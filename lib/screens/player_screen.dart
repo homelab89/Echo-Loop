@@ -8,6 +8,7 @@ import '../providers/player_provider.dart';
 import '../services/subtitle_parser.dart';
 import '../widgets/playback_controls.dart';
 import '../widgets/sentence_list_view.dart';
+import '../widgets/settings_dialog.dart';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key});
@@ -89,42 +90,24 @@ class _PlayerScreenState extends State<PlayerScreen>
           child: Scaffold(
             appBar: AppBar(
               title: Text(player.currentAudioItem?.name ?? 'Player'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () => _showSettingsDialog(context, player),
+                  tooltip: 'Settings',
+                ),
+              ],
             ),
             body: !player.hasAudio
                 ? const Center(child: Text('No audio loaded'))
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isWideScreen = constraints.maxWidth > 800;
-                      return isWideScreen
-                          ? _buildWideLayout(context, player)
-                          : _buildNarrowLayout(context, player);
-                    },
-                  ),
+                : _buildLayout(context, player),
           ),
         );
       },
     );
   }
 
-  Widget _buildWideLayout(BuildContext context, PlayerProvider player) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: Column(
-            children: [
-              Expanded(child: _buildTranscriptView(player)),
-              _buildControlPanel(context, player),
-            ],
-          ),
-        ),
-        const VerticalDivider(width: 1),
-        Expanded(flex: 2, child: _buildSidePanel(player)),
-      ],
-    );
-  }
-
-  Widget _buildNarrowLayout(BuildContext context, PlayerProvider player) {
+  Widget _buildLayout(BuildContext context, PlayerProvider player) {
     return Column(
       children: [
         Expanded(child: _buildTranscriptView(player)),
@@ -205,15 +188,22 @@ class _PlayerScreenState extends State<PlayerScreen>
 
     // 单句模式：只展示当前播放的句子
     if (player.settings.singleSentenceMode) {
-      if (player.currentSentenceIndex == null) {
-        return Center(
-          child: Text(
-            l10n.noSentenceSelected,
-            style: const TextStyle(color: Colors.grey),
-          ),
-        );
+      if (player.currentSentenceIndex == null && player.sentences.isNotEmpty) {
+        // 自动选择第一个句子
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          player.playSentence(0);
+        });
+        return const Center(child: CircularProgressIndicator());
       }
-      return _buildSingleSentenceView(player, player.currentSentenceIndex!);
+      if (player.currentSentenceIndex != null) {
+        return _buildSingleSentenceView(player, player.currentSentenceIndex!);
+      }
+      return Center(
+        child: Text(
+          l10n.noSentenceSelected,
+          style: const TextStyle(color: Colors.grey),
+        ),
+      );
     }
 
     // 非单句模式：展示所有句子列表
@@ -257,6 +247,13 @@ class _PlayerScreenState extends State<PlayerScreen>
     if (player.settings.singleSentenceMode) {
       if (player.currentSentenceIndex == null ||
           !player.bookmarkedIndices.contains(player.currentSentenceIndex)) {
+        // 自动选择第一个收藏的句子
+        if (bookmarkedSentences.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            player.playSentence(bookmarkedSentences.first.index);
+          });
+          return const Center(child: CircularProgressIndicator());
+        }
         return Center(
           child: Text(
             l10n.noSentenceSelected,
@@ -348,306 +345,11 @@ class _PlayerScreenState extends State<PlayerScreen>
     );
   }
 
-  // 侧边设置面板
-  Widget _buildSidePanel(PlayerProvider player) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSingleSentenceModeRow(player, l10n),
-                const SizedBox(height: 24),
-                _buildDisplayRow(player, l10n),
-                const SizedBox(height: 24),
-                _buildSpeedRow(player, l10n),
-                const SizedBox(height: 24),
-                _buildSentenceRepeatSettings(player, l10n),
-                const SizedBox(height: 24),
-                _buildAudioLoopSettings(player, l10n),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 单句模式开关
-  Widget _buildSingleSentenceModeRow(
-    PlayerProvider player,
-    AppLocalizations l10n,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.singleSentenceMode,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.singleSentenceModeDesc,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
-        ),
-        Switch(
-          value: player.settings.singleSentenceMode,
-          onChanged: (value) {
-            player.updateSettings(
-              player.settings.copyWith(singleSentenceMode: value),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  // 显示字幕开关
-  Widget _buildDisplayRow(PlayerProvider player, AppLocalizations l10n) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.showTranscript,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            Text(
-              '${l10n.shortcutKey}: ↑',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
-        ),
-        Switch(
-          value: player.settings.showTranscript,
-          onChanged: (value) {
-            player.updateSettings(
-              player.settings.copyWith(showTranscript: value),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  // 播放速度设置
-  Widget _buildSpeedRow(PlayerProvider player, AppLocalizations l10n) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          l10n.playbackSpeed,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        const SizedBox(width: 16),
-        SizedBox(
-          width: 90,
-          child: DropdownButtonFormField<double>(
-            value: player.settings.playbackSpeed,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              isDense: true,
-            ),
-            isExpanded: true,
-            menuMaxHeight: 300,
-            items: [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0].map((speed) {
-              return DropdownMenuItem(value: speed, child: Text('${speed}x'));
-            }).toList(),
-            onChanged: (speed) {
-              if (speed != null) {
-                player.updateSettings(
-                  player.settings.copyWith(playbackSpeed: speed),
-                );
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 句子重复设置
-  Widget _buildSentenceRepeatSettings(
-    PlayerProvider player,
-    AppLocalizations l10n,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              l10n.sentenceRepeat,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            Switch(
-              value: player.settings.loopEnabled,
-              onChanged: (value) {
-                player.updateSettings(
-                  player.settings.copyWith(loopEnabled: value),
-                );
-              },
-            ),
-          ],
-        ),
-        if (player.settings.loopEnabled) ...[
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.repeatCount),
-              SizedBox(
-                width: 120,
-                child: DropdownButtonFormField<int>(
-                  value: player.settings.loopCount,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    isDense: true,
-                  ),
-                  isExpanded: true,
-                  menuMaxHeight: 300,
-                  items: List.generate(20, (i) => i + 1).map((count) {
-                    return DropdownMenuItem(
-                      value: count,
-                      child: Text('$count ${l10n.times}'),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      player.updateSettings(
-                        player.settings.copyWith(loopCount: value),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.intervalTime),
-              SizedBox(
-                width: 120,
-                child: DropdownButtonFormField<int>(
-                  value: player.settings.pauseInterval.inSeconds,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    isDense: true,
-                  ),
-                  isExpanded: true,
-                  menuMaxHeight: 300,
-                  items: List.generate(31, (i) => i).map((seconds) {
-                    return DropdownMenuItem(
-                      value: seconds,
-                      child: Text('$seconds ${l10n.seconds}'),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      player.updateSettings(
-                        player.settings.copyWith(
-                          pauseInterval: Duration(seconds: value),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-
-  // 音频循环设置
-  Widget _buildAudioLoopSettings(PlayerProvider player, AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              l10n.audioLoop,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            Switch(
-              value: player.settings.loopAudioEnabled,
-              onChanged: (value) {
-                player.updateSettings(
-                  player.settings.copyWith(loopAudioEnabled: value),
-                );
-              },
-            ),
-          ],
-        ),
-        if (player.settings.loopAudioEnabled) ...[
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.loopTimes),
-              SizedBox(
-                width: 120,
-                child: DropdownButtonFormField<int>(
-                  value: player.settings.loopAudio,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    isDense: true,
-                  ),
-                  isExpanded: true,
-                  menuMaxHeight: 300,
-                  items: [
-                    ...List.generate(10, (i) => i + 1).map((count) {
-                      return DropdownMenuItem(
-                        value: count,
-                        child: Text('$count ${l10n.times}'),
-                      );
-                    }),
-                    DropdownMenuItem(value: 0, child: Text(l10n.infiniteLoop)),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      player.updateSettings(
-                        player.settings.copyWith(loopAudio: value),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ],
+  // 显示设置对话框
+  void _showSettingsDialog(BuildContext context, PlayerProvider player) {
+    showDialog(
+      context: context,
+      builder: (context) => SettingsDialog(player: player),
     );
   }
 
@@ -705,10 +407,11 @@ class _PlayerScreenState extends State<PlayerScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // 显示当前模式
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 player.settings.singleSentenceMode
@@ -727,8 +430,10 @@ class _PlayerScreenState extends State<PlayerScreen>
             ],
           ),
           // 显示句子循环状态
-          if (player.settings.loopEnabled)
+          if (player.settings.loopEnabled) ...[
+            const SizedBox(width: 16),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.repeat_one, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
@@ -738,9 +443,12 @@ class _PlayerScreenState extends State<PlayerScreen>
                 ),
               ],
             ),
+          ],
           // 显示音频循环状态
-          if (player.settings.loopAudioEnabled)
+          if (player.settings.loopAudioEnabled) ...[
+            const SizedBox(width: 16),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.repeat, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
@@ -752,7 +460,9 @@ class _PlayerScreenState extends State<PlayerScreen>
                 ),
               ],
             ),
+          ],
           // 显示播放速度
+          const SizedBox(width: 16),
           Text(
             '${player.settings.playbackSpeed}x',
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
