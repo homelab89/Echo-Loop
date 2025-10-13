@@ -139,9 +139,56 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   void _updateCurrentSentence(Duration position) {
-    // 禁用自动选中下一句，用户需要手动控制
-    // 保留这个方法以便未来可能的功能扩展
-    return;
+    // 只在 Continuous 模式下才根据播放进度自动选中句子
+    // 其他模式（Subtitle-Driven）通过播放循环主动更新索引，无需此处处理
+    if (!_shouldUseContinuousMode() || !_isMainPlaybackPlaying) return;
+
+    if (_sentences.isEmpty) return;
+
+    // 使用二分查找快速定位当前播放的句子
+    int newIndex = _findSentenceIndexByPosition(position);
+
+    // 只在索引真正改变时才更新，避免不必要的UI刷新
+    if (newIndex != -1 && newIndex != _currentFullIndex) {
+      _currentFullIndex = newIndex;
+      notifyListeners();
+    }
+  }
+
+  /// 二分查找：根据播放位置查找对应的句子索引
+  int _findSentenceIndexByPosition(Duration position) {
+    if (_sentences.isEmpty) return -1;
+
+    // 特殊情况：位置在第一个句子之前
+    if (position < _sentences.first.startTime) return 0;
+
+    // 特殊情况：位置在最后一个句子之后
+    if (position >= _sentences.last.endTime) return _sentences.length - 1;
+
+    // 二分查找
+    int left = 0;
+    int right = _sentences.length - 1;
+
+    while (left <= right) {
+      int mid = (left + right) ~/ 2;
+      final sentence = _sentences[mid];
+
+      if (position >= sentence.startTime && position < sentence.endTime) {
+        // 找到目标句子
+        return mid;
+      } else if (position < sentence.startTime) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
+    }
+
+    // 如果没有精确匹配（在句子间隙），返回最接近的句子
+    // 优先返回即将播放的下一个句子
+    if (left < _sentences.length) return left;
+    if (right >= 0) return right;
+
+    return -1;
   }
 
   Future<void> loadAudio(AudioItem audioItem) async {
@@ -279,7 +326,8 @@ class PlayerProvider extends ChangeNotifier {
       }
     } else {
       // Full Text 模式：只有当前索引无效时才初始化为0
-      if (_currentFullIndex == null || _currentFullIndex! >= _sentences.length) {
+      if (_currentFullIndex == null ||
+          _currentFullIndex! >= _sentences.length) {
         _currentFullIndex = 0;
         notifyListeners();
       }
@@ -428,7 +476,9 @@ class PlayerProvider extends ChangeNotifier {
           // 等待音频播放完成
           if (_audioPlayer.playing) {
             await _audioPlayer.playerStateStream.firstWhere(
-              (state) => !state.playing || state.processingState == ProcessingState.completed,
+              (state) =>
+                  !state.playing ||
+                  state.processingState == ProcessingState.completed,
             );
           }
           _isMainPlaybackPlaying = false;
@@ -549,7 +599,7 @@ class PlayerProvider extends ChangeNotifier {
 
   Future<void> selectFullSentence(int index, {bool autoPlay = true}) async {
     if (index < 0 || index >= _sentences.length) return;
-    
+
     _currentFullIndex = index;
     _lastPlayedFullIndex = index; // 记录上次手动选择的句子
 
@@ -563,16 +613,19 @@ class PlayerProvider extends ChangeNotifier {
       await _audioPlayer.seek(_sentences[index].startTime);
     }
     notifyListeners();
-    
+
     // 点击item时执行与主播放/暂停按钮相同的动作
     if (autoPlay) {
       await mainPlay();
     }
   }
 
-  Future<void> selectBookmarkedSentence(int index, {bool autoPlay = true}) async {
+  Future<void> selectBookmarkedSentence(
+    int index, {
+    bool autoPlay = true,
+  }) async {
     if (index < 0 || index >= _sentences.length) return;
-    
+
     _currentBookmarkIndex = index;
     _lastPlayedBookmarkIndex = index; // 记录上次手动选择的句子
 
@@ -586,7 +639,7 @@ class PlayerProvider extends ChangeNotifier {
       await _audioPlayer.seek(_sentences[index].startTime);
     }
     notifyListeners();
-    
+
     // 点击item时执行与主播放/暂停按钮相同的动作
     if (autoPlay) {
       await mainPlay();
@@ -596,7 +649,7 @@ class PlayerProvider extends ChangeNotifier {
   /// 重播上一次手动选择的句子（快捷键 'r'）
   Future<void> replayCurrentSentence() async {
     if (_sentences.isEmpty) return;
-    
+
     // 获取上一次手动选择的句子索引
     int? lastPlayedIndex;
     if (_playlistMode == PlaylistMode.bookmarks) {
@@ -604,14 +657,14 @@ class PlayerProvider extends ChangeNotifier {
     } else {
       lastPlayedIndex = _lastPlayedFullIndex;
     }
-    
+
     if (lastPlayedIndex == null) return;
-    
+
     // 暂停当前播放
     if (_audioPlayer.playing) {
       await pause();
     }
-    
+
     // 重新播放该句子
     if (_playlistMode == PlaylistMode.bookmarks) {
       await selectBookmarkedSentence(lastPlayedIndex, autoPlay: true);
@@ -732,13 +785,14 @@ class PlayerProvider extends ChangeNotifier {
 
   Future<void> toggleBookmark(int index) async {
     final isRemoving = _bookmarkedIndices.contains(index);
-    
+
     if (isRemoving) {
       _bookmarkedIndices.remove(index);
       _sentences[index].isBookmarked = false;
-      
+
       // 如果在 bookmark 模式下取消了当前选中的 bookmark
-      if (_playlistMode == PlaylistMode.bookmarks && _currentBookmarkIndex == index) {
+      if (_playlistMode == PlaylistMode.bookmarks &&
+          _currentBookmarkIndex == index) {
         // 清除选中状态
         _currentBookmarkIndex = null;
         // 禁用自动滚动，避免列表跳动
