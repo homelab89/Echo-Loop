@@ -16,8 +16,8 @@ class PlaybackControls extends StatelessWidget {
           // 单句模式开关
           _buildToggleButton(
             context,
-            icon: player.settings.singleSentenceMode 
-                ? Icons.format_quote 
+            icon: player.settings.singleSentenceMode
+                ? Icons.format_quote
                 : Icons.article,
             isActive: player.settings.singleSentenceMode,
             onPressed: () {
@@ -33,8 +33,8 @@ class PlaybackControls extends StatelessWidget {
           // 显示字幕开关
           _buildToggleButton(
             context,
-            icon: player.settings.showTranscript 
-                ? Icons.visibility 
+            icon: player.settings.showTranscript
+                ? Icons.visibility
                 : Icons.visibility_off,
             isActive: player.settings.showTranscript,
             onPressed: () {
@@ -51,7 +51,9 @@ class PlaybackControls extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.skip_previous),
             iconSize: 32,
-            onPressed: player.hasSentences ? () => player.previousSentence() : null,
+            onPressed: player.hasSentences
+                ? () => player.previousSentence()
+                : null,
             tooltip: 'Previous Sentence',
           ),
           const SizedBox(width: 8),
@@ -89,20 +91,23 @@ class PlaybackControls extends StatelessWidget {
   }
 
   Widget _buildPlayPauseButton(BuildContext context) {
+    print('isMainPlaybackPlaying: ${player.isMainPlaybackPlaying}');
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary,
         shape: BoxShape.circle,
       ),
       child: IconButton(
-        icon: Icon(player.isMainPlaybackPlaying ? Icons.pause : Icons.play_arrow),
+        icon: Icon(
+          player.isMainPlaybackPlaying ? Icons.pause : Icons.play_arrow,
+        ),
         iconSize: 40,
         color: Theme.of(context).colorScheme.onPrimary,
         onPressed: () {
           if (player.isMainPlaybackPlaying) {
             player.pause();
           } else {
-            player.play();
+            player.mainPlay();
           }
         },
         tooltip: player.isMainPlaybackPlaying ? 'Pause' : 'Play',
@@ -120,7 +125,7 @@ class PlaybackControls extends StatelessWidget {
     return IconButton(
       icon: Icon(icon),
       iconSize: 24,
-      color: isActive 
+      color: isActive
           ? Theme.of(context).colorScheme.primary
           : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
       onPressed: onPressed,
@@ -148,16 +153,18 @@ class PlaybackControls extends StatelessWidget {
               children: [
                 Text('${speed}x'),
                 if (speed == player.settings.playbackSpeed)
-                  Icon(Icons.check, size: 20, color: Theme.of(context).colorScheme.primary),
+                  Icon(
+                    Icons.check,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
               ],
             ),
           );
         }).toList();
       },
       onSelected: (speed) {
-        player.updateSettings(
-          player.settings.copyWith(playbackSpeed: speed),
-        );
+        player.updateSettings(player.settings.copyWith(playbackSpeed: speed));
       },
     );
   }

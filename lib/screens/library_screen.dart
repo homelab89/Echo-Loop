@@ -1,5 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
@@ -215,6 +217,7 @@ class _AddAudioDialogState extends State<_AddAudioDialog> {
   String? _transcriptPath;
   String _audioName = '';
   bool _isLoading = false;
+  bool _isPicking = false;
 
   @override
   Widget build(BuildContext context) {
@@ -227,7 +230,7 @@ class _AddAudioDialogState extends State<_AddAudioDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ElevatedButton.icon(
-              onPressed: _isLoading ? null : _pickAudioFile,
+              onPressed: _isLoading || _isPicking ? null : _pickAudioFile,
               icon: const Icon(Icons.audiotrack),
               label: const Text('Select Audio File'),
             ),
@@ -240,7 +243,7 @@ class _AddAudioDialogState extends State<_AddAudioDialog> {
             ],
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _isLoading ? null : _pickTranscriptFile,
+              onPressed: _isLoading || _isPicking ? null : _pickTranscriptFile,
               icon: const Icon(Icons.subtitles),
               label: const Text('Select Transcript (Optional)'),
             ),
@@ -288,35 +291,158 @@ class _AddAudioDialogState extends State<_AddAudioDialog> {
   }
 
   Future<void> _pickAudioFile() async {
-    final downloadsPath = '${Platform.environment['HOME']}/Downloads';
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-      allowMultiple: false,
-      initialDirectory: downloadsPath,
-    );
+    if (_isPicking) return;
+    setState(() {
+      _isPicking = true;
+    });
+    try {
+      final initialDir = Platform.isMacOS
+          ? await _getDownloadsDirectory()
+          : null;
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+        allowMultiple: false,
+        initialDirectory: initialDir,
+      );
 
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _audioPath = result.files.single.path;
-        _audioName = path.basenameWithoutExtension(_audioPath!);
-      });
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.single;
+        if (Platform.isIOS) {
+          final dest = await _savePickedFileToSandbox(file, 'audios');
+          if (!mounted) return;
+          setState(() {
+            _audioPath = dest;
+            _audioName = path.basenameWithoutExtension(dest);
+          });
+        } else {
+          final pickedPath = file.path;
+          if (pickedPath != null) {
+            if (!mounted) return;
+            setState(() {
+              _audioPath = pickedPath;
+              _audioName = path.basenameWithoutExtension(_audioPath!);
+            });
+          } else {
+            final dest = await _savePickedFileToSandbox(file, 'audios');
+            if (!mounted) return;
+            setState(() {
+              _audioPath = dest;
+              _audioName = path.basenameWithoutExtension(dest);
+            });
+          }
+        }
+      }
+    } on PlatformException catch (e) {
+      if (e.code != 'multiple_request') rethrow;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPicking = false;
+        });
+      } else {
+        _isPicking = false;
+      }
     }
   }
 
   Future<void> _pickTranscriptFile() async {
-    final downloadsPath = '${Platform.environment['HOME']}/Downloads';
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['srt', 'vtt'],
-      allowMultiple: false,
-      initialDirectory: downloadsPath,
-    );
+    if (_isPicking) return;
+    setState(() {
+      _isPicking = true;
+    });
+    try {
+      final initialDir = Platform.isMacOS
+          ? await _getDownloadsDirectory()
+          : null;
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['srt', 'vtt'],
+        allowMultiple: false,
+        initialDirectory: initialDir,
+      );
 
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _transcriptPath = result.files.single.path;
-      });
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.single;
+        if (Platform.isIOS) {
+          final dest = await _savePickedFileToSandbox(file, 'transcripts');
+          if (!mounted) return;
+          setState(() {
+            _transcriptPath = dest;
+          });
+        } else {
+          final pickedPath = file.path;
+          if (pickedPath != null) {
+            if (!mounted) return;
+            setState(() {
+              _transcriptPath = pickedPath;
+            });
+          } else {
+            final dest = await _savePickedFileToSandbox(file, 'transcripts');
+            if (!mounted) return;
+            setState(() {
+              _transcriptPath = dest;
+            });
+          }
+        }
+      }
+    } on PlatformException catch (e) {
+      if (e.code != 'multiple_request') rethrow;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPicking = false;
+        });
+      } else {
+        _isPicking = false;
+      }
     }
+  }
+
+  Future<String?> _getDownloadsDirectory() async {
+    try {
+      final home = Platform.environment['HOME'];
+      if (home == null) return null;
+      return path.join(home, 'Downloads');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<String> _savePickedFileToSandbox(
+    PlatformFile file,
+    String subdir,
+  ) async {
+    final docs = await getApplicationDocumentsDirectory();
+    final dir = Directory(path.join(docs.path, subdir));
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+
+    final baseName = file.name.isNotEmpty
+        ? file.name
+        : (file.path != null ? path.basename(file.path!) : 'file');
+    String destPath = path.join(dir.path, baseName);
+    int i = 1;
+    while (await File(destPath).exists()) {
+      final name = path.basenameWithoutExtension(baseName);
+      final ext = path.extension(baseName);
+      destPath = path.join(dir.path, '$name ($i)$ext');
+      i++;
+    }
+
+    if (file.path != null) {
+      await File(file.path!).copy(destPath);
+    } else if (file.bytes != null) {
+      await File(destPath).writeAsBytes(file.bytes!);
+    } else if (file.readStream != null) {
+      final out = File(destPath).openWrite();
+      await file.readStream!.pipe(out);
+      await out.close();
+    } else {
+      throw Exception('Unable to access picked file');
+    }
+
+    return destPath;
   }
 
   Future<void> _addAudio() async {

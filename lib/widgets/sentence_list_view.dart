@@ -70,12 +70,15 @@ class _SentenceListViewState extends State<SentenceListView> {
           curve: Curves.easeInOut,
         );
       } else {
-        // 如果key不存在（item不在渲染范围内），先滚动到估算位置
-        final estimatedOffset = widget.currentIndex! * 100.0; // 估算每个item约100像素
-        _scrollController.jumpTo(
-          estimatedOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+        final localPos = widget.sentences.indexWhere(
+          (s) => s.index == widget.currentIndex,
         );
-        // 等待渲染后再次尝试精确定位
+        if (localPos == -1) return;
+
+        final estimatedOffset = localPos * 100.0; // 估算每个item约100像素
+        final max = _scrollController.position.maxScrollExtent;
+        _scrollController.jumpTo(estimatedOffset.clamp(0.0, max));
+
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final key = _itemKeys[widget.currentIndex];
           if (key?.currentContext != null) {
