@@ -1,11 +1,11 @@
 {
-    "name": "listen_master",
-    "short_name": "listen_master",
+    "name": "Listen Master",
+    "short_name": "Listen Master",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Professional English listening practice application",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
