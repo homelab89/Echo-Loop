@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "listen_master" "\0"
+            VALUE "CompanyName", "top.valuespot" "\0"
+            VALUE "FileDescription", "fluency" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "listen_master" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "listen_master.exe" "\0"
-            VALUE "ProductName", "listen_master" "\0"
+            VALUE "InternalName", "fluency" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 top.valuespot. All rights reserved." "\0"
+            VALUE "OriginalFilename", "fluency.exe" "\0"
+            VALUE "ProductName", "fluency" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

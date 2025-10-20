@@ -8,20 +8,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import 'package:listen_master/main.dart';
+import 'package:fluency/main.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     // Create mock PackageInfo for testing
     final packageInfo = PackageInfo(
-      appName: 'Listen Master',
-      packageName: 'com.example.listen_master',
+      appName: 'Fluency',
+      packageName: 'top.valuespot.fluency',
       version: '1.0.0',
       buildNumber: '1',
     );
 
     // Build our app and trigger a frame.
-    await tester.pumpWidget(ListenMasterApp(packageInfo: packageInfo));
+    await tester.pumpWidget(FluencyApp(packageInfo: packageInfo));
 
     // Verify that the app loads
     expect(find.text('Audio Library'), findsOneWidget);

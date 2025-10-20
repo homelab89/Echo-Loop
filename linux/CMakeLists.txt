@@ -4,12 +4,12 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "listen_master")
+set(BINARY_NAME "fluency")
 # Application display name
-set(APPLICATION_NAME "Listen Master")
+set(APPLICATION_NAME "Fluency")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.example.listen_master")
+set(APPLICATION_ID "top.valuespot.fluency")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

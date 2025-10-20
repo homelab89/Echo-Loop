@@ -25,7 +25,8 @@ void main() async {
       await session.configure(
         const AudioSessionConfiguration(
           avAudioSessionCategory: AVAudioSessionCategory.playback,
-          avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.duckOthers,
+          avAudioSessionCategoryOptions:
+              AVAudioSessionCategoryOptions.duckOthers,
           avAudioSessionMode: AVAudioSessionMode.spokenAudio,
           avAudioSessionRouteSharingPolicy:
               AVAudioSessionRouteSharingPolicy.defaultPolicy,
@@ -46,13 +47,13 @@ void main() async {
     print('Web platform: skipping audio session configuration');
   }
 
-  runApp(ListenMasterApp(packageInfo: packageInfo));
+  runApp(FluencyApp(packageInfo: packageInfo));
 }
 
-class ListenMasterApp extends StatelessWidget {
+class FluencyApp extends StatelessWidget {
   final PackageInfo packageInfo;
 
-  const ListenMasterApp({super.key, required this.packageInfo});
+  const FluencyApp({super.key, required this.packageInfo});
 
   ThemeData _buildLightTheme() {
     return ThemeData(
@@ -98,7 +99,7 @@ class ListenMasterApp extends StatelessWidget {
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
           return MaterialApp(
-            title: 'Listen Master',
+            title: 'Fluency',
             debugShowCheckedModeBanner: false,
             theme: _buildLightTheme(),
             darkTheme: _buildDarkTheme(),

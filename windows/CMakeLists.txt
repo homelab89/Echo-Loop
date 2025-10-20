@@ -1,11 +1,11 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(listen_master LANGUAGES CXX)
-set(APPLICATION_NAME "Listen Master")
+project(fluency LANGUAGES CXX)
+set(APPLICATION_NAME "Fluency")
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "listen_master")
+set(BINARY_NAME "fluency")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

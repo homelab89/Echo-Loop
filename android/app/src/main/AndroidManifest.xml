@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="Listen Master"
+        android:label="Fluency"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
