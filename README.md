@@ -260,3 +260,14 @@ This is the second sentence.
 ## 📄 许可证
 
 本项目仅供教育和个人使用。
+
+## 常用命令
+
+```bash
+# 生成图标
+flutter pub run flutter_launcher_icons
+# 安装 ios 版本
+flutter run --release -d <device_id>
+# 构建 macos 版本
+flutter build macos --release
+```
