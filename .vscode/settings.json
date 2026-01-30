@@ -1,0 +1,55 @@
+{
+  "editor.codeActionsOnSave": {
+    "quickfix.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "emmet.showExpandedAbbreviation": "never",
+  "prettier.enable": false,
+  "todo-tree.highlights.enabled": true,
+  "todo-tree.general.tags": ["TODO", "FIXME", "BUG", "NOTE"],
+  "todo-tree.highlights.customHighlight": {
+    "TODO": {
+      "type": "tag",
+      "foreground": "#000000",
+      "background": "#ff9800",
+      "icon": "alert",
+      "iconColour": "#ff9800",
+      "gutterIcon": true,
+      "rulerColour": "#ff9800",
+      "rulerLane": "center"
+    },
+    "FIXME": {
+      "type": "tag",
+      "foreground": "#2b0508",
+      "background": "#ffb3b8",
+      "gutterIcon": true,
+      "icon": "alert",
+      "iconColour": "#fa4d56",
+      "rulerColour": "#fa4d56",
+      "rulerLane": "center"
+    },
+    "BUG": {
+      "type": "tag",
+      "foreground": "#2b0508",
+      "background": "#ffb3b8",
+      "gutterIcon": true,
+      "icon": "bug",
+      "iconColour": "#fa4d56",
+      "rulerColour": "#fa4d56",
+      "rulerLane": "center"
+    },
+    "NOTE": {
+      "type": "tag",
+      "foreground": "#041322",
+      "background": "#a6c8ff",
+      "gutterIcon": true,
+      "icon": "info",
+      "iconColour": "#4589ff",
+      "rulerColour": "#4589ff",
+      "rulerLane": "center"
+    }
+  }
+}
