@@ -113,5 +113,54 @@
         "type": "String"
       }
     }
-  }
+  },
+  "collections": "Collections",
+  "collection": "Collection",
+  "createCollection": "Create Collection",
+  "collectionName": "Collection Name",
+  "enterCollectionName": "Enter collection name",
+  "noCollectionsYet": "No collections yet",
+  "tapToCreateCollection": "Tap + to create your first collection",
+  "deleteCollection": "Delete Collection",
+  "deleteCollectionConfirm": "Are you sure you want to delete \"{name}\"? Audio files in this collection will not be deleted.",
+  "@deleteCollectionConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "renameCollection": "Rename",
+  "starCollection": "Star",
+  "unstarCollection": "Unstar",
+  "sortByNameAsc": "Name (A-Z)",
+  "sortByNameDesc": "Name (Z-A)",
+  "sortByDateAsc": "Oldest First",
+  "sortByDateDesc": "Newest First",
+  "sortByCustom": "Custom Order",
+  "sortCollections": "Sort",
+  "gridView": "Grid View",
+  "listView": "List View",
+  "audioCount": "{count} audios",
+  "@audioCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "collectionNameEmpty": "Collection name cannot be empty",
+  "collectionNameExists": "A collection with this name already exists",
+  "addAudioToCollection": "Add Audio",
+  "removeFromCollection": "Remove from Collection",
+  "removeFromCollectionConfirm": "Remove \"{name}\" from this collection?",
+  "@removeFromCollectionConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "emptyCollection": "No audio in this collection",
+  "tapToAddAudio": "Tap + to add audio files"
 }

@@ -293,4 +293,95 @@ class AppLocalizationsEn extends AppLocalizations {
   String addedOn(String date) {
     return 'Added: $date';
   }
+
+  @override
+  String get collections => 'Collections';
+
+  @override
+  String get collection => 'Collection';
+
+  @override
+  String get createCollection => 'Create Collection';
+
+  @override
+  String get collectionName => 'Collection Name';
+
+  @override
+  String get enterCollectionName => 'Enter collection name';
+
+  @override
+  String get noCollectionsYet => 'No collections yet';
+
+  @override
+  String get tapToCreateCollection => 'Tap + to create your first collection';
+
+  @override
+  String get deleteCollection => 'Delete Collection';
+
+  @override
+  String deleteCollectionConfirm(String name) {
+    return 'Are you sure you want to delete \"$name\"? Audio files in this collection will not be deleted.';
+  }
+
+  @override
+  String get renameCollection => 'Rename';
+
+  @override
+  String get starCollection => 'Star';
+
+  @override
+  String get unstarCollection => 'Unstar';
+
+  @override
+  String get sortByNameAsc => 'Name (A-Z)';
+
+  @override
+  String get sortByNameDesc => 'Name (Z-A)';
+
+  @override
+  String get sortByDateAsc => 'Oldest First';
+
+  @override
+  String get sortByDateDesc => 'Newest First';
+
+  @override
+  String get sortByCustom => 'Custom Order';
+
+  @override
+  String get sortCollections => 'Sort';
+
+  @override
+  String get gridView => 'Grid View';
+
+  @override
+  String get listView => 'List View';
+
+  @override
+  String audioCount(int count) {
+    return '$count audios';
+  }
+
+  @override
+  String get collectionNameEmpty => 'Collection name cannot be empty';
+
+  @override
+  String get collectionNameExists =>
+      'A collection with this name already exists';
+
+  @override
+  String get addAudioToCollection => 'Add Audio';
+
+  @override
+  String get removeFromCollection => 'Remove from Collection';
+
+  @override
+  String removeFromCollectionConfirm(String name) {
+    return 'Remove \"$name\" from this collection?';
+  }
+
+  @override
+  String get emptyCollection => 'No audio in this collection';
+
+  @override
+  String get tapToAddAudio => 'Tap + to add audio files';
 }

@@ -292,4 +292,94 @@ class AppLocalizationsZh extends AppLocalizations {
   String addedOn(String date) {
     return '添加于：$date';
   }
+
+  @override
+  String get collections => '合集';
+
+  @override
+  String get collection => '合集';
+
+  @override
+  String get createCollection => '创建合集';
+
+  @override
+  String get collectionName => '合集名称';
+
+  @override
+  String get enterCollectionName => '请输入合集名称';
+
+  @override
+  String get noCollectionsYet => '还没有合集';
+
+  @override
+  String get tapToCreateCollection => '点击 + 创建第一个合集';
+
+  @override
+  String get deleteCollection => '删除合集';
+
+  @override
+  String deleteCollectionConfirm(String name) {
+    return '确定要删除「$name」吗？合集中的音频文件不会被删除。';
+  }
+
+  @override
+  String get renameCollection => '重命名';
+
+  @override
+  String get starCollection => '星标';
+
+  @override
+  String get unstarCollection => '取消星标';
+
+  @override
+  String get sortByNameAsc => '名称 (A-Z)';
+
+  @override
+  String get sortByNameDesc => '名称 (Z-A)';
+
+  @override
+  String get sortByDateAsc => '最早创建';
+
+  @override
+  String get sortByDateDesc => '最近创建';
+
+  @override
+  String get sortByCustom => '自定义排序';
+
+  @override
+  String get sortCollections => '排序';
+
+  @override
+  String get gridView => '文件夹视图';
+
+  @override
+  String get listView => '列表视图';
+
+  @override
+  String audioCount(int count) {
+    return '$count 个音频';
+  }
+
+  @override
+  String get collectionNameEmpty => '合集名称不能为空';
+
+  @override
+  String get collectionNameExists => '已存在同名合集';
+
+  @override
+  String get addAudioToCollection => '添加音频';
+
+  @override
+  String get removeFromCollection => '从合集中移除';
+
+  @override
+  String removeFromCollectionConfirm(String name) {
+    return '确定要将「$name」从合集中移除吗？';
+  }
+
+  @override
+  String get emptyCollection => '合集中还没有音频';
+
+  @override
+  String get tapToAddAudio => '点击 + 添加音频文件';
 }

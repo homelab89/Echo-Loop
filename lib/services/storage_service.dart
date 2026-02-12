@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/audio_item.dart';
+import '../models/collection.dart';
 import '../models/playback_settings.dart';
 
 class StorageService {
   static const String _audioLibraryKey = 'audio_library';
+  static const String _collectionsKey = 'collections';
   static const String _settingsKey = 'playback_settings';
   static const String _bookmarksKey = 'bookmarks_';
 
@@ -27,6 +29,28 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = json.encode(items.map((item) => item.toJson()).toList());
     await prefs.setString(_audioLibraryKey, jsonString);
+  }
+
+  // Collections
+  static Future<List<Collection>> loadCollections() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_collectionsKey);
+    if (jsonString == null) return [];
+
+    try {
+      final List<dynamic> jsonList = json.decode(jsonString);
+      return jsonList.map((json) => Collection.fromJson(json)).toList();
+    } catch (e) {
+      print('Error loading collections: $e');
+      return [];
+    }
+  }
+
+  static Future<void> saveCollections(List<Collection> collections) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString =
+        json.encode(collections.map((c) => c.toJson()).toList());
+    await prefs.setString(_collectionsKey, jsonString);
   }
 
   // Playback Settings

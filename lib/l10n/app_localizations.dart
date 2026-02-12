@@ -655,6 +655,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Added: {date}'**
   String addedOn(String date);
+
+  /// No description provided for @collections.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections'**
+  String get collections;
+
+  /// No description provided for @collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection'**
+  String get collection;
+
+  /// No description provided for @createCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Collection'**
+  String get createCollection;
+
+  /// No description provided for @collectionName.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection Name'**
+  String get collectionName;
+
+  /// No description provided for @enterCollectionName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter collection name'**
+  String get enterCollectionName;
+
+  /// No description provided for @noCollectionsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No collections yet'**
+  String get noCollectionsYet;
+
+  /// No description provided for @tapToCreateCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + to create your first collection'**
+  String get tapToCreateCollection;
+
+  /// No description provided for @deleteCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Collection'**
+  String get deleteCollection;
+
+  /// No description provided for @deleteCollectionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{name}\"? Audio files in this collection will not be deleted.'**
+  String deleteCollectionConfirm(String name);
+
+  /// No description provided for @renameCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get renameCollection;
+
+  /// No description provided for @starCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Star'**
+  String get starCollection;
+
+  /// No description provided for @unstarCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Unstar'**
+  String get unstarCollection;
+
+  /// No description provided for @sortByNameAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (A-Z)'**
+  String get sortByNameAsc;
+
+  /// No description provided for @sortByNameDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (Z-A)'**
+  String get sortByNameDesc;
+
+  /// No description provided for @sortByDateAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest First'**
+  String get sortByDateAsc;
+
+  /// No description provided for @sortByDateDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest First'**
+  String get sortByDateDesc;
+
+  /// No description provided for @sortByCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Order'**
+  String get sortByCustom;
+
+  /// No description provided for @sortCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get sortCollections;
+
+  /// No description provided for @gridView.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid View'**
+  String get gridView;
+
+  /// No description provided for @listView.
+  ///
+  /// In en, this message translates to:
+  /// **'List View'**
+  String get listView;
+
+  /// No description provided for @audioCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} audios'**
+  String audioCount(int count);
+
+  /// No description provided for @collectionNameEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection name cannot be empty'**
+  String get collectionNameEmpty;
+
+  /// No description provided for @collectionNameExists.
+  ///
+  /// In en, this message translates to:
+  /// **'A collection with this name already exists'**
+  String get collectionNameExists;
+
+  /// No description provided for @addAudioToCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Audio'**
+  String get addAudioToCollection;
+
+  /// No description provided for @removeFromCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Collection'**
+  String get removeFromCollection;
+
+  /// No description provided for @removeFromCollectionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{name}\" from this collection?'**
+  String removeFromCollectionConfirm(String name);
+
+  /// No description provided for @emptyCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'No audio in this collection'**
+  String get emptyCollection;
+
+  /// No description provided for @tapToAddAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + to add audio files'**
+  String get tapToAddAudio;
 }
 
 class _AppLocalizationsDelegate

@@ -6,9 +6,11 @@ import 'package:audio_session/audio_session.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/audio_library_provider.dart';
+import 'providers/collection_provider.dart';
 import 'providers/player_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/library_screen.dart';
+import 'screens/collection_screen.dart';
 import 'screens/player_screen.dart';
 import 'screens/settings_screen.dart';
 
@@ -94,6 +96,7 @@ class FluencyApp extends StatelessWidget {
         Provider<PackageInfo>.value(value: packageInfo),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => AudioLibraryProvider()),
+        ChangeNotifierProvider(create: (_) => CollectionProvider()),
         ChangeNotifierProvider(create: (_) => PlayerProvider()),
       ],
       child: Consumer<SettingsProvider>(
@@ -140,6 +143,7 @@ class _MainScreenState extends State<MainScreen> {
     // Load library on startup
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AudioLibraryProvider>().loadLibrary();
+      context.read<CollectionProvider>().loadCollections();
     });
   }
 
@@ -182,6 +186,10 @@ class _MainScreenState extends State<MainScreen> {
                         label: Text(l10n.library),
                       ),
                       NavigationRailDestination(
+                        icon: const Icon(Icons.collections_bookmark),
+                        label: Text(l10n.collections),
+                      ),
+                      NavigationRailDestination(
                         icon: const Icon(Icons.play_circle),
                         label: Text(l10n.player),
                       ),
@@ -211,6 +219,10 @@ class _MainScreenState extends State<MainScreen> {
                       label: l10n.library,
                     ),
                     NavigationDestination(
+                      icon: const Icon(Icons.collections_bookmark, size: 24),
+                      label: l10n.collections,
+                    ),
+                    NavigationDestination(
                       icon: const Icon(Icons.play_circle, size: 24),
                       label: l10n.player,
                     ),
@@ -230,8 +242,10 @@ class _MainScreenState extends State<MainScreen> {
       case 0:
         return const LibraryScreen();
       case 1:
-        return const PlayerScreen();
+        return const CollectionScreen();
       case 2:
+        return const PlayerScreen();
+      case 3:
         return const SettingsScreen();
       default:
         return const LibraryScreen();
