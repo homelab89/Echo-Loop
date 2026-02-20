@@ -382,4 +382,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get tapToAddAudio => '点击 + 添加音频文件';
+
+  @override
+  String get study => '学习';
+
+  @override
+  String get favorites => '收藏';
+
+  @override
+  String get profile => '我的';
+
+  @override
+  String get studyComingSoon => '学习功能即将上线';
+
+  @override
+  String get favoritesComingSoon => '收藏功能即将上线';
 }

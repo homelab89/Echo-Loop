@@ -162,5 +162,10 @@
     }
   },
   "emptyCollection": "No audio in this collection",
-  "tapToAddAudio": "Tap + to add audio files"
+  "tapToAddAudio": "Tap + to add audio files",
+  "study": "Study",
+  "favorites": "Favorites",
+  "profile": "Profile",
+  "studyComingSoon": "Study feature coming soon",
+  "favoritesComingSoon": "Favorites feature coming soon"
 }

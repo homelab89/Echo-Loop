@@ -384,4 +384,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tapToAddAudio => 'Tap + to add audio files';
+
+  @override
+  String get study => 'Study';
+
+  @override
+  String get favorites => 'Favorites';
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get studyComingSoon => 'Study feature coming soon';
+
+  @override
+  String get favoritesComingSoon => 'Favorites feature coming soon';
 }

@@ -8,9 +8,9 @@ import 'l10n/app_localizations.dart';
 import 'providers/audio_library_provider.dart';
 import 'providers/collection_provider.dart';
 import 'providers/settings_provider.dart';
-import 'screens/library_screen.dart';
 import 'screens/collection_screen.dart';
-import 'screens/player_screen.dart';
+import 'screens/study_screen.dart';
+import 'screens/favorites_screen.dart';
 import 'screens/settings_screen.dart';
 
 void main() async {
@@ -106,7 +106,6 @@ class FluencyApp extends ConsumerWidget {
       ],
       home: MainScreen(packageInfo: packageInfo),
       routes: {
-        '/player': (context) => const PlayerScreen(),
         '/settings': (context) => const SettingsScreen(),
       },
     );
@@ -123,7 +122,7 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
 
   @override
   void initState() {
@@ -169,20 +168,20 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                     },
                     destinations: [
                       NavigationRailDestination(
-                        icon: const Icon(Icons.library_music),
-                        label: Text(l10n.library),
-                      ),
-                      NavigationRailDestination(
                         icon: const Icon(Icons.collections_bookmark),
                         label: Text(l10n.collections),
                       ),
                       NavigationRailDestination(
-                        icon: const Icon(Icons.play_circle),
-                        label: Text(l10n.player),
+                        icon: const Icon(Icons.school),
+                        label: Text(l10n.study),
                       ),
                       NavigationRailDestination(
-                        icon: const Icon(Icons.account_circle),
-                        label: Text(l10n.account),
+                        icon: const Icon(Icons.favorite),
+                        label: Text(l10n.favorites),
+                      ),
+                      NavigationRailDestination(
+                        icon: const Icon(Icons.person),
+                        label: Text(l10n.profile),
                       ),
                     ],
                   ),
@@ -202,20 +201,20 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                   destinations: [
                     NavigationDestination(
-                      icon: const Icon(Icons.library_music, size: 24),
-                      label: l10n.library,
-                    ),
-                    NavigationDestination(
                       icon: const Icon(Icons.collections_bookmark, size: 24),
                       label: l10n.collections,
                     ),
                     NavigationDestination(
-                      icon: const Icon(Icons.play_circle, size: 24),
-                      label: l10n.player,
+                      icon: const Icon(Icons.school, size: 24),
+                      label: l10n.study,
                     ),
                     NavigationDestination(
-                      icon: const Icon(Icons.account_circle, size: 24),
-                      label: l10n.account,
+                      icon: const Icon(Icons.favorite, size: 24),
+                      label: l10n.favorites,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.person, size: 24),
+                      label: l10n.profile,
                     ),
                   ],
                 ),
@@ -227,15 +226,15 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Widget _getSelectedScreen() {
     switch (_selectedIndex) {
       case 0:
-        return const LibraryScreen();
-      case 1:
         return const CollectionScreen();
+      case 1:
+        return const StudyScreen();
       case 2:
-        return const PlayerScreen();
+        return const FavoritesScreen();
       case 3:
         return SettingsScreen(packageInfo: widget.packageInfo);
       default:
-        return const LibraryScreen();
+        return const CollectionScreen();
     }
   }
 }

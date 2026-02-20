@@ -120,5 +120,10 @@
   "removeFromCollection": "从合集中移除",
   "removeFromCollectionConfirm": "确定要将「{name}」从合集中移除吗？",
   "emptyCollection": "合集中还没有音频",
-  "tapToAddAudio": "点击 + 添加音频文件"
+  "tapToAddAudio": "点击 + 添加音频文件",
+  "study": "学习",
+  "favorites": "收藏",
+  "profile": "我的",
+  "studyComingSoon": "学习功能即将上线",
+  "favoritesComingSoon": "收藏功能即将上线"
 }

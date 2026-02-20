@@ -1,270 +1,129 @@
-# Fluency - 专业英语听力练习应用
+# Fluency - 英语听说练习应用
 
-一款专业的英语听力练习应用，采用 Flutter 构建，支持跨平台运行。通过交互式音频播放和字幕支持，帮助语言学习者提升听力理解能力。
+Flutter 跨平台英语听说练习应用，支持 macOS / iOS / Android / Web。围绕真实音频材料，提供「首学→间隔复习→毕业检验」的完整学习闭环：盲听理解大意、逐句精听标注难点、跟读模仿发音、复述锻炼输出，配合 9 阶段间隔复习（R1-R28）巩固记忆，最终实现脱离字幕流利跟读与复述。
 
-## ✨ 核心功能
+## 核心功能
 
-### 📚 音频库管理
-- 从本地导入音频文件（支持所有音频格式）
+### 学习流程
+- **首学**：全文盲听 → 逐句精听+标注 → 难句跟读 → 段级复述
+- **间隔复习**：9 阶段复习周期（R1-R28），从 1 天到 28 天逐步拉长间隔
+- **毕业检验**：全文盲听 + 不看字幕跟读 + 总结复述，达标即毕业
+- 进度记录到小阶段级别，支持断点续学
+
+> 完整学习流程设计见 [METHOD.md](./METHOD.md)
+
+### 音频库管理
+- 从本地导入音频文件（支持所有常见音频格式）
 - 可选导入字幕文件（SRT/VTT 格式）
 - 列表展示所有音频，标记是否包含字幕
-- 显示添加日期，支持删除确认
 - 持久化存储
 
-### 🎵 三种播放模式
-- **全文播放模式**：连续播放整个音频
-- **单句播放模式**：逐句播放并自动暂停，精听利器
-- **收藏播放模式**：只播放收藏的句子，针对性复习
+### 三种播放模式
+- **全文播放**：连续播放整个音频
+- **单句播放**：逐句播放并自动暂停，精听利器
+- **收藏播放**：只播放收藏的句子，针对性复习
 
-### 🔄 灵活的循环播放
-- 可配置循环次数（1-10 次或无限 ∞）
+### 灵活的循环播放
+- 可配置循环次数（1-10 次或无限）
 - 可配置暂停间隔（0-10 秒）
 - 支持单句循环、全文循环、收藏句子循环
 
-### ⭐ 智能收藏系统
+### 智能收藏系统
 - 点击星标即可收藏/取消收藏句子
 - 收藏状态自动保存
 - 收藏列表展示和快速跳转
 
-### 🎮 完整的播放控制
+### 完整的播放控制
 - 播放/暂停/停止
 - 上一句/下一句导航
 - 进度条拖动定位
 - 速度调节（0.5x - 2.0x）
 - 点击句子直接跳转播放
 
-### 📝 字幕功能
+### 字幕功能
 - 实时高亮当前播放句子
 - 自动滚动到当前句子
 - 显示时间轴
-- 友好的空状态提示
 
-## 🎨 高级功能
+### 其他
+- 响应式设计（移动端底部导航，桌面端侧边导航）
+- 浅色/深色/跟随系统主题
+- 国际化：英文、简体中文
 
-### 响应式设计
-- **移动端**：底部导航栏，垂直布局
-- **桌面端**：侧边导航栏，宽屏并排显示
-- 自适应断点：600px 和 800px
-- Material Design 3 设计语言
+## 技术栈
 
-### 主题系统
-- **浅色模式**：明亮清新
-- **深色模式**：护眼舒适
-- **跟随系统**：自动切换（默认）
-- 主色调：蓝色 (#2196F3)
-- 设置持久化保存
+| 类别 | 技术 |
+|------|------|
+| UI 框架 | Flutter + Material Design 3 |
+| 状态管理 | Riverpod（代码生成模式） |
+| 音频播放 | just_audio + audio_session |
+| 国际化 | flutter_localizations + ARB 文件 |
+| 字幕解析 | subtitle（SRT/VTT） |
+| 文件选择 | file_picker |
+| 数据持久化 | shared_preferences + path_provider |
+| 测试 | flutter_test + mocktail |
+| 静态分析 | flutter_lints |
 
-### 国际化支持
-- **英文**（默认）
-- **简体中文**
-- 所有界面完全本地化
-- 语言选择自动保存
-- 易于扩展新语言
-
-### 设置管理
-- 独立的 Account（账户）栏目
-- 主题模式选择
-- 语言选择
-- 关于信息和版本号
-
-## 🛠️ 技术栈
-
-### 音频处理
-- **just_audio** - 专业音频播放引擎
-- **audio_session** - 音频会话管理
-- **audio_video_progress_bar** - 交互式进度条
-
-### UI 框架
-- **Flutter** - 跨平台 UI 框架
-- **Material Design 3** - 设计语言
-- **Provider** - 状态管理
-
-### 国际化
-- **flutter_localizations** - Flutter 官方 i18n
-- **intl** - 格式化支持
-- **gen-l10n** - 代码生成
-
-### 字幕与文件
-- **subtitle** - SRT/VTT 字幕解析
-- **file_picker** - 跨平台文件选择
-
-### 数据持久化
-- **shared_preferences** - 本地存储
-- **path_provider** - 路径管理
-
-## 📁 项目结构
+## 项目结构
 
 ```
 lib/
-├── l10n/                         # 国际化
-│   ├── app_en.arb               # 英文文案
-│   ├── app_zh.arb               # 中文文案
-│   └── app_localizations.dart   # 自动生成
-├── models/                      # 数据模型
-│   ├── audio_item.dart         # 音频项元数据
-│   ├── sentence.dart           # 字幕句子数据
-│   └── playback_settings.dart  # 播放配置
-├── providers/                   # 状态管理
-│   ├── audio_library_provider.dart  # 音频库管理
-│   ├── player_provider.dart         # 播放控制
-│   └── settings_provider.dart       # 设置管理
-├── services/                    # 业务逻辑
-│   ├── subtitle_parser.dart    # 字幕文件解析
-│   └── storage_service.dart    # 数据持久化
-├── screens/                     # 界面
-│   ├── library_screen.dart     # 音频库界面
-│   ├── player_screen.dart      # 播放器界面
-│   └── settings_screen.dart    # 设置界面
-├── widgets/                     # 可复用组件
-│   ├── playback_controls.dart   # 播放控制
-│   ├── sentence_list_view.dart  # 字幕列表
-│   └── settings_panel.dart      # 设置面板
-└── main.dart                    # 应用入口
+├── l10n/              # 国际化翻译文件（ARB 格式）
+├── models/            # 数据模型（AudioItem, Sentence, Collection 等）
+├── providers/         # Riverpod 状态管理
+│   ├── audio_engine/  # 音频引擎层（底层播放控制）
+│   └── listening_practice/  # 听力练习层（业务逻辑）
+│       ├── sentence_tracker.dart     # 句子定位（二分查找）
+│       └── bookmark_manager.dart     # 书签管理
+├── screens/           # 页面
+├── services/          # 服务层（StorageService, SubtitleParser）
+└── widgets/           # 可复用组件
+
+integration_test/
+
+test/
+├── models/            # 模型单元测试
+├── providers/         # Provider / 辅助类测试
+├── services/          # 服务层测试
+└── widget_test.dart   # Widget 冒烟测试
 ```
-
-## 🚀 快速开始
-
-### 环境要求
-- Flutter SDK 3.9.2 或更高版本
-- iOS 模拟器 / Android 模拟器 / 真机
-- 桌面端：macOS / Windows / Linux 开发环境
-
-### 安装步骤
-
-1. 克隆仓库
-2. 安装依赖：
-```bash
-flutter pub get
-```
-
-3. 运行应用：
-```bash
-# 移动端
-flutter run
-
-# 指定平台
-flutter run -d macos    # macOS
-flutter run -d ios      # iOS
-flutter run -d android  # Android
-```
-
-## 📖 使用指南
-
-### 添加音频文件
-
-1. 在音频库界面点击 **+** 按钮
-2. 选择音频文件（MP3、WAV 等格式）
-3. 可选：选择字幕文件（SRT 或 VTT 格式）
-4. 音频将被添加到库中
-
-### 播放控制
-
-- **播放/暂停**：控制音频播放
-- **上一句/下一句**：在句子间导航
-- **停止**：停止播放并重置
-- **进度条**：点击进度条跳转到指定位置
-- **收藏**：点击 ⭐ 收藏句子
-
-### 播放设置
-
-点击 ⚙️ 图标进行配置：
-- **播放速度**：0.5x 到 2.0x 调节
-- **循环播放**：启用/禁用，设置循环次数
-- **暂停间隔**：设置循环之间的停顿时间（0-10 秒）
-
-### 播放模式切换
-
-在播放器界面切换模式：
-- **全文播放**：连续播放完整音频
-- **单句播放**：逐句播放，自动重复
-- **仅播放收藏**：复习收藏的句子
-
-### 主题和语言
-
-进入 Account（账户）栏目：
-1. **主题模式**：选择浅色/深色/跟随系统
-2. **语言**：选择 English 或简体中文
-
-## 📝 字幕格式
-
-应用支持标准字幕格式：
-
-**SRT 示例：**
-```srt
-1
-00:00:00,000 --> 00:00:03,000
-Welcome to English listening practice.
-
-2
-00:00:03,500 --> 00:00:07,000
-This is the second sentence.
-```
-
-**VTT 示例：**
-```vtt
-WEBVTT
-
-00:00:00.000 --> 00:00:03.000
-Welcome to English listening practice.
-
-00:00:03.500 --> 00:00:07.000
-This is the second sentence.
-```
-
-## 💡 使用场景
-
-### 场景 1：精听单句
-1. 导入音频和字幕
-2. 切换到"单句播放"模式
-3. 启用循环（如 3 次）
-4. 设置暂停间隔（如 2 秒）
-5. 反复练习每一句
-
-### 场景 2：复习收藏
-1. 播放过程中收藏难句
-2. 切换到"仅播放收藏"模式
-3. 专注练习收藏的句子
-
-### 场景 3：整体泛听
-1. 使用"全文播放"模式
-2. 调整播放速度（如 0.75x）
-3. 启用循环，反复听整篇
-
-## 🎓 设计原则
-
-- **模块化架构**：清晰的分层，职责分离
-- **Provider 模式**：响应式状态管理
-- **错误处理**：完整的异常处理和降级
-- **响应式设计**：自适应移动端和桌面端
-- **官方方案**：优先使用 Flutter 官方库
-- **类型安全**：完整的 Dart null safety
-
-## 🌐 平台支持
-
-- ✅ iOS
-- ✅ Android
-- ✅ macOS
-- ✅ Windows
-- ✅ Linux
-
-## 🔮 未来增强
-
-可能的功能扩展：
-- 云端同步音频库和收藏
-- AB 循环（任意段落重复）
-- 导出收藏列表
-- 音频录制和对比
-- 词典集成
-- 更多语言支持
 
 ## 常用命令
 
 ```bash
-# 生成图标
-flutter pub run flutter_launcher_icons
-# 安装 ios 版本
-flutter devices
-flutter run --release -d <device_id>
-# 构建 macos 版本
-flutter build macos --release
+# 运行
+flutter run -d macos          # macOS
+flutter run -d chrome          # Web
+flutter run -d ios             # iOS
+flutter run -d android         # Android
+
+# 质量检查
+flutter analyze                # 静态分析
+flutter test                   # 运行所有测试
+dart format .                  # 代码格式化
+
+# 依赖管理
+flutter pub get                # 安装依赖
+flutter pub upgrade            # 升级依赖
+
+# 代码生成（修改 Riverpod Provider 后）
+dart run build_runner build
+
+# 构建
+flutter build macos            # macOS
+flutter build apk              # Android APK
+flutter build ios              # iOS
 ```
+
+## 平台支持
+
+- macOS
+- iOS
+- Android
+- Web
+
+## 环境要求
+
+- Flutter SDK 3.9.2+
+- iOS 模拟器 / Android 模拟器 / 真机
+- 桌面端：macOS / Windows / Linux 开发环境

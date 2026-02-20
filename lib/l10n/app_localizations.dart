@@ -823,6 +823,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap + to add audio files'**
   String get tapToAddAudio;
+
+  /// No description provided for @study.
+  ///
+  /// In en, this message translates to:
+  /// **'Study'**
+  String get study;
+
+  /// No description provided for @favorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get favorites;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @studyComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Study feature coming soon'**
+  String get studyComingSoon;
+
+  /// No description provided for @favoritesComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites feature coming soon'**
+  String get favoritesComingSoon;
 }
 
 class _AppLocalizationsDelegate
