@@ -196,12 +196,12 @@ void main() {
       await tester.tap(find.text('Theme Mode'));
       await tester.pumpAndSettle();
 
-      // 选择 Dark 主题
-      await tester.tap(find.text('Dark'));
+      // 选择 Dark Mode 主题
+      await tester.tap(find.text('Dark Mode'));
       await tester.pumpAndSettle();
 
-      // 验证设置已更新为 Dark
-      expect(find.text('Dark'), findsOneWidget);
+      // 验证设置已更新为 Dark Mode
+      expect(find.text('Dark Mode'), findsOneWidget);
     });
 
     testWidgets('切换语言', (tester) async {
@@ -216,12 +216,12 @@ void main() {
       await tester.tap(find.text('Language'));
       await tester.pumpAndSettle();
 
-      // 选择中文
-      await tester.tap(find.text('Chinese'));
+      // 选择简体中文
+      await tester.tap(find.text('简体中文'));
       await tester.pumpAndSettle();
 
       // 语言切换后 UI 文案应变为中文
-      expect(find.text('中文'), findsOneWidget);
+      expect(find.text('简体中文'), findsOneWidget);
     });
   });
 
