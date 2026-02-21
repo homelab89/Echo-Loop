@@ -12,9 +12,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => 'Fluency';
 
   @override
-  String get library => '音频库';
-
-  @override
   String get player => '播放器';
 
   @override
@@ -22,9 +19,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settings => '设置';
-
-  @override
-  String get audioLibrary => '音频库';
 
   @override
   String get addAudio => '添加音频';

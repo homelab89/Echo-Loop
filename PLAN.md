@@ -60,8 +60,8 @@ lib/
 │   ├── collection_detail_screen.dart#   合集详情页
 │   ├── study_screen.dart            #   学习页（当前占位）
 │   ├── favorites_screen.dart        #   收藏页（当前占位）
+│   ├── learning_plan_screen.dart     #   学习计划表页
 │   ├── player_screen.dart           #   播放器页（核心交互）
-│   ├── library_screen.dart          #   音频库管理页
 │   └── settings_screen.dart         #   设置页
 ├── widgets/                         # 可复用 UI 组件
 │   ├── playback_controls.dart       #   播放控制面板

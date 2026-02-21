@@ -12,9 +12,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Fluency';
 
   @override
-  String get library => 'Library';
-
-  @override
   String get player => 'Player';
 
   @override
@@ -22,9 +19,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings => 'Settings';
-
-  @override
-  String get audioLibrary => 'Audio Library';
 
   @override
   String get addAudio => 'Add Audio';

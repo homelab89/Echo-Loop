@@ -104,12 +104,6 @@ abstract class AppLocalizations {
   /// **'Fluency'**
   String get appTitle;
 
-  /// No description provided for @library.
-  ///
-  /// In en, this message translates to:
-  /// **'Library'**
-  String get library;
-
   /// No description provided for @player.
   ///
   /// In en, this message translates to:
@@ -127,12 +121,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get settings;
-
-  /// No description provided for @audioLibrary.
-  ///
-  /// In en, this message translates to:
-  /// **'Audio Library'**
-  String get audioLibrary;
 
   /// No description provided for @addAudio.
   ///

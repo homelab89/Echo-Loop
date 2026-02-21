@@ -1,11 +1,9 @@
 {
   "@@locale": "en",
   "appTitle": "Fluency",
-  "library": "Library",
   "player": "Player",
   "account": "Account",
   "settings": "Settings",
-  "audioLibrary": "Audio Library",
   "addAudio": "Add Audio",
   "noAudioYet": "No audio files yet",
   "tapToAdd": "Tap + to add your first audio",

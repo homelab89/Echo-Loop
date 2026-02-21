@@ -1,11 +1,9 @@
 {
   "@@locale": "zh",
   "appTitle": "Fluency",
-  "library": "音频库",
   "player": "播放器",
   "account": "账户",
   "settings": "设置",
-  "audioLibrary": "音频库",
   "addAudio": "添加音频",
   "noAudioYet": "还没有音频文件",
   "tapToAdd": "点击 + 添加第一个音频",
