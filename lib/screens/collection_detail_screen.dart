@@ -244,7 +244,11 @@ class _CollectionAudioTile extends ConsumerWidget {
               .read(listeningPracticeProvider.notifier)
               .loadAudio(audioItem);
           if (!context.mounted) return;
-          Navigator.pushNamed(context, '/player');
+          Navigator.pushNamed(
+            context,
+            '/learning-plan',
+            arguments: audioItem,
+          );
         },
       ),
     );

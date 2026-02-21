@@ -877,6 +877,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Favorites feature coming soon'**
   String get favoritesComingSoon;
+
+  /// No description provided for @learningPlanProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning Progress'**
+  String get learningPlanProgress;
+
+  /// No description provided for @learningPlanNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get learningPlanNotStarted;
+
+  /// No description provided for @firstStudy.
+  ///
+  /// In en, this message translates to:
+  /// **'First Study'**
+  String get firstStudy;
+
+  /// No description provided for @review.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get review;
+
+  /// No description provided for @stepProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed}/{total} completed'**
+  String stepProgress(int completed, int total);
+
+  /// No description provided for @stepBlindListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Blind Listening'**
+  String get stepBlindListening;
+
+  /// No description provided for @stepBlindListeningDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen 1-2 times without subtitles'**
+  String get stepBlindListeningDesc;
+
+  /// No description provided for @stepIntensiveListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensive Listening'**
+  String get stepIntensiveListening;
+
+  /// No description provided for @stepIntensiveListeningDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen sentence by sentence, mark difficult ones'**
+  String get stepIntensiveListeningDesc;
+
+  /// No description provided for @stepShadowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Shadowing'**
+  String get stepShadowing;
+
+  /// No description provided for @stepShadowingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat difficult sentences with subtitles'**
+  String get stepShadowingDesc;
+
+  /// No description provided for @stepRetelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Retelling'**
+  String get stepRetelling;
+
+  /// No description provided for @stepRetellingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Retell paragraphs in your own words'**
+  String get stepRetellingDesc;
+
+  /// No description provided for @review1.
+  ///
+  /// In en, this message translates to:
+  /// **'Review 1'**
+  String get review1;
+
+  /// No description provided for @review2.
+  ///
+  /// In en, this message translates to:
+  /// **'Review 2'**
+  String get review2;
+
+  /// No description provided for @review3.
+  ///
+  /// In en, this message translates to:
+  /// **'Review 3'**
+  String get review3;
+
+  /// No description provided for @review4.
+  ///
+  /// In en, this message translates to:
+  /// **'Review 4'**
+  String get review4;
+
+  /// No description provided for @review5.
+  ///
+  /// In en, this message translates to:
+  /// **'Review 5'**
+  String get review5;
+
+  /// No description provided for @review6.
+  ///
+  /// In en, this message translates to:
+  /// **'Review 6'**
+  String get review6;
+
+  /// No description provided for @review7.
+  ///
+  /// In en, this message translates to:
+  /// **'Review 7'**
+  String get review7;
+
+  /// No description provided for @reviewEarTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Ear Training'**
+  String get reviewEarTraining;
+
+  /// No description provided for @reviewGraduation.
+  ///
+  /// In en, this message translates to:
+  /// **'Graduation Test'**
+  String get reviewGraduation;
+
+  /// No description provided for @reviewInterval6h.
+  ///
+  /// In en, this message translates to:
+  /// **'After 6h'**
+  String get reviewInterval6h;
+
+  /// No description provided for @reviewInterval1d.
+  ///
+  /// In en, this message translates to:
+  /// **'After 1 day'**
+  String get reviewInterval1d;
+
+  /// No description provided for @reviewInterval3d.
+  ///
+  /// In en, this message translates to:
+  /// **'After 3 days'**
+  String get reviewInterval3d;
+
+  /// No description provided for @reviewInterval5d.
+  ///
+  /// In en, this message translates to:
+  /// **'After 5 days'**
+  String get reviewInterval5d;
+
+  /// No description provided for @reviewInterval8d.
+  ///
+  /// In en, this message translates to:
+  /// **'After 8 days'**
+  String get reviewInterval8d;
+
+  /// No description provided for @reviewInterval11d.
+  ///
+  /// In en, this message translates to:
+  /// **'After 11 days'**
+  String get reviewInterval11d;
+
+  /// No description provided for @reviewInterval14d.
+  ///
+  /// In en, this message translates to:
+  /// **'After 14 days'**
+  String get reviewInterval14d;
+
+  /// No description provided for @reviewInterval21d.
+  ///
+  /// In en, this message translates to:
+  /// **'After 21 days'**
+  String get reviewInterval21d;
+
+  /// No description provided for @reviewInterval28d.
+  ///
+  /// In en, this message translates to:
+  /// **'After 28 days'**
+  String get reviewInterval28d;
+
+  /// No description provided for @startLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Learning'**
+  String get startLearning;
 }
 
 class _AppLocalizationsDelegate

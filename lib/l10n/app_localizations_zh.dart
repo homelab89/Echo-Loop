@@ -411,4 +411,102 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get favoritesComingSoon => '收藏功能即将上线';
+
+  @override
+  String get learningPlanProgress => '学习进度';
+
+  @override
+  String get learningPlanNotStarted => '未开始';
+
+  @override
+  String get firstStudy => '首学';
+
+  @override
+  String get review => '复习';
+
+  @override
+  String stepProgress(int completed, int total) {
+    return '$completed/$total 完成';
+  }
+
+  @override
+  String get stepBlindListening => '全文盲听';
+
+  @override
+  String get stepBlindListeningDesc => '不看字幕完整听 1-2 遍';
+
+  @override
+  String get stepIntensiveListening => '逐句精听';
+
+  @override
+  String get stepIntensiveListeningDesc => '逐句盲听，标记难句';
+
+  @override
+  String get stepShadowing => '难句跟读';
+
+  @override
+  String get stepShadowingDesc => '有字幕跟读难句';
+
+  @override
+  String get stepRetelling => '段级复述';
+
+  @override
+  String get stepRetellingDesc => '用自己的话复述';
+
+  @override
+  String get review1 => '首轮复习';
+
+  @override
+  String get review2 => '第二轮复习';
+
+  @override
+  String get review3 => '第三轮复习';
+
+  @override
+  String get review4 => '第四轮复习';
+
+  @override
+  String get review5 => '第五轮复习';
+
+  @override
+  String get review6 => '第六轮复习';
+
+  @override
+  String get review7 => '第七轮复习';
+
+  @override
+  String get reviewEarTraining => '磨耳朵';
+
+  @override
+  String get reviewGraduation => '毕业检验';
+
+  @override
+  String get reviewInterval6h => '6小时后';
+
+  @override
+  String get reviewInterval1d => '1天后';
+
+  @override
+  String get reviewInterval3d => '3天后';
+
+  @override
+  String get reviewInterval5d => '5天后';
+
+  @override
+  String get reviewInterval8d => '8天后';
+
+  @override
+  String get reviewInterval11d => '11天后';
+
+  @override
+  String get reviewInterval14d => '14天后';
+
+  @override
+  String get reviewInterval21d => '21天后';
+
+  @override
+  String get reviewInterval28d => '28天后';
+
+  @override
+  String get startLearning => '开始学习';
 }

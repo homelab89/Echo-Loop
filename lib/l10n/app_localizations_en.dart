@@ -413,4 +413,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get favoritesComingSoon => 'Favorites feature coming soon';
+
+  @override
+  String get learningPlanProgress => 'Learning Progress';
+
+  @override
+  String get learningPlanNotStarted => 'Not started';
+
+  @override
+  String get firstStudy => 'First Study';
+
+  @override
+  String get review => 'Review';
+
+  @override
+  String stepProgress(int completed, int total) {
+    return '$completed/$total completed';
+  }
+
+  @override
+  String get stepBlindListening => 'Blind Listening';
+
+  @override
+  String get stepBlindListeningDesc => 'Listen 1-2 times without subtitles';
+
+  @override
+  String get stepIntensiveListening => 'Intensive Listening';
+
+  @override
+  String get stepIntensiveListeningDesc =>
+      'Listen sentence by sentence, mark difficult ones';
+
+  @override
+  String get stepShadowing => 'Shadowing';
+
+  @override
+  String get stepShadowingDesc => 'Repeat difficult sentences with subtitles';
+
+  @override
+  String get stepRetelling => 'Retelling';
+
+  @override
+  String get stepRetellingDesc => 'Retell paragraphs in your own words';
+
+  @override
+  String get review1 => 'Review 1';
+
+  @override
+  String get review2 => 'Review 2';
+
+  @override
+  String get review3 => 'Review 3';
+
+  @override
+  String get review4 => 'Review 4';
+
+  @override
+  String get review5 => 'Review 5';
+
+  @override
+  String get review6 => 'Review 6';
+
+  @override
+  String get review7 => 'Review 7';
+
+  @override
+  String get reviewEarTraining => 'Ear Training';
+
+  @override
+  String get reviewGraduation => 'Graduation Test';
+
+  @override
+  String get reviewInterval6h => 'After 6h';
+
+  @override
+  String get reviewInterval1d => 'After 1 day';
+
+  @override
+  String get reviewInterval3d => 'After 3 days';
+
+  @override
+  String get reviewInterval5d => 'After 5 days';
+
+  @override
+  String get reviewInterval8d => 'After 8 days';
+
+  @override
+  String get reviewInterval11d => 'After 11 days';
+
+  @override
+  String get reviewInterval14d => 'After 14 days';
+
+  @override
+  String get reviewInterval21d => 'After 21 days';
+
+  @override
+  String get reviewInterval28d => 'After 28 days';
+
+  @override
+  String get startLearning => 'Start Learning';
 }

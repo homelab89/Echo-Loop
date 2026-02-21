@@ -17,6 +17,8 @@ import 'screens/study_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/player_screen.dart';
+import 'screens/learning_plan_screen.dart';
+import 'models/audio_item.dart' as models;
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -103,6 +105,16 @@ class FluencyApp extends ConsumerWidget {
       routes: {
         '/settings': (context) => const SettingsScreen(),
         '/player': (context) => const PlayerScreen(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/learning-plan') {
+          final audioItem = settings.arguments as models.AudioItem;
+          return MaterialPageRoute(
+            builder: (context) =>
+                LearningPlanScreen(audioItem: audioItem),
+          );
+        }
+        return null;
       },
     );
   }

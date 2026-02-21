@@ -91,6 +91,15 @@ Widget createTestScreen(
         '/player': (context) => const Scaffold(body: Text('Player')),
         '/settings': (context) => const Scaffold(body: Text('Settings')),
       },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/learning-plan') {
+          return MaterialPageRoute(
+            builder: (context) =>
+                const Scaffold(body: Text('Learning Plan')),
+          );
+        }
+        return null;
+      },
     ),
   );
 }
