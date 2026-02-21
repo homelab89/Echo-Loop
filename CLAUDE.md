@@ -58,7 +58,6 @@ flutter build macos
 2. 在任务下添加完成记录：
 
 **完成时间**: 2026-01-31
-**Commit**: 对应的 Commit ID（提交后更新）
 ```
 
 ### 步骤 6: 更新 PLAN.md（如有需要）
