@@ -35,6 +35,10 @@ class LearningProgresses extends Table {
   IntColumn get totalStudyDurationMs =>
       integer().withDefault(const Constant(0))();
 
+  /// 盲听已完成遍数（用户可随时查看）
+  IntColumn get blindListenPassCount =>
+      integer().withDefault(const Constant(0))();
+
   /// 最后更新时间
   DateTimeColumn get updatedAt => dateTime()();
 

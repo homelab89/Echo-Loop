@@ -37,8 +37,8 @@ class ListeningPracticeState {
 
   Sentence? get currentSentence =>
       currentFullIndex != null && currentFullIndex! < sentences.length
-          ? sentences[currentFullIndex!]
-          : null;
+      ? sentences[currentFullIndex!]
+      : null;
 
   bool get hasAudio => currentAudioItem != null;
   bool get hasSentences => sentences.isNotEmpty;

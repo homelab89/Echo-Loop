@@ -30,6 +30,9 @@ class LearningProgress {
   /// 累计学习时长（毫秒）
   final int totalStudyDurationMs;
 
+  /// 盲听已完成遍数
+  final int blindListenPassCount;
+
   /// 最后更新时间
   final DateTime updatedAt;
 
@@ -42,6 +45,7 @@ class LearningProgress {
     this.lastStageCompletedAt,
     this.currentStageStartedAt,
     this.totalStudyDurationMs = 0,
+    this.blindListenPassCount = 0,
     required this.updatedAt,
   });
 
@@ -138,6 +142,7 @@ class LearningProgress {
     DateTime? lastStageCompletedAt,
     DateTime? currentStageStartedAt,
     int? totalStudyDurationMs,
+    int? blindListenPassCount,
     DateTime? updatedAt,
   }) {
     return LearningProgress(
@@ -151,6 +156,7 @@ class LearningProgress {
       currentStageStartedAt:
           currentStageStartedAt ?? this.currentStageStartedAt,
       totalStudyDurationMs: totalStudyDurationMs ?? this.totalStudyDurationMs,
+      blindListenPassCount: blindListenPassCount ?? this.blindListenPassCount,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }

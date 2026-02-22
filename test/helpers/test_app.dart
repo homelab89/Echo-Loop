@@ -16,6 +16,8 @@ import 'package:fluency/providers/collection_provider.dart';
 import 'package:fluency/providers/listening_practice/listening_practice_provider.dart';
 import 'package:fluency/providers/audio_engine/audio_engine_provider.dart';
 import 'package:fluency/providers/learning_progress_provider.dart';
+import 'package:fluency/providers/learning_session/learning_session_provider.dart';
+import 'package:fluency/providers/learning_session/blind_listen_player_provider.dart';
 import 'package:fluency/theme/app_theme.dart';
 
 import 'mock_providers.dart';
@@ -45,6 +47,8 @@ Widget createTestApp(
     learningProgressNotifierProvider.overrideWith(
       () => TestLearningProgressNotifier(),
     ),
+    learningSessionProvider.overrideWith(() => TestLearningSession()),
+    blindListenPlayerProvider.overrideWith(() => TestBlindListenPlayer()),
   ];
 
   return ProviderScope(
@@ -132,6 +136,11 @@ GoRouter createTestRouter(Widget screen) {
           GoRoute(
             path: ':audioId/player',
             builder: (context, state) => const Scaffold(body: Text('Player')),
+          ),
+          GoRoute(
+            path: ':audioId/blind-listen',
+            builder: (context, state) =>
+                const Scaffold(body: Text('Blind Listen')),
           ),
         ],
       ),

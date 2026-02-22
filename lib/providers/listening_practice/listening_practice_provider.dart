@@ -22,6 +22,9 @@ class ListeningPractice extends _$ListeningPractice {
   StreamSubscription? _positionSub;
   StreamSubscription? _playerStateSub;
 
+  /// 连续播放模式的全曲循环计数（重新播放时重置）
+  int _audioLoopCount = 0;
+
   @override
   ListeningPracticeState build() {
     _setupListeners();
@@ -44,6 +47,23 @@ class ListeningPractice extends _$ListeningPractice {
   void _disposeListeners() {
     _positionSub?.cancel();
     _playerStateSub?.cancel();
+  }
+
+  /// 暂停 stream 监听（盲听模式期间调用）
+  ///
+  /// 盲听期间 LP 的 `_onPlayerStateChanged` 会在音频完成时
+  /// 调用 `_handlePlaybackCompleted()` → `_playContinuous()`，
+  /// 导致 LP 尝试接管播放。暂停监听避免干扰。
+  void suspendListeners() {
+    _positionSub?.cancel();
+    _playerStateSub?.cancel();
+    _positionSub = null;
+    _playerStateSub = null;
+  }
+
+  /// 恢复 stream 监听（退出盲听模式时调用）
+  void resumeListeners() {
+    _setupListeners();
   }
 
   Future<void> _loadSettings() async {
@@ -90,7 +110,10 @@ class ListeningPractice extends _$ListeningPractice {
     if (!_shouldUseContinuousMode()) return;
 
     if (state.settings.loopAudioEnabled) {
-      final shouldLoop = state.settings.loopAudio == 0 || true;
+      _audioLoopCount++;
+      final shouldLoop =
+          state.settings.loopAudio == 0 ||
+          _audioLoopCount < state.settings.loopAudio;
       if (shouldLoop && state.sentences.isNotEmpty) {
         Future.microtask(() async {
           if (state.playlistMode == PlaylistMode.bookmarks) {
@@ -253,7 +276,14 @@ class ListeningPractice extends _$ListeningPractice {
     }
 
     if (_shouldUseContinuousMode()) {
-      await _playContinuous();
+      // 暂停后恢复：engine 有位置且未完成播放，跳过 seek 直接继续
+      final isResume =
+          _engine.currentPosition > Duration.zero &&
+          _engine.audioPlayer.processingState != ja.ProcessingState.completed;
+      if (!isResume) {
+        _audioLoopCount = 0;
+      }
+      await _playContinuous(resume: isResume);
     } else {
       // 准备播放列表和起始位置
       List<Sentence> playList;
@@ -279,18 +309,23 @@ class ListeningPractice extends _$ListeningPractice {
   }
 
   // --- 连续播放模式 ---
-  Future<void> _playContinuous() async {
+  /// [resume] 为 true 时跳过 seek，从当前暂停位置继续播放
+  Future<void> _playContinuous({bool resume = false}) async {
     final sessionId = _engine.newSession();
 
-    final startIndex = state.currentFullIndex;
-    Duration? targetPosition;
-    if (startIndex != null && startIndex < state.sentences.length) {
-      targetPosition = state.sentences[startIndex].startTime;
-    }
+    if (!resume) {
+      final startIndex = state.currentFullIndex;
+      Duration? targetPosition;
+      if (startIndex != null && startIndex < state.sentences.length) {
+        targetPosition = state.sentences[startIndex].startTime;
+      }
 
-    await _engine.clearClip();
-    if (targetPosition != null) {
-      await _engine.seek(targetPosition);
+      await _engine.clearClip();
+      if (targetPosition != null) {
+        await _engine.seek(targetPosition);
+      }
+    } else {
+      await _engine.clearClip();
     }
 
     await _engine.play();
@@ -389,6 +424,13 @@ class ListeningPractice extends _$ListeningPractice {
 
     if (_engine.isActiveSession(sessionId)) {
       await _engine.stop();
+    }
+  }
+
+  /// 重置播放位置到开头（供外部学习流程调用）
+  void resetToBeginning() {
+    if (state.sentences.isNotEmpty) {
+      state = state.copyWith(currentFullIndex: 0);
     }
   }
 

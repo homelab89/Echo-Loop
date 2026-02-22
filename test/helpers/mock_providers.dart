@@ -15,6 +15,8 @@ import 'package:fluency/providers/collection_provider.dart';
 import 'package:fluency/providers/listening_practice/listening_practice_provider.dart';
 import 'package:fluency/providers/audio_engine/audio_engine_provider.dart';
 import 'package:fluency/providers/learning_progress_provider.dart';
+import 'package:fluency/providers/learning_session/learning_session_provider.dart';
+import 'package:fluency/providers/learning_session/blind_listen_player_provider.dart';
 import 'package:fluency/database/enums.dart';
 import 'package:fluency/models/learning_progress.dart';
 import 'package:fluency/models/sentence.dart';
@@ -275,6 +277,16 @@ class TestListeningPractice extends ListeningPractice {
 
   @override
   Future<void> saveCurrentPlaybackState() async {}
+
+  @override
+  void suspendListeners() {
+    // 测试中不做任何操作
+  }
+
+  @override
+  void resumeListeners() {
+    // 测试中不做任何操作
+  }
 }
 
 /// 创建测试用 LearningProgress
@@ -287,6 +299,7 @@ LearningProgress createTestLearningProgress({
   DateTime? lastStageCompletedAt,
   DateTime? currentStageStartedAt,
   int totalStudyDurationMs = 0,
+  int blindListenPassCount = 0,
   DateTime? updatedAt,
 }) {
   return LearningProgress(
@@ -298,6 +311,7 @@ LearningProgress createTestLearningProgress({
     lastStageCompletedAt: lastStageCompletedAt,
     currentStageStartedAt: currentStageStartedAt,
     totalStudyDurationMs: totalStudyDurationMs,
+    blindListenPassCount: blindListenPassCount,
     updatedAt: updatedAt ?? DateTime(2026, 1, 1),
   );
 }
@@ -347,10 +361,113 @@ class TestLearningProgressNotifier extends LearningProgressNotifier {
   }
 
   @override
+  Future<void> incrementBlindListenPassCount(String audioItemId) async {
+    final progress = state.progressMap[audioItemId];
+    if (progress == null) return;
+
+    final newMap = Map<String, LearningProgress>.from(state.progressMap);
+    newMap[audioItemId] = progress.copyWith(
+      blindListenPassCount: progress.blindListenPassCount + 1,
+    );
+    state = state.copyWith(progressMap: newMap);
+  }
+
+  @override
   Future<void> deleteProgress(String audioItemId) async {
     final newMap = Map<String, LearningProgress>.from(state.progressMap);
     newMap.remove(audioItemId);
     state = state.copyWith(progressMap: newMap);
+  }
+}
+
+/// 测试用 LearningSession — 不依赖音频引擎
+class TestLearningSession extends LearningSession {
+  final LearningSessionState _initialState;
+
+  TestLearningSession([this._initialState = const LearningSessionState()]);
+
+  @override
+  LearningSessionState build() => _initialState;
+
+  @override
+  Future<void> enterBlindListenMode(
+    String audioItemId, {
+    bool isFreePlay = false,
+  }) async {
+    state = state.copyWith(
+      learningMode: LearningMode.blindListen,
+      audioItemId: audioItemId,
+      isFreePlay: isFreePlay,
+    );
+  }
+
+  @override
+  Future<void> replayBlindListen() async {
+    state = state.copyWith(blindListenCompleted: false);
+  }
+
+  @override
+  Future<void> exitLearningMode() async {
+    state = const LearningSessionState();
+  }
+}
+
+/// 测试用 BlindListenPlayer — 不依赖音频引擎
+class TestBlindListenPlayer extends BlindListenPlayer {
+  final BlindListenPlayerState _initialState;
+
+  TestBlindListenPlayer([this._initialState = const BlindListenPlayerState()]);
+
+  @override
+  BlindListenPlayerState build() => _initialState;
+
+  @override
+  void initialize(Duration totalDuration) {
+    state = BlindListenPlayerState(totalDuration: totalDuration);
+  }
+
+  @override
+  Future<void> play() async {
+    state = state.copyWith(isPlaying: true, isCompleted: false);
+  }
+
+  @override
+  Future<void> pause() async {
+    state = state.copyWith(isPlaying: false);
+  }
+
+  @override
+  Future<void> seekTo(Duration pos) async {
+    state = state.copyWith(position: pos, isCompleted: false);
+  }
+
+  @override
+  void onDragStart() {
+    state = state.copyWith(isDragging: true);
+  }
+
+  @override
+  void onDragUpdate(Duration pos) {
+    state = state.copyWith(position: pos);
+  }
+
+  @override
+  Future<void> onDragEnd(Duration pos) async {
+    state = state.copyWith(isDragging: false, position: pos);
+  }
+
+  @override
+  Future<void> resetAndPlay() async {
+    state = state.copyWith(
+      position: Duration.zero,
+      isPlaying: true,
+      isCompleted: false,
+    );
+  }
+
+  @override
+  void disposePlayer() {
+    state = const BlindListenPlayerState();
   }
 }
 

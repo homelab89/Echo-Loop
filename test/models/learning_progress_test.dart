@@ -385,12 +385,24 @@ void main() {
   });
 
   group('DifficultyLevel', () {
-    test('fromValue 正确转换', () {
-      expect(DifficultyLevel.fromValue(0), DifficultyLevel.easy);
-      expect(DifficultyLevel.fromValue(1), DifficultyLevel.medium);
-      expect(DifficultyLevel.fromValue(2), DifficultyLevel.hard);
+    test('fromValue 正确转换（5 档）', () {
+      expect(DifficultyLevel.fromValue(0), DifficultyLevel.veryEasy);
+      expect(DifficultyLevel.fromValue(1), DifficultyLevel.easy);
+      expect(DifficultyLevel.fromValue(2), DifficultyLevel.medium);
+      expect(DifficultyLevel.fromValue(3), DifficultyLevel.hard);
+      expect(DifficultyLevel.fromValue(4), DifficultyLevel.veryHard);
       // 无效值返回 medium
       expect(DifficultyLevel.fromValue(99), DifficultyLevel.medium);
+    });
+
+    test('label 不为空', () {
+      for (final level in DifficultyLevel.values) {
+        expect(level.label.isNotEmpty, true);
+      }
+    });
+
+    test('共 5 个难度等级', () {
+      expect(DifficultyLevel.values.length, 5);
     });
   });
 }

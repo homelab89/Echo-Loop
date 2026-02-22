@@ -17,9 +17,7 @@ void main() {
   group('PlaybackControls', () {
     group('渲染', () {
       testWidgets('显示播放按钮（初始暂停状态）', (tester) async {
-        await tester.pumpWidget(
-          createTestApp(const PlaybackControls()),
-        );
+        await tester.pumpWidget(createTestApp(const PlaybackControls()));
         await tester.pumpAndSettle();
 
         // 暂停状态显示播放图标
@@ -32,9 +30,7 @@ void main() {
           createTestApp(
             const PlaybackControls(),
             overrides: [
-              appSettingsProvider.overrideWith(
-                () => TestAppSettings(),
-              ),
+              appSettingsProvider.overrideWith(() => TestAppSettings()),
               listeningPracticeProvider.overrideWith(
                 () => TestListeningPractice(),
               ),
@@ -50,9 +46,7 @@ void main() {
       });
 
       testWidgets('显示上一句/下一句按钮', (tester) async {
-        await tester.pumpWidget(
-          createTestApp(const PlaybackControls()),
-        );
+        await tester.pumpWidget(createTestApp(const PlaybackControls()));
         await tester.pumpAndSettle();
 
         expect(find.byIcon(Icons.skip_previous), findsOneWidget);
@@ -60,9 +54,7 @@ void main() {
       });
 
       testWidgets('显示速度按钮', (tester) async {
-        await tester.pumpWidget(
-          createTestApp(const PlaybackControls()),
-        );
+        await tester.pumpWidget(createTestApp(const PlaybackControls()));
         await tester.pumpAndSettle();
 
         // 默认速度 1.0x
@@ -70,18 +62,14 @@ void main() {
       });
 
       testWidgets('显示循环开关按钮', (tester) async {
-        await tester.pumpWidget(
-          createTestApp(const PlaybackControls()),
-        );
+        await tester.pumpWidget(createTestApp(const PlaybackControls()));
         await tester.pumpAndSettle();
 
         expect(find.byIcon(Icons.repeat_one), findsOneWidget);
       });
 
       testWidgets('显示字幕显示切换按钮', (tester) async {
-        await tester.pumpWidget(
-          createTestApp(const PlaybackControls()),
-        );
+        await tester.pumpWidget(createTestApp(const PlaybackControls()));
         await tester.pumpAndSettle();
 
         // 默认 showTranscript=true 显示 visibility 图标
@@ -91,9 +79,7 @@ void main() {
 
     group('交互', () {
       testWidgets('无句子时上一句/下一句按钮禁用', (tester) async {
-        await tester.pumpWidget(
-          createTestApp(const PlaybackControls()),
-        );
+        await tester.pumpWidget(createTestApp(const PlaybackControls()));
         await tester.pumpAndSettle();
 
         // 找到上一句按钮，应该是禁用的（onPressed 为 null）
@@ -114,9 +100,7 @@ void main() {
           createTestApp(
             const PlaybackControls(),
             overrides: [
-              appSettingsProvider.overrideWith(
-                () => TestAppSettings(),
-              ),
+              appSettingsProvider.overrideWith(() => TestAppSettings()),
               listeningPracticeProvider.overrideWith(
                 () => TestListeningPractice(
                   ListeningPracticeState(
@@ -143,9 +127,7 @@ void main() {
       });
 
       testWidgets('点击速度按钮显示速度选择菜单', (tester) async {
-        await tester.pumpWidget(
-          createTestApp(const PlaybackControls()),
-        );
+        await tester.pumpWidget(createTestApp(const PlaybackControls()));
         await tester.pumpAndSettle();
 
         // 点击速度按钮
@@ -168,9 +150,7 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
 
-        await tester.pumpWidget(
-          createTestApp(const PlaybackControls()),
-        );
+        await tester.pumpWidget(createTestApp(const PlaybackControls()));
         await tester.pumpAndSettle();
 
         // 窄屏布局使用 Column（两行）
@@ -185,9 +165,7 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
 
-        await tester.pumpWidget(
-          createTestApp(const PlaybackControls()),
-        );
+        await tester.pumpWidget(createTestApp(const PlaybackControls()));
         await tester.pumpAndSettle();
 
         // 宽屏布局使用单行 Row

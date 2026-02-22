@@ -36,7 +36,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transcript => 'Transcript';
 
   @override
-  String get playing => 'Playing';
+  String get playing => 'Last';
 
   @override
   String get delete => 'Delete';
@@ -513,4 +513,87 @@ class AppLocalizationsEn extends AppLocalizations {
   String reviewCountdownHours(int hours) {
     return 'Available in $hours hours';
   }
+
+  @override
+  String get blindListenBriefingTitle => 'Full Listening';
+
+  @override
+  String get blindListenBriefingSubtitle => 'First Study - Full Listening';
+
+  @override
+  String blindListenBriefingReviewSubtitle(int round) {
+    return 'Review $round - Full Listening';
+  }
+
+  @override
+  String get blindListenBriefingTip =>
+      'Listen without subtitles, try to get the gist';
+
+  @override
+  String get startPractice => 'Start Practice';
+
+  @override
+  String get blindListenAppBarTitle => 'Full Listening';
+
+  @override
+  String blindListenPassLabel(int count) {
+    return 'Pass $count';
+  }
+
+  @override
+  String get blindListenComplete => 'Listening Complete';
+
+  @override
+  String blindListenPassInfo(int count) {
+    return 'Listened $count time(s)';
+  }
+
+  @override
+  String get selectDifficulty => 'How did it feel?';
+
+  @override
+  String get selectDifficultyRequired =>
+      'Please select a difficulty to continue';
+
+  @override
+  String get listenAgain => 'Listen Again';
+
+  @override
+  String get nextStage => 'Next';
+
+  @override
+  String get difficultyVeryEasy => 'Very Easy';
+
+  @override
+  String get difficultyEasy => 'Easy';
+
+  @override
+  String get difficultyMedium => 'Okay';
+
+  @override
+  String get difficultyHard => 'Hard';
+
+  @override
+  String get difficultyVeryHard => 'Very Hard';
+
+  @override
+  String get countdownNextPlay => 'Next play starts in';
+
+  @override
+  String get skipCountdown => 'Skip';
+
+  @override
+  String audioDuration(String duration) {
+    return 'Duration: $duration';
+  }
+
+  @override
+  String get exitBlindListenTitle => 'Exit Listening?';
+
+  @override
+  String get exitBlindListenMessage =>
+      'Audio is still playing. Are you sure you want to exit?';
+
+  @override
+  String get confirmExit => 'Exit';
 }

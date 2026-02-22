@@ -13,6 +13,7 @@ import 'package:fluency/providers/audio_library_provider.dart';
 import 'package:fluency/providers/listening_practice/listening_practice_provider.dart';
 import 'package:fluency/providers/audio_engine/audio_engine_provider.dart';
 import 'package:fluency/providers/learning_progress_provider.dart';
+import 'package:fluency/providers/learning_session/learning_session_provider.dart';
 import 'package:fluency/theme/app_theme.dart';
 
 import '../helpers/mock_providers.dart';
@@ -47,6 +48,11 @@ void main() {
           path: '/collections/:collectionId/:audioId/player',
           builder: (context, state) => const Scaffold(body: Text('Player')),
         ),
+        GoRoute(
+          path: '/collections/:collectionId/:audioId/blind-listen',
+          builder: (context, state) =>
+              const Scaffold(body: Text('Blind Listen')),
+        ),
       ],
     );
 
@@ -63,6 +69,7 @@ void main() {
             progressState ?? const LearningProgressState(),
           ),
         ),
+        learningSessionProvider.overrideWith(() => TestLearningSession()),
       ],
       child: MaterialApp.router(
         locale: locale,
@@ -194,11 +201,48 @@ void main() {
       expect(find.text('2/4 completed'), findsOneWidget);
     });
 
-    testWidgets('点击"开始学习"导航到播放器', (tester) async {
+    testWidgets('点击"开始学习"显示简报弹窗', (tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Start Learning'));
+      await tester.pumpAndSettle();
+
+      // 当前子步骤是 blindListen，应弹出简报弹窗
+      expect(find.text('Full Listening'), findsOneWidget);
+      expect(find.text('Start Practice'), findsOneWidget);
+    });
+
+    testWidgets('简报弹窗点击开始练习后导航到盲听播放器', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start Learning'));
+      await tester.pumpAndSettle();
+
+      // 点击开始练习
+      await tester.tap(find.text('Start Practice'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Blind Listen'), findsOneWidget);
+    });
+
+    testWidgets('非盲听子步骤直接导航到播放器', (tester) async {
+      final progressState = LearningProgressState(
+        progressMap: {
+          'test-1': LearningProgress(
+            audioItemId: 'test-1',
+            currentStage: LearningStage.firstLearn,
+            currentSubStage: SubStageType.intensiveListen,
+            updatedAt: DateTime(2026, 1, 1),
+          ),
+        },
+      );
+
+      await tester.pumpWidget(createTestWidget(progressState: progressState));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Continue Learning'));
       await tester.pumpAndSettle();
 
       expect(find.text('Player'), findsOneWidget);
@@ -256,6 +300,7 @@ void main() {
             learningProgressNotifierProvider.overrideWith(
               () => TestLearningProgressNotifier(),
             ),
+            learningSessionProvider.overrideWith(() => TestLearningSession()),
           ],
           child: MaterialApp.router(
             supportedLocales: const [Locale('en'), Locale('zh')],
@@ -276,6 +321,42 @@ void main() {
         find.text('Audio file not found. The file may have been deleted.'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('已完成盲听步骤可点击直接进入自由练习', (tester) async {
+      final progressState = LearningProgressState(
+        progressMap: {
+          'test-1': LearningProgress(
+            audioItemId: 'test-1',
+            currentStage: LearningStage.firstLearn,
+            currentSubStage: SubStageType.intensiveListen,
+            updatedAt: DateTime(2026, 1, 1),
+          ),
+        },
+      );
+
+      await tester.pumpWidget(createTestWidget(progressState: progressState));
+      await tester.pumpAndSettle();
+
+      // 盲听步骤已完成，点击直接导航到盲听播放器（不弹 briefing sheet）
+      await tester.tap(find.text('Blind Listening'));
+      await tester.pumpAndSettle();
+
+      // 不应弹出简报弹窗，而是直接导航到盲听播放器
+      expect(find.text('Full Listening'), findsNothing);
+      expect(find.text('Blind Listen'), findsOneWidget);
+    });
+
+    testWidgets('未完成盲听步骤不可点击', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // 盲听步骤是当前步骤（未完成），点击不应弹出简报弹窗
+      await tester.tap(find.text('Blind Listening'));
+      await tester.pumpAndSettle();
+
+      // 不应弹出简报弹窗（因为没有 onTap）
+      expect(find.text('Full Listening'), findsNothing);
     });
 
     testWidgets('已完成状态显示正确', (tester) async {

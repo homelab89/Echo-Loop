@@ -2497,6 +2497,17 @@ class $LearningProgressesTable extends LearningProgresses
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _blindListenPassCountMeta =
+      const VerificationMeta('blindListenPassCount');
+  @override
+  late final GeneratedColumn<int> blindListenPassCount = GeneratedColumn<int>(
+    'blind_listen_pass_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -2518,6 +2529,7 @@ class $LearningProgressesTable extends LearningProgresses
     lastStageCompletedAt,
     currentStageStartedAt,
     totalStudyDurationMs,
+    blindListenPassCount,
     updatedAt,
   ];
   @override
@@ -2603,6 +2615,15 @@ class $LearningProgressesTable extends LearningProgresses
         ),
       );
     }
+    if (data.containsKey('blind_listen_pass_count')) {
+      context.handle(
+        _blindListenPassCountMeta,
+        blindListenPassCount.isAcceptableOrUnknown(
+          data['blind_listen_pass_count']!,
+          _blindListenPassCountMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -2652,6 +2673,10 @@ class $LearningProgressesTable extends LearningProgresses
         DriftSqlType.int,
         data['${effectivePrefix}total_study_duration_ms'],
       )!,
+      blindListenPassCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}blind_listen_pass_count'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -2691,6 +2716,9 @@ class LearningProgressesData extends DataClass
   /// 累计学习时长（毫秒）
   final int totalStudyDurationMs;
 
+  /// 盲听已完成遍数（用户可随时查看）
+  final int blindListenPassCount;
+
   /// 最后更新时间
   final DateTime updatedAt;
   const LearningProgressesData({
@@ -2702,6 +2730,7 @@ class LearningProgressesData extends DataClass
     this.lastStageCompletedAt,
     this.currentStageStartedAt,
     required this.totalStudyDurationMs,
+    required this.blindListenPassCount,
     required this.updatedAt,
   });
   @override
@@ -2725,6 +2754,7 @@ class LearningProgressesData extends DataClass
       );
     }
     map['total_study_duration_ms'] = Variable<int>(totalStudyDurationMs);
+    map['blind_listen_pass_count'] = Variable<int>(blindListenPassCount);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -2745,6 +2775,7 @@ class LearningProgressesData extends DataClass
           ? const Value.absent()
           : Value(currentStageStartedAt),
       totalStudyDurationMs: Value(totalStudyDurationMs),
+      blindListenPassCount: Value(blindListenPassCount),
       updatedAt: Value(updatedAt),
     );
   }
@@ -2771,6 +2802,9 @@ class LearningProgressesData extends DataClass
       totalStudyDurationMs: serializer.fromJson<int>(
         json['totalStudyDurationMs'],
       ),
+      blindListenPassCount: serializer.fromJson<int>(
+        json['blindListenPassCount'],
+      ),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -2792,6 +2826,7 @@ class LearningProgressesData extends DataClass
         currentStageStartedAt,
       ),
       'totalStudyDurationMs': serializer.toJson<int>(totalStudyDurationMs),
+      'blindListenPassCount': serializer.toJson<int>(blindListenPassCount),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -2805,6 +2840,7 @@ class LearningProgressesData extends DataClass
     Value<DateTime?> lastStageCompletedAt = const Value.absent(),
     Value<DateTime?> currentStageStartedAt = const Value.absent(),
     int? totalStudyDurationMs,
+    int? blindListenPassCount,
     DateTime? updatedAt,
   }) => LearningProgressesData(
     audioItemId: audioItemId ?? this.audioItemId,
@@ -2821,6 +2857,7 @@ class LearningProgressesData extends DataClass
         ? currentStageStartedAt.value
         : this.currentStageStartedAt,
     totalStudyDurationMs: totalStudyDurationMs ?? this.totalStudyDurationMs,
+    blindListenPassCount: blindListenPassCount ?? this.blindListenPassCount,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   LearningProgressesData copyWithCompanion(LearningProgressesCompanion data) {
@@ -2849,6 +2886,9 @@ class LearningProgressesData extends DataClass
       totalStudyDurationMs: data.totalStudyDurationMs.present
           ? data.totalStudyDurationMs.value
           : this.totalStudyDurationMs,
+      blindListenPassCount: data.blindListenPassCount.present
+          ? data.blindListenPassCount.value
+          : this.blindListenPassCount,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -2864,6 +2904,7 @@ class LearningProgressesData extends DataClass
           ..write('lastStageCompletedAt: $lastStageCompletedAt, ')
           ..write('currentStageStartedAt: $currentStageStartedAt, ')
           ..write('totalStudyDurationMs: $totalStudyDurationMs, ')
+          ..write('blindListenPassCount: $blindListenPassCount, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2879,6 +2920,7 @@ class LearningProgressesData extends DataClass
     lastStageCompletedAt,
     currentStageStartedAt,
     totalStudyDurationMs,
+    blindListenPassCount,
     updatedAt,
   );
   @override
@@ -2893,6 +2935,7 @@ class LearningProgressesData extends DataClass
           other.lastStageCompletedAt == this.lastStageCompletedAt &&
           other.currentStageStartedAt == this.currentStageStartedAt &&
           other.totalStudyDurationMs == this.totalStudyDurationMs &&
+          other.blindListenPassCount == this.blindListenPassCount &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -2906,6 +2949,7 @@ class LearningProgressesCompanion
   final Value<DateTime?> lastStageCompletedAt;
   final Value<DateTime?> currentStageStartedAt;
   final Value<int> totalStudyDurationMs;
+  final Value<int> blindListenPassCount;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const LearningProgressesCompanion({
@@ -2917,6 +2961,7 @@ class LearningProgressesCompanion
     this.lastStageCompletedAt = const Value.absent(),
     this.currentStageStartedAt = const Value.absent(),
     this.totalStudyDurationMs = const Value.absent(),
+    this.blindListenPassCount = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2929,6 +2974,7 @@ class LearningProgressesCompanion
     this.lastStageCompletedAt = const Value.absent(),
     this.currentStageStartedAt = const Value.absent(),
     this.totalStudyDurationMs = const Value.absent(),
+    this.blindListenPassCount = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : audioItemId = Value(audioItemId),
@@ -2942,6 +2988,7 @@ class LearningProgressesCompanion
     Expression<DateTime>? lastStageCompletedAt,
     Expression<DateTime>? currentStageStartedAt,
     Expression<int>? totalStudyDurationMs,
+    Expression<int>? blindListenPassCount,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -2958,6 +3005,8 @@ class LearningProgressesCompanion
         'current_stage_started_at': currentStageStartedAt,
       if (totalStudyDurationMs != null)
         'total_study_duration_ms': totalStudyDurationMs,
+      if (blindListenPassCount != null)
+        'blind_listen_pass_count': blindListenPassCount,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2972,6 +3021,7 @@ class LearningProgressesCompanion
     Value<DateTime?>? lastStageCompletedAt,
     Value<DateTime?>? currentStageStartedAt,
     Value<int>? totalStudyDurationMs,
+    Value<int>? blindListenPassCount,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -2986,6 +3036,7 @@ class LearningProgressesCompanion
       currentStageStartedAt:
           currentStageStartedAt ?? this.currentStageStartedAt,
       totalStudyDurationMs: totalStudyDurationMs ?? this.totalStudyDurationMs,
+      blindListenPassCount: blindListenPassCount ?? this.blindListenPassCount,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -3026,6 +3077,11 @@ class LearningProgressesCompanion
         totalStudyDurationMs.value,
       );
     }
+    if (blindListenPassCount.present) {
+      map['blind_listen_pass_count'] = Variable<int>(
+        blindListenPassCount.value,
+      );
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -3046,6 +3102,7 @@ class LearningProgressesCompanion
           ..write('lastStageCompletedAt: $lastStageCompletedAt, ')
           ..write('currentStageStartedAt: $currentStageStartedAt, ')
           ..write('totalStudyDurationMs: $totalStudyDurationMs, ')
+          ..write('blindListenPassCount: $blindListenPassCount, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5864,6 +5921,7 @@ typedef $$LearningProgressesTableCreateCompanionBuilder =
       Value<DateTime?> lastStageCompletedAt,
       Value<DateTime?> currentStageStartedAt,
       Value<int> totalStudyDurationMs,
+      Value<int> blindListenPassCount,
       required DateTime updatedAt,
       Value<int> rowid,
     });
@@ -5877,6 +5935,7 @@ typedef $$LearningProgressesTableUpdateCompanionBuilder =
       Value<DateTime?> lastStageCompletedAt,
       Value<DateTime?> currentStageStartedAt,
       Value<int> totalStudyDurationMs,
+      Value<int> blindListenPassCount,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -5961,6 +6020,11 @@ class $$LearningProgressesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get blindListenPassCount => $composableBuilder(
+    column: $table.blindListenPassCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
@@ -6031,6 +6095,11 @@ class $$LearningProgressesTableOrderingComposer
 
   ColumnOrderings<int> get totalStudyDurationMs => $composableBuilder(
     column: $table.totalStudyDurationMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get blindListenPassCount => $composableBuilder(
+    column: $table.blindListenPassCount,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -6107,6 +6176,11 @@ class $$LearningProgressesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get blindListenPassCount => $composableBuilder(
+    column: $table.blindListenPassCount,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
@@ -6175,6 +6249,7 @@ class $$LearningProgressesTableTableManager
                 Value<DateTime?> lastStageCompletedAt = const Value.absent(),
                 Value<DateTime?> currentStageStartedAt = const Value.absent(),
                 Value<int> totalStudyDurationMs = const Value.absent(),
+                Value<int> blindListenPassCount = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningProgressesCompanion(
@@ -6186,6 +6261,7 @@ class $$LearningProgressesTableTableManager
                 lastStageCompletedAt: lastStageCompletedAt,
                 currentStageStartedAt: currentStageStartedAt,
                 totalStudyDurationMs: totalStudyDurationMs,
+                blindListenPassCount: blindListenPassCount,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -6199,6 +6275,7 @@ class $$LearningProgressesTableTableManager
                 Value<DateTime?> lastStageCompletedAt = const Value.absent(),
                 Value<DateTime?> currentStageStartedAt = const Value.absent(),
                 Value<int> totalStudyDurationMs = const Value.absent(),
+                Value<int> blindListenPassCount = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => LearningProgressesCompanion.insert(
@@ -6210,6 +6287,7 @@ class $$LearningProgressesTableTableManager
                 lastStageCompletedAt: lastStageCompletedAt,
                 currentStageStartedAt: currentStageStartedAt,
                 totalStudyDurationMs: totalStudyDurationMs,
+                blindListenPassCount: blindListenPassCount,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),

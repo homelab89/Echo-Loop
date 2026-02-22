@@ -66,9 +66,7 @@ void main() {
 
     group('copyWith clear* 标志', () {
       test('clearCurrentAudioItem 设置为 null', () {
-        final state = ListeningPracticeState(
-          currentAudioItem: sampleAudio,
-        );
+        final state = ListeningPracticeState(currentAudioItem: sampleAudio);
         final copied = state.copyWith(clearCurrentAudioItem: true);
 
         expect(copied.currentAudioItem, isNull);

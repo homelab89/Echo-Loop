@@ -25,10 +25,7 @@ class ToggleTranscriptIntent extends Intent {
 class PlayerHotkeyScope extends ConsumerWidget {
   final Widget child;
 
-  const PlayerHotkeyScope({
-    super.key,
-    required this.child,
-  });
+  const PlayerHotkeyScope({super.key, required this.child});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

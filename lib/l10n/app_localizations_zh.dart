@@ -36,7 +36,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get transcript => '字幕';
 
   @override
-  String get playing => '播放中';
+  String get playing => '上次';
 
   @override
   String get delete => '删除';
@@ -510,4 +510,84 @@ class AppLocalizationsZh extends AppLocalizations {
   String reviewCountdownHours(int hours) {
     return '$hours 小时后可复习';
   }
+
+  @override
+  String get blindListenBriefingTitle => '全文盲听';
+
+  @override
+  String get blindListenBriefingSubtitle => '首学 - 全文盲听';
+
+  @override
+  String blindListenBriefingReviewSubtitle(int round) {
+    return '第$round轮复习 - 全文盲听';
+  }
+
+  @override
+  String get blindListenBriefingTip => '不看字幕，完整听一遍，感受大意即可';
+
+  @override
+  String get startPractice => '开始练习';
+
+  @override
+  String get blindListenAppBarTitle => '全文盲听';
+
+  @override
+  String blindListenPassLabel(int count) {
+    return '第 $count 遍';
+  }
+
+  @override
+  String get blindListenComplete => '听力完成';
+
+  @override
+  String blindListenPassInfo(int count) {
+    return '已听 $count 遍';
+  }
+
+  @override
+  String get selectDifficulty => '感觉如何？';
+
+  @override
+  String get selectDifficultyRequired => '请选择难度后继续';
+
+  @override
+  String get listenAgain => '再听一遍';
+
+  @override
+  String get nextStage => '下一步';
+
+  @override
+  String get difficultyVeryEasy => '很轻松';
+
+  @override
+  String get difficultyEasy => '偏轻松';
+
+  @override
+  String get difficultyMedium => '还可以';
+
+  @override
+  String get difficultyHard => '偏难';
+
+  @override
+  String get difficultyVeryHard => '很难';
+
+  @override
+  String get countdownNextPlay => '即将开始下一遍';
+
+  @override
+  String get skipCountdown => '跳过';
+
+  @override
+  String audioDuration(String duration) {
+    return '时长：$duration';
+  }
+
+  @override
+  String get exitBlindListenTitle => '退出盲听？';
+
+  @override
+  String get exitBlindListenMessage => '音频正在播放中，确定要退出吗？';
+
+  @override
+  String get confirmExit => '退出';
 }

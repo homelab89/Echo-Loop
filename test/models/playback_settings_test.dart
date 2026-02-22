@@ -50,9 +50,7 @@ void main() {
       });
 
       test('pauseInterval 以毫秒序列化', () {
-        const settings = PlaybackSettings(
-          pauseInterval: Duration(seconds: 5),
-        );
+        const settings = PlaybackSettings(pauseInterval: Duration(seconds: 5));
         final json = settings.toJson();
         expect(json['pauseInterval'], 5000);
       });
@@ -85,8 +83,9 @@ void main() {
       });
 
       test('pauseInterval > 30 秒截断为 30 秒', () {
-        final settings =
-            PlaybackSettings.fromJson({'pauseInterval': 60000}); // 60s
+        final settings = PlaybackSettings.fromJson({
+          'pauseInterval': 60000,
+        }); // 60s
         expect(settings.pauseInterval, const Duration(seconds: 30));
       });
 
@@ -109,10 +108,7 @@ void main() {
     group('copyWith', () {
       test('部分字段覆盖', () {
         const settings = PlaybackSettings();
-        final copied = settings.copyWith(
-          loopEnabled: true,
-          playbackSpeed: 2.0,
-        );
+        final copied = settings.copyWith(loopEnabled: true, playbackSpeed: 2.0);
 
         expect(copied.loopEnabled, isTrue);
         expect(copied.playbackSpeed, 2.0);

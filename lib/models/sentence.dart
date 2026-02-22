@@ -16,20 +16,20 @@ class Sentence {
   Duration get duration => endTime - startTime;
 
   Map<String, dynamic> toJson() => {
-        'index': index,
-        'text': text,
-        'startTime': startTime.inMilliseconds,
-        'endTime': endTime.inMilliseconds,
-        'isBookmarked': isBookmarked,
-      };
+    'index': index,
+    'text': text,
+    'startTime': startTime.inMilliseconds,
+    'endTime': endTime.inMilliseconds,
+    'isBookmarked': isBookmarked,
+  };
 
   factory Sentence.fromJson(Map<String, dynamic> json) => Sentence(
-        index: json['index'],
-        text: json['text'],
-        startTime: Duration(milliseconds: json['startTime']),
-        endTime: Duration(milliseconds: json['endTime']),
-        isBookmarked: json['isBookmarked'] ?? false,
-      );
+    index: json['index'],
+    text: json['text'],
+    startTime: Duration(milliseconds: json['startTime']),
+    endTime: Duration(milliseconds: json['endTime']),
+    isBookmarked: json['isBookmarked'] ?? false,
+  );
 
   Sentence copyWith({
     int? index,

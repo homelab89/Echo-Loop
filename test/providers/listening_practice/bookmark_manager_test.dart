@@ -54,9 +54,7 @@ void main() {
       });
 
       test('前后有空格的 [text] 也被识别（trim）', () {
-        final sentences = [
-          createSentence(0, '  [Title]  '),
-        ];
+        final sentences = [createSentence(0, '  [Title]  ')];
         final bookmarks = BookmarkManager.autoAddBracketBookmarks(sentences);
         expect(bookmarks, {0});
       });
@@ -91,10 +89,7 @@ void main() {
 
     group('toggleBookmark', () {
       test('添加新书签（isRemoving=false）', () {
-        final sentences = [
-          createSentence(0, 'A'),
-          createSentence(1, 'B'),
-        ];
+        final sentences = [createSentence(0, 'A'), createSentence(1, 'B')];
         final (isRemoving, indicesToRemove, nextIndex) =
             BookmarkManager.toggleBookmark(0, sentences, {}, false);
 
@@ -123,8 +118,12 @@ void main() {
           createSentence(2, 'World'),
         ];
         // 所有句子都是书签
-        final (isRemoving, indicesToRemove, _) =
-            BookmarkManager.toggleBookmark(0, sentences, {0, 1, 2}, false);
+        final (isRemoving, indicesToRemove, _) = BookmarkManager.toggleBookmark(
+          0,
+          sentences,
+          {0, 1, 2},
+          false,
+        );
 
         expect(isRemoving, isTrue);
         // 'Hello' 和 'hello' 标准化后相同，都应被移除
@@ -139,8 +138,12 @@ void main() {
           createSentence(1, 'Hello'),
           createSentence(2, ',Hello.'),
         ];
-        final (_, indicesToRemove, __) =
-            BookmarkManager.toggleBookmark(0, sentences, {0, 1, 2}, false);
+        final (_, indicesToRemove, __) = BookmarkManager.toggleBookmark(
+          0,
+          sentences,
+          {0, 1, 2},
+          false,
+        );
 
         // 标准化后 'Hello!', 'Hello', ',Hello.' 都是 'hello'
         expect(indicesToRemove, {0, 1, 2});
@@ -153,30 +156,37 @@ void main() {
           createSentence(2, 'C'),
         ];
         // 书签模式下，移除索引 0，下一个应该是索引 1
-        final (_, __, nextIndex) =
-            BookmarkManager.toggleBookmark(0, sentences, {0, 1, 2}, true);
+        final (_, __, nextIndex) = BookmarkManager.toggleBookmark(
+          0,
+          sentences,
+          {0, 1, 2},
+          true,
+        );
 
         expect(nextIndex, isNotNull);
         expect(nextIndex, 1);
       });
 
       test('非书签模式 nextIndex 为 null', () {
-        final sentences = [
-          createSentence(0, 'A'),
-          createSentence(1, 'B'),
-        ];
-        final (_, __, nextIndex) =
-            BookmarkManager.toggleBookmark(0, sentences, {0, 1}, false);
+        final sentences = [createSentence(0, 'A'), createSentence(1, 'B')];
+        final (_, __, nextIndex) = BookmarkManager.toggleBookmark(
+          0,
+          sentences,
+          {0, 1},
+          false,
+        );
 
         expect(nextIndex, isNull);
       });
 
       test('书签模式移除最后一个书签时 nextIndex 为 null', () {
-        final sentences = [
-          createSentence(0, 'A'),
-        ];
-        final (_, __, nextIndex) =
-            BookmarkManager.toggleBookmark(0, sentences, {0}, true);
+        final sentences = [createSentence(0, 'A')];
+        final (_, __, nextIndex) = BookmarkManager.toggleBookmark(
+          0,
+          sentences,
+          {0},
+          true,
+        );
 
         expect(nextIndex, isNull);
       });
@@ -188,8 +198,12 @@ void main() {
           createSentence(2, 'Different'),
         ];
         // 移除索引 0，索引 1 同文本也会被移除，下一个应该是索引 2
-        final (_, indicesToRemove, nextIndex) =
-            BookmarkManager.toggleBookmark(0, sentences, {0, 1, 2}, true);
+        final (_, indicesToRemove, nextIndex) = BookmarkManager.toggleBookmark(
+          0,
+          sentences,
+          {0, 1, 2},
+          true,
+        );
 
         expect(indicesToRemove, {0, 1});
         expect(nextIndex, 2);

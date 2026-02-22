@@ -9,7 +9,7 @@
   "tapToAdd": "Tap + to add your first audio",
   "added": "Added",
   "transcript": "Transcript",
-  "playing": "Playing",
+  "playing": "Last",
   "delete": "Delete",
   "deleteAudio": "Delete Audio",
   "deleteConfirm": "Are you sure you want to delete \"{name}\"?",
@@ -225,5 +225,49 @@
     "placeholders": {
       "hours": { "type": "int" }
     }
-  }
+  },
+  "blindListenBriefingTitle": "Full Listening",
+  "blindListenBriefingSubtitle": "First Study - Full Listening",
+  "blindListenBriefingReviewSubtitle": "Review {round} - Full Listening",
+  "@blindListenBriefingReviewSubtitle": {
+    "placeholders": {
+      "round": { "type": "int" }
+    }
+  },
+  "blindListenBriefingTip": "Listen without subtitles, try to get the gist",
+  "startPractice": "Start Practice",
+  "blindListenAppBarTitle": "Full Listening",
+  "blindListenPassLabel": "Pass {count}",
+  "@blindListenPassLabel": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "blindListenComplete": "Listening Complete",
+  "blindListenPassInfo": "Listened {count} time(s)",
+  "@blindListenPassInfo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "selectDifficulty": "How did it feel?",
+  "selectDifficultyRequired": "Please select a difficulty to continue",
+  "listenAgain": "Listen Again",
+  "nextStage": "Next",
+  "difficultyVeryEasy": "Very Easy",
+  "difficultyEasy": "Easy",
+  "difficultyMedium": "Okay",
+  "difficultyHard": "Hard",
+  "difficultyVeryHard": "Very Hard",
+  "countdownNextPlay": "Next play starts in",
+  "skipCountdown": "Skip",
+  "audioDuration": "Duration: {duration}",
+  "@audioDuration": {
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+  "exitBlindListenTitle": "Exit Listening?",
+  "exitBlindListenMessage": "Audio is still playing. Are you sure you want to exit?",
+  "confirmExit": "Exit"
 }

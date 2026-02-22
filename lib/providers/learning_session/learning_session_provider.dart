@@ -1,0 +1,230 @@
+/// 学习会话层 Provider
+///
+/// 管理学习模式状态（盲听等），进入盲听时暂停 ListeningPractice
+/// 的 stream 监听，通过 BlindListenPlayer 直接操作 AudioEngine。
+/// 负责：进入/退出学习模式、保存/恢复用户播放设置、监听播放完成。
+library;
+
+import 'dart:async';
+import 'package:just_audio/just_audio.dart' as ja;
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../models/playback_settings.dart';
+import '../audio_engine/audio_engine_provider.dart';
+import '../learning_progress_provider.dart';
+import '../listening_practice/listening_practice_provider.dart';
+import 'blind_listen_player_provider.dart';
+
+part 'learning_session_provider.g.dart';
+
+/// 学习模式类型
+enum LearningMode {
+  /// 全文盲听
+  blindListen,
+}
+
+/// 学习会话状态
+class LearningSessionState {
+  /// 当前学习模式（null = 自由收听）
+  final LearningMode? learningMode;
+
+  /// 本遍盲听是否已播放完成
+  final bool blindListenCompleted;
+
+  /// 当前盲听遍数（从 1 开始，表示正在听第几遍）
+  final int blindListenPassCount;
+
+  /// 当前学习的音频 ID
+  final String? audioItemId;
+
+  /// 进入学习模式前的用户播放设置（退出时恢复）
+  final PlaybackSettings? savedSettings;
+
+  /// 是否为自由练习模式（已完成步骤的单独练习，不计入遍数、不弹完成对话框）
+  final bool isFreePlay;
+
+  /// 目标盲听遍数（暂时硬编码，后续由 AI 决定）
+  final int targetBlindListenPasses;
+
+  const LearningSessionState({
+    this.learningMode,
+    this.blindListenCompleted = false,
+    this.blindListenPassCount = 0,
+    this.audioItemId,
+    this.savedSettings,
+    this.isFreePlay = false,
+    this.targetBlindListenPasses = 2,
+  });
+
+  /// 是否处于学习模式中
+  bool get isInLearningMode => learningMode != null;
+
+  /// 是否还有剩余遍数未完成
+  ///
+  /// `blindListenPassCount` 表示"正在听第几遍"，完成后才 +1，
+  /// 所以用 `<` 比较：正在听的这一遍还没达到目标时返回 true。
+  bool get hasRemainingPasses => blindListenPassCount < targetBlindListenPasses;
+
+  LearningSessionState copyWith({
+    LearningMode? learningMode,
+    bool? blindListenCompleted,
+    int? blindListenPassCount,
+    String? audioItemId,
+    PlaybackSettings? savedSettings,
+    bool? isFreePlay,
+    int? targetBlindListenPasses,
+    bool clearLearningMode = false,
+    bool clearSavedSettings = false,
+    bool clearAudioItemId = false,
+  }) {
+    return LearningSessionState(
+      learningMode: clearLearningMode
+          ? null
+          : (learningMode ?? this.learningMode),
+      blindListenCompleted: blindListenCompleted ?? this.blindListenCompleted,
+      blindListenPassCount: blindListenPassCount ?? this.blindListenPassCount,
+      audioItemId: clearAudioItemId ? null : (audioItemId ?? this.audioItemId),
+      savedSettings: clearSavedSettings
+          ? null
+          : (savedSettings ?? this.savedSettings),
+      isFreePlay: isFreePlay ?? this.isFreePlay,
+      targetBlindListenPasses:
+          targetBlindListenPasses ?? this.targetBlindListenPasses,
+    );
+  }
+}
+
+/// 学习会话 Provider
+///
+/// 作为播放器之上的学习流程控制层。
+/// 进入盲听模式时暂停 LP 监听、初始化 BlindListenPlayer，
+/// 退出时停止盲听播放、恢复 LP 监听。
+@Riverpod(keepAlive: true)
+class LearningSession extends _$LearningSession {
+  StreamSubscription<ja.PlayerState>? _playerStateSub;
+
+  @override
+  LearningSessionState build() {
+    ref.onDispose(() {
+      _playerStateSub?.cancel();
+    });
+    return const LearningSessionState();
+  }
+
+  /// 进入全文盲听模式
+  ///
+  /// 1. 保存当前用户播放设置
+  /// 2. 暂停 LP 的 stream 监听（避免 LP 干扰盲听播放）
+  /// 3. 初始化 BlindListenPlayer，从数据库读取已有遍数
+  /// 4. 开始监听播放完成事件
+  Future<void> enterBlindListenMode(
+    String audioItemId, {
+    bool isFreePlay = false,
+  }) async {
+    final practice = ref.read(listeningPracticeProvider.notifier);
+    final currentSettings = ref.read(listeningPracticeProvider).settings;
+
+    // 从数据库读取已完成遍数
+    final progress = ref
+        .read(learningProgressNotifierProvider)
+        .progressMap[audioItemId];
+    final dbPassCount = progress?.blindListenPassCount ?? 0;
+
+    // 保存用户原始设置，遍数从数据库已完成遍数 + 1 开始（当前正在听的这一遍）
+    state = state.copyWith(
+      learningMode: LearningMode.blindListen,
+      blindListenCompleted: false,
+      blindListenPassCount: dbPassCount + 1,
+      audioItemId: audioItemId,
+      savedSettings: currentSettings,
+      isFreePlay: isFreePlay,
+    );
+
+    // 暂停 LP 的 stream 监听，避免干扰盲听播放
+    practice.suspendListeners();
+
+    // 初始化盲听播放器，始终从音频开头播放（激励用户一次听完）
+    final engineState = ref.read(audioEngineProvider);
+    final blindPlayer = ref.read(blindListenPlayerProvider.notifier);
+    blindPlayer.initialize(engineState.totalDuration ?? Duration.zero);
+    await blindPlayer.seekTo(Duration.zero);
+
+    // 开始监听播放完成
+    _startListeningForCompletion();
+  }
+
+  /// 再听一遍
+  ///
+  /// 重置完成状态，递增遍数，通过 BlindListenPlayer 从头开始播放。
+  Future<void> replayBlindListen() async {
+    state = state.copyWith(
+      blindListenCompleted: false,
+      blindListenPassCount: state.blindListenPassCount + 1,
+    );
+
+    final blindPlayer = ref.read(blindListenPlayerProvider.notifier);
+    await blindPlayer.resetAndPlay();
+  }
+
+  /// 退出学习模式
+  ///
+  /// 停止盲听播放、释放 BlindListenPlayer 资源、恢复 LP 监听。
+  Future<void> exitLearningMode() async {
+    _playerStateSub?.cancel();
+    _playerStateSub = null;
+
+    // 停止盲听播放并释放资源
+    final blindPlayer = ref.read(blindListenPlayerProvider.notifier);
+    await blindPlayer.pause();
+    blindPlayer.disposePlayer();
+
+    // 恢复 LP 的 stream 监听
+    final practice = ref.read(listeningPracticeProvider.notifier);
+    practice.resumeListeners();
+
+    // 停止引擎播放（确保干净退出）
+    await practice.stop();
+
+    state = const LearningSessionState();
+  }
+
+  /// 标记本遍盲听完成并持久化遍数到数据库
+  Future<void> _markBlindListenCompleted() async {
+    if (state.learningMode != LearningMode.blindListen) return;
+    if (state.blindListenCompleted) return;
+
+    state = state.copyWith(blindListenCompleted: true);
+
+    // 播放完成后暂停并将进度条回到零点，等待用户下一步操作
+    final blindPlayer = ref.read(blindListenPlayerProvider.notifier);
+    await blindPlayer.pause();
+    await blindPlayer.seekTo(Duration.zero);
+
+    // 持久化盲听遍数到数据库
+    final audioItemId = state.audioItemId;
+    if (audioItemId != null) {
+      await ref
+          .read(learningProgressNotifierProvider.notifier)
+          .incrementBlindListenPassCount(audioItemId);
+    }
+
+    // 自由练习模式：递增会话内遍数并重置完成标志，使下一遍完成时能再次触发
+    // 正常模式由对话框的 replayBlindListen() 处理递增和重置
+    if (state.isFreePlay) {
+      state = state.copyWith(
+        blindListenCompleted: false,
+        blindListenPassCount: state.blindListenPassCount + 1,
+      );
+    }
+  }
+
+  /// 监听音频播放完成事件
+  void _startListeningForCompletion() {
+    _playerStateSub?.cancel();
+    final engine = ref.read(audioEngineProvider.notifier);
+    _playerStateSub = engine.playerStateStream.listen((playerState) {
+      if (playerState.processingState == ja.ProcessingState.completed) {
+        _markBlindListenCompleted();
+      }
+    });
+  }
+}

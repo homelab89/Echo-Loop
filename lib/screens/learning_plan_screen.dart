@@ -10,12 +10,15 @@ import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
 import '../database/enums.dart';
 import '../models/learning_progress.dart';
+import '../providers/audio_engine/audio_engine_provider.dart';
 import '../providers/audio_library_provider.dart';
 import '../providers/learning_progress_provider.dart';
+import '../providers/learning_session/learning_session_provider.dart';
 import '../providers/listening_practice/listening_practice_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
+import '../widgets/blind_listen_briefing_sheet.dart';
 
 /// 学习计划表页面
 class LearningPlanScreen extends ConsumerStatefulWidget {
@@ -59,6 +62,46 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
         ref.read(listeningPracticeProvider.notifier).loadAudio(audioItem);
       }
     });
+  }
+
+  /// 处理"开始学习/继续学习"按钮点击
+  void _handleStartLearning(BuildContext context, LearningProgress? progress) {
+    // 判断当前子步骤是否为盲听
+    final isBlindListen =
+        progress == null ||
+        progress.currentSubStage == SubStageType.blindListen;
+
+    if (isBlindListen) {
+      // 显示简报弹窗
+      final isFirstStudy =
+          progress == null || progress.currentStage == LearningStage.firstLearn;
+      final reviewRound = progress != null ? progress.currentStage.index : 0;
+      final totalDuration = ref.read(audioEngineProvider).totalDuration;
+
+      showBlindListenBriefingSheet(
+        context: context,
+        isFirstStudy: isFirstStudy,
+        reviewRound: reviewRound,
+        audioDuration: totalDuration,
+        onStartPractice: () async {
+          // 进入盲听模式
+          await ref
+              .read(learningSessionProvider.notifier)
+              .enterBlindListenMode(widget.audioItemId);
+          if (mounted) {
+            context.push(
+              AppRoutes.blindListenPlayer(
+                widget.collectionId,
+                widget.audioItemId,
+              ),
+            );
+          }
+        },
+      );
+    } else {
+      // 其他子步骤 → 直接导航到播放器
+      context.push(AppRoutes.player(widget.collectionId, widget.audioItemId));
+    }
   }
 
   @override
@@ -107,7 +150,12 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
               children: [
                 _ProgressCard(l10n: l10n, progress: progress),
                 const SizedBox(height: AppSpacing.l),
-                _FirstStudySection(l10n: l10n, progress: progress),
+                _FirstStudySection(
+                  l10n: l10n,
+                  progress: progress,
+                  collectionId: widget.collectionId,
+                  audioItemId: widget.audioItemId,
+                ),
                 const SizedBox(height: AppSpacing.l),
                 _ReviewSection(
                   l10n: l10n,
@@ -126,9 +174,7 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
             l10n: l10n,
             progress: progress,
             onPressed: () {
-              context.push(
-                AppRoutes.player(widget.collectionId, widget.audioItemId),
-              );
+              _handleStartLearning(context, progress);
             },
           ),
         ],
@@ -266,14 +312,27 @@ class _ProgressRingPainter extends CustomPainter {
 }
 
 /// 首学区域 — 默认展开，显示 4 个步骤
-class _FirstStudySection extends StatelessWidget {
+///
+/// 已完成的盲听步骤支持点击进入自由练习模式。
+class _FirstStudySection extends ConsumerWidget {
   final AppLocalizations l10n;
   final LearningProgress? progress;
 
-  const _FirstStudySection({required this.l10n, this.progress});
+  /// 合集 ID（导航用）
+  final String collectionId;
+
+  /// 音频项 ID（导航用）
+  final String audioItemId;
+
+  const _FirstStudySection({
+    required this.l10n,
+    this.progress,
+    required this.collectionId,
+    required this.audioItemId,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final completedCount = progress?.completedFirstStudySteps ?? 0;
     final firstLearnStage = LearningStage.firstLearn;
@@ -337,6 +396,22 @@ class _FirstStudySection extends StatelessWidget {
               progress?.isSubStageCompleted(firstLearnStage, subStage) ?? false;
           final isCurrent =
               progress?.isCurrentSubStage(firstLearnStage, subStage) ?? false;
+
+          // 盲听步骤显示已听遍数
+          String? subtitle;
+          if (subStage == SubStageType.blindListen) {
+            final passCount = progress?.blindListenPassCount ?? 0;
+            if (passCount > 0) {
+              subtitle = l10n.blindListenPassInfo(passCount);
+            }
+          }
+
+          // 已完成的盲听步骤支持点击进入自由练习
+          VoidCallback? onTap;
+          if (isCompleted && subStage == SubStageType.blindListen) {
+            onTap = () => _startFreePlayBlindListen(context, ref);
+          }
+
           return _StepCard(
             stepNumber: index + 1,
             icon: stepData.icon,
@@ -345,10 +420,25 @@ class _FirstStudySection extends StatelessWidget {
             isCompleted: isCompleted,
             isCurrent: isCurrent,
             isLast: index == subStages.length - 1,
+            subtitle: subtitle,
+            onTap: onTap,
           );
         }),
       ],
     );
+  }
+
+  /// 进入自由练习盲听模式（直接进入，不弹 briefing sheet）
+  Future<void> _startFreePlayBlindListen(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    await ref
+        .read(learningSessionProvider.notifier)
+        .enterBlindListenMode(audioItemId, isFreePlay: true);
+    if (context.mounted) {
+      context.push(AppRoutes.blindListenPlayer(collectionId, audioItemId));
+    }
   }
 }
 
@@ -375,6 +465,12 @@ class _StepCard extends StatelessWidget {
   final bool isCurrent;
   final bool isLast;
 
+  /// 可选的附加信息（如"已听 X 遍"）
+  final String? subtitle;
+
+  /// 点击回调（如已完成的盲听步骤可点击进入自由练习）
+  final VoidCallback? onTap;
+
   const _StepCard({
     required this.stepNumber,
     required this.icon,
@@ -383,6 +479,8 @@ class _StepCard extends StatelessWidget {
     required this.isCompleted,
     required this.isCurrent,
     required this.isLast,
+    this.subtitle,
+    this.onTap,
   });
 
   @override
@@ -403,7 +501,7 @@ class _StepCard extends StatelessWidget {
                   height: 28,
                   decoration: BoxDecoration(
                     color: isCompleted
-                        ? theme.colorScheme.outlineVariant
+                        ? Colors.green.shade50
                         : isCurrent
                         ? null
                         : theme.colorScheme.surfaceContainerHighest,
@@ -414,11 +512,7 @@ class _StepCard extends StatelessWidget {
                   ),
                   child: Center(
                     child: isCompleted
-                        ? Icon(
-                            Icons.check,
-                            size: 16,
-                            color: theme.colorScheme.outline,
-                          )
+                        ? Icon(Icons.check, size: 16, color: Colors.green)
                         : Text(
                             '$stepNumber',
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -445,44 +539,58 @@ class _StepCard extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.s),
               child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.m),
-                  child: Row(
-                    children: [
-                      Icon(
-                        icon,
-                        color: isCompleted
-                            ? theme.colorScheme.outline
-                            : theme.colorScheme.primary,
-                        size: 24,
-                      ),
-                      const SizedBox(width: AppSpacing.m),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: isCompleted
-                                    ? theme.colorScheme.outline
-                                    : null,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              description,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: isCompleted
-                                    ? theme.colorScheme.outline
-                                    : theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+                clipBehavior: onTap != null ? Clip.antiAlias : Clip.none,
+                child: InkWell(
+                  onTap: onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.m),
+                    child: Row(
+                      children: [
+                        Icon(
+                          icon,
+                          color: isCompleted
+                              ? theme.colorScheme.outline
+                              : theme.colorScheme.primary,
+                          size: 24,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: AppSpacing.m),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: isCompleted
+                                      ? theme.colorScheme.outline
+                                      : null,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                description,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: isCompleted
+                                      ? theme.colorScheme.outline
+                                      : theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              if (subtitle != null) ...[
+                                const SizedBox(height: AppSpacing.xs),
+                                Text(
+                                  subtitle!,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -706,7 +814,7 @@ class _ReviewStepCard extends StatelessWidget {
                   height: 28,
                   decoration: BoxDecoration(
                     color: isCompleted
-                        ? theme.colorScheme.outlineVariant
+                        ? Colors.green.shade50
                         : isCurrent
                         ? null
                         : theme.colorScheme.surfaceContainerHighest,
@@ -720,11 +828,7 @@ class _ReviewStepCard extends StatelessWidget {
                   ),
                   child: Center(
                     child: isCompleted
-                        ? Icon(
-                            Icons.check,
-                            size: 16,
-                            color: theme.colorScheme.outline,
-                          )
+                        ? Icon(Icons.check, size: 16, color: Colors.green)
                         : Text(
                             '$stepNumber',
                             style: theme.textTheme.bodySmall?.copyWith(

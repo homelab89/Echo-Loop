@@ -155,7 +155,7 @@ abstract class AppLocalizations {
   /// No description provided for @playing.
   ///
   /// In en, this message translates to:
-  /// **'Playing'**
+  /// **'Last'**
   String get playing;
 
   /// No description provided for @delete.
@@ -1063,6 +1063,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Available in {hours} hours'**
   String reviewCountdownHours(int hours);
+
+  /// No description provided for @blindListenBriefingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Listening'**
+  String get blindListenBriefingTitle;
+
+  /// No description provided for @blindListenBriefingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'First Study - Full Listening'**
+  String get blindListenBriefingSubtitle;
+
+  /// No description provided for @blindListenBriefingReviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review {round} - Full Listening'**
+  String blindListenBriefingReviewSubtitle(int round);
+
+  /// No description provided for @blindListenBriefingTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen without subtitles, try to get the gist'**
+  String get blindListenBriefingTip;
+
+  /// No description provided for @startPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Practice'**
+  String get startPractice;
+
+  /// No description provided for @blindListenAppBarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Listening'**
+  String get blindListenAppBarTitle;
+
+  /// No description provided for @blindListenPassLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass {count}'**
+  String blindListenPassLabel(int count);
+
+  /// No description provided for @blindListenComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening Complete'**
+  String get blindListenComplete;
+
+  /// No description provided for @blindListenPassInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Listened {count} time(s)'**
+  String blindListenPassInfo(int count);
+
+  /// No description provided for @selectDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'How did it feel?'**
+  String get selectDifficulty;
+
+  /// No description provided for @selectDifficultyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a difficulty to continue'**
+  String get selectDifficultyRequired;
+
+  /// No description provided for @listenAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen Again'**
+  String get listenAgain;
+
+  /// No description provided for @nextStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get nextStage;
+
+  /// No description provided for @difficultyVeryEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Very Easy'**
+  String get difficultyVeryEasy;
+
+  /// No description provided for @difficultyEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get difficultyEasy;
+
+  /// No description provided for @difficultyMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Okay'**
+  String get difficultyMedium;
+
+  /// No description provided for @difficultyHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get difficultyHard;
+
+  /// No description provided for @difficultyVeryHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Very Hard'**
+  String get difficultyVeryHard;
+
+  /// No description provided for @countdownNextPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Next play starts in'**
+  String get countdownNextPlay;
+
+  /// No description provided for @skipCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skipCountdown;
+
+  /// No description provided for @audioDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration: {duration}'**
+  String audioDuration(String duration);
+
+  /// No description provided for @exitBlindListenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit Listening?'**
+  String get exitBlindListenTitle;
+
+  /// No description provided for @exitBlindListenMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio is still playing. Are you sure you want to exit?'**
+  String get exitBlindListenMessage;
+
+  /// No description provided for @confirmExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get confirmExit;
 }
 
 class _AppLocalizationsDelegate

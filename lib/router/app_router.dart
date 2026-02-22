@@ -16,6 +16,7 @@ import '../screens/favorites_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/learning_plan_screen.dart';
 import '../screens/player_screen.dart';
+import '../screens/blind_listen_player_screen.dart';
 import 'main_shell.dart';
 
 /// 全局根导航器 key
@@ -39,6 +40,10 @@ abstract class AppRoutes {
   /// 播放器页路径
   static String player(String collectionId, String audioId) =>
       '/collections/$collectionId/$audioId/player';
+
+  /// 盲听播放器页路径
+  static String blindListenPlayer(String collectionId, String audioId) =>
+      '/collections/$collectionId/$audioId/blind-listen';
 }
 
 /// GoRouter Provider（keepAlive，不可 invalidate）
@@ -114,6 +119,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: ':audioId/player',
             parentNavigatorKey: rootNavigatorKey,
             builder: (context, state) => const PlayerScreen(),
+          ),
+          GoRoute(
+            path: ':audioId/blind-listen',
+            parentNavigatorKey: rootNavigatorKey,
+            builder: (context, state) {
+              final collectionId = state.pathParameters['collectionId']!;
+              final audioId = state.pathParameters['audioId']!;
+              return BlindListenPlayerScreen(
+                collectionId: collectionId,
+                audioItemId: audioId,
+              );
+            },
           ),
         ],
       ),

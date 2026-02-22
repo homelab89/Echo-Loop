@@ -18,11 +18,19 @@ class PlaybackControls extends ConsumerWidget {
 
         if (isMobile) {
           return _buildMobileLayout(
-            context, ref, playerState, controller, engineNotifier,
+            context,
+            ref,
+            playerState,
+            controller,
+            engineNotifier,
           );
         } else {
           return _buildDesktopLayout(
-            context, ref, playerState, controller, engineNotifier,
+            context,
+            ref,
+            playerState,
+            controller,
+            engineNotifier,
           );
         }
       },
@@ -109,9 +117,7 @@ class PlaybackControls extends ConsumerWidget {
                   tooltip: 'Previous Sentence',
                 ),
                 const SizedBox(width: 12),
-                _buildPlayPauseButton(
-                  context, controller, engineNotifier,
-                ),
+                _buildPlayPauseButton(context, controller, engineNotifier),
                 const SizedBox(width: 12),
                 IconButton(
                   icon: const Icon(Icons.skip_next),
@@ -150,8 +156,7 @@ class PlaybackControls extends ConsumerWidget {
             onPressed: () {
               controller.updateSettings(
                 playerState.settings.copyWith(
-                  singleSentenceMode:
-                      !playerState.settings.singleSentenceMode,
+                  singleSentenceMode: !playerState.settings.singleSentenceMode,
                 ),
               );
             },
@@ -226,9 +231,7 @@ class PlaybackControls extends ConsumerWidget {
         shape: BoxShape.circle,
       ),
       child: IconButton(
-        icon: Icon(
-          isPlaying ? Icons.pause : Icons.play_arrow,
-        ),
+        icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
         iconSize: 36,
         color: Theme.of(context).colorScheme.onPrimary,
         onPressed: () {

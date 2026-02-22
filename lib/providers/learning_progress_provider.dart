@@ -82,7 +82,7 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
         audioItemId: Value(audioItemId),
         currentStage: Value(LearningStage.firstLearn.key),
         currentSubStage: Value(SubStageType.blindListen.key),
-        difficulty: const Value(1),
+        difficulty: const Value(2),
         firstLearnCompletedAt: const Value(null),
         lastStageCompletedAt: const Value(null),
         currentStageStartedAt: Value(now),
@@ -184,6 +184,23 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
     state = state.copyWith(progressMap: newMap);
   }
 
+  /// 增加盲听完成遍数并持久化
+  Future<void> incrementBlindListenPassCount(String audioItemId) async {
+    final progress = state.progressMap[audioItemId];
+    if (progress == null) return;
+
+    final updated = progress.copyWith(
+      blindListenPassCount: progress.blindListenPassCount + 1,
+      updatedAt: DateTime.now(),
+    );
+
+    await _persistProgress(updated);
+
+    final newMap = Map<String, LearningProgress>.from(state.progressMap);
+    newMap[audioItemId] = updated;
+    state = state.copyWith(progressMap: newMap);
+  }
+
   /// 删除指定音频的学习进度（音频删除时调用）
   Future<void> deleteProgress(String audioItemId) async {
     final dao = ref.read(learningProgressDaoProvider);
@@ -209,6 +226,7 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
         lastStageCompletedAt: Value(progress.lastStageCompletedAt),
         currentStageStartedAt: Value(progress.currentStageStartedAt),
         totalStudyDurationMs: Value(progress.totalStudyDurationMs),
+        blindListenPassCount: Value(progress.blindListenPassCount),
         updatedAt: Value(progress.updatedAt),
       ),
     );
@@ -225,6 +243,7 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
       lastStageCompletedAt: row.lastStageCompletedAt,
       currentStageStartedAt: row.currentStageStartedAt,
       totalStudyDurationMs: row.totalStudyDurationMs,
+      blindListenPassCount: row.blindListenPassCount,
       updatedAt: row.updatedAt,
     );
   }

@@ -43,10 +43,7 @@ void main() {
     });
 
     test('零值', () {
-      expect(
-        SubtitleParser.formatDuration(Duration.zero),
-        '0:00',
-      );
+      expect(SubtitleParser.formatDuration(Duration.zero), '0:00');
     });
 
     test('仅有秒数', () {

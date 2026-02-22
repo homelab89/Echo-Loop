@@ -59,6 +59,9 @@ lib/
 │   ├── audio_engine/
 │   │   └── audio_engine_provider.dart  # 底层音频控制（封装 just_audio）
 │   ├── learning_progress_provider.dart  # 学习进度管理（加载/推进/难度设置）
+│   ├── learning_session/
+│   │   ├── learning_session_provider.dart  # 学习会话层（盲听模式/设置保存恢复）
+│   │   └── blind_listen_player_provider.dart # 盲听专用轻量播放器（直接操作 AudioEngine）
 │   └── listening_practice/
 │       ├── listening_practice_provider.dart  # 核心业务：播放模式/句子导航/书签
 │       ├── sentence_tracker.dart     #   二分查找定位当前句子
@@ -70,12 +73,15 @@ lib/
 │   ├── study_screen.dart            #   学习页（当前占位）
 │   ├── favorites_screen.dart        #   收藏页（当前占位）
 │   ├── learning_plan_screen.dart     #   学习计划表页
+│   ├── blind_listen_player_screen.dart #  盲听播放器（极简界面）
 │   ├── player_screen.dart           #   播放器页（核心交互）
 │   └── settings_screen.dart         #   设置页
 ├── widgets/                         # 可复用 UI 组件
 │   ├── playback_controls.dart       #   播放控制面板
 │   ├── sentence_list_view.dart      #   句子列表（滚动 + 高亮）
 │   ├── settings_dialog.dart         #   播放设置弹窗
+│   ├── blind_listen_briefing_sheet.dart #  盲听简报底部弹窗
+│   ├── blind_listen_complete_dialog.dart # 盲听完成/难度选择对话框
 │   └── player_hotkey_scope.dart     #   桌面端键盘快捷键
 └── theme/
     └── app_theme.dart               # 主题系统（Material 3，蓝色主色调）
@@ -111,16 +117,20 @@ integration_test/                    # 端到端集成测试
 
 ## 架构设计
 
-### 2 层播放器架构
+### 3 层播放器架构
 
 ```
-┌─────────────────────────────────────────────┐
-│         ListeningPractice（业务层）           │
-│  句子追踪 · 书签管理 · 循环播放 · 播放模式    │
-├─────────────────────────────────────────────┤
-│           AudioEngine（底层）                 │
-│  封装 just_audio · 播放/暂停/seek/速度控制    │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│      LearningSession（学习会话层）             │
+│  学习模式 · 盲听遍数 · 完成判定 · 设置保存恢复  │
+├──────────────┬───────────────────────────────┤
+│ BlindListen  │  ListeningPractice（播放业务层）│
+│ Player       │  句子追踪·书签·循环·播放模式    │
+│ （盲听专用）  │  （普通播放/精听模式）          │
+├──────────────┴───────────────────────────────┤
+│           AudioEngine（底层）                  │
+│  封装 just_audio · 播放/暂停/seek/速度控制     │
+└──────────────────────────────────────────────┘
 ```
 
 - **AudioEngine**（底层）：封装 just_audio，提供播放、暂停、seek、速度控制等原子操作，不包含业务逻辑

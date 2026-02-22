@@ -152,21 +152,36 @@ enum LearningStage {
   }
 }
 
-/// 难度等级枚举
+/// 难度等级枚举（5 档）
 ///
-/// 影响复习遍数和间隔调整。
+/// 影响复习遍数和间隔调整。盲听完成后由用户选择。
 enum DifficultyLevel {
-  /// 简单
-  easy(0),
+  /// 很轻松
+  veryEasy(0),
 
-  /// 中等
-  medium(1),
+  /// 偏轻松
+  easy(1),
 
-  /// 困难
-  hard(2);
+  /// 还可以
+  medium(2),
+
+  /// 偏难
+  hard(3),
+
+  /// 很难
+  veryHard(4);
 
   const DifficultyLevel(this.value);
   final int value;
+
+  /// 中文 UI 标签
+  String get label => switch (this) {
+    veryEasy => '很轻松',
+    easy => '偏轻松',
+    medium => '还可以',
+    hard => '偏难',
+    veryHard => '很难',
+  };
 
   /// 从整数值创建枚举
   static DifficultyLevel fromValue(int value) {

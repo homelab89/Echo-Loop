@@ -62,10 +62,7 @@ void main() {
     });
 
     test('collectionDetail 构建正确路径', () {
-      expect(
-        AppRoutes.collectionDetail('abc-123'),
-        '/collections/abc-123',
-      );
+      expect(AppRoutes.collectionDetail('abc-123'), '/collections/abc-123');
     });
 
     test('learningPlan 构建正确路径', () {
@@ -150,17 +147,14 @@ void main() {
         routes: [
           GoRoute(
             path: '/collections/:collectionId',
-            builder: (context, state) =>
-                const Scaffold(body: Text('Detail')),
+            builder: (context, state) => const Scaffold(body: Text('Detail')),
             routes: [
               GoRoute(
                 path: ':audioId/plan',
                 builder: (context, state) {
                   final colId = state.pathParameters['collectionId']!;
                   final audioId = state.pathParameters['audioId']!;
-                  return Scaffold(
-                    body: Text('Plan: $colId/$audioId'),
-                  );
+                  return Scaffold(body: Text('Plan: $colId/$audioId'));
                 },
               ),
             ],
@@ -180,17 +174,14 @@ void main() {
         routes: [
           GoRoute(
             path: '/collections/:collectionId',
-            builder: (context, state) =>
-                const Scaffold(body: Text('Detail')),
+            builder: (context, state) => const Scaffold(body: Text('Detail')),
             routes: [
               GoRoute(
                 path: ':audioId/player',
                 builder: (context, state) {
                   final colId = state.pathParameters['collectionId']!;
                   final audioId = state.pathParameters['audioId']!;
-                  return Scaffold(
-                    body: Text('Player: $colId/$audioId'),
-                  );
+                  return Scaffold(body: Text('Player: $colId/$audioId'));
                 },
               ),
             ],

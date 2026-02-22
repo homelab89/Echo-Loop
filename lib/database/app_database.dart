@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -73,6 +73,12 @@ class AppDatabase extends _$AppDatabase {
           await m.deleteTable('learning_progresses');
           await m.createTable(learningProgresses);
           await m.createTable(stageCompletions);
+        }
+        // v4→v5：learning_progresses 新增 blindListenPassCount 列
+        // App 尚未发布，直接重建
+        if (from < 5) {
+          await m.deleteTable('learning_progresses');
+          await m.createTable(learningProgresses);
         }
       },
     );

@@ -72,11 +72,13 @@ void main() {
       });
 
       testWidgets('循环开启时显示子设置', (tester) async {
-        await tester.pumpWidget(_buildSettingsDialogTest(
-          practiceState: const ListeningPracticeState(
-            settings: PlaybackSettings(loopEnabled: true),
+        await tester.pumpWidget(
+          _buildSettingsDialogTest(
+            practiceState: const ListeningPracticeState(
+              settings: PlaybackSettings(loopEnabled: true),
+            ),
           ),
-        ));
+        );
         await tester.pumpAndSettle();
 
         // 循环次数和间隔时间应显示
@@ -93,11 +95,13 @@ void main() {
       });
 
       testWidgets('音频循环开启时显示循环次数', (tester) async {
-        await tester.pumpWidget(_buildSettingsDialogTest(
-          practiceState: const ListeningPracticeState(
-            settings: PlaybackSettings(loopAudioEnabled: true),
+        await tester.pumpWidget(
+          _buildSettingsDialogTest(
+            practiceState: const ListeningPracticeState(
+              settings: PlaybackSettings(loopAudioEnabled: true),
+            ),
           ),
-        ));
+        );
         await tester.pumpAndSettle();
 
         expect(find.text('Loop Count'), findsOneWidget);
