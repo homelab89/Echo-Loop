@@ -91,7 +91,7 @@ test/
 ## 常用命令
 
 ```bash
-# 运行
+# 运行, Debug 模式
 flutter run -d macos          # macOS
 flutter run -d chrome          # Web
 flutter run -d ios             # iOS
