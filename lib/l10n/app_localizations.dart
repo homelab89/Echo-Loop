@@ -1553,7 +1553,7 @@ abstract class AppLocalizations {
   /// No description provided for @intensiveListenPauseSmartDesc.
   ///
   /// In en, this message translates to:
-  /// **'Auto-adjusted by sentence length'**
+  /// **'Auto-adjusted based on difficulty, sentence length, and learning stage'**
   String get intensiveListenPauseSmartDesc;
 
   /// No description provided for @intensiveListenPauseFixedUnit.
@@ -1663,6 +1663,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to delete \"{name}\"? It will be removed from all audio.'**
   String deleteTagConfirm(String name);
+
+  /// No description provided for @listenAndRepeatAppBarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen & Repeat'**
+  String get listenAndRepeatAppBarTitle;
+
+  /// No description provided for @listenAndRepeatProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat {current}/{total}'**
+  String listenAndRepeatProgress(int current, int total);
+
+  /// No description provided for @listenAndRepeatPlayCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Play {current}/{total}'**
+  String listenAndRepeatPlayCount(int current, int total);
+
+  /// No description provided for @listenAndRepeatPauseBetweenPlays.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat time {seconds}s'**
+  String listenAndRepeatPauseBetweenPlays(int seconds);
+
+  /// No description provided for @listenAndRepeatPauseBetweenSentences.
+  ///
+  /// In en, this message translates to:
+  /// **'Next sentence in {seconds}s'**
+  String listenAndRepeatPauseBetweenSentences(int seconds);
+
+  /// No description provided for @listenAndRepeatCompleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen & Repeat Complete'**
+  String get listenAndRepeatCompleteTitle;
+
+  /// No description provided for @listenAndRepeatCompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve completed listen & repeat for all {total} difficult sentences.'**
+  String listenAndRepeatCompleteMessage(int total);
+
+  /// No description provided for @listenAndRepeatNoDifficultSentences.
+  ///
+  /// In en, this message translates to:
+  /// **'No difficult sentences marked. Skipping listen & repeat.'**
+  String get listenAndRepeatNoDifficultSentences;
+
+  /// No description provided for @exitListenAndRepeatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit Listen & Repeat?'**
+  String get exitListenAndRepeatTitle;
+
+  /// No description provided for @exitListenAndRepeatMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress will be saved. You can continue from where you left off.'**
+  String get exitListenAndRepeatMessage;
+
+  /// No description provided for @listenAndRepeatBriefingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen & Repeat'**
+  String get listenAndRepeatBriefingTitle;
+
+  /// No description provided for @listenAndRepeatBriefingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'First Study - Listen & Repeat'**
+  String get listenAndRepeatBriefingSubtitle;
+
+  /// No description provided for @listenAndRepeatBriefingTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to each sentence, then repeat it aloud during the pause.'**
+  String get listenAndRepeatBriefingTip;
+
+  /// No description provided for @listenAndRepeatBriefingDifficultCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} difficult sentences'**
+  String listenAndRepeatBriefingDifficultCount(int count);
+
+  /// No description provided for @listenAndRepeatBriefingPlayCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} plays per sentence'**
+  String listenAndRepeatBriefingPlayCount(int count);
+
+  /// No description provided for @listenAndRepeatRemoveDifficult.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked difficult, tap to remove'**
+  String get listenAndRepeatRemoveDifficult;
+
+  /// No description provided for @listenAndRepeatSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat Settings'**
+  String get listenAndRepeatSettings;
+
+  /// No description provided for @listenAndRepeatSettingsTemporaryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings apply to this session only'**
+  String get listenAndRepeatSettingsTemporaryHint;
+
+  /// No description provided for @listenAndRepeatPauseSmartDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-adjusted based on difficulty, sentence length, and learning stage'**
+  String get listenAndRepeatPauseSmartDesc;
+
+  /// No description provided for @sentenceDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'{duration}s'**
+  String sentenceDuration(String duration);
 }
 
 class _AppLocalizationsDelegate

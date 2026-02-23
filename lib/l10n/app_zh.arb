@@ -257,7 +257,7 @@
   "intensiveListenPauseFixed": "固定间隔",
   "intensiveListenPauseMultiplierMode": "句长倍数",
   "intensiveListenSettingsTemporaryHint": "设置仅对本次精听有效",
-  "intensiveListenPauseSmartDesc": "根据句子长度自动判定",
+  "intensiveListenPauseSmartDesc": "根据难度、句子长度和学习阶段自动调整",
   "intensiveListenPauseFixedUnit": "{seconds}秒",
   "@intensiveListenPauseFixedUnit": {
     "placeholders": {
@@ -307,5 +307,67 @@
   "enterTagName": "输入标签名称",
   "selectColor": "选择颜色",
   "deleteTag": "删除标签",
-  "deleteTagConfirm": "确定要删除「{name}」吗？将从所有音频中移除。"
+  "deleteTagConfirm": "确定要删除「{name}」吗？将从所有音频中移除。",
+  "listenAndRepeatAppBarTitle": "难句跟读",
+  "listenAndRepeatProgress": "跟读 {current}/{total}",
+  "@listenAndRepeatProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "listenAndRepeatPlayCount": "第 {current}/{total} 遍",
+  "@listenAndRepeatPlayCount": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "listenAndRepeatPauseBetweenPlays": "跟读时间 {seconds}秒",
+  "@listenAndRepeatPauseBetweenPlays": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "listenAndRepeatPauseBetweenSentences": "{seconds}秒后播放下一句",
+  "@listenAndRepeatPauseBetweenSentences": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "listenAndRepeatCompleteTitle": "跟读完成",
+  "listenAndRepeatCompleteMessage": "你已完成全部 {total} 个难句的跟读练习。",
+  "@listenAndRepeatCompleteMessage": {
+    "placeholders": {
+      "total": { "type": "int" }
+    }
+  },
+  "listenAndRepeatNoDifficultSentences": "没有标记难句，跳过跟读环节。",
+  "exitListenAndRepeatTitle": "退出跟读？",
+  "exitListenAndRepeatMessage": "进度已保存，下次可从断点继续。",
+  "listenAndRepeatBriefingTitle": "难句跟读",
+  "listenAndRepeatBriefingSubtitle": "首学 - 难句跟读",
+  "listenAndRepeatBriefingTip": "听完后跟读，在停顿时间内大声朗读这个句子。",
+  "listenAndRepeatBriefingDifficultCount": "{count} 个难句",
+  "@listenAndRepeatBriefingDifficultCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "listenAndRepeatBriefingPlayCount": "每句 {count} 遍",
+  "@listenAndRepeatBriefingPlayCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "listenAndRepeatRemoveDifficult": "已标记难句，点此取消收藏",
+  "listenAndRepeatSettings": "跟读设置",
+  "listenAndRepeatSettingsTemporaryHint": "设置仅对本次跟读有效",
+  "listenAndRepeatPauseSmartDesc": "根据难度、句子长度和学习阶段自动调整",
+  "sentenceDuration": "{duration}秒",
+  "@sentenceDuration": {
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  }
 }

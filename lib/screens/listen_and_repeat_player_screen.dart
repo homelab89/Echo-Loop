@@ -1,7 +1,7 @@
-/// 精听播放器页面
+/// 跟读播放器页面
 ///
-/// 逐句精听界面，支持普通模式（文字遮盖）、标注模式（揭示文本）、
-/// 标注重播模式（带字幕重播）。
+/// 难句跟读界面，逐句显示难句文本（带★标记），
+/// 用户听完后在停顿时间内跟读。
 ///
 /// 完成处理：所有句子播完 → 完成对话框 → completeCurrentSubStage → 退出
 /// 退出处理：PopScope → 保存断点 → exitLearningMode → pop
@@ -14,37 +14,33 @@ import '../database/enums.dart';
 import '../database/providers.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/learning_progress_provider.dart';
-import '../providers/learning_session/intensive_listen_player_provider.dart';
 import '../providers/learning_session/learning_session_provider.dart';
-import '../providers/listening_practice/bookmark_manager.dart';
-import '../providers/listening_practice/listening_practice_provider.dart';
-import '../router/app_router.dart';
+import '../providers/learning_session/listen_and_repeat_player_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/intensive_listen/intensive_listen_settings_sheet.dart';
-import '../widgets/listen_and_repeat/listen_and_repeat_briefing_sheet.dart';
 import '../widgets/intensive_listen/sentence_annotation_card.dart';
+import '../widgets/listen_and_repeat/listen_and_repeat_settings_sheet.dart';
 
-/// 精听播放器页面
-class IntensiveListenPlayerScreen extends ConsumerStatefulWidget {
+/// 跟读播放器页面
+class ListenAndRepeatPlayerScreen extends ConsumerStatefulWidget {
   /// 合集 ID（用于返回导航，从独立音频路由进入时为 null）
   final String? collectionId;
 
   /// 音频项 ID
   final String audioItemId;
 
-  const IntensiveListenPlayerScreen({
+  const ListenAndRepeatPlayerScreen({
     super.key,
     this.collectionId,
     required this.audioItemId,
   });
 
   @override
-  ConsumerState<IntensiveListenPlayerScreen> createState() =>
-      _IntensiveListenPlayerScreenState();
+  ConsumerState<ListenAndRepeatPlayerScreen> createState() =>
+      _ListenAndRepeatPlayerScreenState();
 }
 
-class _IntensiveListenPlayerScreenState
-    extends ConsumerState<IntensiveListenPlayerScreen> {
+class _ListenAndRepeatPlayerScreenState
+    extends ConsumerState<ListenAndRepeatPlayerScreen> {
   bool _isShowingDialog = false;
 
   @override
@@ -52,16 +48,13 @@ class _IntensiveListenPlayerScreenState
     super.initState();
     // 进入后自动开始播放
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(intensiveListenPlayerProvider.notifier).startPlaying();
+      ref.read(listenAndRepeatPlayerProvider.notifier).startPlaying();
     });
   }
 
   /// 处理退出（close 按钮 / 系统返回）
-  ///
-  /// 自由练习模式直接退出；正常学习模式弹出确认对话框，
-  /// 确认后保存断点和难句，再退出。
   Future<void> _handleExit() async {
-    final player = ref.read(intensiveListenPlayerProvider.notifier);
+    final player = ref.read(listenAndRepeatPlayerProvider.notifier);
     await player.pause();
     if (!mounted) return;
 
@@ -76,8 +69,8 @@ class _IntensiveListenPlayerScreenState
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.exitIntensiveListenTitle),
-        content: Text(l10n.exitIntensiveListenMessage),
+        title: Text(l10n.exitListenAndRepeatTitle),
+        content: Text(l10n.exitListenAndRepeatMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -92,100 +85,50 @@ class _IntensiveListenPlayerScreenState
     );
 
     if (confirm != true || !mounted) {
-      // 用户取消退出 → 恢复播放（标注模式下不恢复，保持暂停状态）
+      // 用户取消退出 → 恢复播放
       if (mounted) {
-        final currentState = ref.read(intensiveListenPlayerProvider);
-        if (!currentState.isAnnotationMode) {
-          player.resume();
-        }
+        player.resume();
       }
       return;
     }
 
-    // 保存断点 + 难句
+    // 保存断点
     await _saveSentenceProgress();
-    await _saveDifficultSentences();
 
     await ref.read(learningSessionProvider.notifier).exitLearningMode();
     if (mounted) context.pop();
   }
 
-  /// 保存精听断点进度
+  /// 保存跟读断点进度
   Future<void> _saveSentenceProgress() async {
-    final player = ref.read(intensiveListenPlayerProvider.notifier);
+    final player = ref.read(listenAndRepeatPlayerProvider.notifier);
     await ref
         .read(learningProgressNotifierProvider.notifier)
-        .saveIntensiveListenSentenceIndex(
+        .saveShadowingSentenceIndex(
           widget.audioItemId,
           player.currentIndex,
         );
   }
 
-  /// 保存难句书签到数据库
-  Future<void> _saveDifficultSentences() async {
-    final playerState = ref.read(intensiveListenPlayerProvider);
-    final player = ref.read(intensiveListenPlayerProvider.notifier);
-    final bookmarkDao = ref.read(bookmarkDaoProvider);
+  /// 取消当前句子的难句收藏
+  Future<void> _handleRemoveDifficult() async {
+    final player = ref.read(listenAndRepeatPlayerProvider.notifier);
+    final removed = player.removeDifficultMark();
 
-    for (final index in playerState.difficultSentences) {
-      if (index < player.sentences.length) {
-        final sentence = player.sentences[index];
-        await BookmarkManager.addBookmarkToDb(
-          widget.audioItemId,
-          sentence,
-          dao: bookmarkDao,
-        );
-      }
-    }
-  }
-
-  /// 进入难句跟读模式
-  ///
-  /// 精听完成后调用，读取难句书签并进入跟读。
-  /// 0 个难句时显示 SnackBar 提示并 pop 回计划页。
-  void _startListenAndRepeat() {
-    final l10n = AppLocalizations.of(context)!;
-    final lpState = ref.read(listeningPracticeProvider);
-
-    if (lpState.sentences.isEmpty) {
-      context.pop();
-      return;
-    }
-
-    // 读取难句书签数量（用于 briefing sheet）
-    final playerState = ref.read(intensiveListenPlayerProvider);
-    final difficultCount = playerState.difficultSentences.length;
-
-    if (difficultCount == 0) {
-      // 无难句 → 跳过跟读，回到计划页
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.listenAndRepeatNoDifficultSentences)),
+    if (removed != null) {
+      // 从数据库删除书签
+      final bookmarkDao = ref.read(bookmarkDaoProvider);
+      await bookmarkDao.removeBookmark(
+        widget.audioItemId,
+        removed.index,
       );
-      context.pop();
-      return;
     }
 
-    showListenAndRepeatBriefingSheet(
-      context: context,
-      difficultCount: difficultCount,
-      playCount: 3, // 默认遍数（实际由难度决定，此处为预览估值）
-      onStartPractice: () async {
-        await ref
-            .read(learningSessionProvider.notifier)
-            .enterListenAndRepeatMode(
-              widget.audioItemId,
-              lpState.sentences,
-            );
-        if (mounted) {
-          context.pushReplacement(
-            AppRoutes.listenAndRepeatPlayer(
-              widget.collectionId,
-              widget.audioItemId,
-            ),
-          );
-        }
-      },
-    );
+    // 如果还有句子且未完成，自动开始播放下一句
+    final state = ref.read(listenAndRepeatPlayerProvider);
+    if (!state.isCompleted && state.totalSentences > 0) {
+      await player.startPlaying();
+    }
   }
 
   /// 获取当前步骤的上下文信息
@@ -196,7 +139,7 @@ class _IntensiveListenPlayerScreenState
     String? nextStepName,
     bool isLastStep,
   })
-      _getStepContext() {
+  _getStepContext() {
     final l10n = AppLocalizations.of(context)!;
     final progress = ref
         .read(learningProgressNotifierProvider)
@@ -204,7 +147,7 @@ class _IntensiveListenPlayerScreenState
 
     if (progress == null) {
       final subStages = LearningStage.firstLearn.subStages;
-      final idx = subStages.indexOf(SubStageType.intensiveListen);
+      final idx = subStages.indexOf(SubStageType.listenAndRepeat);
       final isLast = idx >= subStages.length - 1;
       String? nextName;
       if (!isLast) {
@@ -227,7 +170,6 @@ class _IntensiveListenPlayerScreenState
     final currentIdx = subStages.indexOf(progress.currentSubStage);
     final isLast = currentIdx >= subStages.length - 1;
 
-    // 判断下一步是否有播放器
     String? nextStepName;
     if (!isLast) {
       final nextSubStage = subStages[currentIdx + 1];
@@ -246,17 +188,12 @@ class _IntensiveListenPlayerScreenState
   }
 
   /// 处理播放完成
-  ///
-  /// 弹出完成对话框，支持双按钮："返回计划"和"继续下一步"。
   Future<void> _handleCompleted() async {
     if (_isShowingDialog || !mounted) return;
     _isShowingDialog = true;
 
     final session = ref.read(learningSessionProvider);
-    final playerState = ref.read(intensiveListenPlayerProvider);
-
-    // 保存难句书签
-    await _saveDifficultSentences();
+    final playerState = ref.read(listenAndRepeatPlayerProvider);
 
     if (!mounted) {
       _isShowingDialog = false;
@@ -273,13 +210,11 @@ class _IntensiveListenPlayerScreenState
 
     final stepCtx = _getStepContext();
 
-    // continueToNext: true = 继续, false = 返回计划, null = 对话框未响应
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => _IntensiveListenCompleteDialog(
+      builder: (ctx) => _ListenAndRepeatCompleteDialog(
         totalSentences: playerState.totalSentences,
-        difficultCount: playerState.difficultSentences.length,
         stepIndex: stepCtx.stepIndex,
         totalSteps: stepCtx.totalSteps,
         stageName: stepCtx.stageName,
@@ -296,27 +231,19 @@ class _IntensiveListenPlayerScreenState
         // 清除断点（已完成）
         await ref
             .read(learningProgressNotifierProvider.notifier)
-            .saveIntensiveListenSentenceIndex(widget.audioItemId, null);
+            .saveShadowingSentenceIndex(widget.audioItemId, null);
 
         // 推进子步骤
         await ref
             .read(learningProgressNotifierProvider.notifier)
             .completeCurrentSubStage(widget.audioItemId);
       } catch (e) {
-        debugPrint('精听完成处理出错: $e');
+        debugPrint('跟读完成处理出错: $e');
       }
 
-      if (result == true) {
-        // 继续下一步 → 进入难句跟读
-        await ref.read(learningSessionProvider.notifier).exitLearningMode();
-        if (mounted) {
-          _startListenAndRepeat();
-        }
-      } else {
-        // 返回计划页
-        await ref.read(learningSessionProvider.notifier).exitLearningMode();
-        if (mounted) context.pop();
-      }
+      // 目前跟读后的步骤暂无播放器，统一返回计划页
+      await ref.read(learningSessionProvider.notifier).exitLearningMode();
+      if (mounted) context.pop();
     }
   }
 
@@ -325,11 +252,11 @@ class _IntensiveListenPlayerScreenState
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    final playerState = ref.watch(intensiveListenPlayerProvider);
-    final player = ref.read(intensiveListenPlayerProvider.notifier);
+    final playerState = ref.watch(listenAndRepeatPlayerProvider);
+    final player = ref.read(listenAndRepeatPlayerProvider.notifier);
 
     // 监听完成状态
-    ref.listen<IntensiveListenState>(intensiveListenPlayerProvider, (
+    ref.listen<ListenAndRepeatPlayerState>(listenAndRepeatPlayerProvider, (
       prev,
       next,
     ) {
@@ -363,15 +290,14 @@ class _IntensiveListenPlayerScreenState
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(l10n.intensiveListenAppBarTitle),
+          title: Text(l10n.listenAndRepeatAppBarTitle),
           centerTitle: true,
           actions: [
             IconButton(
               icon: const Icon(Icons.tune),
-              tooltip: l10n.intensiveListenSettings,
-              onPressed: () {
-                showIntensiveListenSettingsSheet(context: context);
-              },
+              onPressed: () => showListenAndRepeatSettingsSheet(
+                context: context,
+              ),
             ),
           ],
         ),
@@ -387,35 +313,49 @@ class _IntensiveListenPlayerScreenState
 
             // 主体内容
             Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: playerState.isAnnotationReplay
-                    ? _AnnotationReplayView(
-                        key: const ValueKey('replay'),
-                        text: currentSentence?.text ?? '',
-                        l10n: l10n,
-                      )
-                    : playerState.isAnnotationMode
-                    ? _AnnotationModeView(
-                        key: const ValueKey('annotation'),
-                        text: currentSentence?.text ?? '',
-                        isDifficult: playerState.difficultSentences.contains(
-                          playerState.currentSentenceIndex,
-                        ),
-                        l10n: l10n,
-                        onContinue: () => player.exitAnnotationMode(),
-                        onToggleDifficult: () =>
-                            player.toggleDifficultSentence(),
-                      )
-                    : _NormalModeView(
-                        key: const ValueKey('normal'),
-                        playerState: playerState,
-                        l10n: l10n,
-                        theme: theme,
-                        onPeek: () => player.toggleTextReveal(),
-                        onCantUnderstand: () => player.enterAnnotationMode(),
-                        sentenceText: currentSentence?.text,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.l),
+                child: Column(
+                  children: [
+                    // 句子卡片（带★标记）
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: currentSentence != null
+                            ? SentenceAnnotationCard(
+                                text: currentSentence.text,
+                                isDifficult: true,
+                                onToggle: _handleRemoveDifficult,
+                              )
+                            : const SizedBox.shrink(),
                       ),
+                    ),
+                    const SizedBox(height: AppSpacing.m),
+
+                    // 遍数 / 停顿倒计时
+                    SizedBox(
+                      height: 64,
+                      child: Center(
+                        child: playerState.isPauseBetweenPlays
+                            ? _PauseCountdownIndicator(
+                                remaining: playerState.pauseRemaining,
+                                total: playerState.pauseDuration,
+                                isBetweenSentences:
+                                    playerState.isPauseBetweenSentences,
+                                l10n: l10n,
+                              )
+                            : Text(
+                                l10n.listenAndRepeatPlayCount(
+                                  playerState.currentPlayCount,
+                                  playerState.settings.repeatCount,
+                                ),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -425,9 +365,7 @@ class _IntensiveListenPlayerScreenState
               onPrevious: () => player.goToPrevious(),
               onNext: () => player.goToNext(),
               onPlayPause: () {
-                if (playerState.isAnnotationMode) {
-                  player.replayInAnnotationMode();
-                } else if (playerState.isPlaying) {
+                if (playerState.isPlaying) {
                   player.pause();
                 } else {
                   player.resume();
@@ -443,7 +381,7 @@ class _IntensiveListenPlayerScreenState
 
 /// 顶部进度条区域
 class _ProgressSection extends StatelessWidget {
-  final IntensiveListenState playerState;
+  final ListenAndRepeatPlayerState playerState;
   final AppLocalizations l10n;
 
   /// 句子时长文本（如 "3.5s"），为 null 时不显示
@@ -488,7 +426,7 @@ class _ProgressSection extends StatelessWidget {
           Row(
             children: [
               Text(
-                l10n.intensiveListenProgress(current, total),
+                l10n.listenAndRepeatProgress(current, total),
                 style: subtitleStyle,
               ),
               const Spacer(),
@@ -506,138 +444,10 @@ class _ProgressSection extends StatelessWidget {
   }
 }
 
-/// 普通模式视图（文字遮盖 / 偷看）
-class _NormalModeView extends StatelessWidget {
-  final IntensiveListenState playerState;
-  final AppLocalizations l10n;
-  final ThemeData theme;
-  final VoidCallback onPeek;
-  final VoidCallback onCantUnderstand;
-  final String? sentenceText;
-
-  const _NormalModeView({
-    super.key,
-    required this.playerState,
-    required this.l10n,
-    required this.theme,
-    required this.onPeek,
-    required this.onCantUnderstand,
-    this.sentenceText,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.l),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // 遮盖/偷看区域
-          Expanded(
-            child: Center(
-              child: playerState.isTextRevealed && sentenceText != null
-                  ? Text(
-                      sentenceText!,
-                      style: theme.textTheme.titleMedium?.copyWith(height: 1.6),
-                      textAlign: TextAlign.center,
-                    )
-                  : _HiddenTextPlaceholder(),
-            ),
-          ),
-
-          // 固定高度区域：播放遍数 或 间隔倒计时
-          SizedBox(
-            height: 64,
-            child: Center(
-              child: playerState.isPauseBetweenPlays
-                  ? _PauseCountdownIndicator(
-                      remaining: playerState.pauseRemaining,
-                      total: playerState.pauseDuration,
-                      isBetweenSentences: playerState.isPauseBetweenSentences,
-                      l10n: l10n,
-                    )
-                  : Text(
-                      l10n.intensiveListenPlayCount(
-                        playerState.currentPlayCount,
-                        playerState.settings.repeatCount,
-                      ),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.l),
-
-          // 操作按钮行
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              OutlinedButton.icon(
-                onPressed: onPeek,
-                icon: Icon(
-                  playerState.isTextRevealed
-                      ? Icons.visibility_off
-                      : Icons.visibility,
-                ),
-                label: Text(
-                  playerState.isTextRevealed
-                      ? l10n.intensiveListenHideSubtitle
-                      : l10n.intensiveListenPeek,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.m),
-              FilledButton.tonal(
-                onPressed: onCantUnderstand,
-                child: Text(l10n.intensiveListenCantUnderstand),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 隐藏文本占位（灰色线条）
-class _HiddenTextPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.hearing,
-          size: 48,
-          color: theme.colorScheme.primary.withValues(alpha: 0.3),
-        ),
-        const SizedBox(height: AppSpacing.l),
-        // 占位灰色线条
-        for (int i = 0; i < 3; i++) ...[
-          Container(
-            width: 200 - i * 40,
-            height: 8,
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
 /// 间隔倒计时指示器
 class _PauseCountdownIndicator extends StatelessWidget {
   final Duration remaining;
   final Duration total;
-
-  /// 是否是句间停顿（true=下一句，false=下一遍）
   final bool isBetweenSentences;
   final AppLocalizations l10n;
 
@@ -657,8 +467,8 @@ class _PauseCountdownIndicator extends StatelessWidget {
     final seconds = (remainingMs / 1000).ceil();
 
     final label = isBetweenSentences
-        ? l10n.intensiveListenPauseBetweenSentences(seconds)
-        : l10n.intensiveListenPauseBetweenPlays(seconds);
+        ? l10n.listenAndRepeatPauseBetweenSentences(seconds)
+        : l10n.listenAndRepeatPauseBetweenPlays(seconds);
 
     return Column(
       children: [
@@ -681,100 +491,9 @@ class _PauseCountdownIndicator extends StatelessWidget {
   }
 }
 
-/// 标注模式视图
-class _AnnotationModeView extends StatelessWidget {
-  final String text;
-  final bool isDifficult;
-  final AppLocalizations l10n;
-  final VoidCallback onContinue;
-  final VoidCallback onToggleDifficult;
-
-  const _AnnotationModeView({
-    super.key,
-    required this.text,
-    required this.isDifficult,
-    required this.l10n,
-    required this.onContinue,
-    required this.onToggleDifficult,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.l),
-      child: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: SentenceAnnotationCard(
-                text: text,
-                isDifficult: isDifficult,
-                onToggle: onToggleDifficult,
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.m),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onContinue,
-              child: Text(l10n.intensiveListenContinue),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 标注重播模式视图（带字幕重播中）
-class _AnnotationReplayView extends StatelessWidget {
-  final String text;
-  final AppLocalizations l10n;
-
-  const _AnnotationReplayView({
-    super.key,
-    required this.text,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.l),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 显示句子文本
-            Text(
-              text,
-              style: theme.textTheme.titleMedium?.copyWith(height: 1.6),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.l),
-
-            // 播放中指示器
-            CircularProgressIndicator(strokeWidth: 2),
-            const SizedBox(height: AppSpacing.s),
-            Text(
-              l10n.intensiveListenReplayingWithSubtitle,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// 底部播放控制
 class _PlaybackControls extends StatelessWidget {
-  final IntensiveListenState playerState;
+  final ListenAndRepeatPlayerState playerState;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onPlayPause;
@@ -790,13 +509,6 @@ class _PlaybackControls extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // 标注重播模式下播放按钮禁用（自动播放中，不应干预）
-    final isPlayDisabled = playerState.isAnnotationReplay;
-
-    // 上一句/下一句：标注模式和标注重播模式下都禁用
-    final isNavDisabled =
-        playerState.isAnnotationMode || playerState.isAnnotationReplay;
-
     return Container(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.l,
@@ -809,7 +521,7 @@ class _PlaybackControls extends StatelessWidget {
         children: [
           // 上一句
           IconButton(
-            onPressed: isNavDisabled || playerState.currentSentenceIndex <= 0
+            onPressed: playerState.currentSentenceIndex <= 0
                 ? null
                 : onPrevious,
             icon: const Icon(Icons.skip_previous, size: 32),
@@ -819,33 +531,25 @@ class _PlaybackControls extends StatelessWidget {
 
           // 播放/暂停
           GestureDetector(
-            onTap: isPlayDisabled ? null : onPlayPause,
+            onTap: onPlayPause,
             child: Container(
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: isPlayDisabled
-                    ? theme.colorScheme.surfaceContainerHighest
-                    : theme.colorScheme.primary,
+                color: theme.colorScheme.primary,
                 shape: BoxShape.circle,
-                boxShadow: isPlayDisabled
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withValues(
-                            alpha: 0.3,
-                          ),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Icon(
                 playerState.isPlaying ? Icons.pause : Icons.play_arrow,
                 size: 32,
-                color: isPlayDisabled
-                    ? theme.colorScheme.onSurfaceVariant
-                    : theme.colorScheme.onPrimary,
+                color: theme.colorScheme.onPrimary,
               ),
             ),
           ),
@@ -853,10 +557,8 @@ class _PlaybackControls extends StatelessWidget {
 
           // 下一句
           IconButton(
-            onPressed:
-                isNavDisabled ||
-                    playerState.currentSentenceIndex >=
-                        playerState.totalSentences - 1
+            onPressed: playerState.currentSentenceIndex >=
+                    playerState.totalSentences - 1
                 ? null
                 : onNext,
             icon: const Icon(Icons.skip_next, size: 32),
@@ -868,21 +570,17 @@ class _PlaybackControls extends StatelessWidget {
   }
 }
 
-/// 精听完成对话框 — 双按钮（返回计划 / 继续下一步）
-///
-/// 返回 true 表示"继续下一步"，false 表示"返回计划"。
-class _IntensiveListenCompleteDialog extends StatelessWidget {
+/// 跟读完成对话框 — 双按钮（返回计划 / 继续下一步）
+class _ListenAndRepeatCompleteDialog extends StatelessWidget {
   final int totalSentences;
-  final int difficultCount;
   final int stepIndex;
   final int totalSteps;
   final String stageName;
   final String? nextStepName;
   final bool isLastStep;
 
-  const _IntensiveListenCompleteDialog({
+  const _ListenAndRepeatCompleteDialog({
     required this.totalSentences,
-    required this.difficultCount,
     required this.stepIndex,
     required this.totalSteps,
     required this.stageName,
@@ -902,14 +600,13 @@ class _IntensiveListenCompleteDialog extends StatelessWidget {
           children: [
             Icon(Icons.check_circle, color: theme.colorScheme.primary),
             const SizedBox(width: AppSpacing.s),
-            Text(l10n.intensiveListenCompleteTitle),
+            Text(l10n.listenAndRepeatCompleteTitle),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 步骤进度
             Text(
               l10n.stepProgressLabel(stepIndex + 1, totalSteps, stageName),
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -917,28 +614,19 @@ class _IntensiveListenCompleteDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.s),
-            // 完成统计
             Text(
-              l10n.intensiveListenCompleteMessage(totalSentences, difficultCount),
+              l10n.listenAndRepeatCompleteMessage(totalSentences),
               style: theme.textTheme.bodyMedium,
             ),
           ],
         ),
-        // 底部操作按钮（返回计划 + 继续 同一行）
         actions: _buildActions(context, l10n),
       ),
     );
   }
 
-  /// 构建底部操作按钮
-  ///
-  /// 三种情况：
-  /// 1. 有下一步可继续：[返回计划 Outlined] [继续：X Filled] 同一行
-  /// 2. 末步骤：[完成首学/复习 Filled]（全宽）
-  /// 3. 非末步骤但下一步不可用：[返回计划 Filled]（全宽）
   List<Widget> _buildActions(BuildContext context, AppLocalizations l10n) {
     if (nextStepName != null) {
-      // 情况 1：有下一步可继续 — 返回计划（左） + 继续（右）
       return [
         Row(
           children: [
@@ -959,7 +647,6 @@ class _IntensiveListenCompleteDialog extends StatelessWidget {
         ),
       ];
     } else if (isLastStep) {
-      // 情况 2：末步骤 — 完成按钮全宽
       final l10nCtx = AppLocalizations.of(context)!;
       final isFirstStudy = stageName == l10nCtx.firstStudy ||
           stageName == LearningStage.firstLearn.label;
@@ -977,7 +664,6 @@ class _IntensiveListenCompleteDialog extends StatelessWidget {
         ),
       ];
     } else {
-      // 情况 3：非末步骤但下一步不可用 — 返回计划全宽
       return [
         SizedBox(
           width: double.infinity,

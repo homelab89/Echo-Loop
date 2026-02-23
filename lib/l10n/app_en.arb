@@ -392,7 +392,7 @@
   "intensiveListenPauseFixed": "Fixed",
   "intensiveListenPauseMultiplierMode": "Multiplier",
   "intensiveListenSettingsTemporaryHint": "Settings apply to this session only",
-  "intensiveListenPauseSmartDesc": "Auto-adjusted by sentence length",
+  "intensiveListenPauseSmartDesc": "Auto-adjusted based on difficulty, sentence length, and learning stage",
   "intensiveListenPauseFixedUnit": "{seconds}s",
   "@intensiveListenPauseFixedUnit": {
     "placeholders": {
@@ -448,6 +448,68 @@
       "name": {
         "type": "String"
       }
+    }
+  },
+  "listenAndRepeatAppBarTitle": "Listen & Repeat",
+  "listenAndRepeatProgress": "Repeat {current}/{total}",
+  "@listenAndRepeatProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "listenAndRepeatPlayCount": "Play {current}/{total}",
+  "@listenAndRepeatPlayCount": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "listenAndRepeatPauseBetweenPlays": "Repeat time {seconds}s",
+  "@listenAndRepeatPauseBetweenPlays": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "listenAndRepeatPauseBetweenSentences": "Next sentence in {seconds}s",
+  "@listenAndRepeatPauseBetweenSentences": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "listenAndRepeatCompleteTitle": "Listen & Repeat Complete",
+  "listenAndRepeatCompleteMessage": "You've completed listen & repeat for all {total} difficult sentences.",
+  "@listenAndRepeatCompleteMessage": {
+    "placeholders": {
+      "total": { "type": "int" }
+    }
+  },
+  "listenAndRepeatNoDifficultSentences": "No difficult sentences marked. Skipping listen & repeat.",
+  "exitListenAndRepeatTitle": "Exit Listen & Repeat?",
+  "exitListenAndRepeatMessage": "Your progress will be saved. You can continue from where you left off.",
+  "listenAndRepeatBriefingTitle": "Listen & Repeat",
+  "listenAndRepeatBriefingSubtitle": "First Study - Listen & Repeat",
+  "listenAndRepeatBriefingTip": "Listen to each sentence, then repeat it aloud during the pause.",
+  "listenAndRepeatBriefingDifficultCount": "{count} difficult sentences",
+  "@listenAndRepeatBriefingDifficultCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "listenAndRepeatBriefingPlayCount": "{count} plays per sentence",
+  "@listenAndRepeatBriefingPlayCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "listenAndRepeatRemoveDifficult": "Marked difficult, tap to remove",
+  "listenAndRepeatSettings": "Repeat Settings",
+  "listenAndRepeatSettingsTemporaryHint": "Settings apply to this session only",
+  "listenAndRepeatPauseSmartDesc": "Auto-adjusted based on difficulty, sentence length, and learning stage",
+  "sentenceDuration": "{duration}s",
+  "@sentenceDuration": {
+    "placeholders": {
+      "duration": { "type": "String" }
     }
   }
 }

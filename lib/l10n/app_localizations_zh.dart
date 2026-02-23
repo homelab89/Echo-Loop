@@ -787,7 +787,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get intensiveListenSettingsTemporaryHint => '设置仅对本次精听有效';
 
   @override
-  String get intensiveListenPauseSmartDesc => '根据句子长度自动判定';
+  String get intensiveListenPauseSmartDesc => '根据难度、句子长度和学习阶段自动调整';
 
   @override
   String intensiveListenPauseFixedUnit(int seconds) {
@@ -855,5 +855,81 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String deleteTagConfirm(String name) {
     return '确定要删除「$name」吗？将从所有音频中移除。';
+  }
+
+  @override
+  String get listenAndRepeatAppBarTitle => '难句跟读';
+
+  @override
+  String listenAndRepeatProgress(int current, int total) {
+    return '跟读 $current/$total';
+  }
+
+  @override
+  String listenAndRepeatPlayCount(int current, int total) {
+    return '第 $current/$total 遍';
+  }
+
+  @override
+  String listenAndRepeatPauseBetweenPlays(int seconds) {
+    return '跟读时间 $seconds秒';
+  }
+
+  @override
+  String listenAndRepeatPauseBetweenSentences(int seconds) {
+    return '$seconds秒后播放下一句';
+  }
+
+  @override
+  String get listenAndRepeatCompleteTitle => '跟读完成';
+
+  @override
+  String listenAndRepeatCompleteMessage(int total) {
+    return '你已完成全部 $total 个难句的跟读练习。';
+  }
+
+  @override
+  String get listenAndRepeatNoDifficultSentences => '没有标记难句，跳过跟读环节。';
+
+  @override
+  String get exitListenAndRepeatTitle => '退出跟读？';
+
+  @override
+  String get exitListenAndRepeatMessage => '进度已保存，下次可从断点继续。';
+
+  @override
+  String get listenAndRepeatBriefingTitle => '难句跟读';
+
+  @override
+  String get listenAndRepeatBriefingSubtitle => '首学 - 难句跟读';
+
+  @override
+  String get listenAndRepeatBriefingTip => '听完后跟读，在停顿时间内大声朗读这个句子。';
+
+  @override
+  String listenAndRepeatBriefingDifficultCount(int count) {
+    return '$count 个难句';
+  }
+
+  @override
+  String listenAndRepeatBriefingPlayCount(int count) {
+    return '每句 $count 遍';
+  }
+
+  @override
+  String get listenAndRepeatRemoveDifficult => '已标记难句，点此取消收藏';
+
+  @override
+  String get listenAndRepeatSettings => '跟读设置';
+
+  @override
+  String get listenAndRepeatSettingsTemporaryHint => '设置仅对本次跟读有效';
+
+  @override
+  String get listenAndRepeatPauseSmartDesc => '根据难度、句子长度和学习阶段自动调整';
+
+  @override
+  String sentenceDuration(String duration) {
+    return '$duration秒';
   }
 }

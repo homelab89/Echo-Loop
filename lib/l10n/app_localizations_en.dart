@@ -806,7 +806,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get intensiveListenPauseSmartDesc =>
-      'Auto-adjusted by sentence length';
+      'Auto-adjusted based on difficulty, sentence length, and learning stage';
 
   @override
   String intensiveListenPauseFixedUnit(int seconds) {
@@ -874,5 +874,87 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String deleteTagConfirm(String name) {
     return 'Are you sure you want to delete \"$name\"? It will be removed from all audio.';
+  }
+
+  @override
+  String get listenAndRepeatAppBarTitle => 'Listen & Repeat';
+
+  @override
+  String listenAndRepeatProgress(int current, int total) {
+    return 'Repeat $current/$total';
+  }
+
+  @override
+  String listenAndRepeatPlayCount(int current, int total) {
+    return 'Play $current/$total';
+  }
+
+  @override
+  String listenAndRepeatPauseBetweenPlays(int seconds) {
+    return 'Repeat time ${seconds}s';
+  }
+
+  @override
+  String listenAndRepeatPauseBetweenSentences(int seconds) {
+    return 'Next sentence in ${seconds}s';
+  }
+
+  @override
+  String get listenAndRepeatCompleteTitle => 'Listen & Repeat Complete';
+
+  @override
+  String listenAndRepeatCompleteMessage(int total) {
+    return 'You\'ve completed listen & repeat for all $total difficult sentences.';
+  }
+
+  @override
+  String get listenAndRepeatNoDifficultSentences =>
+      'No difficult sentences marked. Skipping listen & repeat.';
+
+  @override
+  String get exitListenAndRepeatTitle => 'Exit Listen & Repeat?';
+
+  @override
+  String get exitListenAndRepeatMessage =>
+      'Your progress will be saved. You can continue from where you left off.';
+
+  @override
+  String get listenAndRepeatBriefingTitle => 'Listen & Repeat';
+
+  @override
+  String get listenAndRepeatBriefingSubtitle => 'First Study - Listen & Repeat';
+
+  @override
+  String get listenAndRepeatBriefingTip =>
+      'Listen to each sentence, then repeat it aloud during the pause.';
+
+  @override
+  String listenAndRepeatBriefingDifficultCount(int count) {
+    return '$count difficult sentences';
+  }
+
+  @override
+  String listenAndRepeatBriefingPlayCount(int count) {
+    return '$count plays per sentence';
+  }
+
+  @override
+  String get listenAndRepeatRemoveDifficult =>
+      'Marked difficult, tap to remove';
+
+  @override
+  String get listenAndRepeatSettings => 'Repeat Settings';
+
+  @override
+  String get listenAndRepeatSettingsTemporaryHint =>
+      'Settings apply to this session only';
+
+  @override
+  String get listenAndRepeatPauseSmartDesc =>
+      'Auto-adjusted based on difficulty, sentence length, and learning stage';
+
+  @override
+  String sentenceDuration(String duration) {
+    return '${duration}s';
   }
 }
