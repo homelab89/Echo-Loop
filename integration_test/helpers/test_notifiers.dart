@@ -91,6 +91,9 @@ LearningProgress createTestLearningProgress({
   DateTime? currentStageStartedAt,
   int totalStudyDurationMs = 0,
   int blindListenPassCount = 0,
+  int? intensiveListenDifficultCount,
+  int? intensiveListenPassCount,
+  int? shadowingPassCount,
   int? intensiveListenSentenceIndex,
   DateTime? updatedAt,
 }) {
@@ -104,6 +107,9 @@ LearningProgress createTestLearningProgress({
     currentStageStartedAt: currentStageStartedAt,
     totalStudyDurationMs: totalStudyDurationMs,
     blindListenPassCount: blindListenPassCount,
+    intensiveListenDifficultCount: intensiveListenDifficultCount,
+    intensiveListenPassCount: intensiveListenPassCount,
+    shadowingPassCount: shadowingPassCount,
     intensiveListenSentenceIndex: intensiveListenSentenceIndex,
     updatedAt: updatedAt ?? DateTime(2026, 1, 1),
   );
@@ -469,6 +475,48 @@ class TestLearningProgressNotifier extends LearningProgressNotifier {
     newMap[audioItemId] = progress.copyWith(
       shadowingSentenceIndex: sentenceIndex,
       clearShadowingSentenceIndex: sentenceIndex == null,
+      updatedAt: DateTime.now(),
+    );
+    state = state.copyWith(progressMap: newMap);
+  }
+
+  @override
+  Future<void> saveDifficultCount(
+    String audioItemId,
+    int count,
+  ) async {
+    final progress = state.progressMap[audioItemId];
+    if (progress == null) return;
+
+    final newMap = Map<String, LearningProgress>.from(state.progressMap);
+    newMap[audioItemId] = progress.copyWith(
+      intensiveListenDifficultCount: count,
+      updatedAt: DateTime.now(),
+    );
+    state = state.copyWith(progressMap: newMap);
+  }
+
+  @override
+  Future<void> incrementIntensiveListenPassCount(String audioItemId) async {
+    final progress = state.progressMap[audioItemId];
+    if (progress == null) return;
+
+    final newMap = Map<String, LearningProgress>.from(state.progressMap);
+    newMap[audioItemId] = progress.copyWith(
+      intensiveListenPassCount: (progress.intensiveListenPassCount ?? 0) + 1,
+      updatedAt: DateTime.now(),
+    );
+    state = state.copyWith(progressMap: newMap);
+  }
+
+  @override
+  Future<void> incrementShadowingPassCount(String audioItemId) async {
+    final progress = state.progressMap[audioItemId];
+    if (progress == null) return;
+
+    final newMap = Map<String, LearningProgress>.from(state.progressMap);
+    newMap[audioItemId] = progress.copyWith(
+      shadowingPassCount: (progress.shadowingPassCount ?? 0) + 1,
       updatedAt: DateTime.now(),
     );
     state = state.copyWith(progressMap: newMap);
@@ -913,13 +961,26 @@ class TestListenAndRepeatPlayer extends ListenAndRepeatPlayer {
   }
 }
 
-/// 测试用 BookmarkDao — 所有方法 no-op
+/// 测试用 BookmarkDao — 支持 watchByAudioId 返回可控 Stream
 ///
 /// 精听播放器退出时会通过 BookmarkDao 保存难句书签，
-/// 集成测试中不需要真实数据库操作。
+/// 学习计划页通过 watchByAudioId 实时查询难句数。
+/// [bookmarkCount] 控制 watchByAudioId 返回的书签数量。
 class TestBookmarkDao implements BookmarkDao {
+  /// 设置书签数量，watchByAudioId 会返回对应数量的 mock 书签
+  int bookmarkCount = 0;
+
   @override
-  dynamic noSuchMethod(Invocation invocation) => null;
+  dynamic noSuchMethod(Invocation invocation) {
+    // watchByAudioId 需返回 Stream，其他方法返回 null
+    final memberName = invocation.memberName.toString();
+    if (memberName.contains('watchByAudioId')) {
+      return Stream.value(
+        List.generate(bookmarkCount, (i) => null),
+      );
+    }
+    return null;
+  }
 }
 
 // ========== App 工厂 ==========
