@@ -54,6 +54,9 @@ class LearningProgresses extends Table {
   /// 跟读断点续学句子索引（null 表示从头开始）
   IntColumn get shadowingSentenceIndex => integer().nullable()();
 
+  /// 难句补练断点续学句子索引（null 表示从头开始）
+  IntColumn get difficultPracticeSentenceIndex => integer().nullable()();
+
   /// 复述断点续学段落索引（null 表示从头开始）
   IntColumn get retellParagraphIndex => integer().nullable()();
 

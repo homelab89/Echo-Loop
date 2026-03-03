@@ -1,7 +1,138 @@
 # Fluency 项目规划
 
-> 最后更新：2026-02-26
-> 当前阶段：Milestone 1 已完成 ✅，Drift 迁移已完成 ✅，资源库 Tab 改造已完成 ✅，Milestone 2 进行中（复习提醒闭环、复习占位流程、未解锁复习防提前学习、首轮6小时解锁、复习解锁统一时钟与边界自动化测试、复习入口弹窗直达与ReviewHub移除、复习逾期窗口策略与自动化测试已完成）
+> 最后更新：2026-03-02
+> 当前任务：Bug 修复（3 个）
+
+---
+
+## 当前计划：Bug 修复
+
+### Bug 1：跟读自由练习模式最后一句无停顿直接退出
+
+**根因**：
+
+1. **Provider 层**（`listen_and_repeat_player_provider.dart` 第 336-340 行）：
+   `_autoAdvance()` 检测到最后一句后立即设置 `isCompleted = true` 并 return，完全跳过了句末停顿逻辑。
+
+2. **Screen 层**（`listen_and_repeat_player_screen.dart` 第 204-211 行）：
+   `_handleCompleted()` 在 `isFreePlay` 模式下直接 `context.pop()` 退出页面，没有弹窗。
+
+**修复步骤**：
+
+1. **Provider — `_autoAdvance()` 最后一句也走停顿流程**
+   - 文件：`lib/providers/learning_session/listen_and_repeat_player_provider.dart`
+   - 移除最后一句的提前 return，改为统一调用 `_engine.autoAdvance()`
+   - 在 `onAdvance` 回调中判断：最后一句则标记 `isCompleted = true`，否则推进到下一句
+
+2. **Provider — 新增 `resetToStart()` 方法**
+   - 文件同上
+   - `_engine.invalidateSession()` → 重置 state 到第一句 → `startPlaying()`
+
+3. **Screen — `_handleCompleted()` 自由练习弹出对话框**
+   - 文件：`lib/screens/listen_and_repeat_player_screen.dart`
+   - `isFreePlay` 分支改为弹出 `_FreePlayCompleteDialog`
+   - 返回 `true` = 完成退出 → `context.pop()`，`null` = 再来一遍 → `resetToStart()`
+   - 无论哪种选择都递增遍数
+
+4. **Screen — 新增 `_FreePlayCompleteDialog` 组件**
+   - 复用 `_RetellCompleteDialog` 模式：标题行 + 统计内容 + "再来一遍"(TextButton) + "完成练习"(FilledButton)
+
+---
+
+### Bug 2：精听自由练习模式最后一句无停顿直接退出
+
+**根因**：与 Bug 1 完全相同的模式。
+
+1. **Provider 层**（`intensive_listen_player_provider.dart` 第 463-468 行）
+2. **Screen 层**（`intensive_listen_player_screen.dart` 第 343-353 行）
+
+**修复步骤**：
+
+1. **Provider — `_autoAdvance()` 最后一句也走停顿流程**
+   - 文件：`lib/providers/learning_session/intensive_listen_player_provider.dart`
+   - 精听使用内联 `_startCountdown` + `Future.delayed` 机制
+   - 移除最后一句的提前 return，统一执行停顿后判断：最后一句 → `isCompleted = true`，否则推进
+
+2. **Provider — 新增 `resetToStart()` 方法**
+
+3. **Screen — `_handleCompleted()` 自由练习弹出对话框**
+   - 文件：`lib/screens/intensive_listen_player_screen.dart`
+   - 同 Bug 1 模式，弹出 `_FreePlayCompleteDialog`
+
+4. **Screen — 新增 `_FreePlayCompleteDialog` 组件**
+
+---
+
+### Bug 3：段落复述字幕显示选项只在播放完后才能点击
+
+**根因**：`retell_player_screen.dart` 第 296-298 行
+
+```dart
+onSelectionChanged: state.phase == RetellPhase.retelling
+    ? (selected) => player.setDisplayMode(selected.first)
+    : null,
+```
+
+`SegmentedButton` 被 `RetellPhase.retelling` 门控，`listening` 阶段不可点击。
+
+**修复步骤**：
+
+1. **一行修改**：移除 phase 条件，始终允许切换
+   ```dart
+   onSelectionChanged: (selected) => player.setDisplayMode(selected.first),
+   ```
+
+---
+
+### 国际化新增 Key
+
+| Key | 中文 | 英文 |
+|-----|------|------|
+| `shadowingCompleteTitle` | 跟读完成 | Shadowing Complete |
+| `shadowingCompleteMessage` | 共 {count} 句跟读完成 | {count} sentences shadowed |
+| `intensiveListenCompleteTitle` | 精听完成 | Intensive Listening Complete |
+| `intensiveListenCompleteMessage` | 共 {count} 句精听完成 | {count} sentences listened |
+| `practiceAgain` | 再来一遍 | Practice Again |
+| `practiceComplete` | 完成练习 | Practice Complete |
+
+> 注：`practiceAgain` 和 `practiceComplete` 作为通用 key，跟读/精听共用。也可复用现有 `retellPracticeAgain` 和 `retellCompleteFreePlay`，如确认文案一致则不新增。
+
+---
+
+### 代码生成
+
+```bash
+flutter gen-l10n
+dart run build_runner build --delete-conflicting-outputs
+```
+
+---
+
+### 影响范围
+
+| 文件 | 改动类型 |
+|------|----------|
+| `lib/providers/learning_session/listen_and_repeat_player_provider.dart` | 改 `_autoAdvance` + 新增 `resetToStart` |
+| `lib/screens/listen_and_repeat_player_screen.dart` | 改 `_handleCompleted` + 新增 `_FreePlayCompleteDialog` |
+| `lib/providers/learning_session/intensive_listen_player_provider.dart` | 改 `_autoAdvance` + 新增 `resetToStart` |
+| `lib/screens/intensive_listen_player_screen.dart` | 改 `_handleCompleted` + 新增 `_FreePlayCompleteDialog` |
+| `lib/screens/retell_player_screen.dart` | 一行改动（移除 phase 条件） |
+| `lib/l10n/app_zh.arb` | 新增 i18n key |
+| `lib/l10n/app_en.arb` | 新增 i18n key |
+
+---
+
+### 验证步骤
+
+1. `flutter analyze` — 无错误
+2. `flutter test` — 现有测试通过
+3. 手动验证：
+   - 跟读自由练习 → 最后一句播完 → 有跟读停顿 → 弹窗"完成/再来一遍"
+   - 精听自由练习 → 最后一句播完 → 有停顿 → 弹窗"完成/再来一遍"
+   - 段落复述 → 播放阶段即可切换字幕显示模式
+   - 正常模式（非自由练习）不受影响
+
+---
 
 ## 项目概述
 

@@ -332,15 +332,12 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
     );
   }
 
-  /// 自动推进到下一句
+  /// 自动推进到下一句（最后一句也走停顿流程）
   Future<void> _autoAdvance() async {
-    if (state.currentSentenceIndex >= state.totalSentences - 1) {
-      // 最后一句 → 标记完成
-      state = state.copyWith(isCompleted: true, isPlaying: false);
-      return;
-    }
+    final isLastSentence =
+        state.currentSentenceIndex >= state.totalSentences - 1;
 
-    // 句间停顿
+    // 所有句子（包括最后一句）都走停顿，给用户跟读时间
     final sentence = currentSentence;
     final calculator = _buildPauseCalculator();
     final pauseDur = sentence != null
@@ -362,15 +359,40 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
         state = state.copyWith(pauseRemaining: remaining);
       },
       onAdvance: () async {
-        state = state.copyWith(
-          currentSentenceIndex: state.currentSentenceIndex + 1,
-          currentPlayCount: 1,
-          isPauseBetweenPlays: false,
-          isPauseBetweenSentences: false,
-        );
-        _startSentence();
+        if (isLastSentence) {
+          // 最后一句停顿结束 → 标记完成
+          state = state.copyWith(
+            isCompleted: true,
+            isPlaying: false,
+            isPauseBetweenPlays: false,
+            isPauseBetweenSentences: false,
+          );
+        } else {
+          // 非最后一句 → 推进到下一句
+          state = state.copyWith(
+            currentSentenceIndex: state.currentSentenceIndex + 1,
+            currentPlayCount: 1,
+            isPauseBetweenPlays: false,
+            isPauseBetweenSentences: false,
+          );
+          _startSentence();
+        }
       },
     );
+  }
+
+  /// 重置到第一句并重新开始播放（供"再来一遍"使用）
+  Future<void> resetToStart() async {
+    _engine.invalidateSession();
+    state = state.copyWith(
+      currentSentenceIndex: 0,
+      currentPlayCount: 1,
+      isCompleted: false,
+      isPlaying: false,
+      isPauseBetweenPlays: false,
+      isPauseBetweenSentences: false,
+    );
+    await startPlaying();
   }
 
   /// 根据当前设置构建停顿计算器

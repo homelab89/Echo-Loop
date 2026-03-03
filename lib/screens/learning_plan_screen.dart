@@ -128,19 +128,145 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
     }
   }
 
-  /// 复习阶段：先展示任务提示弹窗，再进入当前复习步骤页面。
+  /// 复习阶段：先展示任务提示弹窗，再按 subStage 分发到真实页面。
   void _startReviewSubStage(BuildContext context, LearningProgress progress) {
+    final subStage = progress.currentSubStage;
+
+    // 段级复述自带时长选择弹窗，无需再展示复习简报
+    if (subStage == SubStageType.reviewRetellParagraph) {
+      _startReviewRetell(context, isSummary: false);
+      return;
+    }
+
     showReviewBriefingSheet(
       context: context,
       stage: progress.currentStage,
-      subStage: progress.currentSubStage,
+      subStage: subStage,
       onStartPractice: () {
-        context.push(
-          AppRoutes.audioReviewSubStage(
-            widget.audioItemId,
-            progress.currentSubStage.key,
+        switch (subStage) {
+          case SubStageType.blindListen:
+            _startReviewBlindListen(context);
+          case SubStageType.reviewDifficultPractice:
+            _startReviewDifficultPractice(context);
+          case SubStageType.reviewRetellSummary:
+            _startReviewRetell(context, isSummary: true);
+          default:
+            // 不应到达，回退到计划页
+            break;
+        }
+      },
+    );
+  }
+
+  /// 复习盲听：复用 BlindListenPlayerScreen，1 遍、无难度选择
+  Future<void> _startReviewBlindListen(BuildContext context) async {
+    await ref
+        .read(learningSessionProvider.notifier)
+        .enterBlindListenMode(widget.audioItemId);
+    if (mounted) {
+      context.push(
+        AppRoutes.blindListenPlayer(widget.collectionId, widget.audioItemId),
+      );
+    }
+  }
+
+  /// 复习难句补练：进入 ReviewDifficultPracticeScreen
+  Future<void> _startReviewDifficultPractice(BuildContext context) async {
+    final lpState = ref.read(listeningPracticeProvider);
+
+    if (lpState.sentences.isEmpty) {
+      // 无字幕 → 跳过
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!
+                .reviewDifficultPracticeNone),
           ),
         );
+      }
+      return;
+    }
+
+    await ref
+        .read(learningSessionProvider.notifier)
+        .enterReviewDifficultPracticeMode(
+          widget.audioItemId,
+          lpState.sentences,
+        );
+    if (mounted) {
+      context.push(
+        AppRoutes.reviewDifficultPractice(
+          widget.collectionId,
+          widget.audioItemId,
+        ),
+      );
+    }
+  }
+
+  /// 复习复述：复用 RetellPlayerScreen
+  ///
+  /// [isSummary] 为 true 时全文作为单个段落（reviewRetellSummary）
+  Future<void> _startReviewRetell(
+    BuildContext context, {
+    required bool isSummary,
+  }) async {
+    final lpState = ref.read(listeningPracticeProvider);
+
+    if (lpState.sentences.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.intensiveListenNoSubtitle,
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (isSummary) {
+      // reviewRetellSummary：全文作为单个段落，无需选择时长
+      final keywordsMap = extractKeywords(
+        lpState.sentences,
+        ratio: KeywordRatio.oneThird,
+      );
+      await ref.read(learningSessionProvider.notifier).enterRetellMode(
+            widget.audioItemId,
+            [lpState.sentences],
+            keywordsMap,
+          );
+      if (mounted) {
+        context.push(
+          AppRoutes.retellPlayer(widget.collectionId, widget.audioItemId),
+        );
+      }
+      return;
+    }
+
+    // reviewRetellParagraph：弹出简报面板让用户选择段落时长
+    showRetellBriefingSheet(
+      context: context,
+      sentences: lpState.sentences,
+      onStartPractice: (targetDuration) async {
+        final paragraphs = groupSentencesIntoParagraphs(
+          lpState.sentences,
+          targetDuration,
+        );
+        final keywordsMap = extractKeywords(
+          lpState.sentences,
+          ratio: KeywordRatio.oneThird,
+        );
+        await ref.read(learningSessionProvider.notifier).enterRetellMode(
+              widget.audioItemId,
+              paragraphs,
+              keywordsMap,
+            );
+        if (mounted) {
+          context.push(
+            AppRoutes.retellPlayer(widget.collectionId, widget.audioItemId),
+          );
+        }
       },
     );
   }
@@ -401,6 +527,8 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
                       progress: progress,
                       review: review,
                       now: now,
+                      collectionId: widget.collectionId,
+                      audioItemId: widget.audioItemId,
                       isExpanded: _isReviewRoundExpanded(
                         review.stage,
                         progress,
@@ -1102,11 +1230,17 @@ class _ReviewStageData {
 /// 单个复习轮次区块（与首学同级）
 ///
 /// 视觉与首学区块保持一致：标题行可独立折叠/展开，展开后显示子阶段。
-class _ReviewRoundSection extends StatelessWidget {
+class _ReviewRoundSection extends ConsumerWidget {
   final AppLocalizations l10n;
   final LearningProgress? progress;
   final _ReviewStageData review;
   final DateTime now;
+
+  /// 合集 ID（导航用）
+  final String? collectionId;
+
+  /// 音频项 ID（导航用）
+  final String audioItemId;
   final bool isExpanded;
   final VoidCallback onToggle;
 
@@ -1115,6 +1249,8 @@ class _ReviewRoundSection extends StatelessWidget {
     this.progress,
     required this.review,
     required this.now,
+    required this.collectionId,
+    required this.audioItemId,
     required this.isExpanded,
     required this.onToggle,
   });
@@ -1222,8 +1358,98 @@ class _ReviewRoundSection extends StatelessWidget {
     };
   }
 
+  /// 进入自由练习盲听模式（复习阶段的全文盲听）
+  Future<void> _startFreePlayBlindListen(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    await ref
+        .read(learningSessionProvider.notifier)
+        .enterBlindListenMode(audioItemId, isFreePlay: true);
+    if (context.mounted) {
+      context.push(
+        AppRoutes.blindListenPlayer(collectionId, audioItemId),
+      );
+    }
+  }
+
+  /// 进入自由练习难句补练模式
+  Future<void> _startFreePlayDifficultPractice(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final lpState = ref.read(listeningPracticeProvider);
+    if (lpState.sentences.isEmpty) return;
+
+    await ref
+        .read(learningSessionProvider.notifier)
+        .enterReviewDifficultPracticeMode(
+          audioItemId,
+          lpState.sentences,
+          isFreePlay: true,
+        );
+    if (context.mounted) {
+      context.push(
+        AppRoutes.reviewDifficultPractice(collectionId, audioItemId),
+      );
+    }
+  }
+
+  /// 进入自由练习复述模式（段级复述 / 全文总结复述）
+  Future<void> _startFreePlayRetell(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isSummary,
+  }) async {
+    final lpState = ref.read(listeningPracticeProvider);
+    if (lpState.sentences.isEmpty) return;
+
+    if (isSummary) {
+      // 全文总结复述：全文作为单个段落，无需选择时长
+      final keywordsMap = extractKeywords(
+        lpState.sentences,
+        ratio: KeywordRatio.oneThird,
+      );
+      await ref.read(learningSessionProvider.notifier).enterRetellMode(
+            audioItemId,
+            [lpState.sentences],
+            keywordsMap,
+            isFreePlay: true,
+          );
+      if (context.mounted) {
+        context.push(AppRoutes.retellPlayer(collectionId, audioItemId));
+      }
+      return;
+    }
+
+    // 段级复述：弹出简报面板让用户选择段落时长
+    showRetellBriefingSheet(
+      context: context,
+      sentences: lpState.sentences,
+      onStartPractice: (targetDuration) async {
+        final paragraphs = groupSentencesIntoParagraphs(
+          lpState.sentences,
+          targetDuration,
+        );
+        final keywordsMap = extractKeywords(
+          lpState.sentences,
+          ratio: KeywordRatio.oneThird,
+        );
+        await ref.read(learningSessionProvider.notifier).enterRetellMode(
+              audioItemId,
+              paragraphs,
+              keywordsMap,
+              isFreePlay: true,
+            );
+        if (context.mounted) {
+          context.push(AppRoutes.retellPlayer(collectionId, audioItemId));
+        }
+      },
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final subStages = review.stage.subStages;
     final completedCount = _completedSubStageCount();
@@ -1308,6 +1534,23 @@ class _ReviewRoundSection extends StatelessWidget {
                   false;
               final isCurrent =
                   progress?.isCurrentSubStage(review.stage, subStage) ?? false;
+
+              // 已完成的复习子步骤支持点击进入自由练习
+              VoidCallback? onTap;
+              if (isCompleted) {
+                onTap = switch (subStage) {
+                  SubStageType.blindListen =>
+                    () => _startFreePlayBlindListen(context, ref),
+                  SubStageType.reviewDifficultPractice =>
+                    () => _startFreePlayDifficultPractice(context, ref),
+                  SubStageType.reviewRetellParagraph =>
+                    () => _startFreePlayRetell(context, ref, isSummary: false),
+                  SubStageType.reviewRetellSummary =>
+                    () => _startFreePlayRetell(context, ref, isSummary: true),
+                  _ => null,
+                };
+              }
+
               return _StepCard(
                 stepNumber: index + 1,
                 icon: subStageData.icon,
@@ -1316,6 +1559,7 @@ class _ReviewRoundSection extends StatelessWidget {
                 isCompleted: isCompleted,
                 isCurrent: isCurrent,
                 isLast: index == subStages.length - 1,
+                onTap: onTap,
               );
             }),
           ),

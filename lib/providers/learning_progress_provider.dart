@@ -70,7 +70,8 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
     final existing = state.progressMap[audioItemId];
     if (existing != null) return existing;
 
-    final now = ref.read(nowProvider)();
+    // 持久化时间始终用真实时间
+    final now = DateTime.now();
     final progress = LearningProgress(
       audioItemId: audioItemId,
       currentStageStartedAt: now,
@@ -105,8 +106,11 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
   Future<void> completeCurrentSubStage(String audioItemId) async {
     final progress = state.progressMap[audioItemId];
     if (progress == null || progress.isCompleted) return;
-    final now = ref.read(nowProvider)();
-    if (progress.isReviewLockedAt(now)) return;
+    final checkNow = ref.read(nowProvider)();
+    if (progress.isReviewLockedAt(checkNow)) return;
+
+    // 持久化时间始终用真实时间，避免 debug 偏移导致复习链断裂
+    final now = DateTime.now();
 
     final stage = progress.currentStage;
     final subStages = stage.subStages;
@@ -287,6 +291,27 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
     state = state.copyWith(progressMap: newMap);
   }
 
+  /// 保存难句补练断点句子索引
+  Future<void> saveDifficultPracticeSentenceIndex(
+    String audioItemId,
+    int? sentenceIndex,
+  ) async {
+    final progress = state.progressMap[audioItemId];
+    if (progress == null) return;
+
+    final updated = progress.copyWith(
+      difficultPracticeSentenceIndex: sentenceIndex,
+      clearDifficultPracticeSentenceIndex: sentenceIndex == null,
+      updatedAt: DateTime.now(),
+    );
+
+    await _persistProgress(updated);
+
+    final newMap = Map<String, LearningProgress>.from(state.progressMap);
+    newMap[audioItemId] = updated;
+    state = state.copyWith(progressMap: newMap);
+  }
+
   /// 保存复述断点段落索引
   Future<void> saveRetellParagraphIndex(
     String audioItemId,
@@ -369,6 +394,9 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
           progress.intensiveListenSentenceIndex,
         ),
         shadowingSentenceIndex: Value(progress.shadowingSentenceIndex),
+        difficultPracticeSentenceIndex: Value(
+          progress.difficultPracticeSentenceIndex,
+        ),
         retellParagraphIndex: Value(progress.retellParagraphIndex),
         retellPassCount: Value(progress.retellPassCount),
         updatedAt: Value(progress.updatedAt),
@@ -399,6 +427,7 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
       shadowingPassCount: row.shadowingPassCount,
       intensiveListenSentenceIndex: row.intensiveListenSentenceIndex,
       shadowingSentenceIndex: row.shadowingSentenceIndex,
+      difficultPracticeSentenceIndex: row.difficultPracticeSentenceIndex,
       retellParagraphIndex: row.retellParagraphIndex,
       retellPassCount: row.retellPassCount,
       updatedAt: row.updatedAt,

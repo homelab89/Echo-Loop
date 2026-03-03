@@ -1119,4 +1119,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSessionOnly => 'Settings apply to current session only';
+
+  @override
+  String get reviewDifficultPracticeTitle => 'Difficult Sentence Practice';
+
+  @override
+  String reviewDifficultPracticeProgress(int current, int total) {
+    return '$current/$total sentences';
+  }
+
+  @override
+  String get reviewDifficultPracticeBlindListen => 'Listening...';
+
+  @override
+  String get reviewDifficultPracticeCompleteTitle =>
+      'Difficult Practice Complete';
+
+  @override
+  String reviewDifficultPracticeCompleteMessage(int total) {
+    return 'You\'ve practiced all $total difficult sentences.';
+  }
+
+  @override
+  String get reviewDifficultPracticeNone =>
+      'No difficult sentences to practice.';
+
+  @override
+  String get exitReviewDifficultPracticeTitle => 'Exit Practice?';
+
+  @override
+  String get exitReviewDifficultPracticeMessage =>
+      'Your progress will not be saved for this step.';
+
+  @override
+  String reviewDifficultPracticeAdvancing(int seconds) {
+    return 'Next sentence in ${seconds}s';
+  }
+
+  @override
+  String get developer => 'Developer';
+
+  @override
+  String get unlockAllReviews => 'Unlock All Reviews';
+
+  @override
+  String get unlockAllReviewsDescription =>
+      'Skip review time locks for testing';
 }

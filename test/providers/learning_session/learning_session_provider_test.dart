@@ -157,12 +157,13 @@ void main() {
   });
 
   group('LearningMode', () {
-    test('blindListen、intensiveListen、listenAndRepeat 和 retell 枚举存在', () {
+    test('所有学习模式枚举存在', () {
       expect(LearningMode.blindListen, isNotNull);
       expect(LearningMode.intensiveListen, isNotNull);
       expect(LearningMode.listenAndRepeat, isNotNull);
       expect(LearningMode.retell, isNotNull);
-      expect(LearningMode.values.length, 4);
+      expect(LearningMode.reviewDifficultPractice, isNotNull);
+      expect(LearningMode.values.length, 5);
     });
   });
 }

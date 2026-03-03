@@ -456,18 +456,15 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
     }
   }
 
-  /// 自动推进到下一句
+  /// 自动推进到下一句（最后一句也走停顿流程）
   ///
   /// 推进前先停顿，停顿时长由设置决定，
   /// 复用遍间停顿机制（倒计时 UI + Future.delayed）。
   Future<void> _autoAdvance() async {
-    if (state.currentSentenceIndex >= state.totalSentences - 1) {
-      // 最后一句 → 标记完成
-      state = state.copyWith(isCompleted: true, isPlaying: false);
-      return;
-    }
+    final isLastSentence =
+        state.currentSentenceIndex >= state.totalSentences - 1;
 
-    // 句间停顿
+    // 所有句子（包括最后一句）都走停顿
     final sentence = currentSentence;
     final pauseDur = sentence != null
         ? calculatePauseDuration(sentence.duration, state.settings)
@@ -492,17 +489,46 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
     // 停顿期间用户可能暂停/切句，检查 session 是否仍有效
     if (!engine.isActiveSession(sessionId)) return;
 
+    if (isLastSentence) {
+      // 最后一句停顿结束 → 标记完成
+      state = state.copyWith(
+        isCompleted: true,
+        isPlaying: false,
+        isPauseBetweenPlays: false,
+        isPauseBetweenSentences: false,
+      );
+    } else {
+      // 非最后一句 → 推进到下一句
+      state = state.copyWith(
+        currentSentenceIndex: state.currentSentenceIndex + 1,
+        currentPlayCount: 1,
+        isTextRevealed: false,
+        isPauseBetweenPlays: false,
+        isPauseBetweenSentences: false,
+        isAnnotationMode: false,
+        isAnnotationReplay: false,
+      );
+
+      _startSentence();
+    }
+  }
+
+  /// 重置到第一句并重新开始播放（供"再来一遍"使用）
+  Future<void> resetToStart() async {
+    _invalidateSession();
+    _cancelCountdown();
     state = state.copyWith(
-      currentSentenceIndex: state.currentSentenceIndex + 1,
+      currentSentenceIndex: 0,
       currentPlayCount: 1,
-      isTextRevealed: false,
+      isCompleted: false,
+      isPlaying: false,
       isPauseBetweenPlays: false,
       isPauseBetweenSentences: false,
       isAnnotationMode: false,
       isAnnotationReplay: false,
+      isTextRevealed: false,
     );
-
-    _startSentence();
+    await startPlaying();
   }
 
   /// 标注重播完成后推进（停顿由 _autoAdvance 统一处理）

@@ -1091,4 +1091,46 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsSessionOnly => '设置仅对本次会话生效';
+
+  @override
+  String get reviewDifficultPracticeTitle => '难句补练';
+
+  @override
+  String reviewDifficultPracticeProgress(int current, int total) {
+    return '$current/$total 句';
+  }
+
+  @override
+  String get reviewDifficultPracticeBlindListen => '正在播放…';
+
+  @override
+  String get reviewDifficultPracticeCompleteTitle => '难句补练完成';
+
+  @override
+  String reviewDifficultPracticeCompleteMessage(int total) {
+    return '已完成全部 $total 个难句的练习。';
+  }
+
+  @override
+  String get reviewDifficultPracticeNone => '没有需要补练的难句。';
+
+  @override
+  String get exitReviewDifficultPracticeTitle => '退出补练？';
+
+  @override
+  String get exitReviewDifficultPracticeMessage => '当前步骤的进度不会保存。';
+
+  @override
+  String reviewDifficultPracticeAdvancing(int seconds) {
+    return '$seconds秒后进入下一句';
+  }
+
+  @override
+  String get developer => '开发者';
+
+  @override
+  String get unlockAllReviews => '解锁所有复习';
+
+  @override
+  String get unlockAllReviewsDescription => '跳过复习时间锁，用于测试';
 }

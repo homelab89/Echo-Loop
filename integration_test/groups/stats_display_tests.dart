@@ -309,13 +309,18 @@ void statsDisplayTests() {
       );
       await tester.pumpAndSettle();
 
-      // 触发完成（自由练习模式直接退出）
+      // 触发完成（自由练习模式弹出完成对话框）
       final screenContext =
           tester.element(find.byType(ListenAndRepeatPlayerScreen));
       final screenContainer = ProviderScope.containerOf(screenContext);
       final p = screenContainer.read(listenAndRepeatPlayerProvider.notifier)
           as TestListenAndRepeatPlayer;
       p.setState(p.state.copyWith(isCompleted: true));
+      await tester.pumpAndSettle();
+
+      // 完成对话框弹出 → 点击"Done"完成退出
+      expect(find.text('Listen & Repeat Complete'), findsOneWidget);
+      await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
 
       // 验证跟读遍数递增

@@ -8,7 +8,6 @@ import '../providers/study_task_provider.dart';
 import '../providers/time_provider.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
-import '../widgets/review/review_briefing_sheet.dart';
 
 /// 学习任务列表页
 ///
@@ -164,23 +163,8 @@ class _TaskCard extends StatelessWidget {
           onPressed: isDisabled
               ? null
               : () {
-                  if (task.type == StudyTaskType.firstStudy) {
-                    context.push(AppRoutes.audioLearningPlan(task.audioId));
-                  } else {
-                    showReviewBriefingSheet(
-                      context: context,
-                      stage: task.stage,
-                      subStage: task.subStage,
-                      onStartPractice: () {
-                        context.push(
-                          AppRoutes.audioReviewSubStage(
-                            task.audioId,
-                            task.subStage.key,
-                          ),
-                        );
-                      },
-                    );
-                  }
+                  // 所有任务统一跳转到学习计划页，由其分发到真实播放器
+                  context.push(AppRoutes.audioLearningPlan(task.audioId));
                 },
           child: Text(_isChinese(context) ? '开始学习' : 'Start'),
         ),

@@ -29,6 +29,13 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.m),
           _buildAboutSection(context, ref, l10n),
+          const SizedBox(height: AppSpacing.m),
+          _buildDeveloperSection(
+            context,
+            l10n,
+            settings,
+            settingsController,
+          ),
         ],
       ),
     );
@@ -82,6 +89,28 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
         ListTile(leading: _emojiIcon('📖'), title: Text(l10n.appDescription)),
+      ],
+    );
+  }
+
+  /// 构建开发者选项区域
+  Widget _buildDeveloperSection(
+    BuildContext context,
+    AppLocalizations l10n,
+    AppSettingsState settings,
+    AppSettings controller,
+  ) {
+    return _buildSection(
+      context,
+      title: l10n.developer,
+      children: [
+        SwitchListTile(
+          secondary: _emojiIcon('🔧'),
+          title: Text(l10n.unlockAllReviews),
+          subtitle: Text(l10n.unlockAllReviewsDescription),
+          value: settings.unlockAllReviews,
+          onChanged: (value) => controller.setUnlockAllReviews(value),
+        ),
       ],
     );
   }

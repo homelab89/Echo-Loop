@@ -48,6 +48,9 @@ class LearningProgress {
   /// 跟读断点续学句子索引（null 表示从头开始）
   final int? shadowingSentenceIndex;
 
+  /// 难句补练断点续学句子索引（null 表示从头开始）
+  final int? difficultPracticeSentenceIndex;
+
   /// 复述断点续学段落索引（null 表示从头开始）
   final int? retellParagraphIndex;
 
@@ -72,6 +75,7 @@ class LearningProgress {
     this.shadowingPassCount,
     this.intensiveListenSentenceIndex,
     this.shadowingSentenceIndex,
+    this.difficultPracticeSentenceIndex,
     this.retellParagraphIndex,
     this.retellPassCount,
     required this.updatedAt,
@@ -233,11 +237,13 @@ class LearningProgress {
     int? shadowingPassCount,
     int? intensiveListenSentenceIndex,
     int? shadowingSentenceIndex,
+    int? difficultPracticeSentenceIndex,
     int? retellParagraphIndex,
     int? retellPassCount,
     DateTime? updatedAt,
     bool clearIntensiveListenSentenceIndex = false,
     bool clearShadowingSentenceIndex = false,
+    bool clearDifficultPracticeSentenceIndex = false,
     bool clearRetellParagraphIndex = false,
   }) {
     return LearningProgress(
@@ -263,6 +269,10 @@ class LearningProgress {
       shadowingSentenceIndex: clearShadowingSentenceIndex
           ? null
           : (shadowingSentenceIndex ?? this.shadowingSentenceIndex),
+      difficultPracticeSentenceIndex: clearDifficultPracticeSentenceIndex
+          ? null
+          : (difficultPracticeSentenceIndex ??
+              this.difficultPracticeSentenceIndex),
       retellParagraphIndex: clearRetellParagraphIndex
           ? null
           : (retellParagraphIndex ?? this.retellParagraphIndex),

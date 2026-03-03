@@ -68,9 +68,9 @@ void main() {
               const Scaffold(body: Text('Blind Listen')),
         ),
         GoRoute(
-          path: '/audio/:audioId/review/:subStage',
+          path: '/collections/:collectionId/:audioId/review-difficult-practice',
           builder: (context, state) =>
-              const Scaffold(body: Text('Review Placeholder')),
+              const Scaffold(body: Text('Review Difficult Practice')),
         ),
       ],
     );
@@ -314,7 +314,7 @@ void main() {
       expect(continueButton.onPressed, isNotNull);
     });
 
-    testWidgets('复习继续学习先弹窗再进入当前子步骤', (tester) async {
+    testWidgets('复习继续学习先弹窗再进入盲听播放器', (tester) async {
       final now = DateTime(2026, 2, 25, 12, 0);
       final progressState = LearningProgressState(
         progressMap: {
@@ -339,7 +339,8 @@ void main() {
 
       await tester.tap(find.text('Start Practice'));
       await tester.pumpAndSettle();
-      expect(find.text('Review Placeholder'), findsOneWidget);
+      // 复习盲听导航到盲听播放器页面
+      expect(find.text('Blind Listen'), findsOneWidget);
     });
 
     testWidgets('有进度时显示正确的完成步骤数', (tester) async {

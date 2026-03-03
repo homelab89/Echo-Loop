@@ -17,6 +17,7 @@ import 'blind_listen_player_provider.dart';
 import 'intensive_listen_player_provider.dart';
 import 'listen_and_repeat_player_provider.dart';
 import 'retell_player_provider.dart';
+import 'review_difficult_practice_provider.dart';
 import 'sentence_playback_engine.dart';
 import '../../database/providers.dart';
 
@@ -35,6 +36,9 @@ enum LearningMode {
 
   /// 段级复述
   retell,
+
+  /// 复习难句补练
+  reviewDifficultPractice,
 }
 
 /// 学习会话状态
@@ -310,6 +314,53 @@ class LearningSession extends _$LearningSession {
     );
   }
 
+  /// 进入复习难句补练模式
+  ///
+  /// 1. 保存当前用户播放设置
+  /// 2. 暂停 LP 的 stream 监听
+  /// 3. 从 BookmarkDao 读取难句 → 过滤句子
+  /// 4. 初始化 ReviewDifficultPractice
+  Future<void> enterReviewDifficultPracticeMode(
+    String audioItemId,
+    List<Sentence> allSentences, {
+    bool isFreePlay = false,
+  }) async {
+    final practice = ref.read(listeningPracticeProvider.notifier);
+    final currentSettings = ref.read(listeningPracticeProvider).settings;
+
+    // 从数据库读取难句索引
+    final bookmarkDao = ref.read(bookmarkDaoProvider);
+    final bookmarkedIndices = await bookmarkDao.getBookmarkedIndices(
+      audioItemId,
+    );
+
+    // 过滤出难句列表
+    final difficultSentences = allSentences
+        .where((s) => bookmarkedIndices.contains(s.index))
+        .toList();
+
+    // 从数据库读取断点句子索引
+    final progress = ref
+        .read(learningProgressNotifierProvider)
+        .progressMap[audioItemId];
+    final startIndex = progress?.difficultPracticeSentenceIndex ?? 0;
+
+    state = state.copyWith(
+      learningMode: LearningMode.reviewDifficultPractice,
+      blindListenCompleted: false,
+      audioItemId: audioItemId,
+      savedSettings: currentSettings,
+      isFreePlay: isFreePlay,
+    );
+
+    // 暂停 LP 的 stream 监听
+    practice.suspendListeners();
+
+    // 初始化难句补练播放器（传入断点索引）
+    final player = ref.read(reviewDifficultPracticeProvider.notifier);
+    player.initialize(difficultSentences, startIndex: startIndex);
+  }
+
   /// 退出学习模式
   ///
   /// 根据当前学习模式分支处理：停止播放、释放资源、恢复 LP 监听。
@@ -336,6 +387,10 @@ class LearningSession extends _$LearningSession {
       // 释放复述播放器资源
       final retellPlayer = ref.read(retellPlayerProvider.notifier);
       retellPlayer.disposePlayer();
+    } else if (mode == LearningMode.reviewDifficultPractice) {
+      // 释放难句补练播放器资源
+      final player = ref.read(reviewDifficultPracticeProvider.notifier);
+      player.disposePlayer();
     }
 
     // 通用：清除 clip 防止残留影响 LP 的 absolutePositionStream

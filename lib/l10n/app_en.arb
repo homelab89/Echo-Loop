@@ -622,5 +622,35 @@
   "pauseModeMultiplier": "Multiplier",
   "fixedPauseSeconds": "Fixed pause",
   "pauseMultiplier": "Multiplier",
-  "settingsSessionOnly": "Settings apply to current session only"
+  "settingsSessionOnly": "Settings apply to current session only",
+
+  "reviewDifficultPracticeTitle": "Difficult Sentence Practice",
+  "reviewDifficultPracticeProgress": "{current}/{total} sentences",
+  "@reviewDifficultPracticeProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "reviewDifficultPracticeBlindListen": "Listening...",
+  "reviewDifficultPracticeCompleteTitle": "Difficult Practice Complete",
+  "reviewDifficultPracticeCompleteMessage": "You've practiced all {total} difficult sentences.",
+  "@reviewDifficultPracticeCompleteMessage": {
+    "placeholders": {
+      "total": { "type": "int" }
+    }
+  },
+  "reviewDifficultPracticeNone": "No difficult sentences to practice.",
+  "exitReviewDifficultPracticeTitle": "Exit Practice?",
+  "exitReviewDifficultPracticeMessage": "Your progress will not be saved for this step.",
+  "reviewDifficultPracticeAdvancing": "Next sentence in {seconds}s",
+  "@reviewDifficultPracticeAdvancing": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+
+  "developer": "Developer",
+  "unlockAllReviews": "Unlock All Reviews",
+  "unlockAllReviewsDescription": "Skip review time locks for testing"
 }

@@ -480,5 +480,35 @@
   "pauseModeMultiplier": "倍数",
   "fixedPauseSeconds": "固定间隔",
   "pauseMultiplier": "倍数",
-  "settingsSessionOnly": "设置仅对本次会话生效"
+  "settingsSessionOnly": "设置仅对本次会话生效",
+
+  "reviewDifficultPracticeTitle": "难句补练",
+  "reviewDifficultPracticeProgress": "{current}/{total} 句",
+  "@reviewDifficultPracticeProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "reviewDifficultPracticeBlindListen": "正在播放…",
+  "reviewDifficultPracticeCompleteTitle": "难句补练完成",
+  "reviewDifficultPracticeCompleteMessage": "已完成全部 {total} 个难句的练习。",
+  "@reviewDifficultPracticeCompleteMessage": {
+    "placeholders": {
+      "total": { "type": "int" }
+    }
+  },
+  "reviewDifficultPracticeNone": "没有需要补练的难句。",
+  "exitReviewDifficultPracticeTitle": "退出补练？",
+  "exitReviewDifficultPracticeMessage": "当前步骤的进度不会保存。",
+  "reviewDifficultPracticeAdvancing": "{seconds}秒后进入下一句",
+  "@reviewDifficultPracticeAdvancing": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+
+  "developer": "开发者",
+  "unlockAllReviews": "解锁所有复习",
+  "unlockAllReviewsDescription": "跳过复习时间锁，用于测试"
 }

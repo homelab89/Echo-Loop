@@ -28,11 +28,6 @@ void main() {
           builder: (context, state) => const StudyScreen(),
         ),
         GoRoute(
-          path: '/audio/:audioId/review/:subStage',
-          builder: (context, state) =>
-              const Scaffold(body: Text('Review Placeholder')),
-        ),
-        GoRoute(
           path: '/audio/:audioId/plan',
           builder: (context, state) =>
               const Scaffold(body: Text('Learning Plan')),
@@ -112,7 +107,7 @@ void main() {
     expect(startButton.onPressed, isNull);
   });
 
-  testWidgets('复习任务点击开始后先弹窗再进入当前子步骤', (tester) async {
+  testWidgets('复习任务点击开始后导航到学习计划页', (tester) async {
     final now = DateTime(2026, 2, 25, 12, 0);
     final audioItems = [
       AudioItem(
@@ -146,11 +141,9 @@ void main() {
     expect(find.text('Review Audio'), findsOneWidget);
     await tester.tap(find.text('Start'));
     await tester.pumpAndSettle();
-    expect(find.text('Start Practice'), findsOneWidget);
 
-    await tester.tap(find.text('Start Practice'));
-    await tester.pumpAndSettle();
-    expect(find.text('Review Placeholder'), findsOneWidget);
+    // 所有复习任务统一导航到学习计划页
+    expect(find.text('Learning Plan'), findsOneWidget);
   });
 
   testWidgets('逾期复习任务显示逾期文案', (tester) async {

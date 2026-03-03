@@ -1,7 +1,9 @@
 /// 全文盲听完成对话框
 ///
 /// 播放完成后弹出，展示步骤进度、已听遍数和 5 档难度选择。
-/// 无默认值，必须选择难度后才能点击操作按钮。
+/// 首学模式下无默认值，必须选择难度后才能点击操作按钮。
+/// 复习模式下隐藏难度选择器（[showDifficultySelector] = false），
+/// 操作按钮直接可用。
 ///
 /// 按钮布局根据上下文分三种情况：
 /// 1. 有下一步可继续：[返回计划] [继续：X] + [再听一遍]
@@ -44,6 +46,7 @@ Future<BlindListenResult?> showBlindListenCompleteDialog({
   required String stageName,
   String? nextStepName,
   bool isLastStep = false,
+  bool showDifficultySelector = true,
 }) {
   return showDialog<BlindListenResult?>(
     context: context,
@@ -55,6 +58,7 @@ Future<BlindListenResult?> showBlindListenCompleteDialog({
       stageName: stageName,
       nextStepName: nextStepName,
       isLastStep: isLastStep,
+      showDifficultySelector: showDifficultySelector,
     ),
   );
 }
@@ -79,6 +83,9 @@ class BlindListenCompleteDialog extends StatefulWidget {
   /// 是否为当前阶段最后一步
   final bool isLastStep;
 
+  /// 是否显示难度选择器（复习模式下隐藏）
+  final bool showDifficultySelector;
+
   const BlindListenCompleteDialog({
     super.key,
     required this.passCount,
@@ -87,6 +94,7 @@ class BlindListenCompleteDialog extends StatefulWidget {
     required this.stageName,
     this.nextStepName,
     this.isLastStep = false,
+    this.showDifficultySelector = true,
   });
 
   @override
@@ -97,6 +105,15 @@ class BlindListenCompleteDialog extends StatefulWidget {
 class _BlindListenCompleteDialogState extends State<BlindListenCompleteDialog> {
   /// 选中的难度等级（null = 未选择）
   DifficultyLevel? _selectedDifficulty;
+
+  @override
+  void initState() {
+    super.initState();
+    // 隐藏难度选择器时，默认选中 medium 以启用操作按钮
+    if (!widget.showDifficultySelector) {
+      _selectedDifficulty = DifficultyLevel.medium;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,34 +168,37 @@ class _BlindListenCompleteDialogState extends State<BlindListenCompleteDialog> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: AppSpacing.l),
+            // 难度选择（复习模式下隐藏）
+            if (widget.showDifficultySelector) ...[
+              const SizedBox(height: AppSpacing.l),
 
-            // 难度选择标题
-            Text(
-              l10n.selectDifficulty,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              // 难度选择标题
+              Text(
+                l10n.selectDifficulty,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.s),
+              const SizedBox(height: AppSpacing.s),
 
-            // 5 档难度选择
-            Wrap(
-              spacing: AppSpacing.s,
-              runSpacing: AppSpacing.s,
-              children: DifficultyLevel.values.map((level) {
-                final isSelected = _selectedDifficulty == level;
-                return ChoiceChip(
-                  label: Text(difficultyLabels[level] ?? level.label),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedDifficulty = selected ? level : null;
-                    });
-                  },
-                );
-              }).toList(),
-            ),
+              // 5 档难度选择
+              Wrap(
+                spacing: AppSpacing.s,
+                runSpacing: AppSpacing.s,
+                children: DifficultyLevel.values.map((level) {
+                  final isSelected = _selectedDifficulty == level;
+                  return ChoiceChip(
+                    label: Text(difficultyLabels[level] ?? level.label),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedDifficulty = selected ? level : null;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
           ],
         ),
         // 底部操作按钮（返回计划 + 继续 同一行）

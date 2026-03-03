@@ -17,6 +17,8 @@ import 'package:fluency/models/learning_progress.dart';
 import 'package:fluency/models/playback_settings.dart';
 import 'package:fluency/models/sentence.dart';
 import 'package:fluency/database/enums.dart';
+import 'package:fluency/database/app_database.dart'
+    show Bookmark, BookmarksCompanion;
 import 'package:fluency/database/daos/bookmark_dao.dart';
 import 'package:fluency/database/providers.dart';
 import 'package:fluency/providers/settings_provider.dart';
@@ -31,6 +33,7 @@ import 'package:fluency/providers/learning_session/blind_listen_player_provider.
 import 'package:fluency/providers/learning_session/intensive_listen_player_provider.dart';
 import 'package:fluency/providers/learning_session/listen_and_repeat_player_provider.dart';
 import 'package:fluency/providers/learning_session/retell_player_provider.dart';
+import 'package:fluency/providers/learning_session/review_difficult_practice_provider.dart';
 import 'package:fluency/providers/package_info_provider.dart';
 import 'package:fluency/models/retell_settings.dart';
 
@@ -555,6 +558,23 @@ class TestLearningProgressNotifier extends LearningProgressNotifier {
   }
 
   @override
+  Future<void> saveDifficultPracticeSentenceIndex(
+    String audioItemId,
+    int? sentenceIndex,
+  ) async {
+    final progress = state.progressMap[audioItemId];
+    if (progress == null) return;
+
+    final newMap = Map<String, LearningProgress>.from(state.progressMap);
+    newMap[audioItemId] = progress.copyWith(
+      difficultPracticeSentenceIndex: sentenceIndex,
+      clearDifficultPracticeSentenceIndex: sentenceIndex == null,
+      updatedAt: DateTime.now(),
+    );
+    state = state.copyWith(progressMap: newMap);
+  }
+
+  @override
   Future<void> deleteProgress(String audioItemId) async {
     final newMap = Map<String, LearningProgress>.from(state.progressMap);
     newMap.remove(audioItemId);
@@ -648,6 +668,19 @@ class TestLearningSession extends LearningSession {
   }) async {
     state = state.copyWith(
       learningMode: LearningMode.listenAndRepeat,
+      audioItemId: audioItemId,
+      isFreePlay: isFreePlay,
+    );
+  }
+
+  @override
+  Future<void> enterReviewDifficultPracticeMode(
+    String audioItemId,
+    List<Sentence> allSentences, {
+    bool isFreePlay = false,
+  }) async {
+    state = state.copyWith(
+      learningMode: LearningMode.reviewDifficultPractice,
       audioItemId: audioItemId,
       isFreePlay: isFreePlay,
     );
@@ -1174,6 +1207,165 @@ class TestRetellPlayer extends RetellPlayer {
   }
 }
 
+/// 测试用 ReviewDifficultPractice — 不依赖音频引擎
+class TestReviewDifficultPractice extends ReviewDifficultPractice {
+  List<Sentence> _testSentences = [];
+
+  @override
+  ReviewDifficultPracticeState build() =>
+      const ReviewDifficultPracticeState();
+
+  @override
+  Sentence? get currentSentence =>
+      _testSentences.isNotEmpty &&
+              state.currentSentenceIndex < _testSentences.length
+          ? _testSentences[state.currentSentenceIndex]
+          : null;
+
+  @override
+  List<Sentence> get sentences => List.unmodifiable(_testSentences);
+
+  @override
+  int get currentIndex => state.currentSentenceIndex;
+
+  @override
+  void initialize(List<Sentence> sentences, {int startIndex = 0}) {
+    _testSentences = List.of(sentences);
+    final validIndex = _testSentences.isEmpty
+        ? 0
+        : startIndex.clamp(0, _testSentences.length - 1);
+    state = ReviewDifficultPracticeState(
+      currentSentenceIndex: validIndex,
+      totalSentences: sentences.length,
+    );
+  }
+
+  @override
+  Future<void> startPlaying() async {
+    if (_testSentences.isEmpty) {
+      state = state.copyWith(isCompleted: true);
+      return;
+    }
+    state = state.copyWith(isPlaying: true);
+  }
+
+  @override
+  void pause() {
+    state = state.copyWith(isPlaying: false);
+  }
+
+  @override
+  Future<void> resume() async {
+    if (state.isAnnotationMode) return;
+    state = state.copyWith(isPlaying: true);
+  }
+
+  @override
+  void enterAnnotationMode() {
+    state = state.copyWith(
+      isAnnotationMode: true,
+      isPlaying: false,
+      isTextRevealed: false,
+    );
+  }
+
+  @override
+  Future<void> exitAnnotationMode() async {
+    state = state.copyWith(
+      isAnnotationMode: false,
+      isAnnotationReplay: false,
+      isPlaying: true,
+    );
+  }
+
+  @override
+  Future<void> replayInAnnotationMode() async {
+    if (!state.isAnnotationMode) return;
+    state = state.copyWith(isPlaying: true);
+  }
+
+  @override
+  void toggleTextReveal() {
+    state = state.copyWith(isTextRevealed: !state.isTextRevealed);
+  }
+
+  @override
+  Sentence? removeDifficultMark() {
+    if (_testSentences.isEmpty) return null;
+
+    final removedIndex = state.currentSentenceIndex;
+    final removed = _testSentences[removedIndex];
+    _testSentences = List.from(_testSentences)..removeAt(removedIndex);
+
+    if (_testSentences.isEmpty) {
+      state = state.copyWith(
+        isCompleted: true,
+        isPlaying: false,
+        totalSentences: 0,
+      );
+      return removed;
+    }
+
+    final newIndex = removedIndex >= _testSentences.length
+        ? _testSentences.length - 1
+        : removedIndex;
+
+    state = state.copyWith(
+      currentSentenceIndex: newIndex,
+      totalSentences: _testSentences.length,
+      currentPlayCount: 1,
+      isPlaying: false,
+      isAnnotationMode: false,
+      isAnnotationReplay: false,
+      isTextRevealed: false,
+    );
+
+    return removed;
+  }
+
+  @override
+  Future<void> goToNext() async {
+    if (state.currentSentenceIndex < state.totalSentences - 1) {
+      state = state.copyWith(
+        currentSentenceIndex: state.currentSentenceIndex + 1,
+        currentPlayCount: 1,
+        isAnnotationMode: false,
+        isAnnotationReplay: false,
+        isTextRevealed: false,
+      );
+    }
+  }
+
+  @override
+  Future<void> goToPrevious() async {
+    if (state.currentSentenceIndex > 0) {
+      state = state.copyWith(
+        currentSentenceIndex: state.currentSentenceIndex - 1,
+        currentPlayCount: 1,
+        isAnnotationMode: false,
+        isAnnotationReplay: false,
+        isTextRevealed: false,
+      );
+    }
+  }
+
+  @override
+  void disposePlayer() {
+    _testSentences = [];
+    state = const ReviewDifficultPracticeState();
+  }
+
+  /// 直接设置 state（测试辅助方法）
+  void setState(ReviewDifficultPracticeState newState) {
+    state = newState;
+  }
+
+  /// 设置测试句子（测试辅助方法）
+  void setTestSentences(List<Sentence> sentences) {
+    _testSentences = List.of(sentences);
+  }
+}
+
 /// 测试用 BookmarkDao — 支持 watchByAudioId 返回可控 Stream
 ///
 /// 精听播放器退出时会通过 BookmarkDao 保存难句书签，
@@ -1183,11 +1375,79 @@ class TestBookmarkDao implements BookmarkDao {
   /// 设置书签数量，watchByAudioId 会返回对应数量的 mock 书签
   int bookmarkCount = 0;
 
+  /// 内存存储：audioItemId → sentenceIndex 集合
+  final Map<String, Set<int>> _store = {};
+
+  @override
+  Future<List<Bookmark>> getByAudioId(String audioItemId) {
+    final indices = _store[audioItemId] ?? {};
+    // 返回 mock Bookmark 列表（只需长度正确）
+    final bookmarks = indices
+        .map(
+          (i) => Bookmark(
+            id: i,
+            audioItemId: audioItemId,
+            sentenceIndex: i,
+            sentenceText: 'test sentence $i',
+            startTime: 0.0,
+            endTime: 1.0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            syncStatus: 0,
+          ),
+        )
+        .toList();
+    return Future.value(bookmarks);
+  }
+
+  @override
+  Future<Set<int>> getBookmarkedIndices(String audioItemId) {
+    return Future.value(_store[audioItemId] ?? {});
+  }
+
+  @override
+  Future<void> addBookmark(BookmarksCompanion entry) {
+    final audioId = entry.audioItemId.value;
+    final index = entry.sentenceIndex.value;
+    _store.putIfAbsent(audioId, () => {});
+    _store[audioId]!.add(index);
+    return Future.value();
+  }
+
+  @override
+  Future<void> removeBookmark(String audioItemId, int sentenceIndex) {
+    _store[audioItemId]?.remove(sentenceIndex);
+    return Future.value();
+  }
+
+  @override
+  Future<void> removeBookmarks(String audioItemId, Set<int> sentenceIndices) {
+    _store[audioItemId]?.removeAll(sentenceIndices);
+    return Future.value();
+  }
+
+  @override
+  Future<void> removeAllForAudio(String audioItemId) {
+    _store.remove(audioItemId);
+    return Future.value();
+  }
+
+  @override
+  Future<void> batchInsert(List<BookmarksCompanion> entries) {
+    for (final entry in entries) {
+      final audioId = entry.audioItemId.value;
+      final index = entry.sentenceIndex.value;
+      _store.putIfAbsent(audioId, () => {});
+      _store[audioId]!.add(index);
+    }
+    return Future.value();
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) {
-    // watchByAudioId 需返回 Stream，其他方法返回 null
     final memberName = invocation.memberName.toString();
     if (memberName.contains('watchByAudioId')) {
+      // watchByAudioId 返回 Stream<List<Bookmark>>
       return Stream.value(
         List.generate(bookmarkCount, (i) => null),
       );
@@ -1227,6 +1487,9 @@ Widget createTestApp() {
         () => TestListenAndRepeatPlayer(),
       ),
       retellPlayerProvider.overrideWith(() => TestRetellPlayer()),
+      reviewDifficultPracticeProvider.overrideWith(
+        () => TestReviewDifficultPractice(),
+      ),
       bookmarkDaoProvider.overrideWithValue(TestBookmarkDao()),
       packageInfoProvider.overrideWithValue(_testPackageInfo),
     ],
@@ -1280,6 +1543,9 @@ Widget createTestAppWithAudio({
         () => TestListenAndRepeatPlayer(),
       ),
       retellPlayerProvider.overrideWith(() => TestRetellPlayer()),
+      reviewDifficultPracticeProvider.overrideWith(
+        () => TestReviewDifficultPractice(),
+      ),
       bookmarkDaoProvider.overrideWithValue(TestBookmarkDao()),
       packageInfoProvider.overrideWithValue(_testPackageInfo),
     ],

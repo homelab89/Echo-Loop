@@ -200,6 +200,12 @@ class _BlindListenPlayerScreenState
     final session = ref.read(learningSessionProvider);
     final stepCtx = _getStepContext();
 
+    // 复习模式下不显示难度选择器
+    final progress = ref
+        .read(learningProgressNotifierProvider)
+        .progressMap[widget.audioItemId];
+    final isReview = progress?.isInReviewStage ?? false;
+
     final result = await showBlindListenCompleteDialog(
       context: context,
       passCount: session.blindListenPassCount,
@@ -208,6 +214,7 @@ class _BlindListenPlayerScreenState
       stageName: stepCtx.stageName,
       nextStepName: stepCtx.nextStepName,
       isLastStep: stepCtx.isLastStep,
+      showDifficultySelector: !isReview,
     );
 
     _isShowingDialog = false;
@@ -217,11 +224,13 @@ class _BlindListenPlayerScreenState
       // 用户选择"再听一遍"
       await ref.read(learningSessionProvider.notifier).replayBlindListen();
     } else {
-      // 用户选择了难度 → 保存难度 → 推进子步骤
+      // 保存难度（仅首学模式）→ 推进子步骤
       try {
-        await ref
-            .read(learningProgressNotifierProvider.notifier)
-            .setDifficulty(widget.audioItemId, result.difficulty);
+        if (!isReview) {
+          await ref
+              .read(learningProgressNotifierProvider.notifier)
+              .setDifficulty(widget.audioItemId, result.difficulty);
+        }
         await ref
             .read(learningProgressNotifierProvider.notifier)
             .completeCurrentSubStage(widget.audioItemId);
@@ -264,7 +273,6 @@ class _BlindListenPlayerScreenState
 
       final lpState = ref.read(listeningPracticeProvider);
       if (lpState.sentences.isEmpty) {
-        // 无字幕，回退到计划页
         if (mounted) context.pop();
         return;
       }
@@ -280,8 +288,33 @@ class _BlindListenPlayerScreenState
           ),
         );
       }
+    } else if (nextSubStage == SubStageType.reviewDifficultPractice) {
+      // 复习盲听后 → 进入难句补练
+      await ref.read(learningSessionProvider.notifier).exitLearningMode();
+      if (!mounted) return;
+
+      final lpState = ref.read(listeningPracticeProvider);
+      if (lpState.sentences.isEmpty) {
+        if (mounted) context.pop();
+        return;
+      }
+
+      await ref
+          .read(learningSessionProvider.notifier)
+          .enterReviewDifficultPracticeMode(
+            widget.audioItemId,
+            lpState.sentences,
+          );
+      if (mounted) {
+        context.pushReplacement(
+          AppRoutes.reviewDifficultPractice(
+            widget.collectionId,
+            widget.audioItemId,
+          ),
+        );
+      }
     } else {
-      // 其他子步骤暂无专用播放器 → 返回计划页
+      // 其他子步骤 → 返回计划页
       await ref.read(learningSessionProvider.notifier).exitLearningMode();
       if (mounted) context.pop();
     }
@@ -434,9 +467,9 @@ bool _hasPlayerScreen(SubStageType type) => switch (type) {
   SubStageType.intensiveListen => true,
   SubStageType.listenAndRepeat => true,
   SubStageType.retell => true,
-  SubStageType.reviewDifficultPractice => false,
-  SubStageType.reviewRetellParagraph => false,
-  SubStageType.reviewRetellSummary => false,
+  SubStageType.reviewDifficultPractice => true,
+  SubStageType.reviewRetellParagraph => true,
+  SubStageType.reviewRetellSummary => true,
 };
 
 /// 获取子步骤的本地化名称
@@ -446,9 +479,9 @@ String _getSubStageName(SubStageType type, AppLocalizations l10n) =>
       SubStageType.intensiveListen => l10n.stepIntensiveListening,
       SubStageType.listenAndRepeat => l10n.stepShadowing,
       SubStageType.retell => l10n.stepRetelling,
-      SubStageType.reviewDifficultPractice => 'Difficult practice',
-      SubStageType.reviewRetellParagraph => 'Paragraph retelling',
-      SubStageType.reviewRetellSummary => 'Summary retelling',
+      SubStageType.reviewDifficultPractice => l10n.reviewDifficultPracticeTitle,
+      SubStageType.reviewRetellParagraph => l10n.stepRetelling,
+      SubStageType.reviewRetellSummary => l10n.stepRetelling,
     };
 
 /// 底部进度条区域 — 完全由 BlindListenPlayer 状态驱动

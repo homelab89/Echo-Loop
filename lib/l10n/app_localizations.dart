@@ -2053,6 +2053,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings apply to current session only'**
   String get settingsSessionOnly;
+
+  /// No description provided for @reviewDifficultPracticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficult Sentence Practice'**
+  String get reviewDifficultPracticeTitle;
+
+  /// No description provided for @reviewDifficultPracticeProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{current}/{total} sentences'**
+  String reviewDifficultPracticeProgress(int current, int total);
+
+  /// No description provided for @reviewDifficultPracticeBlindListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening...'**
+  String get reviewDifficultPracticeBlindListen;
+
+  /// No description provided for @reviewDifficultPracticeCompleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficult Practice Complete'**
+  String get reviewDifficultPracticeCompleteTitle;
+
+  /// No description provided for @reviewDifficultPracticeCompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve practiced all {total} difficult sentences.'**
+  String reviewDifficultPracticeCompleteMessage(int total);
+
+  /// No description provided for @reviewDifficultPracticeNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No difficult sentences to practice.'**
+  String get reviewDifficultPracticeNone;
+
+  /// No description provided for @exitReviewDifficultPracticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit Practice?'**
+  String get exitReviewDifficultPracticeTitle;
+
+  /// No description provided for @exitReviewDifficultPracticeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress will not be saved for this step.'**
+  String get exitReviewDifficultPracticeMessage;
+
+  /// No description provided for @reviewDifficultPracticeAdvancing.
+  ///
+  /// In en, this message translates to:
+  /// **'Next sentence in {seconds}s'**
+  String reviewDifficultPracticeAdvancing(int seconds);
+
+  /// No description provided for @developer.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer'**
+  String get developer;
+
+  /// No description provided for @unlockAllReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock All Reviews'**
+  String get unlockAllReviews;
+
+  /// No description provided for @unlockAllReviewsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip review time locks for testing'**
+  String get unlockAllReviewsDescription;
 }
 
 class _AppLocalizationsDelegate

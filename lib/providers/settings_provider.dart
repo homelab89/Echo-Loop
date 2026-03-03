@@ -8,15 +8,24 @@ class AppSettingsState {
   final ThemeMode themeMode;
   final Locale locale;
 
+  /// 开发者选项：解锁所有复习（跳过时间锁）。
+  final bool unlockAllReviews;
+
   const AppSettingsState({
     this.themeMode = ThemeMode.system,
     this.locale = const Locale('en'),
+    this.unlockAllReviews = false,
   });
 
-  AppSettingsState copyWith({ThemeMode? themeMode, Locale? locale}) {
+  AppSettingsState copyWith({
+    ThemeMode? themeMode,
+    Locale? locale,
+    bool? unlockAllReviews,
+  }) {
     return AppSettingsState(
       themeMode: themeMode ?? this.themeMode,
       locale: locale ?? this.locale,
+      unlockAllReviews: unlockAllReviews ?? this.unlockAllReviews,
     );
   }
 }
@@ -42,7 +51,13 @@ class AppSettings extends _$AppSettings {
     final localeString = prefs.getString('locale') ?? 'en';
     final locale = Locale(localeString);
 
-    state = state.copyWith(themeMode: themeMode, locale: locale);
+    final unlockAllReviews = prefs.getBool('unlock_all_reviews') ?? false;
+
+    state = state.copyWith(
+      themeMode: themeMode,
+      locale: locale,
+      unlockAllReviews: unlockAllReviews,
+    );
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
@@ -62,5 +77,13 @@ class AppSettings extends _$AppSettings {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('locale', locale.languageCode);
+  }
+
+  /// 设置是否解锁所有复习（开发者选项）。
+  Future<void> setUnlockAllReviews(bool value) async {
+    state = state.copyWith(unlockAllReviews: value);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('unlock_all_reviews', value);
   }
 }

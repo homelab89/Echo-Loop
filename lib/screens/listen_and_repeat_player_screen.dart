@@ -200,14 +200,35 @@ class _ListenAndRepeatPlayerScreenState
       return;
     }
 
-    // 自由练习模式：递增遍数 → 退出
+    // 自由练习模式：弹窗询问"完成"或"再来一遍"
     if (session.isFreePlay) {
+      final result = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => _FreePlayCompleteDialog(
+          title: AppLocalizations.of(ctx)!.listenAndRepeatCompleteTitle,
+          message: AppLocalizations.of(ctx)!.listenAndRepeatCompleteMessage(
+            playerState.totalSentences,
+          ),
+        ),
+      );
+
+      _isShowingDialog = false;
+      if (!mounted) return;
+
+      // 递增遍数（无论再来一遍还是完成，都算一遍）
       await ref
           .read(learningProgressNotifierProvider.notifier)
           .incrementShadowingPassCount(widget.audioItemId);
-      await ref.read(learningSessionProvider.notifier).exitLearningMode();
-      _isShowingDialog = false;
-      if (mounted) context.pop();
+
+      if (result == true) {
+        // 完成退出
+        await ref.read(learningSessionProvider.notifier).exitLearningMode();
+        if (mounted) context.pop();
+      } else {
+        // 再来一遍：重置到第一句重新开始
+        ref.read(listenAndRepeatPlayerProvider.notifier).resetToStart();
+      }
       return;
     }
 
@@ -729,15 +750,68 @@ class _ListenAndRepeatCompleteDialog extends StatelessWidget {
   }
 }
 
+/// 自由练习完成对话框
+///
+/// 显示完成标题和消息，提供「完成」和「再来一遍」两个操作按钮。
+/// 返回 `true` 表示完成退出，`false` 表示再来一遍。
+class _FreePlayCompleteDialog extends StatelessWidget {
+  final String title;
+  final String message;
+
+  const _FreePlayCompleteDialog({
+    required this.title,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return PopScope(
+      canPop: false,
+      child: AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: theme.colorScheme.primary),
+            const SizedBox(width: AppSpacing.s),
+            Flexible(child: Text(title)),
+          ],
+        ),
+        content: Text(message, style: theme.textTheme.bodyMedium),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(l10n.done),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(l10n.listenAgain),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// 判断子步骤是否有专用播放器页面
 bool _hasPlayerScreen(SubStageType type) => switch (type) {
   SubStageType.blindListen => true,
   SubStageType.intensiveListen => true,
   SubStageType.listenAndRepeat => true,
   SubStageType.retell => true,
-  SubStageType.reviewDifficultPractice => false,
-  SubStageType.reviewRetellParagraph => false,
-  SubStageType.reviewRetellSummary => false,
+  SubStageType.reviewDifficultPractice => true,
+  SubStageType.reviewRetellParagraph => true,
+  SubStageType.reviewRetellSummary => true,
 };
 
 /// 获取子步骤的本地化名称
@@ -747,9 +821,9 @@ String _getSubStageName(SubStageType type, AppLocalizations l10n) =>
       SubStageType.intensiveListen => l10n.stepIntensiveListening,
       SubStageType.listenAndRepeat => l10n.stepShadowing,
       SubStageType.retell => l10n.stepRetelling,
-      SubStageType.reviewDifficultPractice => 'Difficult practice',
-      SubStageType.reviewRetellParagraph => 'Paragraph retelling',
-      SubStageType.reviewRetellSummary => 'Summary retelling',
+      SubStageType.reviewDifficultPractice => l10n.reviewDifficultPracticeTitle,
+      SubStageType.reviewRetellParagraph => l10n.stepRetelling,
+      SubStageType.reviewRetellSummary => l10n.stepRetelling,
     };
 
 /// 格式化时间戳为 MM:SS.m 格式（如 01:02.3）

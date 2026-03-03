@@ -275,6 +275,92 @@ void main() {
       expect(result!.continueToNext, isFalse);
     });
 
+    /// 复习模式（隐藏难度选择器）
+    testWidgets('showDifficultySelector=false — 隐藏难度选择器，按钮直接可用',
+        (tester) async {
+      await tester.pumpWidget(
+        createTestApp(
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () {
+                showBlindListenCompleteDialog(
+                  context: context,
+                  passCount: 1,
+                  stepIndex: 0,
+                  totalSteps: 3,
+                  stageName: 'Review Round 1',
+                  nextStepName: 'Difficult Sentence Practice',
+                  showDifficultySelector: false,
+                );
+              },
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      // 难度选择器不可见
+      expect(find.text('How did it feel?'), findsNothing);
+      expect(find.text('Very Easy'), findsNothing);
+      expect(find.text('Hard'), findsNothing);
+
+      // 按钮直接可用（不需要选择难度）
+      final continueButton = tester.widget<FilledButton>(
+        find.widgetWithText(
+          FilledButton,
+          'Continue: Difficult Sentence Practice',
+        ),
+      );
+      expect(continueButton.onPressed, isNotNull);
+
+      final backButton = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Back to Plan'),
+      );
+      expect(backButton.onPressed, isNotNull);
+    });
+
+    testWidgets('showDifficultySelector=false — 点击继续返回默认难度 medium',
+        (tester) async {
+      BlindListenResult? result;
+
+      await tester.pumpWidget(
+        createTestApp(
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                result = await showBlindListenCompleteDialog(
+                  context: context,
+                  passCount: 1,
+                  stepIndex: 0,
+                  totalSteps: 3,
+                  stageName: 'Review Round 1',
+                  nextStepName: 'Difficult Sentence Practice',
+                  showDifficultySelector: false,
+                );
+              },
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      // 直接点击"继续"
+      await tester.tap(
+        find.text('Continue: Difficult Sentence Practice'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(result, isNotNull);
+      expect(result!.difficulty, DifficultyLevel.medium);
+      expect(result!.continueToNext, isTrue);
+    });
+
     testWidgets('显示正确遍数', (tester) async {
       await tester.pumpWidget(
         createTestApp(
