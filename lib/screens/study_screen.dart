@@ -31,72 +31,70 @@ class StudyScreen extends ConsumerWidget {
         .where((t) => t.type == StudyTaskType.firstStudy)
         .toList();
 
-    if (tasks.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.l),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.assignment_turned_in_outlined,
-                size: 64,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-              const SizedBox(height: AppSpacing.m),
-              Text(
-                _isChinese(context) ? '暂无待完成任务' : 'No study tasks yet',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.s),
-              Text(
-                _isChinese(context)
-                    ? '导入音频后即可开始首学。'
-                    : 'Import audio files to start first study.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return Scaffold(
+      appBar: AppBar(title: Text(_isChinese(context) ? '学习任务' : 'Study Tasks')),
+      body: tasks.isEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.l),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.assignment_turned_in_outlined,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(height: AppSpacing.m),
+                    Text(
+                      _isChinese(context) ? '暂无待完成任务' : 'No study tasks yet',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.s),
+                    Text(
+                      _isChinese(context)
+                          ? '导入音频后即可开始首学。'
+                          : 'Import audio files to start first study.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.m),
-      children: [
-        Text(
-          _isChinese(context) ? '学习任务' : 'Study Tasks',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: AppSpacing.m),
-        if (readyReviews.isNotEmpty)
-          _TaskSection(
-            title: _isChinese(context) ? '待复习（可开始）' : 'Ready to review',
-            tasks: readyReviews,
-            l10n: l10n,
-            now: now,
-          ),
-        if (upcomingReviews.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.m),
-          _TaskSection(
-            title: _isChinese(context) ? '待复习（未到时间）' : 'Upcoming reviews',
-            tasks: upcomingReviews,
-            l10n: l10n,
-            now: now,
-          ),
-        ],
-        if (firstStudies.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.m),
-          _TaskSection(
-            title: _isChinese(context) ? '首学任务' : 'First study',
-            tasks: firstStudies,
-            l10n: l10n,
-            now: now,
-          ),
-        ],
-      ],
+            )
+          : ListView(
+              padding: const EdgeInsets.all(AppSpacing.m),
+              children: [
+                if (readyReviews.isNotEmpty)
+                  _TaskSection(
+                    title: _isChinese(context) ? '待复习（可开始）' : 'Ready to review',
+                    tasks: readyReviews,
+                    l10n: l10n,
+                    now: now,
+                  ),
+                if (upcomingReviews.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.m),
+                  _TaskSection(
+                    title: _isChinese(context)
+                        ? '待复习（未到时间）'
+                        : 'Upcoming reviews',
+                    tasks: upcomingReviews,
+                    l10n: l10n,
+                    now: now,
+                  ),
+                ],
+                if (firstStudies.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.m),
+                  _TaskSection(
+                    title: _isChinese(context) ? '首学任务' : 'First study',
+                    tasks: firstStudies,
+                    l10n: l10n,
+                    now: now,
+                  ),
+                ],
+              ],
+            ),
     );
   }
 }
@@ -138,9 +136,10 @@ class _TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDisabled = task.type == StudyTaskType.reviewUpcoming;
     final subtitle = switch (task.type) {
-      StudyTaskType.reviewReady => task.isOverdue
-          ? _formatOverdue(context, task.overdueDuration)
-          : (_isChinese(context) ? '可开始复习' : 'Ready now'),
+      StudyTaskType.reviewReady =>
+        task.isOverdue
+            ? _formatOverdue(context, task.overdueDuration)
+            : (_isChinese(context) ? '可开始复习' : 'Ready now'),
       StudyTaskType.reviewUpcoming => _formatNextReview(
         context,
         task.nextReviewAt,
