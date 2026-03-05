@@ -152,10 +152,13 @@ class ListeningPractice extends _$ListeningPractice {
 
   // --- 加载音频（业务编排）---
   Future<void> loadAudio(AudioItem audioItem) async {
-    print("loadAudio: ${audioItem.name}");
     state = state.copyWith(autoScrollEnabled: true);
 
-    if (state.currentAudioItem?.id == audioItem.id) return;
+    // 同一音频且字幕未变化时跳过
+    if (state.currentAudioItem?.id == audioItem.id &&
+        state.currentAudioItem?.transcriptPath == audioItem.transcriptPath) {
+      return;
+    }
 
     state = state.copyWith(isLoading: true);
 

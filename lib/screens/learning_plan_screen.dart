@@ -86,10 +86,8 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
           .getItemById(widget.audioItemId);
       if (audioItem == null) return;
 
-      final practiceState = ref.read(listeningPracticeProvider);
-      if (practiceState.currentAudioItem?.id != audioItem.id) {
-        ref.read(listeningPracticeProvider.notifier).loadAudio(audioItem);
-      }
+      // 始终调用 loadAudio：同一音频时只重新读取字幕，不重新加载音频文件
+      ref.read(listeningPracticeProvider.notifier).loadAudio(audioItem);
     });
   }
 
@@ -179,8 +177,9 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!
-                .reviewDifficultPracticeNone),
+            content: Text(
+              AppLocalizations.of(context)!.reviewDifficultPracticeNone,
+            ),
           ),
         );
       }
@@ -232,10 +231,10 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
         ratio: KeywordRatio.oneThird,
       );
       await ref.read(learningSessionProvider.notifier).enterRetellMode(
-            widget.audioItemId,
-            [lpState.sentences],
-            keywordsMap,
-          );
+        widget.audioItemId,
+        [lpState.sentences],
+        keywordsMap,
+      );
       if (mounted) {
         context.push(
           AppRoutes.retellPlayer(widget.collectionId, widget.audioItemId),
@@ -257,11 +256,9 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
           lpState.sentences,
           ratio: KeywordRatio.oneThird,
         );
-        await ref.read(learningSessionProvider.notifier).enterRetellMode(
-              widget.audioItemId,
-              paragraphs,
-              keywordsMap,
-            );
+        await ref
+            .read(learningSessionProvider.notifier)
+            .enterRetellMode(widget.audioItemId, paragraphs, keywordsMap);
         if (mounted) {
           context.push(
             AppRoutes.retellPlayer(widget.collectionId, widget.audioItemId),
@@ -1367,9 +1364,7 @@ class _ReviewRoundSection extends ConsumerWidget {
         .read(learningSessionProvider.notifier)
         .enterBlindListenMode(audioItemId, isFreePlay: true);
     if (context.mounted) {
-      context.push(
-        AppRoutes.blindListenPlayer(collectionId, audioItemId),
-      );
+      context.push(AppRoutes.blindListenPlayer(collectionId, audioItemId));
     }
   }
 
@@ -1410,7 +1405,9 @@ class _ReviewRoundSection extends ConsumerWidget {
         lpState.sentences,
         ratio: KeywordRatio.oneThird,
       );
-      await ref.read(learningSessionProvider.notifier).enterRetellMode(
+      await ref
+          .read(learningSessionProvider.notifier)
+          .enterRetellMode(
             audioItemId,
             [lpState.sentences],
             keywordsMap,
@@ -1435,7 +1432,9 @@ class _ReviewRoundSection extends ConsumerWidget {
           lpState.sentences,
           ratio: KeywordRatio.oneThird,
         );
-        await ref.read(learningSessionProvider.notifier).enterRetellMode(
+        await ref
+            .read(learningSessionProvider.notifier)
+            .enterRetellMode(
               audioItemId,
               paragraphs,
               keywordsMap,
@@ -1539,8 +1538,10 @@ class _ReviewRoundSection extends ConsumerWidget {
               VoidCallback? onTap;
               if (isCompleted) {
                 onTap = switch (subStage) {
-                  SubStageType.blindListen =>
-                    () => _startFreePlayBlindListen(context, ref),
+                  SubStageType.blindListen => () => _startFreePlayBlindListen(
+                    context,
+                    ref,
+                  ),
                   SubStageType.reviewDifficultPractice =>
                     () => _startFreePlayDifficultPractice(context, ref),
                   SubStageType.reviewRetellParagraph =>

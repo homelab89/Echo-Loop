@@ -71,7 +71,7 @@ class RetellPlayerState {
     this.playingSentenceIndex = -1,
     this.phase = RetellPhase.listening,
     this.currentRepeatCount = 1,
-    this.displayMode = RetellDisplayMode.keywordsOnly,
+    this.displayMode = RetellDisplayMode.hideAll,
     this.settings = const RetellSettings(),
     this.isPlaying = false,
     this.isRetellCountdown = false,
@@ -182,10 +182,9 @@ class RetellPlayer extends _$RetellPlayer {
 
   /// 获取当前段落的句子列表
   List<Sentence> get currentParagraphSentences =>
-      _paragraphs.isNotEmpty &&
-              state.currentParagraphIndex < _paragraphs.length
-          ? _paragraphs[state.currentParagraphIndex]
-          : [];
+      _paragraphs.isNotEmpty && state.currentParagraphIndex < _paragraphs.length
+      ? _paragraphs[state.currentParagraphIndex]
+      : [];
 
   /// 获取所有段落
   List<List<Sentence>> get paragraphs => List.unmodifiable(_paragraphs);
@@ -207,7 +206,7 @@ class RetellPlayer extends _$RetellPlayer {
       currentParagraphIndex: 0,
       totalParagraphs: _paragraphs.length,
       settings: state.settings,
-      displayMode: RetellDisplayMode.keywordsOnly,
+      displayMode: RetellDisplayMode.hideAll,
     );
     await _playCurrentParagraph();
   }
@@ -232,10 +231,7 @@ class RetellPlayer extends _$RetellPlayer {
     _positionSub?.cancel();
     _countdownTimer?.cancel();
     await engine.stopPlayback();
-    state = state.copyWith(
-      isPlaying: false,
-      isRetellCountdown: false,
-    );
+    state = state.copyWith(isPlaying: false, isRetellCountdown: false);
   }
 
   /// 恢复播放
@@ -264,7 +260,7 @@ class RetellPlayer extends _$RetellPlayer {
       currentRepeatCount: 1,
       playingSentenceIndex: -1,
       isRetellCountdown: false,
-      displayMode: RetellDisplayMode.keywordsOnly,
+      displayMode: RetellDisplayMode.hideAll,
     );
 
     await _playCurrentParagraph();
@@ -281,7 +277,7 @@ class RetellPlayer extends _$RetellPlayer {
       currentRepeatCount: 1,
       playingSentenceIndex: -1,
       isRetellCountdown: false,
-      displayMode: RetellDisplayMode.keywordsOnly,
+      displayMode: RetellDisplayMode.hideAll,
     );
 
     await _playCurrentParagraph();
@@ -302,7 +298,8 @@ class RetellPlayer extends _$RetellPlayer {
   ///
   /// 当 [keywordRatio] 变化时自动重新生成关键词。
   void updateSettings(RetellSettings newSettings) {
-    final ratioChanged = newSettings.keywordRatio != state.settings.keywordRatio;
+    final ratioChanged =
+        newSettings.keywordRatio != state.settings.keywordRatio;
     state = state.copyWith(settings: newSettings);
     if (ratioChanged) {
       regenerateKeywords();
@@ -404,13 +401,15 @@ class RetellPlayer extends _$RetellPlayer {
   /// 进入复述阶段
   void _enterRetellingPhase() {
     final paragraphDuration = currentParagraphDuration;
-    final pauseDuration =
-        state.settings.calculatePauseDuration(paragraphDuration);
+    final pauseDuration = state.settings.calculatePauseDuration(
+      paragraphDuration,
+    );
 
     state = state.copyWith(
       phase: RetellPhase.retelling,
       isPlaying: false,
       playingSentenceIndex: -1,
+      displayMode: RetellDisplayMode.keywordsOnly,
     );
 
     _startRetellCountdown(pauseDuration);
@@ -445,9 +444,7 @@ class RetellPlayer extends _$RetellPlayer {
     // 检查遍数
     if (state.currentRepeatCount < state.settings.repeatCount) {
       // 还有遍数 → 回到 listening phase
-      state = state.copyWith(
-        currentRepeatCount: state.currentRepeatCount + 1,
-        );
+      state = state.copyWith(currentRepeatCount: state.currentRepeatCount + 1);
       await _playCurrentParagraph();
     } else {
       // 推进下一段

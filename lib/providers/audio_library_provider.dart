@@ -55,6 +55,9 @@ class AudioLibrary extends _$AudioLibrary {
             sentenceCount: row.sentenceCount,
             wordCount: row.wordCount,
             isStarred: row.isStarred,
+            transcriptSource: TranscriptSource.fromIndex(row.transcriptSource),
+            audioSha256: row.audioSha256,
+            transcriptLanguage: row.transcriptLanguage,
           ),
         )
         .toList();
@@ -224,9 +227,7 @@ class AudioLibrary extends _$AudioLibrary {
     final items = [...state.audioItems];
     final index = items.indexWhere((item) => item.id == id);
     if (index != -1) {
-      items[index] = items[index].copyWith(
-        isStarred: !items[index].isStarred,
-      );
+      items[index] = items[index].copyWith(isStarred: !items[index].isStarred);
       state = state.copyWith(audioItems: items);
       await _upsertItem(items[index]);
     }
@@ -242,8 +243,9 @@ class AudioLibrary extends _$AudioLibrary {
 
   /// 补填缺失时长 — 对 totalDuration == 0 的音频逐个提取并持久化
   Future<void> backfillDurations() async {
-    final missing =
-        state.audioItems.where((item) => item.totalDuration == 0).toList();
+    final missing = state.audioItems
+        .where((item) => item.totalDuration == 0)
+        .toList();
     for (final item in missing) {
       final seconds = await getAudioDurationSeconds(item.audioPath);
       if (seconds > 0) {
@@ -281,6 +283,9 @@ class AudioLibrary extends _$AudioLibrary {
         sentenceCount: Value(item.sentenceCount),
         wordCount: Value(item.wordCount),
         isStarred: Value(item.isStarred),
+        transcriptSource: Value(item.transcriptSource?.index),
+        audioSha256: Value(item.audioSha256),
+        transcriptLanguage: Value(item.transcriptLanguage),
         updatedAt: Value(DateTime.now()),
       ),
     );

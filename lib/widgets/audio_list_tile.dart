@@ -16,7 +16,8 @@ import '../providers/tag_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
-import '../utils/transcript_picker.dart';
+import '../providers/transcription_task_provider.dart';
+import 'manage_subtitles_sheet.dart';
 
 /// 音频列表项 — 资源库全局列表和合集详情页共用
 ///
@@ -85,6 +86,11 @@ class AudioListTile extends ConsumerWidget {
     // 获取音频关联的标签数据
     final tagData = _getTagData(ref);
 
+    // 监听后台转录任务状态
+    final transcriptionTask = ref.watch(
+      transcriptionTaskManagerProvider.select((map) => map[audioItem.id]),
+    );
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       color: isCurrentlyPlaying
@@ -111,6 +117,7 @@ class AudioListTile extends ConsumerWidget {
           progress,
           collectionNames,
           tagData,
+          transcriptionTask,
         ),
         trailing: _buildTrailing(context, ref, l10n, theme, isCurrentlyPlaying),
         onTap: () => _handleTap(context, l10n),
@@ -121,9 +128,7 @@ class AudioListTile extends ConsumerWidget {
   /// 获取音频关联的标签数据（名称 + 颜色）
   List<Tag> _getTagData(WidgetRef ref) {
     final tagIds = ref.watch(
-      tagListProvider.select(
-        (s) => s.audioToTagsMap[audioItem.id],
-      ),
+      tagListProvider.select((s) => s.audioToTagsMap[audioItem.id]),
     );
     if (tagIds == null) return const [];
 
@@ -164,7 +169,14 @@ class AudioListTile extends ConsumerWidget {
     dynamic progress,
     List<String> collectionNames,
     List<Tag> tagData,
+    TranscriptionTaskState? transcriptionTask,
   ) {
+    // 是否有进行中的转录任务
+    final isTranscribing =
+        transcriptionTask is TranscriptionHashing ||
+        transcriptionTask is TranscriptionUploading ||
+        transcriptionTask is TranscriptionProcessing;
+
     return Wrap(
       spacing: 12,
       runSpacing: 4,
@@ -187,8 +199,31 @@ class AudioListTile extends ConsumerWidget {
               ),
             ],
           ),
-        // 字幕图标 + 文字
-        if (audioItem.hasTranscript)
+        // 后台转录进度指示
+        if (isTranscribing)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                l10n.transcriptionProcessing,
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        // 字幕图标 + 文字（转录中不显示，避免重复）
+        if (audioItem.hasTranscript && !isTranscribing)
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -270,7 +305,11 @@ class AudioListTile extends ConsumerWidget {
   }
 
   /// 构建星标按钮
-  Widget _buildStarButton(WidgetRef ref, AppLocalizations l10n, ThemeData theme) {
+  Widget _buildStarButton(
+    WidgetRef ref,
+    AppLocalizations l10n,
+    ThemeData theme,
+  ) {
     return IconButton(
       icon: Icon(
         audioItem.isStarred ? Icons.star : Icons.star_border,
@@ -348,12 +387,12 @@ class AudioListTile extends ConsumerWidget {
           ),
         ),
         PopupMenuItem(
-          value: 'transcript',
+          value: 'manageSubtitles',
           child: Row(
             children: [
               const Icon(Icons.subtitles_outlined, size: 20),
               const SizedBox(width: 8),
-              Text(l10n.uploadTranscript),
+              Text(l10n.manageSubtitles),
             ],
           ),
         ),
@@ -391,8 +430,8 @@ class AudioListTile extends ConsumerWidget {
       onSelected: (value) {
         if (value == 'rename') {
           _showRenameDialog(context, ref);
-        } else if (value == 'transcript') {
-          uploadTranscriptForAudio(context, ref, audioItem);
+        } else if (value == 'manageSubtitles') {
+          _showManageSubtitlesSheet(context);
         } else if (value == 'manage') {
           onManageCollections?.call();
         } else if (value == 'manageTags') {
@@ -443,6 +482,15 @@ class AudioListTile extends ConsumerWidget {
       return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     }
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  /// 打开管理字幕底部弹窗
+  void _showManageSubtitlesSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => ManageSubtitlesSheet(audioItem: audioItem),
+    );
   }
 
   /// 重命名音频对话框

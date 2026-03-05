@@ -1,8 +1,8 @@
 /// 复述句子 Tile
 ///
 /// 段落内单个句子的显示组件，支持多种渲染模式：
-/// - listening 阶段：整句灰色矩形遮盖，当前播放句高亮
-/// - retelling 阶段：按 displayMode 显示关键词/隐藏词
+/// - 按 displayMode 显示关键词/全部显示/全部隐藏（listening 和 retelling 通用）
+/// - listening 阶段当前播放句高亮
 ///
 /// 每个词独立渲染（不合并相邻遮盖词），保证切换显示模式时
 /// Wrap children 数量一致，布局不跳动。
@@ -84,9 +84,7 @@ class RetellSentenceTile extends StatelessWidget {
                   ),
                 ),
               ),
-              Expanded(
-                child: _buildMaskedText(theme, tokenize(sentence.text)),
-              ),
+              Expanded(child: _buildMaskedText(theme, tokenize(sentence.text))),
             ],
           ),
         ],
@@ -98,19 +96,11 @@ class RetellSentenceTile extends StatelessWidget {
   Widget _buildMaskedText(ThemeData theme, List<String> words) {
     if (words.isEmpty) return const SizedBox.shrink();
 
-    // listening 阶段：整句遮盖
-    if (phase == RetellPhase.listening) {
-      return Wrap(
-        spacing: 2,
-        runSpacing: 2,
-        children: _buildWordWidgets(words, (_) => true, theme),
-      );
-    }
-
-    // retelling 阶段：按显示模式渲染
+    // 按显示模式渲染（listening 和 retelling 阶段统一逻辑）
     final shouldMask = switch (displayMode) {
-      RetellDisplayMode.keywordsOnly =>
-        (int idx) => !keywordIndices.contains(idx),
+      RetellDisplayMode.keywordsOnly => (int idx) => !keywordIndices.contains(
+        idx,
+      ),
       RetellDisplayMode.showAll => (int idx) => false,
       RetellDisplayMode.hideAll => (int idx) => true,
     };

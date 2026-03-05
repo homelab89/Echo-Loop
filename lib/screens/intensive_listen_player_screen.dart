@@ -339,17 +339,38 @@ class _IntensiveListenPlayerScreenState
       return;
     }
 
-    // 自由练习模式：保存难句数 + 递增遍数 → 退出
+    // 自由练习模式：弹窗询问"完成"或"再来一遍"
     if (session.isFreePlay) {
+      final result = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => _FreePlayCompleteDialog(
+          title: AppLocalizations.of(ctx)!.intensiveListenCompleteTitle,
+          message: AppLocalizations.of(ctx)!.intensiveListenCompleteMessage(
+            playerState.totalSentences,
+            totalDifficultCount,
+          ),
+        ),
+      );
+
+      _isShowingDialog = false;
+      if (!mounted) return;
+
+      // 无论选择什么，都保存统计并递增遍数
       await ref
           .read(learningProgressNotifierProvider.notifier)
           .saveDifficultCount(widget.audioItemId, totalDifficultCount);
       await ref
           .read(learningProgressNotifierProvider.notifier)
           .incrementIntensiveListenPassCount(widget.audioItemId);
-      await ref.read(learningSessionProvider.notifier).exitLearningMode();
-      _isShowingDialog = false;
-      if (mounted) context.pop();
+
+      if (result == true) {
+        await ref.read(learningSessionProvider.notifier).exitLearningMode();
+        if (mounted) context.pop();
+      } else {
+        // 再来一遍：resetToStart()，保留已标记难句
+        ref.read(intensiveListenPlayerProvider.notifier).resetToStart();
+      }
       return;
     }
 
@@ -1117,6 +1138,56 @@ class _IntensiveListenCompleteDialog extends StatelessWidget {
         ),
       ];
     }
+  }
+}
+
+/// 精听自由练习完成对话框
+///
+/// 显示完成标题和消息，提供「完成」和「再来一遍」两个操作按钮。
+/// 返回 `true` 表示完成退出，`false` 表示再来一遍。
+class _FreePlayCompleteDialog extends StatelessWidget {
+  final String title;
+  final String message;
+
+  const _FreePlayCompleteDialog({required this.title, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return PopScope(
+      canPop: false,
+      child: AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: theme.colorScheme.primary),
+            const SizedBox(width: AppSpacing.s),
+            Flexible(child: Text(title)),
+          ],
+        ),
+        content: Text(message, style: theme.textTheme.bodyMedium),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(l10n.done),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(l10n.listenAgain),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

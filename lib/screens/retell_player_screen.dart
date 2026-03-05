@@ -34,8 +34,7 @@ class RetellPlayerScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<RetellPlayerScreen> createState() =>
-      _RetellPlayerScreenState();
+  ConsumerState<RetellPlayerScreen> createState() => _RetellPlayerScreenState();
 }
 
 class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen> {
@@ -91,10 +90,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen> {
           .currentParagraphFirstSentenceIndex;
       await ref
           .read(learningProgressNotifierProvider.notifier)
-          .saveRetellParagraphIndex(
-            widget.audioItemId,
-            sentenceIndex,
-          );
+          .saveRetellParagraphIndex(widget.audioItemId, sentenceIndex);
       await _exit();
     }
   }
@@ -274,9 +270,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen> {
             // 显示模式切换（仅当前段落生效，可见词关闭时隐藏）
             if (state.settings.keywordMethod != KeywordMethod.off)
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.m,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
                 child: SegmentedButton<RetellDisplayMode>(
                   segments: [
                     ButtonSegment(
@@ -293,9 +287,8 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen> {
                     ),
                   ],
                   selected: {state.displayMode},
-                  onSelectionChanged: state.phase == RetellPhase.retelling
-                      ? (selected) => player.setDisplayMode(selected.first)
-                      : null,
+                  onSelectionChanged: (selected) =>
+                      player.setDisplayMode(selected.first),
                 ),
               ),
             const SizedBox(height: AppSpacing.s),
@@ -311,8 +304,9 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen> {
                     height: 1,
                     indent: AppSpacing.m,
                     endIndent: AppSpacing.m,
-                    color: theme.colorScheme.outlineVariant
-                        .withValues(alpha: 0.3),
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.3,
+                    ),
                   ),
                   itemBuilder: (context, index) {
                     final sentence = sentences[index];
@@ -323,16 +317,16 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen> {
                     return RetellSentenceTile(
                       sentence: sentence,
                       phase: state.phase,
-                      displayMode: state.settings.keywordMethod != KeywordMethod.off
+                      displayMode:
+                          state.settings.keywordMethod != KeywordMethod.off
                           ? state.displayMode
                           : RetellDisplayMode.hideAll,
                       keywordIndices: sentenceKeywords,
-                      isPlayingSentence: state.phase == RetellPhase.listening &&
+                      isPlayingSentence:
+                          state.phase == RetellPhase.listening &&
                           index == state.playingSentenceIndex,
-                      onWordTap: (word) => showWordDictionarySheet(
-                        context: context,
-                        word: word,
-                      ),
+                      onWordTap: (word) =>
+                          showWordDictionarySheet(context: context, word: word),
                     );
                   },
                 ),
@@ -347,11 +341,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen> {
             const SizedBox(height: AppSpacing.s),
 
             // 底部控制
-            _BottomControls(
-              state: state,
-              player: player,
-              l10n: l10n,
-            ),
+            _BottomControls(state: state, player: player, l10n: l10n),
 
             const SizedBox(height: AppSpacing.m),
           ],
@@ -466,8 +456,7 @@ class _BottomControls extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isFirst = state.currentParagraphIndex <= 0;
-    final isLast =
-        state.currentParagraphIndex >= state.totalParagraphs - 1;
+    final isLast = state.currentParagraphIndex >= state.totalParagraphs - 1;
 
     // 中间大按钮：listening → play/pause，retelling → 跳过倒计时
     final IconData centerIcon;
@@ -570,8 +559,7 @@ class _RetellCompleteDialog extends StatelessWidget {
             // 步骤进度（非自由练习模式）
             if (stepIndex != null && totalSteps != null && stageName != null)
               Text(
-                l10n.stepProgressLabel(
-                    stepIndex! + 1, totalSteps!, stageName!),
+                l10n.stepProgressLabel(stepIndex! + 1, totalSteps!, stageName!),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

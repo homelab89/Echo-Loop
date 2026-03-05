@@ -1,0 +1,612 @@
+// 管理字幕底部弹窗
+//
+// 提供本地上传、AI 转录和删除字幕三种操作。
+// AI 转录在后台运行，弹窗关闭后任务继续。
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:universal_io/io.dart';
+import '../models/audio_item.dart';
+import '../providers/audio_library_provider.dart';
+import '../providers/learning_progress_provider.dart';
+import '../providers/listening_practice/listening_practice_provider.dart';
+import '../providers/transcription_task_provider.dart';
+import '../services/transcription_api_client.dart';
+import '../l10n/app_localizations.dart';
+import '../theme/app_theme.dart';
+import '../utils/transcript_picker.dart';
+import '../utils/transcript_stats.dart';
+
+/// 字幕操作选项
+enum _SubtitleAction { localUpload, aiTranscription }
+
+/// 管理字幕底部弹窗
+///
+/// 遵循 EditTagMembershipSheet 布局模式：
+/// SafeArea > Padding > Column(mainAxisSize.min)
+class ManageSubtitlesSheet extends ConsumerStatefulWidget {
+  /// 要管理字幕的音频项
+  final AudioItem audioItem;
+
+  const ManageSubtitlesSheet({super.key, required this.audioItem});
+
+  @override
+  ConsumerState<ManageSubtitlesSheet> createState() =>
+      _ManageSubtitlesSheetState();
+}
+
+class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
+  _SubtitleAction _selectedAction = _SubtitleAction.aiTranscription;
+  String _selectedLanguage = 'en';
+
+  @override
+  void initState() {
+    super.initState();
+    // 打开弹窗时清除之前的失败状态，避免残留错误阻塞操作
+    final taskState = ref.read(
+      transcriptionTaskManagerProvider,
+    )[widget.audioItem.id];
+    if (taskState is TranscriptionFailed) {
+      ref
+          .read(transcriptionTaskManagerProvider.notifier)
+          .clearState(widget.audioItem.id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    // 监听音频项变化以刷新 UI
+    final audioItem =
+        ref.watch(
+          audioLibraryProvider.select(
+            (s) => s.audioItems
+                .where((i) => i.id == widget.audioItem.id)
+                .firstOrNull,
+          ),
+        ) ??
+        widget.audioItem;
+
+    // 监听转录任务状态
+    final taskState =
+        ref.watch(
+          transcriptionTaskManagerProvider.select((map) => map[audioItem.id]),
+        ) ??
+        const TranscriptionIdle();
+
+    // 是否有进行中的任务
+    final isTaskActive =
+        taskState is TranscriptionHashing ||
+        taskState is TranscriptionUploading ||
+        taskState is TranscriptionProcessing;
+
+    // 转录完成后自动关闭弹窗
+    ref.listen(
+      transcriptionTaskManagerProvider.select((map) => map[audioItem.id]),
+      (prev, next) {
+        if (next is TranscriptionCompleted) {
+          // 短暂显示完成状态后关闭
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (mounted) {
+              ref
+                  .read(transcriptionTaskManagerProvider.notifier)
+                  .clearState(audioItem.id);
+              Navigator.pop(context);
+            }
+          });
+        }
+      },
+    );
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.m),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 拖动手柄
+            Center(
+              child: Container(
+                width: 32,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.4,
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // 标题 + 当前状态
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.manageSubtitles,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _getStatusText(l10n, audioItem),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // 进度模式 或 选择模式
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: isTaskActive || taskState is TranscriptionCompleted
+                  ? _buildProgressView(l10n, theme, taskState)
+                  : taskState is TranscriptionFailed
+                  ? _buildErrorView(l10n, theme, taskState, audioItem)
+                  : _buildRadioOptions(l10n, theme, audioItem),
+            ),
+            const Divider(),
+            // 操作按钮（进度模式下隐藏）
+            if (!isTaskActive && taskState is! TranscriptionCompleted)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: taskState is TranscriptionFailed
+                        ? () => _handleAction(context, audioItem)
+                        : _getActionEnabled(audioItem)
+                        ? () => _handleAction(context, audioItem)
+                        : null,
+                    child: Text(
+                      taskState is TranscriptionFailed
+                          ? l10n.retryTranscription
+                          : _selectedAction == _SubtitleAction.localUpload
+                          ? l10n.uploadTranscript
+                          : _isAiDisabled(audioItem)
+                          ? l10n.alreadyTranscribedWithOption
+                          : l10n.startTranscription,
+                    ),
+                  ),
+                ),
+              ),
+            // 删除字幕按钮（仅有字幕且非进度模式时显示）
+            if (audioItem.hasTranscript && !isTaskActive) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () => _handleDeleteSubtitle(context, audioItem),
+                    icon: Icon(
+                      Icons.delete_outline,
+                      color: theme.colorScheme.error,
+                    ),
+                    label: Text(
+                      l10n.deleteSubtitle,
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建进度视图
+  Widget _buildProgressView(
+    AppLocalizations l10n,
+    ThemeData theme,
+    TranscriptionTaskState taskState,
+  ) {
+    final IconData icon;
+    final String text;
+    final Color iconColor;
+
+    if (taskState is TranscriptionCompleted) {
+      icon = Icons.check_circle;
+      text = l10n.transcriptionComplete;
+      iconColor = Colors.green;
+    } else if (taskState is TranscriptionHashing) {
+      icon = Icons.fingerprint;
+      text = l10n.transcriptionUploading; // 对用户统一显示"上传中"
+      iconColor = theme.colorScheme.primary;
+    } else if (taskState is TranscriptionUploading) {
+      icon = Icons.cloud_upload;
+      text = l10n.transcriptionUploading;
+      iconColor = theme.colorScheme.primary;
+    } else {
+      icon = Icons.auto_awesome;
+      text = l10n.transcriptionProcessing;
+      iconColor = theme.colorScheme.primary;
+    }
+
+    return Padding(
+      key: const ValueKey('progress'),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.m,
+        vertical: AppSpacing.m,
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 48, color: iconColor),
+          const SizedBox(height: 12),
+          Text(
+            text,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: iconColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (taskState is! TranscriptionCompleted) ...[
+            const SizedBox(height: 12),
+            LinearProgressIndicator(
+              value: taskState is TranscriptionUploading
+                  ? taskState.progress
+                  : null,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 构建错误视图
+  Widget _buildErrorView(
+    AppLocalizations l10n,
+    ThemeData theme,
+    TranscriptionFailed taskState,
+    AudioItem audioItem,
+  ) {
+    return Padding(
+      key: const ValueKey('error'),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.m,
+        vertical: AppSpacing.m,
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+          const SizedBox(height: 12),
+          Text(
+            l10n.transcriptionFailed,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.error,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            taskState.message,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 获取当前字幕状态文字
+  String _getStatusText(AppLocalizations l10n, AudioItem audioItem) {
+    if (!audioItem.hasTranscript) return l10n.noSubtitleYet;
+    switch (audioItem.transcriptSource) {
+      case TranscriptSource.local:
+        return l10n.currentSubtitleLocal;
+      case TranscriptSource.ai:
+        final lang = audioItem.transcriptLanguage == 'multi'
+            ? l10n.languageMulti
+            : l10n.languageEnglish;
+        return l10n.currentSubtitleAi(lang);
+      case null:
+        return l10n.currentSubtitleLocal;
+    }
+  }
+
+  /// 构建 Radio 选项列表
+  Widget _buildRadioOptions(
+    AppLocalizations l10n,
+    ThemeData theme,
+    AudioItem audioItem,
+  ) {
+    return Column(
+      key: const ValueKey('options'),
+      children: [
+        RadioListTile<_SubtitleAction>(
+          title: Text(l10n.localUpload),
+          subtitle: Text(l10n.uploadTranscript),
+          value: _SubtitleAction.localUpload,
+          groupValue: _selectedAction,
+          onChanged: (value) {
+            if (value != null) setState(() => _selectedAction = value);
+          },
+        ),
+        RadioListTile<_SubtitleAction>(
+          title: Text(l10n.aiTranscription),
+          value: _SubtitleAction.aiTranscription,
+          groupValue: _selectedAction,
+          onChanged: (value) {
+            if (value != null) setState(() => _selectedAction = value);
+          },
+        ),
+        // AI 转录语言选择（仅在 AI 选中时显示）
+        if (_selectedAction == _SubtitleAction.aiTranscription)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.selectLanguage,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment(
+                      value: 'en',
+                      label: Text(l10n.languageEnglish),
+                    ),
+                    ButtonSegment(
+                      value: 'multi',
+                      label: Text(l10n.languageMulti),
+                    ),
+                  ],
+                  selected: {_selectedLanguage},
+                  onSelectionChanged: (selected) {
+                    setState(() => _selectedLanguage = selected.first);
+                  },
+                ),
+                // AI 已转录该语言时显示提示
+                if (_isAiDisabled(audioItem))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      l10n.alreadyTranscribedWithOption,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// AI 转录按钮是否禁用
+  ///
+  /// 当 transcriptSource==ai 且选中的语言==transcriptLanguage 时禁用
+  bool _isAiDisabled(AudioItem audioItem) {
+    return audioItem.transcriptSource == TranscriptSource.ai &&
+        audioItem.transcriptLanguage == _selectedLanguage;
+  }
+
+  /// 操作按钮是否可用
+  bool _getActionEnabled(AudioItem audioItem) {
+    if (_selectedAction == _SubtitleAction.localUpload) return true;
+    // AI 转录：同语言已转录时禁用
+    return !_isAiDisabled(audioItem);
+  }
+
+  /// 处理操作按钮点击
+  Future<void> _handleAction(BuildContext context, AudioItem audioItem) async {
+    if (_selectedAction == _SubtitleAction.localUpload) {
+      await _handleLocalUpload(context, audioItem);
+    } else {
+      await _handleAiTranscription(context, audioItem);
+    }
+  }
+
+  /// 处理本地上传
+  Future<void> _handleLocalUpload(
+    BuildContext context,
+    AudioItem audioItem,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    // 已有字幕时弹出覆盖确认
+    if (audioItem.hasTranscript) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.overwriteExistingSubtitle),
+          content: Text(l10n.overwriteExistingSubtitleMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.overwrite),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    try {
+      final newPath = await pickAndSaveTranscript();
+      if (newPath == null) return;
+
+      final stats = await getTranscriptStats(newPath);
+
+      if (!context.mounted) return;
+      ref
+          .read(audioLibraryProvider.notifier)
+          .updateAudioItem(
+            audioItem.copyWith(
+              transcriptPath: newPath,
+              sentenceCount: stats.$1,
+              wordCount: stats.$2,
+              transcriptSource: TranscriptSource.local,
+              transcriptLanguage: null,
+            ),
+          );
+
+      if (context.mounted) Navigator.pop(context);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${l10n.pickTranscriptFileFailed}: $e')),
+      );
+    }
+  }
+
+  /// 处理 AI 转录
+  Future<void> _handleAiTranscription(
+    BuildContext context,
+    AudioItem audioItem,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    // 已有字幕时弹出覆盖确认
+    if (audioItem.hasTranscript) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.overwriteExistingSubtitle),
+          content: Text(l10n.overwriteExistingSubtitleMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.overwrite),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    // 启动后台转录任务
+    ref
+        .read(transcriptionTaskManagerProvider.notifier)
+        .startTranscription(audioItem, _selectedLanguage);
+  }
+
+  /// 处理删除字幕
+  Future<void> _handleDeleteSubtitle(
+    BuildContext context,
+    AudioItem audioItem,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    // 检查是否有学习进度
+    final hasProgress = ref.read(
+      learningProgressNotifierProvider.select(
+        (s) => s.progressMap[audioItem.id]?.isStarted ?? false,
+      ),
+    );
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          color: Theme.of(ctx).colorScheme.error,
+        ),
+        title: Text(l10n.deleteSubtitleConfirm),
+        content: hasProgress ? Text(l10n.deleteSubtitleWarning) : null,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+              foregroundColor: Theme.of(ctx).colorScheme.onError,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    // 1. 删除本地字幕文件
+    if (audioItem.transcriptPath != null) {
+      try {
+        final fullPath = await audioItem.getFullTranscriptPath();
+        if (fullPath != null) {
+          final file = File(fullPath);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        }
+      } catch (_) {
+        // 文件不存在不报错
+      }
+    }
+
+    // 2. 删除后端转录记录（仅 AI 转录且有 SHA256 时）
+    if (audioItem.transcriptSource == TranscriptSource.ai &&
+        audioItem.audioSha256 != null &&
+        audioItem.transcriptLanguage != null) {
+      try {
+        await ref
+            .read(transcriptionApiClientProvider)
+            .deleteTranscript(
+              audioItem.audioSha256!,
+              audioItem.transcriptLanguage!,
+            );
+      } catch (_) {
+        // 后端删除失败不阻塞本地操作
+      }
+    }
+
+    // 3. 更新本地数据库：清除字幕相关字段
+    ref
+        .read(audioLibraryProvider.notifier)
+        .updateAudioItem(
+          audioItem.copyWith(
+            transcriptPath: null,
+            transcriptSource: null,
+            transcriptLanguage: null,
+            sentenceCount: 0,
+            wordCount: 0,
+          ),
+        );
+
+    // 4. 清除 listeningPracticeProvider 中缓存的句子数据
+    final practiceState = ref.read(listeningPracticeProvider);
+    if (practiceState.currentAudioItem?.id == audioItem.id) {
+      ref
+          .read(listeningPracticeProvider.notifier)
+          .loadAudio(
+            audioItem.copyWith(
+              transcriptPath: null,
+              transcriptSource: null,
+              transcriptLanguage: null,
+              sentenceCount: 0,
+              wordCount: 0,
+            ),
+          );
+    }
+  }
+}
