@@ -658,13 +658,8 @@ class _NormalModeView extends StatelessWidget {
           GestureDetector(
             onTap: onToggleDifficult,
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(
-                  isDifficult ? Icons.star : Icons.star_border,
-                  color: isDifficult ? Colors.amber : Colors.grey,
-                  size: 18,
-                ),
-                const SizedBox(width: AppSpacing.xs),
                 Flexible(
                   child: Text(
                     isDifficult
@@ -676,6 +671,12 @@ class _NormalModeView extends StatelessWidget {
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Icon(
+                  isDifficult ? Icons.star : Icons.star_border,
+                  color: isDifficult ? Colors.amber.shade700 : Colors.grey,
+                  size: 18,
                 ),
               ],
             ),

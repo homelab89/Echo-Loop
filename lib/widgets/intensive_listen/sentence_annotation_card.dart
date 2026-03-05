@@ -43,13 +43,8 @@ class SentenceAnnotationCard extends StatelessWidget {
         GestureDetector(
           onTap: onToggle,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Icon(
-                isDifficult ? Icons.star : Icons.star_border,
-                color: isDifficult ? Colors.amber : Colors.grey,
-                size: 18,
-              ),
-              const SizedBox(width: AppSpacing.xs),
               Flexible(
                 child: Text(
                   isDifficult
@@ -61,6 +56,12 @@ class SentenceAnnotationCard extends StatelessWidget {
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Icon(
+                isDifficult ? Icons.star : Icons.star_border,
+                color: isDifficult ? Colors.amber : Colors.grey,
+                size: 18,
               ),
             ],
           ),

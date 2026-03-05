@@ -440,9 +440,8 @@ class _NormalModeView extends StatelessWidget {
           GestureDetector(
             onTap: onRemoveDifficult,
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                const Icon(Icons.star, color: Colors.amber, size: 18),
-                const SizedBox(width: AppSpacing.xs),
                 Flexible(
                   child: Text(
                     l10n.intensiveListenMarkedDifficult,
@@ -453,6 +452,8 @@ class _NormalModeView extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: AppSpacing.xs),
+                const Icon(Icons.star, color: Colors.amber, size: 18),
               ],
             ),
           ),
