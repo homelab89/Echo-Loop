@@ -81,9 +81,8 @@ void main() {
           () => TestLearningProgressNotifier(),
         ),
         learningSessionProvider.overrideWith(
-          () => TestLearningSession(
-            sessionState ?? const LearningSessionState(),
-          ),
+          () =>
+              TestLearningSession(sessionState ?? const LearningSessionState()),
         ),
         listenAndRepeatPlayerProvider.overrideWith(
           () => TestListenAndRepeatPlayer(
@@ -170,10 +169,10 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.skip_previous), findsOneWidget);
-      expect(find.byIcon(Icons.skip_next), findsOneWidget);
+      expect(find.byIcon(Icons.skip_previous_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
       // 默认 isPlaying=true，显示暂停图标
-      expect(find.byIcon(Icons.pause), findsOneWidget);
+      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
     });
 
     testWidgets('AppBar 包含设置按钮', (tester) async {
@@ -185,34 +184,30 @@ void main() {
 
     testWidgets('播放中显示暂停图标', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(
-          playerState: createPlayerState(isPlaying: true),
-        ),
+        createTestWidget(playerState: createPlayerState(isPlaying: true)),
       );
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.pause), findsOneWidget);
-      expect(find.byIcon(Icons.play_arrow), findsNothing);
+      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
     });
 
     testWidgets('点击播放按钮切换为暂停图标', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(
-          playerState: createPlayerState(isPlaying: true),
-        ),
+        createTestWidget(playerState: createPlayerState(isPlaying: true)),
       );
       await tester.pumpAndSettle();
 
       // 初始播放中，显示暂停图标
-      expect(find.byIcon(Icons.pause), findsOneWidget);
+      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
 
       // 点击播放/暂停按钮（GestureDetector 包裹的圆形容器）
-      await tester.tap(find.byIcon(Icons.pause));
+      await tester.tap(find.byIcon(Icons.pause_rounded));
       await tester.pumpAndSettle();
 
       // 暂停后显示播放图标
-      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
-      expect(find.byIcon(Icons.pause), findsNothing);
+      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.pause_rounded), findsNothing);
     });
   });
 }

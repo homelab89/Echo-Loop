@@ -32,43 +32,52 @@ void listenAndRepeatTests() {
 
       // 设置学习会话为跟读模式
       final session =
-          container.read(learningSessionProvider.notifier) as TestLearningSession;
-      session.setState(const LearningSessionState(
-        learningMode: LearningMode.listenAndRepeat,
-        audioItemId: 'test-audio-1',
-      ));
+          container.read(learningSessionProvider.notifier)
+              as TestLearningSession;
+      session.setState(
+        const LearningSessionState(
+          learningMode: LearningMode.listenAndRepeat,
+          audioItemId: 'test-audio-1',
+        ),
+      );
 
       // 初始化跟读播放器的句子数据（模拟 3 个难句）
-      final player = container.read(listenAndRepeatPlayerProvider.notifier)
-          as TestListenAndRepeatPlayer;
+      final player =
+          container.read(listenAndRepeatPlayerProvider.notifier)
+              as TestListenAndRepeatPlayer;
       final sentences = createTestSentences(count: 3);
       player.setTestSentences(sentences);
-      player.setState(ListenAndRepeatPlayerState(
-        currentSentenceIndex: 0,
-        totalSentences: sentences.length,
-        targetPlayCount: 3,
-      ));
-
-      container.read(appRouterProvider).push(
-        '/collections/test-collection-1/test-audio-1/listen-and-repeat',
+      player.setState(
+        ListenAndRepeatPlayerState(
+          currentSentenceIndex: 0,
+          totalSentences: sentences.length,
+          targetPlayCount: 3,
+        ),
       );
+
+      container
+          .read(appRouterProvider)
+          .push(
+            '/collections/test-collection-1/test-audio-1/listen-and-repeat',
+          );
       await tester.pumpAndSettle();
     }
 
     /// 获取 ProviderContainer 辅助方法
     ProviderContainer getContainer(WidgetTester tester) {
-      final context =
-          tester.element(find.byType(ListenAndRepeatPlayerScreen));
+      final context = tester.element(find.byType(ListenAndRepeatPlayerScreen));
       return ProviderScope.containerOf(context);
     }
 
     testWidgets('跟读页面基本 UI', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.listenAndRepeat,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.listenAndRepeat,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToListenAndRepeat(tester);
 
       // 验证 AppBar 标题
@@ -78,8 +87,8 @@ void listenAndRepeatTests() {
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
 
       // 验证播放控制按钮
-      expect(find.byIcon(Icons.skip_previous), findsOneWidget);
-      expect(find.byIcon(Icons.skip_next), findsOneWidget);
+      expect(find.byIcon(Icons.skip_previous_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
 
       // 验证句子标注卡片（跟读模式始终显示文本）
       expect(find.byType(SentenceAnnotationCard), findsOneWidget);
@@ -89,26 +98,28 @@ void listenAndRepeatTests() {
     });
 
     testWidgets('上一句/下一句导航', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.listenAndRepeat,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.listenAndRepeat,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToListenAndRepeat(tester);
 
       // 初始在第 1 句，进度显示 "Repeat 1/3"
       expect(find.textContaining('1/3'), findsWidgets);
 
       // 点击下一句
-      await tester.tap(find.byIcon(Icons.skip_next));
+      await tester.tap(find.byIcon(Icons.skip_next_rounded));
       await tester.pumpAndSettle();
 
       // 验证进度变为 2/3
       expect(find.textContaining('2/3'), findsWidgets);
 
       // 点击上一句
-      await tester.tap(find.byIcon(Icons.skip_previous));
+      await tester.tap(find.byIcon(Icons.skip_previous_rounded));
       await tester.pumpAndSettle();
 
       // 验证进度回到 1/3
@@ -116,19 +127,22 @@ void listenAndRepeatTests() {
     });
 
     testWidgets('跟读完成对话框', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.listenAndRepeat,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.listenAndRepeat,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToListenAndRepeat(tester);
 
       final container = getContainer(tester);
 
       // 触发完成：设置 isCompleted = true
-      final player = container.read(listenAndRepeatPlayerProvider.notifier)
-          as TestListenAndRepeatPlayer;
+      final player =
+          container.read(listenAndRepeatPlayerProvider.notifier)
+              as TestListenAndRepeatPlayer;
       player.setState(player.state.copyWith(isCompleted: true));
       await tester.pumpAndSettle();
 
@@ -141,16 +155,18 @@ void listenAndRepeatTests() {
     });
 
     testWidgets('跟读中退出保存断点', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.listenAndRepeat,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.listenAndRepeat,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToListenAndRepeat(tester);
 
       // 导航到第 2 句（索引 1）
-      await tester.tap(find.byIcon(Icons.skip_next));
+      await tester.tap(find.byIcon(Icons.skip_next_rounded));
       await tester.pumpAndSettle();
 
       // 验证当前在第 2 句
@@ -180,12 +196,14 @@ void listenAndRepeatTests() {
     });
 
     testWidgets('设置按钮弹出设置面板', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.listenAndRepeat,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.listenAndRepeat,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToListenAndRepeat(tester);
 
       // 验证设置按钮存在

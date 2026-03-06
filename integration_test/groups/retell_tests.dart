@@ -160,8 +160,8 @@ void retellTests() {
       expect(find.textContaining('1/3'), findsWidgets);
 
       // 验证播放控制按钮（listening phase）
-      expect(find.byIcon(Icons.skip_previous), findsOneWidget);
-      expect(find.byIcon(Icons.skip_next), findsOneWidget);
+      expect(find.byIcon(Icons.skip_previous_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
 
       // 验证 AppBar 操作按钮（显示模式 + 设置）
       expect(find.byIcon(Icons.tune), findsOneWidget);
@@ -182,14 +182,14 @@ void retellTests() {
       expect(find.textContaining('1/3'), findsWidgets);
 
       // 点击下一段
-      await tester.tap(find.byIcon(Icons.skip_next));
+      await tester.tap(find.byIcon(Icons.skip_next_rounded));
       await tester.pumpAndSettle();
 
       // 验证进度变为 2/3
       expect(find.textContaining('2/3'), findsWidgets);
 
       // 点击上一段
-      await tester.tap(find.byIcon(Icons.skip_previous));
+      await tester.tap(find.byIcon(Icons.skip_previous_rounded));
       await tester.pumpAndSettle();
 
       // 验证进度回到 1/3
@@ -310,7 +310,7 @@ void retellTests() {
       await navigateToRetell(tester);
 
       // 导航到第 2 段
-      await tester.tap(find.byIcon(Icons.skip_next));
+      await tester.tap(find.byIcon(Icons.skip_next_rounded));
       await tester.pumpAndSettle();
 
       // 验证当前在第 2 段

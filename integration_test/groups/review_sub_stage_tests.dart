@@ -131,10 +131,7 @@ void reviewSubStageTests() {
       await tester.pumpAndSettle();
 
       // 验证导航到了难句补练页面
-      expect(
-        find.byType(ReviewDifficultPracticeScreen),
-        findsOneWidget,
-      );
+      expect(find.byType(ReviewDifficultPracticeScreen), findsOneWidget);
       expect(find.text('Difficult Sentence Practice'), findsOneWidget);
     });
 
@@ -226,29 +223,35 @@ void reviewSubStageTests() {
 
       // 设置 learningSession 为 reviewDifficultPractice 模式
       final session =
-          container.read(learningSessionProvider.notifier) as TestLearningSession;
+          container.read(learningSessionProvider.notifier)
+              as TestLearningSession;
       await session.enterReviewDifficultPracticeMode(
         'test-audio-1',
         createTestSentences(),
       );
 
       // 初始化难句播放器
-      final player = container.read(reviewDifficultPracticeProvider.notifier)
-          as TestReviewDifficultPractice;
+      final player =
+          container.read(reviewDifficultPracticeProvider.notifier)
+              as TestReviewDifficultPractice;
       player.initialize(createTestSentences(count: 3));
-      player.setState(const ReviewDifficultPracticeState(
-        currentSentenceIndex: 0,
-        totalSentences: 3,
-        isPlaying: true,
-      ));
+      player.setState(
+        const ReviewDifficultPracticeState(
+          currentSentenceIndex: 0,
+          totalSentences: 3,
+          isPlaying: true,
+        ),
+      );
 
       // 直接导航到难句补练页面
       container
           .read(appRouterProvider)
-          .push(AppRoutes.reviewDifficultPractice(
-            'test-collection-1',
-            'test-audio-1',
-          ));
+          .push(
+            AppRoutes.reviewDifficultPractice(
+              'test-collection-1',
+              'test-audio-1',
+            ),
+          );
       await tester.pumpAndSettle();
 
       // 验证 AppBar 标题
@@ -265,8 +268,8 @@ void reviewSubStageTests() {
       expect(find.text("Can't understand"), findsOneWidget);
 
       // 验证底部播放控制按钮
-      expect(find.byIcon(Icons.skip_previous), findsOneWidget);
-      expect(find.byIcon(Icons.skip_next), findsOneWidget);
+      expect(find.byIcon(Icons.skip_previous_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
     });
 
     testWidgets('难句补练完成弹出完成对话框', (tester) async {
@@ -290,38 +293,46 @@ void reviewSubStageTests() {
 
       // 设置 learningSession 为 reviewDifficultPractice 模式
       final session =
-          container.read(learningSessionProvider.notifier) as TestLearningSession;
+          container.read(learningSessionProvider.notifier)
+              as TestLearningSession;
       await session.enterReviewDifficultPracticeMode(
         'test-audio-1',
         createTestSentences(),
       );
 
       // 初始化难句播放器（先设置为未完成状态）
-      final player = container.read(reviewDifficultPracticeProvider.notifier)
-          as TestReviewDifficultPractice;
+      final player =
+          container.read(reviewDifficultPracticeProvider.notifier)
+              as TestReviewDifficultPractice;
       player.initialize(createTestSentences(count: 3));
-      player.setState(const ReviewDifficultPracticeState(
-        currentSentenceIndex: 2,
-        totalSentences: 3,
-        isPlaying: false,
-      ));
+      player.setState(
+        const ReviewDifficultPracticeState(
+          currentSentenceIndex: 2,
+          totalSentences: 3,
+          isPlaying: false,
+        ),
+      );
 
       // 导航到难句补练页面
       container
           .read(appRouterProvider)
-          .push(AppRoutes.reviewDifficultPractice(
-            'test-collection-1',
-            'test-audio-1',
-          ));
+          .push(
+            AppRoutes.reviewDifficultPractice(
+              'test-collection-1',
+              'test-audio-1',
+            ),
+          );
       await tester.pumpAndSettle();
 
       // 模拟完成：设置 isCompleted = true
-      player.setState(const ReviewDifficultPracticeState(
-        currentSentenceIndex: 2,
-        totalSentences: 3,
-        isCompleted: true,
-        isPlaying: false,
-      ));
+      player.setState(
+        const ReviewDifficultPracticeState(
+          currentSentenceIndex: 2,
+          totalSentences: 3,
+          isCompleted: true,
+          isPlaying: false,
+        ),
+      );
       await tester.pumpAndSettle();
 
       // 验证完成对话框出现

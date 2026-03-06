@@ -269,13 +269,13 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.skip_previous), findsOneWidget);
-      expect(find.byIcon(Icons.skip_next), findsOneWidget);
+      expect(find.byIcon(Icons.skip_previous_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
       // 播放中显示暂停图标
-      expect(find.byIcon(Icons.pause), findsOneWidget);
+      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
     });
 
-    testWidgets('第一句时上一句按钮禁用', (tester) async {
+    testWidgets('第一句时上一句按钮透明度降低（禁用态）', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           playerState: createPlayerState(currentSentenceIndex: 0),
@@ -283,13 +283,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final prevButton = tester.widget<IconButton>(
-        find.widgetWithIcon(IconButton, Icons.skip_previous),
+      // _NavButton 使用 AnimatedOpacity，禁用态 opacity=0.15
+      final prevIcon = find.byIcon(Icons.skip_previous_rounded);
+      expect(prevIcon, findsOneWidget);
+      final opacity = tester.widget<AnimatedOpacity>(
+        find
+            .ancestor(of: prevIcon, matching: find.byType(AnimatedOpacity))
+            .first,
       );
-      expect(prevButton.onPressed, isNull);
+      expect(opacity.opacity, 0.15);
     });
 
-    testWidgets('最后一句时下一句按钮禁用', (tester) async {
+    testWidgets('最后一句时下一句按钮透明度降低（禁用态）', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           playerState: createPlayerState(
@@ -300,13 +305,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final nextButton = tester.widget<IconButton>(
-        find.widgetWithIcon(IconButton, Icons.skip_next),
+      final nextIcon = find.byIcon(Icons.skip_next_rounded);
+      expect(nextIcon, findsOneWidget);
+      final opacity = tester.widget<AnimatedOpacity>(
+        find
+            .ancestor(of: nextIcon, matching: find.byType(AnimatedOpacity))
+            .first,
       );
-      expect(nextButton.onPressed, isNull);
+      expect(opacity.opacity, 0.15);
     });
 
-    testWidgets('遍间停顿显示下一遍文案', (tester) async {
+    testWidgets('遍间停顿显示倒计时控件', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           playerState: createPlayerState(
@@ -321,10 +330,12 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Next play in 3s'), findsOneWidget);
+      // CountdownChip 显示秒数文本和进度环
+      expect(find.text('3s'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
-    testWidgets('句间停顿显示下一句文案', (tester) async {
+    testWidgets('句间停顿显示倒计时控件', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           playerState: createPlayerState(
@@ -339,7 +350,9 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Next sentence in 3s'), findsOneWidget);
+      // CountdownChip 显示秒数文本和进度环
+      expect(find.text('3s'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
     testWidgets('中文本地化正确显示', (tester) async {
@@ -525,7 +538,7 @@ void main() {
       expect(find.text('Tap to mark as difficult'), findsOneWidget);
     });
 
-    testWidgets('标注模式下导航按钮禁用', (tester) async {
+    testWidgets('标注模式下导航按钮可用（非重播状态）', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           playerState: createPlayerState(
@@ -538,14 +551,25 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final prevButton = tester.widget<IconButton>(
-        find.widgetWithIcon(IconButton, Icons.skip_previous),
+      // 标注模式下（非 annotationReplay），导航按钮仍可用
+      // _NavButton 使用 AnimatedOpacity，可用态 opacity=0.6
+      final prevIcon = find.byIcon(Icons.skip_previous_rounded);
+      final nextIcon = find.byIcon(Icons.skip_next_rounded);
+      expect(prevIcon, findsOneWidget);
+      expect(nextIcon, findsOneWidget);
+
+      final prevOpacity = tester.widget<AnimatedOpacity>(
+        find
+            .ancestor(of: prevIcon, matching: find.byType(AnimatedOpacity))
+            .first,
       );
-      final nextButton = tester.widget<IconButton>(
-        find.widgetWithIcon(IconButton, Icons.skip_next),
+      final nextOpacity = tester.widget<AnimatedOpacity>(
+        find
+            .ancestor(of: nextIcon, matching: find.byType(AnimatedOpacity))
+            .first,
       );
-      expect(prevButton.onPressed, isNull);
-      expect(nextButton.onPressed, isNull);
+      expect(prevOpacity.opacity, 0.6);
+      expect(nextOpacity.opacity, 0.6);
     });
   });
 }

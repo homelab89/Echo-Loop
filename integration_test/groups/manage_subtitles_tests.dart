@@ -1,7 +1,7 @@
 /// 管理字幕集成测试
 ///
 /// 验证管理字幕底部弹窗的完整流程：
-/// - 打开弹窗、Radio 选项切换
+/// - 打开弹窗、选项卡片切换
 /// - 删除字幕确认流程
 /// - AI 转录禁用逻辑（同语言已转录时）
 /// - 覆盖确认对话框
@@ -16,7 +16,7 @@ import '../helpers/test_notifiers.dart';
 /// 管理字幕相关集成测试
 void manageSubtitlesTests() {
   group('流程：管理字幕', () {
-    testWidgets('无字幕音频 — 打开弹窗，显示 Radio 选项，AI 默认选中', (tester) async {
+    testWidgets('无字幕音频 — 打开弹窗，显示选项卡片，AI 默认选中', (tester) async {
       // 创建无字幕音频
       await tester.pumpWidget(
         createTestAppWithAudio(
@@ -42,10 +42,7 @@ void manageSubtitlesTests() {
       // 弹窗出现 — 标题可见
       expect(find.text('Manage Subtitles'), findsWidgets);
 
-      // 状态文字显示"无字幕"
-      expect(find.text('No subtitle yet'), findsOneWidget);
-
-      // 两个 Radio 选项都可见
+      // 两个选项卡片都可见
       expect(find.text('Local Upload'), findsOneWidget);
       expect(find.text('AI Transcription'), findsOneWidget);
 
@@ -54,11 +51,11 @@ void manageSubtitlesTests() {
       expect(find.text('English'), findsWidgets);
       expect(find.text('Mixed Languages'), findsOneWidget);
 
-      // 无字幕时不显示删除按钮
-      expect(find.text('Delete Subtitle'), findsNothing);
+      // 无字幕时不显示删除图标按钮
+      expect(find.byIcon(Icons.delete_outline), findsNothing);
     });
 
-    testWidgets('有本地字幕音频 — 显示状态和删除按钮', (tester) async {
+    testWidgets('有本地字幕音频 — 显示删除图标按钮', (tester) async {
       await tester.pumpWidget(
         createTestAppWithAudio(
           audioItemOverride: AudioItem(
@@ -86,11 +83,8 @@ void manageSubtitlesTests() {
       await tester.tap(find.text('Manage Subtitles'));
       await tester.pumpAndSettle();
 
-      // 显示当前状态
-      expect(find.text('Current: Local Upload'), findsOneWidget);
-
-      // 删除按钮可见
-      expect(find.text('Delete Subtitle'), findsOneWidget);
+      // 删除图标按钮可见
+      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
     });
 
     testWidgets('删除字幕 — 确认后清除字幕', (tester) async {
@@ -121,8 +115,8 @@ void manageSubtitlesTests() {
       await tester.tap(find.text('Manage Subtitles'));
       await tester.pumpAndSettle();
 
-      // 点击删除字幕
-      await tester.tap(find.text('Delete Subtitle'));
+      // 点击删除图标按钮
+      await tester.tap(find.byIcon(Icons.delete_outline));
       await tester.pumpAndSettle();
 
       // 确认对话框出现
@@ -135,11 +129,8 @@ void manageSubtitlesTests() {
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
 
-      // 弹窗内状态更新为"无字幕"
-      expect(find.text('No subtitle yet'), findsOneWidget);
-
-      // 删除按钮消失
-      expect(find.text('Delete Subtitle'), findsNothing);
+      // 删除后删除图标按钮消失
+      expect(find.byIcon(Icons.delete_outline), findsNothing);
     });
 
     testWidgets('删除字幕 — 取消后无变化', (tester) async {
@@ -168,17 +159,16 @@ void manageSubtitlesTests() {
       await tester.tap(find.text('Manage Subtitles'));
       await tester.pumpAndSettle();
 
-      // 点击删除字幕
-      await tester.tap(find.text('Delete Subtitle'));
+      // 点击删除图标按钮
+      await tester.tap(find.byIcon(Icons.delete_outline));
       await tester.pumpAndSettle();
 
       // 点击"Cancel"取消
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
-      // 字幕状态不变
-      expect(find.text('Current: Local Upload'), findsOneWidget);
-      expect(find.text('Delete Subtitle'), findsOneWidget);
+      // 删除图标按钮仍在
+      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
     });
 
     testWidgets('AI 已转录(en) — 同语言按钮禁用，切换语言后可用', (tester) async {
@@ -208,7 +198,7 @@ void manageSubtitlesTests() {
       await tester.tap(find.text('Manage Subtitles'));
       await tester.pumpAndSettle();
 
-      // 状态显示 AI(English)
+      // 状态显示 AI
       expect(find.textContaining('AI'), findsWidgets);
 
       // AI 默认选中 + en 默认语言 → 禁用提示可见（提示文字 + 按钮文字各出现一次）
@@ -232,7 +222,7 @@ void manageSubtitlesTests() {
       expect(updatedButton.onPressed, isNotNull);
     });
 
-    testWidgets('切换 Radio — 按钮文字正确变化', (tester) async {
+    testWidgets('切换选项 — 按钮文字正确变化', (tester) async {
       await tester.pumpWidget(
         createTestAppWithAudio(
           audioItemOverride: createTestAudioItem(transcriptPath: null),
@@ -311,7 +301,7 @@ void manageSubtitlesTests() {
       await tester.tap(find.text('Local Upload'));
       await tester.pumpAndSettle();
 
-      // 点击上传按钮（FilledButton，避免与 RadioListTile 副标题重复）
+      // 点击上传按钮
       await tester.tap(find.widgetWithText(FilledButton, 'Upload Transcript'));
       await tester.pumpAndSettle();
 
@@ -322,8 +312,8 @@ void manageSubtitlesTests() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
-      // 弹窗仍在
-      expect(find.text('Current: Local Upload'), findsOneWidget);
+      // 弹窗仍在（删除图标按钮仍可见）
+      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
     });
   });
 }

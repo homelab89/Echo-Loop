@@ -32,25 +32,31 @@ void intensiveListenTests() {
 
       // 设置学习会话为精听模式
       final session =
-          container.read(learningSessionProvider.notifier) as TestLearningSession;
-      session.setState(const LearningSessionState(
-        learningMode: LearningMode.intensiveListen,
-        audioItemId: 'test-audio-1',
-      ));
+          container.read(learningSessionProvider.notifier)
+              as TestLearningSession;
+      session.setState(
+        const LearningSessionState(
+          learningMode: LearningMode.intensiveListen,
+          audioItemId: 'test-audio-1',
+        ),
+      );
 
       // 初始化精听播放器的句子数据
-      final player = container.read(intensiveListenPlayerProvider.notifier)
-          as TestIntensiveListenPlayer;
+      final player =
+          container.read(intensiveListenPlayerProvider.notifier)
+              as TestIntensiveListenPlayer;
       final sentences = createTestSentences();
       player.setTestSentences(sentences);
-      player.setState(IntensiveListenState(
-        currentSentenceIndex: 0,
-        totalSentences: sentences.length,
-      ));
-
-      container.read(appRouterProvider).push(
-        '/collections/test-collection-1/test-audio-1/intensive-listen',
+      player.setState(
+        IntensiveListenState(
+          currentSentenceIndex: 0,
+          totalSentences: sentences.length,
+        ),
       );
+
+      container
+          .read(appRouterProvider)
+          .push('/collections/test-collection-1/test-audio-1/intensive-listen');
       await tester.pumpAndSettle();
     }
 
@@ -61,12 +67,14 @@ void intensiveListenTests() {
     }
 
     testWidgets('精听页面基本 UI', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.intensiveListen,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.intensiveListen,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToIntensiveListen(tester);
 
       // 验证 AppBar 标题
@@ -76,10 +84,10 @@ void intensiveListenTests() {
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
 
       // 验证播放控制按钮
-      expect(find.byIcon(Icons.skip_previous), findsOneWidget);
-      expect(find.byIcon(Icons.skip_next), findsOneWidget);
+      expect(find.byIcon(Icons.skip_previous_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
       // 进入后自动播放 → pause 图标
-      expect(find.byIcon(Icons.pause), findsOneWidget);
+      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
 
       // 验证偷看和听不懂按钮
       expect(find.text('Peek'), findsOneWidget);
@@ -87,12 +95,14 @@ void intensiveListenTests() {
     });
 
     testWidgets('偷看字幕：按住显示，松开隐藏', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.intensiveListen,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.intensiveListen,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToIntensiveListen(tester);
 
       // 初始状态：文字隐藏
@@ -100,9 +110,7 @@ void intensiveListenTests() {
 
       // 按住"Peek"按钮 — 模拟 pointer down
       final peekButton = find.text('Peek');
-      final gesture = await tester.startGesture(
-        tester.getCenter(peekButton),
-      );
+      final gesture = await tester.startGesture(tester.getCenter(peekButton));
       await tester.pumpAndSettle();
 
       // 验证按住时文本显示
@@ -119,33 +127,35 @@ void intensiveListenTests() {
     });
 
     testWidgets('上一句/下一句导航', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.intensiveListen,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.intensiveListen,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToIntensiveListen(tester);
 
       // 初始在第 1 句（索引 0），进度显示 "Intensive 1/5"
       expect(find.textContaining('1/5'), findsOneWidget);
 
       // 点击下一句
-      await tester.tap(find.byIcon(Icons.skip_next));
+      await tester.tap(find.byIcon(Icons.skip_next_rounded));
       await tester.pumpAndSettle();
 
       // 验证进度变为 2/5
       expect(find.textContaining('2/5'), findsOneWidget);
 
       // 再点击下一句
-      await tester.tap(find.byIcon(Icons.skip_next));
+      await tester.tap(find.byIcon(Icons.skip_next_rounded));
       await tester.pumpAndSettle();
 
       // 验证进度变为 3/5
       expect(find.textContaining('3/5'), findsOneWidget);
 
       // 点击上一句
-      await tester.tap(find.byIcon(Icons.skip_previous));
+      await tester.tap(find.byIcon(Icons.skip_previous_rounded));
       await tester.pumpAndSettle();
 
       // 验证进度回到 2/5
@@ -153,12 +163,14 @@ void intensiveListenTests() {
     });
 
     testWidgets('标注模式进入', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.intensiveListen,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.intensiveListen,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToIntensiveListen(tester);
 
       // 点击"Can't understand"进入标注模式
@@ -175,12 +187,14 @@ void intensiveListenTests() {
     });
 
     testWidgets('标注模式退出', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.intensiveListen,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.intensiveListen,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToIntensiveListen(tester);
 
       // 进入标注模式
@@ -199,19 +213,22 @@ void intensiveListenTests() {
     });
 
     testWidgets('精听完成对话框', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.intensiveListen,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.intensiveListen,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToIntensiveListen(tester);
 
       final container = getContainer(tester);
 
       // 触发完成：设置 isCompleted = true
-      final player = container.read(intensiveListenPlayerProvider.notifier)
-          as TestIntensiveListenPlayer;
+      final player =
+          container.read(intensiveListenPlayerProvider.notifier)
+              as TestIntensiveListenPlayer;
       player.setState(player.state.copyWith(isCompleted: true));
       await tester.pumpAndSettle();
 
@@ -225,18 +242,20 @@ void intensiveListenTests() {
     });
 
     testWidgets('精听中退出保存断点', (tester) async {
-      await tester.pumpWidget(createTestAppWithAudio(
-        progressOverride: createTestLearningProgress(
-          currentSubStage: SubStageType.intensiveListen,
-          currentStageStartedAt: DateTime.now(),
+      await tester.pumpWidget(
+        createTestAppWithAudio(
+          progressOverride: createTestLearningProgress(
+            currentSubStage: SubStageType.intensiveListen,
+            currentStageStartedAt: DateTime.now(),
+          ),
         ),
-      ));
+      );
       await navigateToIntensiveListen(tester);
 
       // 导航到第 3 句（索引 2）
-      await tester.tap(find.byIcon(Icons.skip_next));
+      await tester.tap(find.byIcon(Icons.skip_next_rounded));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.skip_next));
+      await tester.tap(find.byIcon(Icons.skip_next_rounded));
       await tester.pumpAndSettle();
 
       // 验证当前在第 3 句
