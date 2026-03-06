@@ -9,8 +9,8 @@ import 'dart:math';
 import '../models/retell_settings.dart';
 import '../models/sentence.dart';
 
-/// 分词分隔符正则：空格 + 常见标点
-final _wordSplitPattern = RegExp(r'[\s,;:!?."\-—–]+');
+/// 分词分隔符正则：仅按空白字符拆分，保留标点附着在单词上
+final _wordSplitPattern = RegExp(r'\s+');
 
 /// 从段落句子中提取关键词
 ///
@@ -46,9 +46,11 @@ Map<int, Set<int>> extractKeywords(
     for (var wi = 0; wi < words.length; wi++) {
       allWords.add((sentenceIdx: si, wordIdx: wi, word: words[wi]));
       if (words[wi].length > 2) {
-        candidatesPerSentence
-            .putIfAbsent(si, () => [])
-            .add((sentenceIdx: si, wordIdx: wi, word: words[wi]));
+        candidatesPerSentence.putIfAbsent(si, () => []).add((
+          sentenceIdx: si,
+          wordIdx: wi,
+          word: words[wi],
+        ));
       }
     }
   }

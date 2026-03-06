@@ -15,8 +15,8 @@ import '../../providers/learning_session/retell_player_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/keyword_extraction.dart';
 
-/// Wrap 子元素间距（px）
-const _wordSpacing = 2.0;
+/// Wrap 子元素间距（px）— 模拟自然空格宽度
+const _wordSpacing = 4.0;
 
 /// 复述句子 Tile
 class RetellSentenceTile extends StatelessWidget {
@@ -168,17 +168,13 @@ class _WordBlock extends StatelessWidget {
     final maskColor = theme.colorScheme.surfaceContainerHighest;
 
     final child = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+      padding: const EdgeInsets.symmetric(vertical: 1),
       decoration: isMasked
           ? BoxDecoration(
               color: maskColor,
               borderRadius: BorderRadius.horizontal(
-                left: isPrevMasked
-                    ? Radius.zero
-                    : const Radius.circular(3),
-                right: isNextMasked
-                    ? Radius.zero
-                    : const Radius.circular(3),
+                left: isPrevMasked ? Radius.zero : const Radius.circular(3),
+                right: isNextMasked ? Radius.zero : const Radius.circular(3),
               ),
             )
           : null,

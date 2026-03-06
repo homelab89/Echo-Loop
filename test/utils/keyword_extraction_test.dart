@@ -7,12 +7,18 @@ import 'package:fluency/utils/keyword_extraction.dart';
 
 /// 辅助函数：创建带指定文本的句子列表
 List<Sentence> _makeSentences(List<String> texts) {
-  return texts.asMap().entries.map((e) => Sentence(
-        index: e.key,
-        text: e.value,
-        startTime: Duration(seconds: e.key * 5),
-        endTime: Duration(seconds: (e.key + 1) * 5),
-      )).toList();
+  return texts
+      .asMap()
+      .entries
+      .map(
+        (e) => Sentence(
+          index: e.key,
+          text: e.value,
+          startTime: Duration(seconds: e.key * 5),
+          endTime: Duration(seconds: (e.key + 1) * 5),
+        ),
+      )
+      .toList();
 }
 
 /// 辅助函数：统计关键词总数
@@ -63,12 +69,14 @@ void main() {
       ]);
       final result = extractKeywords(sentences, random: Random(42));
       for (final entry in result.entries) {
-        expect(entry.key, inInclusiveRange(0, 1),
-            reason: '句子索引超出范围');
+        expect(entry.key, inInclusiveRange(0, 1), reason: '句子索引超出范围');
         for (final wordIdx in entry.value) {
           final words = tokenize(sentences[entry.key].text);
-          expect(wordIdx, inInclusiveRange(0, words.length - 1),
-              reason: '词索引超出范围');
+          expect(
+            wordIdx,
+            inInclusiveRange(0, words.length - 1),
+            reason: '词索引超出范围',
+          );
         }
       }
     });
@@ -99,8 +107,7 @@ void main() {
       );
       // 每句都有候选词（长度>2），所以每句至少 1 个
       for (var i = 0; i < sentences.length; i++) {
-        expect(result.containsKey(i), isTrue,
-            reason: '句子 $i 应该至少有 1 个关键词');
+        expect(result.containsKey(i), isTrue, reason: '句子 $i 应该至少有 1 个关键词');
         expect(result[i]!.length, greaterThanOrEqualTo(1));
       }
     });
@@ -161,9 +168,7 @@ void main() {
 
     test('长词被选中的概率更高（统计验证）', () {
       // 构造一个短候选词（3 字母）和一个长候选词（15 字母）
-      final sentences = _makeSentences([
-        'dog internationally',
-      ]);
+      final sentences = _makeSentences(['dog internationally']);
       // 运行多次统计
       var longWordSelected = 0;
       const runs = 1000;
@@ -186,15 +191,26 @@ void main() {
   });
 
   group('tokenize', () {
-    test('按空格和标点分词', () {
-      expect(tokenize('Hello, world!'), ['Hello', 'world']);
-      expect(tokenize("it's a beautiful day"), ["it's", 'a', 'beautiful', 'day']);
-      expect(tokenize('one-two—three'), ['one', 'two', 'three']);
+    test('按空格分词，保留标点附着在单词上', () {
+      expect(tokenize('Hello, world!'), ['Hello,', 'world!']);
+      expect(tokenize("it's a beautiful day"), [
+        "it's",
+        'a',
+        'beautiful',
+        'day',
+      ]);
+      expect(tokenize('one-two—three'), ['one-two—three']);
     });
 
     test('撇号缩写和所有格不拆分', () {
       expect(tokenize("don't stop"), ["don't", 'stop']);
       expect(tokenize("library's book"), ["library's", 'book']);
+    });
+
+    test('标点符号保留在输出中', () {
+      expect(tokenize('Yes, I can.'), ['Yes,', 'I', 'can.']);
+      expect(tokenize('Wait... what?'), ['Wait...', 'what?']);
+      expect(tokenize('Hello; goodbye'), ['Hello;', 'goodbye']);
     });
 
     test('空字符串返回空列表', () {
