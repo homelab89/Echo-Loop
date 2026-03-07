@@ -110,10 +110,17 @@ flutter pub upgrade            # 升级依赖
 # 代码生成（修改 Riverpod Provider 后）
 dart run build_runner build
 
-# 构建
+# 构建（开发环境，使用默认 API 地址）
 flutter build macos            # macOS
 flutter build apk              # Android APK
 flutter build ios              # iOS
+
+# 构建（指定 API 地址）
+flutter build macos --dart-define=API_BASE_URL=https://dev.echo-loop.top   # dev 环境
+flutter build ios --dart-define=API_BASE_URL=https://www.echo-loop.top     # 生产环境
+
+# 真机运行（指定 API 地址）
+flutter run --release -d <DEVICE_ID> --dart-define=API_BASE_URL=https://dev.echo-loop.top
 ```
 
 ## 平台支持

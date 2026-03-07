@@ -4,5 +4,9 @@
 
 /// 后端服务器基础 URL
 ///
-/// TODO: 正式部署后替换为生产环境域名
-const apiBaseUrl = 'http://192.168.1.8:3000';
+/// 通过 `--dart-define=API_BASE_URL=https://xxx` 注入。
+/// 未指定时默认使用本地开发地址。
+const apiBaseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'http://localhost:3000',
+);
