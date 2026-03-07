@@ -272,9 +272,14 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
     }
 
     // reviewRetellParagraph：弹出简报面板让用户选择段落时长
+    final currentStage = ref
+        .read(learningProgressNotifierProvider)
+        .progressMap[widget.audioItemId]
+        ?.currentStage;
     showRetellBriefingSheet(
       context: context,
       sentences: lpState.sentences,
+      defaultSeconds: retellDefaultSeconds(currentStage),
       onStartPractice: (targetDuration) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
@@ -480,6 +485,7 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
     showRetellBriefingSheet(
       context: context,
       sentences: lpState.sentences,
+      defaultSeconds: retellDefaultSeconds(LearningStage.firstLearn),
       onStartPractice: (targetDuration) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
@@ -1074,6 +1080,7 @@ class _FirstStudySection extends ConsumerWidget {
     showRetellBriefingSheet(
       context: context,
       sentences: lpState.sentences,
+      defaultSeconds: retellDefaultSeconds(LearningStage.firstLearn),
       onStartPractice: (targetDuration) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
@@ -1472,6 +1479,7 @@ class _ReviewRoundSection extends ConsumerWidget {
     showRetellBriefingSheet(
       context: context,
       sentences: lpState.sentences,
+      defaultSeconds: retellDefaultSeconds(review.stage),
       onStartPractice: (targetDuration) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,

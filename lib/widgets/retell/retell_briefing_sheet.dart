@@ -5,10 +5,26 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../database/enums.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/sentence.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/paragraph_grouping.dart';
+
+/// 根据学习阶段计算段级复述的默认目标段落时长（秒）
+///
+/// - 首学 + 首轮复习 → 0（逐句）
+/// - review1 + review2 → 10s
+/// - review4 + review7 → 20s
+/// - review14 + review28 → 30s
+int retellDefaultSeconds(LearningStage? stage) {
+  return switch (stage) {
+    null || LearningStage.firstLearn || LearningStage.review0 => 0,
+    LearningStage.review1 || LearningStage.review2 => 10,
+    LearningStage.review4 || LearningStage.review7 => 20,
+    _ => 30,
+  };
+}
 
 /// 可选的目标段落时长（秒）
 /// 0 表示句子级别（每句一段，不按时间分割）
@@ -22,6 +38,7 @@ Future<void> showRetellBriefingSheet({
   required BuildContext context,
   required List<Sentence> sentences,
   required void Function(Duration targetDuration) onStartPractice,
+  int defaultSeconds = 30,
 }) {
   return showModalBottomSheet(
     context: context,
@@ -32,6 +49,7 @@ Future<void> showRetellBriefingSheet({
     builder: (context) => _RetellBriefingSheet(
       sentences: sentences,
       onStartPractice: onStartPractice,
+      defaultSeconds: defaultSeconds,
     ),
   );
 }
@@ -39,10 +57,12 @@ Future<void> showRetellBriefingSheet({
 class _RetellBriefingSheet extends StatefulWidget {
   final List<Sentence> sentences;
   final void Function(Duration targetDuration) onStartPractice;
+  final int defaultSeconds;
 
   const _RetellBriefingSheet({
     required this.sentences,
     required this.onStartPractice,
+    required this.defaultSeconds,
   });
 
   @override
@@ -50,7 +70,7 @@ class _RetellBriefingSheet extends StatefulWidget {
 }
 
 class _RetellBriefingSheetState extends State<_RetellBriefingSheet> {
-  int _selectedSeconds = 30;
+  late int _selectedSeconds = widget.defaultSeconds;
 
   /// 根据当前选择计算段落数
   int get _paragraphCount {

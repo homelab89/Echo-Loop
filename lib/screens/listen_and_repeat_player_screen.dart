@@ -298,6 +298,7 @@ class _ListenAndRepeatPlayerScreenState
     showRetellBriefingSheet(
       context: context,
       sentences: lpState.sentences,
+      defaultSeconds: retellDefaultSeconds(LearningStage.firstLearn),
       onStartPractice: (targetDuration) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
