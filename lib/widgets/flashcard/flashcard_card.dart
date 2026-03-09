@@ -295,7 +295,6 @@ class _BackContentState extends ConsumerState<_BackContent> {
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.l),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 右上角取消收藏
             Align(
@@ -303,73 +302,76 @@ class _BackContentState extends ConsumerState<_BackContent> {
               child: _UnsaveButton(onUnsave: widget.onUnsave),
             ),
 
-            // 单词 + 音标（顶部，较小）
-            Row(
-              children: [
-                Text(
-                  word.word,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.s),
-                if (dict != null && dict.phonetic.isNotEmpty)
-                  Text(
-                    '/${dict.phonetic}/',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                const SizedBox(width: AppSpacing.xs),
-                // 发音按钮（小）
-                SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: IconButton(
-                    onPressed: () => TtsService.instance.speak(word.word),
-                    icon: const Icon(Icons.volume_up, size: 18),
-                    color: theme.colorScheme.primary,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ),
-              ],
-            ),
-
-            // 柯林斯星级 + 考试标签（单词下方、释义上方）
-            if (dict != null &&
-                (dict.collins > 0 || dict.examTags.isNotEmpty)) ...[
-              const SizedBox(height: AppSpacing.s),
-              _buildMetaTags(theme, dict),
-            ],
-
-            const SizedBox(height: AppSpacing.m),
-
-            // 释义（主体）
+            // 主体内容整体居中（单词+释义+例句作为一个块）
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (dict != null && dict.translation != null)
-                      _buildTranslation(theme, dict.translation!)
-                    else
-                      Text(
-                        l10n.flashcardNoDefinition,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                        ),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 单词 + 音标
+                      Row(
+                        children: [
+                          Text(
+                            word.word,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.s),
+                          if (dict != null && dict.phonetic.isNotEmpty)
+                            Text(
+                              '/${dict.phonetic}/',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          const SizedBox(width: AppSpacing.xs),
+                          SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: IconButton(
+                              onPressed: () =>
+                                  TtsService.instance.speak(word.word),
+                              icon: const Icon(Icons.volume_up, size: 18),
+                              color: theme.colorScheme.primary,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ),
+                        ],
                       ),
 
-                    // 来源例句（支持播放）
-                    if (word.sentenceText != null) ...[
+                      // 柯林斯星级 + 考试标签
+                      if (dict != null &&
+                          (dict.collins > 0 || dict.examTags.isNotEmpty)) ...[
+                        const SizedBox(height: AppSpacing.s),
+                        _buildMetaTags(theme, dict),
+                      ],
+
                       const SizedBox(height: AppSpacing.m),
-                      const Divider(height: 1),
-                      const SizedBox(height: AppSpacing.m),
-                      _buildSentenceRow(theme, word),
+
+                      // 释义
+                      if (dict != null && dict.translation != null)
+                        _buildTranslation(theme, dict.translation!)
+                      else
+                        Text(
+                          l10n.flashcardNoDefinition,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+
+                      // 来源例句
+                      if (word.sentenceText != null) ...[
+                        const SizedBox(height: AppSpacing.m),
+                        const Divider(height: 1),
+                        const SizedBox(height: AppSpacing.m),
+                        _buildSentenceRow(theme, word),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
