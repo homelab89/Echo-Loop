@@ -217,7 +217,7 @@ class RetellPlayer extends _$RetellPlayer {
 
   /// 重新开始：重置到第一段，重新播放
   Future<void> restart() async {
-    _cancelAll();
+    await _cancelAll();
     state = RetellPlayerState(
       currentParagraphIndex: 0,
       totalParagraphs: _paragraphs.length,
@@ -269,12 +269,12 @@ class RetellPlayer extends _$RetellPlayer {
   Future<void> goToNextParagraph() async {
     if (state.currentParagraphIndex >= state.totalParagraphs - 1) {
       // 最后一段完成
-      _cancelAll();
+      await _cancelAll();
       state = state.copyWith(isCompleted: true, isPlaying: false);
       return;
     }
 
-    _cancelAll();
+    await _cancelAll();
     state = state.copyWith(
       currentParagraphIndex: state.currentParagraphIndex + 1,
       phase: RetellPhase.listening,
@@ -293,7 +293,7 @@ class RetellPlayer extends _$RetellPlayer {
   Future<void> goToPreviousParagraph() async {
     if (state.currentParagraphIndex <= 0) return;
 
-    _cancelAll();
+    await _cancelAll();
     state = state.copyWith(
       currentParagraphIndex: state.currentParagraphIndex - 1,
       phase: RetellPhase.listening,
@@ -419,9 +419,9 @@ class RetellPlayer extends _$RetellPlayer {
 
     // 计入输入词数（听完一遍段落）
     final paragraphWordCount = countWordsInSentences(sentences);
-    ref.read(learningSessionProvider.notifier).addInputWords(
-      paragraphWordCount,
-    );
+    ref
+        .read(learningSessionProvider.notifier)
+        .addInputWords(paragraphWordCount);
 
     _positionSub?.cancel();
     _enterRetellingPhase();
@@ -505,12 +505,10 @@ class RetellPlayer extends _$RetellPlayer {
   /// 复述倒计时结束
   Future<void> _onRetellCountdownFinished() async {
     // 复述完成 = 输出词数
-    final paragraphWordCount = countWordsInSentences(
-      currentParagraphSentences,
-    );
-    ref.read(learningSessionProvider.notifier).addOutputWords(
-      paragraphWordCount,
-    );
+    final paragraphWordCount = countWordsInSentences(currentParagraphSentences);
+    ref
+        .read(learningSessionProvider.notifier)
+        .addOutputWords(paragraphWordCount);
 
     state = state.copyWith(isRetellCountdown: false);
 
@@ -526,12 +524,15 @@ class RetellPlayer extends _$RetellPlayer {
   }
 
   /// 取消所有异步操作并停止音频
-  void _cancelAll() {
+  ///
+  /// 这里必须等待底层 stop 完成，避免在切段时与下一次 setClip
+  /// 并发触发 just_audio 的 "Loading interrupted"。
+  Future<void> _cancelAll() async {
     final engine = ref.read(audioEngineProvider.notifier);
     _sessionId = engine.newSession();
     _positionSub?.cancel();
     _countdown.cancel();
-    engine.stopPlayback();
+    await engine.stopPlayback();
   }
 
   /// 清理资源
