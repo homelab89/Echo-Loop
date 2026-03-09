@@ -17,8 +17,10 @@ import 'dart:math' as math;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../models/intensive_listen_settings.dart';
 import '../../models/sentence.dart';
+import '../../utils/word_counter.dart';
 import '../audio_engine/audio_engine_provider.dart';
 import 'countdown_controller.dart';
+import 'learning_session_provider.dart';
 
 part 'intensive_listen_player_provider.g.dart';
 
@@ -507,6 +509,10 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
       await engine.playClipOnce(sentence, sessionId);
 
       if (!engine.isActiveSession(sessionId)) return;
+
+      // 每遍播完计入输入词数
+      final wordCount = countWords(sentence.text);
+      ref.read(learningSessionProvider.notifier).addInputWords(wordCount);
 
       // 遍间停顿（最后一遍不停顿）
       if (playCount < repeatCount) {

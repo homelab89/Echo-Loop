@@ -14,8 +14,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../models/retell_settings.dart';
 import '../../models/sentence.dart';
 import '../../utils/keyword_extraction.dart';
+import '../../utils/word_counter.dart';
 import '../audio_engine/audio_engine_provider.dart';
 import 'countdown_controller.dart';
+import 'learning_session_provider.dart';
 
 part 'retell_player_provider.g.dart';
 
@@ -415,6 +417,12 @@ class RetellPlayer extends _$RetellPlayer {
     // 播放完成后进入复述阶段（用局部变量检查）
     if (!engine.isActiveSession(sid)) return;
 
+    // 计入输入词数（听完一遍段落）
+    final paragraphWordCount = countWordsInSentences(sentences);
+    ref.read(learningSessionProvider.notifier).addInputWords(
+      paragraphWordCount,
+    );
+
     _positionSub?.cancel();
     _enterRetellingPhase();
   }
@@ -496,6 +504,14 @@ class RetellPlayer extends _$RetellPlayer {
 
   /// 复述倒计时结束
   Future<void> _onRetellCountdownFinished() async {
+    // 复述完成 = 输出词数
+    final paragraphWordCount = countWordsInSentences(
+      currentParagraphSentences,
+    );
+    ref.read(learningSessionProvider.notifier).addOutputWords(
+      paragraphWordCount,
+    );
+
     state = state.copyWith(isRetellCountdown: false);
 
     // 检查遍数

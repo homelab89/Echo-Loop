@@ -14,7 +14,9 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../models/difficult_practice_settings.dart';
 import '../../models/sentence.dart';
+import '../../utils/word_counter.dart';
 import '../audio_engine/audio_engine_provider.dart';
+import 'learning_session_provider.dart';
 import 'sentence_playback_engine.dart';
 
 part 'review_difficult_practice_provider.g.dart';
@@ -391,6 +393,9 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
     final sentence = currentSentence;
     if (sentence == null || sentence.duration <= Duration.zero) return;
 
+    final wordCount = countWords(sentence.text);
+    final session = ref.read(learningSessionProvider.notifier);
+
     state = state.copyWith(
       isAnnotationMode: true,
       isPlaying: true,
@@ -410,6 +415,9 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
         state = state.copyWith(currentPlayCount: count, isPlaying: true);
       },
       onPauseStarted: (dur) {
+        // 播放完成 = 输入，停顿开始 = 用户跟读 = 输出
+        session.addInputWords(wordCount);
+        session.addOutputWords(wordCount);
         state = state.copyWith(
           isPauseBetweenPlays: true,
           isPlaying: false,
@@ -426,6 +434,8 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
         state = state.copyWith(pauseRemaining: remaining);
       },
       onAllPlaysCompleted: () async {
+        // 最后一遍只有输入，没有跟读停顿
+        session.addInputWords(wordCount);
         state = state.copyWith(
           isAnnotationMode: false,
           isPlaying: false,
@@ -456,6 +466,9 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
       isPauseBetweenSentences: false,
     );
 
+    final wordCount = countWords(sentence.text);
+    final session = ref.read(learningSessionProvider.notifier);
+
     // 盲听循环：1 遍时无遍间停顿，多遍时使用跟读停顿策略
     await _engine.playSentenceLoop(
       sentence: sentence,
@@ -470,6 +483,8 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
           : (_) {},
       onPauseStarted: repeatCount > 1
           ? (dur) {
+              // 每遍播完计入输入词数
+              session.addInputWords(wordCount);
               state = state.copyWith(
                 isPauseBetweenPlays: true,
                 isPlaying: false,
@@ -491,6 +506,8 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
             }
           : (_) {},
       onAllPlaysCompleted: () async {
+        // 最后一遍（或唯一一遍）播完计入输入词数
+        session.addInputWords(wordCount);
         // 盲听完成 → 句间停顿 → 自动推进
         await _autoAdvance();
       },

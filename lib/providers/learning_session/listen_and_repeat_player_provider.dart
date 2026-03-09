@@ -15,7 +15,9 @@ import 'dart:math' as math;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../models/intensive_listen_settings.dart';
 import '../../models/sentence.dart';
+import '../../utils/word_counter.dart';
 import '../audio_engine/audio_engine_provider.dart';
+import 'learning_session_provider.dart';
 import 'sentence_playback_engine.dart';
 
 part 'listen_and_repeat_player_provider.g.dart';
@@ -363,6 +365,9 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
       isPauseBetweenSentences: false,
     );
 
+    final wordCount = countWords(sentence.text);
+    final session = ref.read(learningSessionProvider.notifier);
+
     await _engine.playSentenceLoop(
       sentence: sentence,
       repeatCount: state.settings.repeatCount,
@@ -371,6 +376,9 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
         state = state.copyWith(currentPlayCount: playCount, isPlaying: true);
       },
       onPauseStarted: (pauseDur) {
+        // 播放完成 = 输入，停顿开始 = 用户跟读 = 输出
+        session.addInputWords(wordCount);
+        session.addOutputWords(wordCount);
         state = state.copyWith(
           isPauseBetweenPlays: true,
           isPlaying: false,
@@ -391,6 +399,8 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
         state = state.copyWith(pauseRemaining: remaining);
       },
       onAllPlaysCompleted: () async {
+        // 最后一遍只有输入，没有跟读停顿
+        session.addInputWords(wordCount);
         await _autoAdvance();
       },
     );

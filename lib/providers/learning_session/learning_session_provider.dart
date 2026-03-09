@@ -12,7 +12,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../models/playback_settings.dart';
 import '../../models/sentence.dart';
 import '../../services/study_time_service.dart';
+import '../../utils/word_counter.dart';
 import '../daily_study_time_provider.dart';
+import '../study_stats_provider.dart';
 import '../audio_engine/audio_engine_provider.dart';
 import '../learning_progress_provider.dart';
 import '../listening_practice/listening_practice_provider.dart';
@@ -124,6 +126,12 @@ class LearningSessionState {
 class LearningSession extends _$LearningSession {
   StreamSubscription<ja.PlayerState>? _playerStateSub;
 
+  /// 盲听位置监听（逐句计入输入词数）
+  StreamSubscription<Duration>? _blindListenPositionSub;
+
+  /// 盲听已计入词数的最大句子索引（-1 表示尚无句子被计入）
+  int _blindListenLastCountedIndex = -1;
+
   /// 学习计时器，进入学习模式时启动，退出时停止
   final Stopwatch _studyStopwatch = Stopwatch();
 
@@ -144,6 +152,7 @@ class LearningSession extends _$LearningSession {
     );
     ref.onDispose(() {
       _playerStateSub?.cancel();
+      _blindListenPositionSub?.cancel();
       _saveStudyTime();
       _lifecycleListener.dispose();
     });
@@ -186,6 +195,26 @@ class LearningSession extends _$LearningSession {
     }
   }
 
+  /// 立即持久化输入词数（每播完一句调用，不丢数据）
+  ///
+  /// 写入后刷新统计 UI，使词数实时可见。
+  void addInputWords(int count) {
+    if (count > 0) {
+      _studyTimeService.addInputWords(count);
+      ref.read(studyStatsNotifierProvider.notifier).refresh();
+    }
+  }
+
+  /// 立即持久化输出词数（每完成一次跟读/复述调用，不丢数据）
+  ///
+  /// 写入后刷新统计 UI，使词数实时可见。
+  void addOutputWords(int count) {
+    if (count > 0) {
+      _studyTimeService.addOutputWords(count);
+      ref.read(studyStatsNotifierProvider.notifier).refresh();
+    }
+  }
+
   /// 进入全文盲听模式
   ///
   /// 1. 保存当前用户播放设置
@@ -225,6 +254,9 @@ class LearningSession extends _$LearningSession {
     blindPlayer.initialize(engineState.totalDuration ?? Duration.zero);
     await blindPlayer.seekTo(Duration.zero);
 
+    // 开始逐句追踪输入词数
+    _startBlindListenWordTracking();
+
     // 开始监听播放完成
     _startListeningForCompletion();
   }
@@ -233,6 +265,7 @@ class LearningSession extends _$LearningSession {
   ///
   /// 重置完成状态，递增遍数，通过 BlindListenPlayer 从头开始播放。
   Future<void> replayBlindListen() async {
+    _blindListenLastCountedIndex = -1;
     state = state.copyWith(
       blindListenCompleted: false,
       blindListenPassCount: state.blindListenPassCount + 1,
@@ -430,6 +463,7 @@ class LearningSession extends _$LearningSession {
     await _saveStudyTime();
     // 通知 UI 刷新今日学习时长
     ref.read(dailyStudyTimeProvider.notifier).refresh();
+    ref.read(studyStatsNotifierProvider.notifier).refresh();
 
     final mode = state.learningMode;
 
@@ -437,6 +471,10 @@ class LearningSession extends _$LearningSession {
     _playerStateSub = null;
 
     if (mode == LearningMode.blindListen) {
+      // 补计尚未被位置追踪计入的句子（用户中途退出时）
+      _countRemainingBlindListenWords();
+      _blindListenPositionSub?.cancel();
+      _blindListenPositionSub = null;
       // 停止盲听播放并释放资源
       final blindPlayer = ref.read(blindListenPlayerProvider.notifier);
       await blindPlayer.pause();
@@ -488,6 +526,9 @@ class LearningSession extends _$LearningSession {
     await blindPlayer.pause();
     await blindPlayer.seekTo(Duration.zero);
 
+    // 补计尚未被位置追踪计入的剩余句子词数
+    _countRemainingBlindListenWords();
+
     // 持久化盲听遍数到数据库
     final audioItemId = state.audioItemId;
     if (audioItemId != null) {
@@ -499,10 +540,56 @@ class LearningSession extends _$LearningSession {
     // 自由练习模式：递增会话内遍数并重置完成标志，使下一遍完成时能再次触发
     // 正常模式由对话框的 replayBlindListen() 处理递增和重置
     if (state.isFreePlay) {
+      _blindListenLastCountedIndex = -1;
       state = state.copyWith(
         blindListenCompleted: false,
         blindListenPassCount: state.blindListenPassCount + 1,
       );
+    }
+  }
+
+  /// 开始监听盲听播放位置，逐句计入输入词数
+  ///
+  /// 当播放位置越过某句的 endTime 时，立即将该句词数计入。
+  /// 这样即使用户中途退出，已播过的句子词数也不会丢失。
+  void _startBlindListenWordTracking() {
+    _blindListenLastCountedIndex = -1;
+    _blindListenPositionSub?.cancel();
+
+    final sentences = ref.read(listeningPracticeProvider).sentences;
+    if (sentences.isEmpty) return;
+
+    final engine = ref.read(audioEngineProvider.notifier);
+    _blindListenPositionSub = engine.absolutePositionStream.listen((position) {
+      // 找出所有已播放完成（position >= endTime）但尚未计入的句子
+      for (var i = _blindListenLastCountedIndex + 1; i < sentences.length; i++) {
+        if (position >= sentences[i].endTime) {
+          addInputWords(countWords(sentences[i].text));
+          _blindListenLastCountedIndex = i;
+        } else {
+          break;
+        }
+      }
+    });
+  }
+
+  /// 补计盲听中尚未被位置追踪计入的句子
+  ///
+  /// 两种场景调用：
+  /// 1. 播放完成时 — position stream 可能未触发最后一句的 endTime
+  /// 2. 用户中途退出 — 计入正在听的那句（position >= startTime）
+  void _countRemainingBlindListenWords() {
+    final sentences = ref.read(listeningPracticeProvider).sentences;
+    if (sentences.isEmpty) return;
+
+    final position = ref.read(blindListenPlayerProvider).position;
+    for (var i = _blindListenLastCountedIndex + 1; i < sentences.length; i++) {
+      if (position >= sentences[i].startTime) {
+        addInputWords(countWords(sentences[i].text));
+        _blindListenLastCountedIndex = i;
+      } else {
+        break;
+      }
     }
   }
 
