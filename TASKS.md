@@ -9,6 +9,51 @@
 
 ---
 
+## 已完成：iOS Universal Links（echo-loop.top）
+- [x] iOS Runner 增加 Associated Domains capability（`echo-loop.top` + `www.echo-loop.top`）
+- [x] 新增 `apple-app-site-association` 模板，覆盖当前 App 支持的主要路由
+- [x] 补充部署与真机验证文档，便于后续 App Store 上架自查
+
+  **完成时间**: 2026-03-09
+
+---
+
+## 已完成：iOS Bundle ID 调整
+- [x] iOS Runner 主目标 Bundle ID 改为 `top.echo-loop`
+- [x] iOS RunnerTests Bundle ID 同步改为 `top.echo-loop.RunnerTests`
+- [x] Universal Links AASA `appIDs` 与 iOS 文档类型标识同步更新
+
+  **完成时间**: 2026-03-10
+
+---
+
+## 已完成：iOS 上架前配置清单
+- [x] iOS App 显示名改为 `Echo Loop`
+- [x] 新增 App Store 上架清单文档，区分“已具备 / 待人工准备 / 真机检查”
+- [x] 明确录音与语音识别权限文案留待相关功能接入后再补
+
+  **完成时间**: 2026-03-10
+
+---
+
+## 已完成：iOS 发布步骤文档
+- [x] 新增 iOS 发布操作文档，覆盖 archive、export、upload、build-status 查询
+- [x] 记录 App Store Connect API Key 用法与每条命令的作用
+- [x] 补充 Xcode 导出失败时的手工 IPA 封装兜底方案
+
+  **完成时间**: 2026-03-10
+
+---
+
+## 已完成：iOS 多语言桌面名称
+- [x] iOS 桌面名称支持英文系统显示 `Echo Loop`
+- [x] iOS 桌面名称支持简体中文系统显示 `语环`
+- [x] 新增 `InfoPlist.strings` 本地化资源与对应测试
+
+  **完成时间**: 2026-03-10
+
+---
+
 ## 临时修复
 - [x] 精听标注文案分支修复：仅“看不懂”自动标记当次显示“已自动标记为难句，点此取消”，其余显示“已标记为难句，点此取消”。
   **完成时间**: 2026-03-09

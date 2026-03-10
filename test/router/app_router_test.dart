@@ -78,6 +78,33 @@ void main() {
         '/collections/col-1/audio-2/player',
       );
     });
+
+    test('独立音频学习路径可用于 Universal Links', () {
+      expect(AppRoutes.audioLearningPlan('audio-2'), '/audio/audio-2/plan');
+      expect(AppRoutes.audioPlayer('audio-2'), '/audio/audio-2/player');
+      expect(
+        AppRoutes.blindListenPlayer(null, 'audio-2'),
+        '/audio/audio-2/blind-listen',
+      );
+      expect(
+        AppRoutes.intensiveListenPlayer(null, 'audio-2'),
+        '/audio/audio-2/intensive-listen',
+      );
+      expect(
+        AppRoutes.listenAndRepeatPlayer(null, 'audio-2'),
+        '/audio/audio-2/listen-and-repeat',
+      );
+      expect(AppRoutes.retellPlayer(null, 'audio-2'), '/audio/audio-2/retell');
+      expect(
+        AppRoutes.reviewDifficultPractice(null, 'audio-2'),
+        '/audio/audio-2/review-difficult-practice',
+      );
+    });
+
+    test('全屏功能页路径可用于 Universal Links', () {
+      expect(AppRoutes.bookmarkReview, '/bookmark-review');
+      expect(AppRoutes.flashcard, '/flashcard');
+    });
   });
 
   group('GoRouter 配置', () {

@@ -1,0 +1,54 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "S8S968QAV3.top.echo-loop"
+        ],
+        "components": [
+          {
+            "/": "/api/*",
+            "exclude": true,
+            "comment": "API routes stay on the website."
+          },
+          {
+            "/": "/",
+            "comment": "Open the app home page."
+          },
+          {
+            "/": "/study",
+            "comment": "Study tab."
+          },
+          {
+            "/": "/favorites",
+            "comment": "Favorites tab."
+          },
+          {
+            "/": "/settings",
+            "comment": "Settings tab."
+          },
+          {
+            "/": "/collections",
+            "comment": "Collection list."
+          },
+          {
+            "/": "/collections/*",
+            "comment": "Collection detail and collection-scoped study routes."
+          },
+          {
+            "/": "/audio/*",
+            "comment": "Standalone audio study routes."
+          },
+          {
+            "/": "/bookmark-review",
+            "comment": "Bookmark review screen."
+          },
+          {
+            "/": "/flashcard",
+            "comment": "Flashcard review screen."
+          }
+        ]
+      }
+    ]
+  }
+}
