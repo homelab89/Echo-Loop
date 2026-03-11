@@ -205,7 +205,7 @@
   "audioWillBeKept": "合集中的 {count} 个音频将保留在资源库中",
   "done": "完成",
   "sortAudio": "排序",
-  "deleteAudioConfirm": "确定要删除「{name}」吗？该音频将从所有合集中移除。",
+  "deleteAudioConfirm": "确定要删除「{name}」吗？音频文件将被永久删除。",
   "uploadTranscript": "上传字幕",
   "replaceTranscriptTitle": "替换字幕",
   "replaceTranscriptMessage": "字幕已存在，是否替换？",

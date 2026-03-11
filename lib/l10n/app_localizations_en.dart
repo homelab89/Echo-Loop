@@ -669,7 +669,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deleteAudioConfirm(String name) {
-    return 'Are you sure you want to delete \"$name\"? This audio will be removed from all collections.';
+    return 'Are you sure you want to delete \"$name\"? The audio file will be permanently deleted.';
   }
 
   @override

@@ -663,7 +663,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String deleteAudioConfirm(String name) {
-    return '确定要删除「$name」吗？该音频将从所有合集中移除。';
+    return '确定要删除「$name」吗？音频文件将被永久删除。';
   }
 
   @override

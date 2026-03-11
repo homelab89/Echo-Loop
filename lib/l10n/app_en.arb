@@ -317,7 +317,7 @@
   },
   "done": "Done",
   "sortAudio": "Sort",
-  "deleteAudioConfirm": "Are you sure you want to delete \"{name}\"? This audio will be removed from all collections.",
+  "deleteAudioConfirm": "Are you sure you want to delete \"{name}\"? The audio file will be permanently deleted.",
   "@deleteAudioConfirm": {
     "placeholders": {
       "name": { "type": "String" }
