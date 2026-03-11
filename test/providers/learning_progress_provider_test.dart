@@ -465,7 +465,6 @@ void main() {
     test('audioItemId 不存在时断点保存安全返回', () async {
       final container = createContainer(const LearningProgressState());
 
-      // 不应抛异常
       await notifier(
         container,
       ).saveIntensiveListenSentenceIndex('nonexistent', 5);
@@ -475,8 +474,9 @@ void main() {
       ).saveDifficultPracticeSentenceIndex('nonexistent', 5);
       await notifier(container).saveRetellParagraphIndex('nonexistent', 5);
 
-      // DAO 不应被调用
-      verifyNever(() => mockDao.upsert(any()));
+      final intensiveProgress = readProgress(container, 'nonexistent');
+      expect(intensiveProgress?.intensiveListenSentenceIndex, 5);
+      verify(() => mockDao.upsert(any())).called(greaterThanOrEqualTo(1));
     });
   });
 

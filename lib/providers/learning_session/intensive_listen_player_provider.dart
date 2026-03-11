@@ -13,11 +13,13 @@
 /// 使用 sessionId 守护防止异步竞态。
 library;
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../models/intensive_listen_settings.dart';
 import '../../models/sentence.dart';
 import '../../utils/word_counter.dart';
+import '../learning_progress_provider.dart';
 import '../audio_engine/audio_engine_provider.dart';
 import 'countdown_controller.dart';
 import 'learning_session_provider.dart';
@@ -541,6 +543,8 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
       isCountdownFastForward: false,
     );
 
+    _persistCurrentSentenceIndexAsync();
+
     final engine = ref.read(audioEngineProvider.notifier);
     _currentSessionId = engine.newSession();
     final sessionId = _currentSessionId;
@@ -704,6 +708,22 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
       isCountdownFastForward: false,
     );
     await _autoAdvance();
+  }
+
+  /// 每次开始播放一句时异步保存断点，避免依赖页面退出时机。
+  void _persistCurrentSentenceIndexAsync() {
+    final session = ref.read(learningSessionProvider);
+    final audioItemId = session.audioItemId;
+    if (session.isFreePlay || audioItemId == null) return;
+
+    unawaited(
+      ref
+          .read(learningProgressNotifierProvider.notifier)
+          .saveIntensiveListenSentenceIndex(
+            audioItemId,
+            state.currentSentenceIndex,
+          ),
+    );
   }
 
   /// 使当前 session 失效

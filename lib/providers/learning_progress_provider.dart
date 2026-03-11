@@ -384,8 +384,7 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
     String audioItemId,
     int? sentenceIndex,
   ) async {
-    final progress = state.progressMap[audioItemId];
-    if (progress == null) return;
+    final progress = await ensureProgress(audioItemId);
 
     final updated = progress.copyWith(
       intensiveListenSentenceIndex: sentenceIndex,

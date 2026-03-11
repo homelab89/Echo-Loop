@@ -3,10 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:fluency/database/enums.dart';
 import 'package:fluency/models/intensive_listen_settings.dart';
+import 'package:fluency/models/learning_progress.dart';
 import 'package:fluency/models/sentence.dart';
 import 'package:fluency/providers/audio_engine/audio_engine_provider.dart';
+import 'package:fluency/providers/learning_progress_provider.dart';
 import 'package:fluency/providers/learning_session/intensive_listen_player_provider.dart';
+import 'package:fluency/providers/learning_session/learning_session_provider.dart';
 import '../helpers/mock_providers.dart';
 
 class _ReplayTestAudioEngine extends TestAudioEngine {
@@ -25,6 +29,35 @@ class _ReplayTestAudioEngine extends TestAudioEngine {
   Future<void> playClipOnce(Sentence sentence, int sessionId) async {
     if (!isActiveSession(sessionId)) return;
     await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+}
+
+class _RecordingLearningProgressNotifier extends TestLearningProgressNotifier {
+  _RecordingLearningProgressNotifier(super.initialState);
+
+  final List<int?> savedIndices = [];
+
+  @override
+  Future<void> saveIntensiveListenSentenceIndex(
+    String audioItemId,
+    int? sentenceIndex,
+  ) async {
+    savedIndices.add(sentenceIndex);
+    final progress =
+        state.progressMap[audioItemId] ??
+        LearningProgress(
+          audioItemId: audioItemId,
+          currentStage: LearningStage.firstLearn,
+          currentSubStage: SubStageType.intensiveListen,
+          updatedAt: DateTime(2026, 3, 11),
+        );
+    final newMap = Map<String, LearningProgress>.from(state.progressMap);
+    newMap[audioItemId] = progress.copyWith(
+      intensiveListenSentenceIndex: sentenceIndex,
+      clearIntensiveListenSentenceIndex: sentenceIndex == null,
+      updatedAt: DateTime(2026, 3, 11, 12),
+    );
+    state = state.copyWith(progressMap: newMap);
   }
 }
 
@@ -362,6 +395,55 @@ void main() {
       expect(completed.isCompleted, true);
       expect(completed.isAnnotationReplay, false);
       expect(completed.isPauseBetweenSentences, false);
+    });
+  });
+
+  group('开始播放一句时异步保存断点', () {
+    test('startPlaying 会立即写入当前句索引', () async {
+      final progressNotifier = _RecordingLearningProgressNotifier(
+        LearningProgressState(
+          progressMap: {
+            'audio-1': LearningProgress(
+              audioItemId: 'audio-1',
+              currentStage: LearningStage.firstLearn,
+              currentSubStage: SubStageType.intensiveListen,
+              updatedAt: DateTime(2026, 3, 11),
+            ),
+          },
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          audioEngineProvider.overrideWith(() => _ReplayTestAudioEngine()),
+          learningProgressNotifierProvider.overrideWith(
+            () => progressNotifier,
+          ),
+          learningSessionProvider.overrideWith(
+            () => TestLearningSession(
+              const LearningSessionState(
+                learningMode: LearningMode.intensiveListen,
+                audioItemId: 'audio-1',
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(intensiveListenPlayerProvider.notifier);
+      await notifier.initialize(createTestSentences(count: 3), startIndex: 1);
+      await notifier.startPlaying();
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+
+      expect(progressNotifier.savedIndices, contains(1));
+      expect(progressNotifier.savedIndices.first, 1);
+      expect(
+        container
+            .read(learningProgressNotifierProvider)
+            .progressMap['audio-1']
+            ?.intensiveListenSentenceIndex,
+        isNotNull,
+      );
     });
   });
 

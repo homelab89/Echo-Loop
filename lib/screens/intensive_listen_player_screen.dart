@@ -469,24 +469,6 @@ class _IntensiveListenPlayerScreenState
       }
     });
 
-    ref.listen<IntensiveListenState>(intensiveListenPlayerProvider, (
-      prev,
-      next,
-    ) {
-      final session = ref.read(learningSessionProvider);
-      if (session.isFreePlay) return;
-      final previousIndex = prev?.currentSentenceIndex;
-      if (previousIndex == null || previousIndex == next.currentSentenceIndex) {
-        return;
-      }
-      ref
-          .read(learningProgressNotifierProvider.notifier)
-          .saveIntensiveListenSentenceIndex(
-            widget.audioItemId,
-            next.currentSentenceIndex,
-          );
-    });
-
     final currentSentence = player.currentSentence;
 
     // 句子时长（如 "3.5s"）和时间戳（如 "00:32.1 - 00:35.6"）分开传递，
