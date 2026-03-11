@@ -1,6 +1,6 @@
 {
-    "name": "Fluency",
-    "short_name": "Fluency",
+    "name": "Echo Loop",
+    "short_name": "Echo Loop",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

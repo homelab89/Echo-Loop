@@ -39,6 +39,10 @@ class DictionaryService {
   Database? _db;
   final Lemmatizer _lemmatizer = Lemmatizer();
 
+  static final RegExp _edgePunctuationPattern = RegExp(
+    r'^[^A-Za-z0-9]+|[^A-Za-z0-9]+$',
+  );
+
   /// 确保数据库已初始化
   Future<void> _ensureInitialized() async {
     if (_db != null) return;
@@ -65,7 +69,8 @@ class DictionaryService {
   Future<DictEntry?> lookup(String word) async {
     await _ensureInitialized();
 
-    final lower = word.toLowerCase();
+    final lower = _normalizeLookupWord(word);
+    if (lower.isEmpty) return null;
 
     // 精确匹配
     final exact = _queryWord(lower);
@@ -82,6 +87,10 @@ class DictionaryService {
     }
 
     return null;
+  }
+
+  String _normalizeLookupWord(String word) {
+    return word.trim().replaceAll(_edgePunctuationPattern, '').toLowerCase();
   }
 
   /// 直接查询数据库

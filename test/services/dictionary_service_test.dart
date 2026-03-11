@@ -63,6 +63,17 @@ void main() {
       final entry = await service.lookup('xyznotaword');
       expect(entry, isNull);
     });
+
+    test('会去掉单词两侧多余符号', () async {
+      final entry = await service.lookup(' "Professor!" ');
+      expect(entry, isNotNull);
+      expect(entry!.word, 'professor');
+    });
+
+    test('只有符号时返回 null', () async {
+      final entry = await service.lookup('..."\'!?');
+      expect(entry, isNull);
+    });
   });
 
   group('词形还原 fallback', () {

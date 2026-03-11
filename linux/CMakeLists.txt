@@ -6,7 +6,7 @@ project(runner LANGUAGES CXX)
 # the on-disk name of your application.
 set(BINARY_NAME "fluency")
 # Application display name
-set(APPLICATION_NAME "Fluency")
+set(APPLICATION_NAME "Echo Loop")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
 set(APPLICATION_ID "top.valuespot.fluency")
