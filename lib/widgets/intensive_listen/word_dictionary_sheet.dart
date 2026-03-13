@@ -5,14 +5,19 @@
 /// 支持收藏/取消收藏单词。
 library;
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/dict_entry.dart';
+import '../../models/word_analysis.dart';
 import '../../providers/saved_word_provider.dart';
+import '../../providers/word_ai_provider.dart';
 import '../../services/dictionary_service.dart';
 import '../../services/tts_service.dart';
 import '../../theme/app_theme.dart';
+import '../common/ai_content_section.dart';
 
 /// 显示词典底部弹窗
 ///
@@ -86,10 +91,10 @@ class _WordDictionarySheetState extends ConsumerState<WordDictionarySheet> {
 
   /// 词典弹窗统一使用清洗后的词形作为查询和兜底展示文本，
   /// 避免句末标点在“未收录”状态下直接暴露给用户。
-  String get _normalizedWord =>
-      widget.word
-          .trim()
-          .replaceAll(RegExp(r'^[^A-Za-z0-9]+|[^A-Za-z0-9]+$'), '');
+  String get _normalizedWord => widget.word.trim().replaceAll(
+    RegExp(r'^[^A-Za-z0-9]+|[^A-Za-z0-9]+$'),
+    '',
+  );
 
   /// 用于收藏的 lemmatized 单词（优先使用词典返回的原形）
   String get _lemmaWord =>
@@ -178,10 +183,28 @@ class _WordDictionarySheetState extends ConsumerState<WordDictionarySheet> {
                   child: CircularProgressIndicator.adaptive(),
                 ),
               )
-            else if (_notFound)
-              _buildNotFound(theme)
-            else
-              _buildContent(theme, _entry!),
+            else ...[
+              // 词典内容（支持滚动）
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_notFound)
+                        _buildNotFound(theme)
+                      else
+                        _buildContent(theme, _entry!),
+
+                      // AI 解析（词典有无结果都显示）
+                      if (!_loading) ...[
+                        const SizedBox(height: AppSpacing.m),
+                        _buildWordAiSection(),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -373,6 +396,30 @@ class _WordDictionarySheetState extends ConsumerState<WordDictionarySheet> {
     );
   }
 
+  /// AI 单词解析区块
+  Widget _buildWordAiSection() {
+    final l10n = AppLocalizations.of(context)!;
+    final wordAi = ref.read(wordAiNotifierProvider);
+    final cachedAnalysis = wordAi.getCachedWordAnalysis(_lemmaWord);
+    final cachedJson = cachedAnalysis != null
+        ? jsonEncode(cachedAnalysis.toJson())
+        : null;
+
+    return AiContentSection(
+      icon: Icons.auto_awesome,
+      title: l10n.wordAiAnalysis,
+      cachedContent: cachedJson,
+      onRequest: () async {
+        final result = await wordAi.getWordAnalysis(
+          _lemmaWord,
+          sentence: widget.sentenceText,
+        );
+        return jsonEncode(result.toJson());
+      },
+      contentBuilder: (content) => _WordAnalysisContent(content: content),
+    );
+  }
+
   /// 单条释义行 — 词性标签 + 释义文本
   ///
   /// 识别 "vt." "n." "a." "adv." 等词性前缀，
@@ -430,6 +477,75 @@ class _WordDictionarySheetState extends ConsumerState<WordDictionarySheet> {
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// 单词 AI 解析结构化内容
+///
+/// 从 JSON 字符串反序列化 WordAnalysis，按非 null 字段渲染带标签的内容块。
+/// 参照 _AnalysisContent（sentence_annotation_card.dart）的渲染风格。
+class _WordAnalysisContent extends StatelessWidget {
+  final String content;
+
+  const _WordAnalysisContent({required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    // 防御性解析：JSON 损坏时显示原始文本，避免红屏
+    final WordAnalysis analysis;
+    try {
+      analysis = WordAnalysis.fromJson(
+        jsonDecode(content) as Map<String, dynamic>,
+      );
+    } catch (_) {
+      return Text(
+        content,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          height: 1.5,
+        ),
+      );
+    }
+
+    // 构建 (label, text) 对，跳过 null 字段
+    final sections = <(String, String)>[
+      if (analysis.contextMeaning != null)
+        (l10n.wordAiContextMeaning, analysis.contextMeaning!),
+      if (analysis.collocations != null)
+        (l10n.wordAiCollocations, analysis.collocations!),
+      if (analysis.usage != null) (l10n.wordAiUsage, analysis.usage!),
+      if (analysis.wordFamily != null)
+        (l10n.wordAiWordFamily, analysis.wordFamily!),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < sections.length; i++) ...[
+          if (i > 0) const SizedBox(height: AppSpacing.s),
+          // 标签标题（primary 色 + w600，与 _AnalysisContent 一致）
+          Text(
+            sections[i].$1,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 2),
+          // 正文
+          Text(
+            sections[i].$2,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+        ],
       ],
     );
   }
