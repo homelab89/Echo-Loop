@@ -20,8 +20,8 @@ const _reviewCountdownDuration = Duration(seconds: 5);
 const _fairScoreThreshold = 0.45;
 const _autoRetryDelay = Duration(seconds: 4);
 const _maxConsecutiveFailures = 3;
-const _completionHeuristicThreshold = 0.65;
-const _completionHeuristicTailTokens = 2;
+const _uniqueTailScoreThreshold = 0.40;
+const _nonUniqueTailScoreThreshold = 0.60;
 
 enum ListenAndRepeatTurnPhase {
   idle,
@@ -88,6 +88,13 @@ class SpeechPracticeCompletionHeuristic {
 
   static final RegExp _englishWordPattern = RegExp(r"[A-Za-z]+(?:'[A-Za-z]+)?");
 
+  /// 判断用户是否已读完参考句。
+  ///
+  /// 算法：
+  /// 1. LCS 匹配，计算 score = 匹配数 / reference 词数
+  /// 2. 从 reference 末尾往前数连续匹配长度 N（N=0 直接返回 false）
+  /// 3. 检查尾部 N 个词在 reference 中是否唯一出现
+  /// 4. 唯一 → score >= 0.40 判定完成；非唯一 → score >= 0.60
   bool isLikelyComplete({
     required String referenceText,
     required String partialTranscript,
@@ -104,23 +111,52 @@ class SpeechPracticeCompletionHeuristic {
     }
 
     final score = lcsPairs.length / referenceTokens.length;
-    if (score < _completionHeuristicThreshold) {
+
+    // 从 reference 末尾往前数，连续多少个词都在 LCS 匹配中
+    final matchedRefIndexes = lcsPairs.map((pair) => pair.$1).toSet();
+    var tailMatchLength = 0;
+    for (var i = referenceTokens.length - 1; i >= 0; i--) {
+      if (matchedRefIndexes.contains(i)) {
+        tailMatchLength++;
+      } else {
+        break;
+      }
+    }
+
+    // 句尾完全没匹配，不可能读完
+    if (tailMatchLength == 0) {
       return false;
     }
 
-    final tailSize = referenceTokens.length < _completionHeuristicTailTokens
-        ? referenceTokens.length
-        : _completionHeuristicTailTokens;
-    final tailReferenceIndexes = <int>{
-      for (
-        var i = referenceTokens.length - tailSize;
-        i < referenceTokens.length;
-        i++
-      )
-        i,
-    };
-    final matchedTailIndexes = lcsPairs.map((pair) => pair.$1).toSet();
-    return tailReferenceIndexes.every(matchedTailIndexes.contains);
+    // 检查尾部 N 个词组合在 reference 中是否唯一
+    final tailStart = referenceTokens.length - tailMatchLength;
+    final isTailUnique = _isSubsequenceUnique(referenceTokens, tailStart);
+
+    final threshold = isTailUnique
+        ? _uniqueTailScoreThreshold
+        : _nonUniqueTailScoreThreshold;
+    return score >= threshold;
+  }
+
+  /// 检查 [tokens] 从 [start] 到末尾的连续子序列在 [tokens] 中是否只出现一次。
+  bool _isSubsequenceUnique(List<String> tokens, int start) {
+    final tail = tokens.sublist(start);
+    final tailLength = tail.length;
+    var count = 0;
+    for (var i = 0; i <= tokens.length - tailLength; i++) {
+      var match = true;
+      for (var j = 0; j < tailLength; j++) {
+        if (tokens[i + j] != tail[j]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        count++;
+        if (count > 1) return false;
+      }
+    }
+    return count == 1;
   }
 
   List<String> _tokenize(String text) {

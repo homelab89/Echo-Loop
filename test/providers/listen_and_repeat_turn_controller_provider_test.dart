@@ -126,10 +126,21 @@ void main() {
       expect(result, isTrue);
     });
 
-    test('整体分数不足时即使有句尾也不判定已说完', () {
+    test('句尾唯一且 score >= 40% 时判定已说完（漏读开头）', () {
+      // 4/8 = 50% >= 40%，尾词 "on the door" 唯一
       final result = heuristic.isLikelyComplete(
         referenceText: 'Anyhow I noticed your name on the door',
-        partialTranscript: 'name on the door',
+        partialTranscript: 'your name on the door',
+      );
+
+      expect(result, isTrue);
+    });
+
+    test('句尾唯一但 score < 40% 时不判定已说完', () {
+      // 2/8 = 25% < 40%
+      final result = heuristic.isLikelyComplete(
+        referenceText: 'Anyhow I noticed your name on the door',
+        partialTranscript: 'the door',
       );
 
       expect(result, isFalse);
@@ -142,6 +153,58 @@ void main() {
       );
 
       expect(result, isFalse);
+    });
+
+    test('尾词非唯一时使用更高阈值 60%', () {
+      // "hello" 在 reference 中出现 2 次，tail N=1，非唯一
+      // 1/7 = 14% < 60%
+      final result = heuristic.isLikelyComplete(
+        referenceText: 'I said hello and she said hello',
+        partialTranscript: 'hello',
+      );
+
+      expect(result, isFalse);
+    });
+
+    test('尾词非唯一但 score >= 60% 时判定已说完', () {
+      // "and she said hello" → LCS 匹配 4 个，尾部连续匹配 4 个
+      // 4/7 ≈ 57%，但 "said hello" 出现 2 次
+      // 继续往前看："she said hello" 唯一 → N=3 时 tail 唯一
+      // 实际上从末尾连续匹配：hello(√) said(√) she(√) and(√) → N=4
+      // tail = "and she said hello"，在 reference 中只出现 1 次 → 唯一
+      // 4/7 ≈ 57% >= 40% → 通过
+      final result = heuristic.isLikelyComplete(
+        referenceText: 'I said hello and she said hello',
+        partialTranscript: 'and she said hello',
+      );
+
+      expect(result, isTrue);
+    });
+
+    test('空输入时不判定已说完', () {
+      expect(
+        heuristic.isLikelyComplete(
+          referenceText: 'Hello world',
+          partialTranscript: '',
+        ),
+        isFalse,
+      );
+      expect(
+        heuristic.isLikelyComplete(
+          referenceText: '',
+          partialTranscript: 'Hello world',
+        ),
+        isFalse,
+      );
+    });
+
+    test('完全匹配时判定已说完', () {
+      final result = heuristic.isLikelyComplete(
+        referenceText: 'Hello world',
+        partialTranscript: 'hello world',
+      );
+
+      expect(result, isTrue);
     });
   });
 
@@ -297,57 +360,54 @@ void main() {
       },
     );
 
-    test(
-      '识别失败（noEnglishDetected）时进入 retryPending 自动重试',
-      () async {
-        final backend = _FakeSpeechPracticeBackend(autoEmitFinal: false);
-        final container = ProviderContainer(
-          overrides: [
-            speechPracticeBackendProvider.overrideWithValue(backend),
-            listenAndRepeatPlayerProvider.overrideWith(
-              () => TestListenAndRepeatPlayer(
-                const ListenAndRepeatPlayerState(
-                  currentSentenceIndex: 0,
-                  totalSentences: 1,
-                  currentPlayCount: 1,
-                  isPauseBetweenPlays: true,
-                ),
-                createTestSentences(count: 1),
+    test('识别失败（noEnglishDetected）时进入 retryPending 自动重试', () async {
+      final backend = _FakeSpeechPracticeBackend(autoEmitFinal: false);
+      final container = ProviderContainer(
+        overrides: [
+          speechPracticeBackendProvider.overrideWithValue(backend),
+          listenAndRepeatPlayerProvider.overrideWith(
+            () => TestListenAndRepeatPlayer(
+              const ListenAndRepeatPlayerState(
+                currentSentenceIndex: 0,
+                totalSentences: 1,
+                currentPlayCount: 1,
+                isPauseBetweenPlays: true,
               ),
+              createTestSentences(count: 1),
             ),
-          ],
-        );
-        addTearDown(() async {
-          await backend.dispose();
-          container.dispose();
-        });
-
-        final controller = container.read(
-          listenAndRepeatTurnControllerProvider.notifier,
-        );
-        await controller.ensureAutoTurn(
-          promptId: 'shadowing:a1:0',
-          referenceText: 'Hello world',
-        );
-
-        final stopFuture = controller.handleManualStop();
-
-        // 发送空 final transcript → matcher 判定 noEnglishDetected
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-        backend._controller.add(
-          SpeechPracticeEvent(
-            type: SpeechPracticeEventType.finalTranscriptReady,
-            promptId: 'shadowing:a1:0',
-            transcript: '',
           ),
-        );
-        await stopFuture;
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        ],
+      );
+      addTearDown(() async {
+        await backend.dispose();
+        container.dispose();
+      });
 
-        final turnState = container.read(listenAndRepeatTurnControllerProvider);
-        expect(turnState.phase, ListenAndRepeatTurnPhase.retryPending);
-      },
-    );
+      final controller = container.read(
+        listenAndRepeatTurnControllerProvider.notifier,
+      );
+      await controller.ensureAutoTurn(
+        promptId: 'shadowing:a1:0',
+        referenceText: 'Hello world',
+      );
+
+      final stopFuture = controller.handleManualStop();
+
+      // 发送空 final transcript → matcher 判定 noEnglishDetected
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      backend._controller.add(
+        SpeechPracticeEvent(
+          type: SpeechPracticeEventType.finalTranscriptReady,
+          promptId: 'shadowing:a1:0',
+          transcript: '',
+        ),
+      );
+      await stopFuture;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final turnState = container.read(listenAndRepeatTurnControllerProvider);
+      expect(turnState.phase, ListenAndRepeatTurnPhase.retryPending);
+    });
 
     test('连续 3 次检测失败后退出自动录音进入 manualFallback', () async {
       final backend = _FakeSpeechPracticeBackend(autoEmitFinal: false);
@@ -480,9 +540,7 @@ void main() {
 
         // 9 秒时仍在录音
         async.elapse(const Duration(seconds: 9));
-        final midState = container.read(
-          listenAndRepeatTurnControllerProvider,
-        );
+        final midState = container.read(listenAndRepeatTurnControllerProvider);
         expect(midState.phase, ListenAndRepeatTurnPhase.speaking);
 
         // 10 秒时触发最大时长兜底
@@ -797,9 +855,7 @@ void main() {
 
         // 推进到超过最大时长，状态不应改变（timer 已被取消）
         async.elapse(const Duration(seconds: 20));
-        final lateState = container.read(
-          listenAndRepeatTurnControllerProvider,
-        );
+        final lateState = container.read(listenAndRepeatTurnControllerProvider);
         expect(lateState.phase, ListenAndRepeatTurnPhase.processing);
 
         backend.dispose();
