@@ -297,6 +297,21 @@
   **完成时间**: 2026-03-12 11:29
   **补充更新**: 2026-03-12 14:59，词汇量 badge 支持底部弹窗分页查看（默认按添加时间倒序，支持时间/字母排序）
 
+## 已完成：AI 单词深度解析功能
+
+- [x] 后端 PostgreSQL `word_analyses` 表 + Drizzle schema
+- [x] 后端 API 路由 `POST /api/v1/ai/word-analyze`（L3 unstable_cache + L4 PostgreSQL + LLM 生成）
+- [x] Flutter 数据模型 `WordAnalysis`（4 个可选字段：contextMeaning / collocations / usage / wordFamily）
+- [x] `SentenceAiApiClient` 扩展 `analyzeWord()` 方法
+- [x] `WordAiNotifier` 三级缓存 Provider（L1 内存 → L2 SQLite → L3 API，含并发去重）
+- [x] 国际化（5 个新 key，en + zh）
+- [x] `WordDictionarySheet` UI 集成（AiContentSection 折叠/展开 + 结构化渲染）
+- [x] 测试覆盖（模型 7 + API 客户端 7 + Provider 8 + Widget 6 = 28 个新测试）
+
+  **完成时间**: 2026-03-13
+
+---
+
 ## 意群划分功能
 
 ## 增加自由练习功能

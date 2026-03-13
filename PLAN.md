@@ -26,6 +26,28 @@
 
 ---
 
+## 已完成：AI 单词深度解析功能
+
+**完成时间**: 2026-03-13
+
+在词典弹窗中集成 AI 单词深度解析，帮助学习者理解单词在语境中的含义：
+
+### 后端
+- PostgreSQL `word_analyses` 表 + Drizzle schema
+- API 路由 `POST /api/v1/ai/word-analyze`（L3 unstable_cache + L4 PostgreSQL + LLM 生成）
+- 自适应 4 字段分析：语境释义、常见搭配、用法要点、词族扩展
+
+### Flutter
+- `WordAnalysis` 数据模型（4 个可选字段，AI 自适应返回 null）
+- `WordAiNotifier` 三级缓存（L1 内存 → L2 SQLite → L3 API，并发去重）
+- `WordDictionarySheet` UI 集成（AiContentSection 折叠/展开 + 结构化渲染）
+- 词典有结果和未收录词均支持 AI 解析
+
+### 测试覆盖
+- 28 个新测试（模型 7 + API 客户端 7 + Provider 8 + Widget 6）
+
+---
+
 ## 已完成：管理字幕功能（AI 转录）
 
 **完成时间**: 2026-03-05
