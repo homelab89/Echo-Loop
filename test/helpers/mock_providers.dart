@@ -599,6 +599,26 @@ class TestLearningSession extends LearningSession {
   Future<void> exitLearningMode() async {
     state = const LearningSessionState();
   }
+
+  @override
+  void addInputWords(int count) {
+    // 测试中不访问 StudyStatsNotifier
+  }
+
+  @override
+  void addOutputWords(int count) {
+    // 测试中不访问 StudyStatsNotifier
+  }
+
+  @override
+  void recordLearnedSentence(String text) {
+    // 测试中不访问 LearnedVocabularyTracker
+  }
+
+  @override
+  void recordLearnedSentences(Iterable<Sentence> sentences) {
+    // 测试中不访问 LearnedVocabularyTracker
+  }
 }
 
 /// 测试用 BlindListenPlayer — 不依赖音频引擎

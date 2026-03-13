@@ -348,6 +348,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           audioEngineProvider.overrideWith(() => _ReplayTestAudioEngine()),
+          learningSessionProvider.overrideWith(() => TestLearningSession()),
         ],
       );
       notifier = container.read(intensiveListenPlayerProvider.notifier);
