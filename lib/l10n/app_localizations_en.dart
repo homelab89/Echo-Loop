@@ -957,6 +957,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listenAndRepeatRecordingInProgress => 'Recording...';
 
   @override
+  String get listenAndRepeatStartSpeaking => 'Start speaking';
+
+  @override
+  String get listenAndRepeatAnalyzing => 'Analyzing...';
+
+  @override
+  String get listenAndRepeatTapToRecord => 'Tap to record';
+
+  @override
+  String get listenAndRepeatRatingExcellent => 'Excellent';
+
+  @override
+  String get listenAndRepeatRatingGood => 'Good';
+
+  @override
+  String get listenAndRepeatRatingFair => 'Fair';
+
+  @override
+  String get listenAndRepeatRatingTryAgain => 'Try again';
+
+  @override
   String get listenAndRepeatAwaitingFinalTranscript =>
       'Confirming final transcript...';
 
@@ -990,8 +1011,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Speech recognition is unavailable on this device.';
 
   @override
-  String get listenAndRepeatRecognitionError =>
-      'Unable to check this recording right now.';
+  String get listenAndRepeatRecognitionError => 'Recognition error';
+
+  @override
+  String get listenAndRepeatRetryPending => 'Try again...';
 
   @override
   String get listenAndRepeatCompleteTitle => 'Listen & Repeat Complete';

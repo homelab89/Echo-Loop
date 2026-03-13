@@ -938,7 +938,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get listenAndRepeatPlayRecordingButton => '播放我的录音';
 
   @override
-  String get listenAndRepeatRecordingInProgress => '正在录音...';
+  String get listenAndRepeatRecordingInProgress => '录音中...';
+
+  @override
+  String get listenAndRepeatStartSpeaking => '请开口跟读';
+
+  @override
+  String get listenAndRepeatAnalyzing => '分析中...';
+
+  @override
+  String get listenAndRepeatTapToRecord => '点击开始录音';
+
+  @override
+  String get listenAndRepeatRatingExcellent => '非常棒';
+
+  @override
+  String get listenAndRepeatRatingGood => '不错';
+
+  @override
+  String get listenAndRepeatRatingFair => '还行';
+
+  @override
+  String get listenAndRepeatRatingTryAgain => '再试一次';
 
   @override
   String get listenAndRepeatAwaitingFinalTranscript => '正在确认最终转录...';
@@ -969,7 +990,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get listenAndRepeatRecognitionUnavailable => '当前设备暂不支持语音识别。';
 
   @override
-  String get listenAndRepeatRecognitionError => '暂时无法识别这段录音。';
+  String get listenAndRepeatRecognitionError => '识别错误';
+
+  @override
+  String get listenAndRepeatRetryPending => '再试一遍...';
 
   @override
   String get listenAndRepeatCompleteTitle => '跟读完成';

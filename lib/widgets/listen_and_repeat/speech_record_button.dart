@@ -38,6 +38,9 @@ class _SpeechRecordButtonState extends State<SpeechRecordButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _waveController;
 
+  /// 乐观更新：点击后立即切换为录音态，无需等 parent rebuild。
+  bool _optimisticRecording = false;
+
   /// 等待说话慢速，说话时快速。
   static const _slowDuration = Duration(milliseconds: 2400);
   static const _fastDuration = Duration(milliseconds: 1000);
@@ -53,12 +56,19 @@ class _SpeechRecordButtonState extends State<SpeechRecordButton>
   void didUpdateWidget(covariant SpeechRecordButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.phase != widget.phase) {
+      // parent 已刷新 phase，清除乐观状态
+      _optimisticRecording = false;
       _syncAnimation();
     }
   }
 
+  ListenAndRepeatTurnPhase get _effectivePhase =>
+      _optimisticRecording
+          ? ListenAndRepeatTurnPhase.awaitingSpeech
+          : widget.phase;
+
   void _syncAnimation() {
-    final phase = widget.phase;
+    final phase = _effectivePhase;
     if (phase == ListenAndRepeatTurnPhase.awaitingSpeech) {
       _waveController.duration = _slowDuration;
       if (!_waveController.isAnimating) {
@@ -75,6 +85,19 @@ class _SpeechRecordButtonState extends State<SpeechRecordButton>
     }
   }
 
+  void _handleTap() {
+    // 松开手指后立即切换为录音态视觉，同时触发回调
+    final phase = widget.phase;
+    if (phase != ListenAndRepeatTurnPhase.awaitingSpeech &&
+        phase != ListenAndRepeatTurnPhase.speaking) {
+      setState(() {
+        _optimisticRecording = true;
+      });
+      _syncAnimation();
+    }
+    widget.onTap();
+  }
+
   @override
   void dispose() {
     _waveController.dispose();
@@ -84,7 +107,7 @@ class _SpeechRecordButtonState extends State<SpeechRecordButton>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final phase = widget.phase;
+    final phase = _effectivePhase;
     final isRecording =
         phase == ListenAndRepeatTurnPhase.awaitingSpeech ||
         phase == ListenAndRepeatTurnPhase.speaking;
@@ -113,7 +136,7 @@ class _SpeechRecordButtonState extends State<SpeechRecordButton>
         shadowColor: bgColor.withValues(alpha: 0.4),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: widget.onTap,
+          onTap: _handleTap,
           customBorder: const CircleBorder(),
           child: Stack(
             alignment: Alignment.center,

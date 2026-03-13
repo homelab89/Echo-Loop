@@ -2,7 +2,7 @@
 library;
 
 import 'dart:async';
-
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -43,12 +43,30 @@ class SpeechPracticeSession extends Notifier<SpeechPracticeSessionState> {
     final backend = ref.read(speechPracticeBackendProvider);
     if (backend.isSupported) {
       _eventSub = backend.events.listen(_handleSpeechEvent);
+      unawaited(backend.warmup());
     }
+
+    // App 回前台时刷新权限缓存，覆盖用户在系统设置中撤销权限的场景。
+    final lifecycleListener = AppLifecycleListener(
+      onStateChange: _handleAppLifecycleChange,
+    );
+
     ref.onDispose(() async {
+      lifecycleListener.dispose();
       await _eventSub?.cancel();
       await _disposePlayer();
+      if (backend.isSupported) {
+        await backend.shutdown();
+      }
     });
     return const SpeechPracticeSessionState();
+  }
+
+  /// App 生命周期变化回调：回前台时异步刷新权限缓存。
+  void _handleAppLifecycleChange(AppLifecycleState appState) {
+    if (appState == AppLifecycleState.resumed) {
+      unawaited(ensurePermissions());
+    }
   }
 
   /// 获取当前句子的录音结果。
@@ -75,9 +93,16 @@ class SpeechPracticeSession extends Notifier<SpeechPracticeSessionState> {
   }
 
   /// 开始录音。
+  ///
+  /// 优化：已缓存 granted 时跳过 MethodChannel 权限查询；
+  /// 无活跃回放时跳过 stopAttemptPlayback。
   Future<void> startRecording({required String promptId}) async {
     final backend = ref.read(speechPracticeBackendProvider);
-    await stopAttemptPlayback();
+
+    // 仅在有活跃回放时才 stop，省掉一次空 await。
+    if (state.playingPromptId != null) {
+      await stopAttemptPlayback();
+    }
 
     if (!backend.isSupported) {
       _setAttemptState(
@@ -90,18 +115,23 @@ class SpeechPracticeSession extends Notifier<SpeechPracticeSessionState> {
       return;
     }
 
+    // 优化：已缓存 granted → 跳过 MethodChannel 调用。
     bool granted;
-    try {
-      granted = await ensurePermissions();
-    } on SpeechPracticePlatformException catch (error) {
-      _setAttemptState(
-        promptId,
-        SpeechPracticeAttempt(promptId: promptId).copyWith(
-          status: _statusFromError(error.code),
-          errorMessage: error.message,
-        ),
-      );
-      return;
+    if (state.permissions.isGranted) {
+      granted = true;
+    } else {
+      try {
+        granted = await ensurePermissions();
+      } on SpeechPracticePlatformException catch (error) {
+        _setAttemptState(
+          promptId,
+          SpeechPracticeAttempt(promptId: promptId).copyWith(
+            status: _statusFromError(error.code),
+            errorMessage: error.message,
+          ),
+        );
+        return;
+      }
     }
     if (!granted) {
       _setAttemptState(
@@ -146,6 +176,10 @@ class SpeechPracticeSession extends Notifier<SpeechPracticeSessionState> {
         clearAwaitingFinalPromptId: true,
       );
     } on SpeechPracticePlatformException catch (error) {
+      // startSession 因权限问题失败时，异步刷新缓存。
+      if (_isPermissionError(error.code)) {
+        unawaited(ensurePermissions());
+      }
       _setAttemptState(
         promptId,
         SpeechPracticeAttempt(promptId: promptId).copyWith(
@@ -464,6 +498,10 @@ class SpeechPracticeSession extends Notifier<SpeechPracticeSessionState> {
       // 删除失败不影响学习流程。
     }
   }
+
+  /// 判断错误码是否为权限相关。
+  bool _isPermissionError(String? code) =>
+      code == 'permissionDenied' || code == 'notAuthorized';
 
   SpeechPracticeAttemptStatus _statusFromError(String? code) {
     return switch (code) {

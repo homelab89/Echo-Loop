@@ -100,6 +100,12 @@ class TestSpeechPracticePlatform implements SpeechPracticeBackend {
   }
 
   @override
+  Future<void> warmup({String locale = 'en-US'}) async {}
+
+  @override
+  Future<void> shutdown() async {}
+
+  @override
   Future<String> startSession({
     required String promptId,
     String locale = 'en-US',

@@ -37,6 +37,9 @@ abstract class SpeechPracticeBackend {
   /// 录音识别事件流。
   Stream<SpeechPracticeEvent> get events;
 
+  /// 预热引擎：页面进入时调用，提前初始化 AVAudioEngine + tap。
+  Future<void> warmup({String locale = 'en-US'});
+
   /// 开始 live ASR 录音。
   Future<String> startSession({
     required String promptId,
@@ -51,6 +54,9 @@ abstract class SpeechPracticeBackend {
 
   /// 删除临时录音文件。
   Future<void> deleteRecording(String filePath);
+
+  /// 释放引擎资源：页面退出时调用，销毁 AVAudioEngine + tap。
+  Future<void> shutdown();
 }
 
 /// 原生录音识别桥接。
@@ -120,6 +126,12 @@ class SpeechPracticePlatform implements SpeechPracticeBackend {
   }
 
   @override
+  Future<void> warmup({String locale = 'en-US'}) async {
+    _ensureSupported();
+    await _invokeMap('warmup', {'locale': locale});
+  }
+
+  @override
   Future<String> startSession({
     required String promptId,
     String locale = 'en-US',
@@ -156,6 +168,12 @@ class SpeechPracticePlatform implements SpeechPracticeBackend {
   Future<void> deleteRecording(String filePath) async {
     _ensureSupported();
     await _invokeMap('deleteRecording', {'filePath': filePath});
+  }
+
+  @override
+  Future<void> shutdown() async {
+    _ensureSupported();
+    await _invokeMap('shutdown');
   }
 
   void _ensureSupported() {

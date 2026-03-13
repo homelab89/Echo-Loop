@@ -13,7 +13,13 @@ const _awaitingSpeechReminderDelay = Duration(seconds: 5);
 const _awaitingSpeechFallbackDelay = Duration(seconds: 15);
 const _silenceCompletionCheckDelay = Duration(seconds: 1);
 const _silenceAutoStopDelay = Duration(seconds: 5);
+const _maxRecordingMultiplier = 2.5;
+const _maxRecordingBuffer = Duration(seconds: 5);
+const _maxRecordingFloor = Duration(seconds: 10);
 const _reviewCountdownDuration = Duration(seconds: 5);
+const _fairScoreThreshold = 0.45;
+const _autoRetryDelay = Duration(seconds: 4);
+const _maxConsecutiveFailures = 3;
 const _completionHeuristicThreshold = 0.65;
 const _completionHeuristicTailTokens = 2;
 
@@ -23,6 +29,9 @@ enum ListenAndRepeatTurnPhase {
   speaking,
   processing,
   reviewCountdown,
+
+  /// 评级未达 Fair，短暂展示反馈后自动重新录音。
+  retryPending,
   manualFallback,
 }
 
@@ -45,7 +54,8 @@ class ListenAndRepeatTurnState {
 
   bool get isActive =>
       phase != ListenAndRepeatTurnPhase.idle &&
-      phase != ListenAndRepeatTurnPhase.manualFallback;
+      phase != ListenAndRepeatTurnPhase.manualFallback &&
+      phase != ListenAndRepeatTurnPhase.retryPending;
 
   ListenAndRepeatTurnState copyWith({
     ListenAndRepeatTurnPhase? phase,
@@ -171,6 +181,10 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
   Timer? _speechReminderTimer;
   Timer? _speechFallbackTimer;
   Timer? _reviewTickTimer;
+  Timer? _maxDurationTimer;
+  Timer? _autoRetryTimer;
+  Duration _sentenceDuration = Duration.zero;
+  int _consecutiveFailureCount = 0;
   bool _isStopping = false;
 
   @override
@@ -187,6 +201,7 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
     required String promptId,
     required String referenceText,
     bool allowAutoFallback = true,
+    Duration sentenceDuration = Duration.zero,
   }) async {
     if (state.promptId == promptId && state.isActive) {
       return;
@@ -194,6 +209,7 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
 
     _cancelAllTimers();
     _isStopping = false;
+    _sentenceDuration = sentenceDuration;
     state = ListenAndRepeatTurnState(
       phase: ListenAndRepeatTurnPhase.awaitingSpeech,
       promptId: promptId,
@@ -211,6 +227,12 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
       return;
     }
 
+    _scheduleMaxDurationTimer(
+      promptId: promptId,
+      referenceText: referenceText,
+      sentenceDuration: sentenceDuration,
+    );
+
     if (allowAutoFallback) {
       _scheduleAwaitingSpeechTimers(promptId);
     }
@@ -220,11 +242,13 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
   Future<void> ensureAutoTurn({
     required String promptId,
     required String referenceText,
+    Duration sentenceDuration = Duration.zero,
   }) {
     return ensureTurn(
       promptId: promptId,
       referenceText: referenceText,
       allowAutoFallback: true,
+      sentenceDuration: sentenceDuration,
     );
   }
 
@@ -232,11 +256,13 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
   Future<void> startManualRecording({
     required String promptId,
     required String referenceText,
+    Duration sentenceDuration = Duration.zero,
   }) {
     return ensureTurn(
       promptId: promptId,
       referenceText: referenceText,
       allowAutoFallback: false,
+      sentenceDuration: sentenceDuration,
     );
   }
 
@@ -246,6 +272,8 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
     }
     _cancelAwaitingSpeechTimers();
     _cancelReviewCountdown();
+    _maxDurationTimer?.cancel();
+    _maxDurationTimer = null;
     state = state.copyWith(phase: ListenAndRepeatTurnPhase.processing);
   }
 
@@ -319,6 +347,7 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
   void clearTurn() {
     _cancelAllTimers();
     _isStopping = false;
+    _consecutiveFailureCount = 0;
     state = const ListenAndRepeatTurnState();
   }
 
@@ -349,16 +378,33 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
 
     if (attempt.hasFinalFeedback &&
         !(previousAttempt?.hasFinalFeedback ?? false)) {
-      // 识别失败或未检测到英语时回退为手动录音，等待用户操作
-      if (attempt.status == SpeechPracticeAttemptStatus.noEnglishDetected ||
-          attempt.status == SpeechPracticeAttemptStatus.error ||
-          attempt.status == SpeechPracticeAttemptStatus.permissionDenied ||
+      // 权限被拒或平台不可用时回退为手动录音，重试也无法解决
+      if (attempt.status == SpeechPracticeAttemptStatus.permissionDenied ||
           attempt.status == SpeechPracticeAttemptStatus.unavailable) {
         _cancelAllTimers();
         state = state.copyWith(phase: ListenAndRepeatTurnPhase.manualFallback);
         return;
       }
-      activateReviewCountdown(promptId: promptId);
+      // 检测失败、识别错误或评级未达 Fair 时自动重试
+      final isFailed =
+          attempt.status == SpeechPracticeAttemptStatus.noEnglishDetected ||
+          attempt.status == SpeechPracticeAttemptStatus.error ||
+          (attempt.score ?? 0) < _fairScoreThreshold;
+      if (isFailed) {
+        _consecutiveFailureCount++;
+        if (_consecutiveFailureCount >= _maxConsecutiveFailures) {
+          _consecutiveFailureCount = 0;
+          _cancelAllTimers();
+          state = state.copyWith(
+            phase: ListenAndRepeatTurnPhase.manualFallback,
+          );
+        } else {
+          _scheduleAutoRetry(promptId: promptId);
+        }
+      } else {
+        _consecutiveFailureCount = 0;
+        activateReviewCountdown(promptId: promptId);
+      }
       return;
     }
 
@@ -510,8 +556,60 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
     _reviewTickTimer = null;
   }
 
+  /// 评级未达 Fair 时短暂展示反馈，然后自动重新开始录音。
+  void _scheduleAutoRetry({required String promptId}) {
+    _cancelAllTimers();
+    state = state.copyWith(phase: ListenAndRepeatTurnPhase.retryPending);
+    _autoRetryTimer = Timer(_autoRetryDelay, () {
+      if (state.promptId != promptId ||
+          state.phase != ListenAndRepeatTurnPhase.retryPending) {
+        return;
+      }
+      final referenceText = state.referenceText;
+      if (referenceText == null) return;
+      unawaited(
+        ensureTurn(
+          promptId: promptId,
+          referenceText: referenceText,
+          allowAutoFallback: false,
+          sentenceDuration: _sentenceDuration,
+        ),
+      );
+    });
+  }
+
+  /// 启动录音最大时长兜底计时器。
+  ///
+  /// 超时后静默停止录音并正常评分，用户无感知。
+  void _scheduleMaxDurationTimer({
+    required String promptId,
+    required String referenceText,
+    required Duration sentenceDuration,
+  }) {
+    _maxDurationTimer?.cancel();
+    final maxDuration = _computeMaxRecordingDuration(sentenceDuration);
+    _maxDurationTimer = Timer(maxDuration, () {
+      if (state.promptId != promptId) return;
+      if (state.phase == ListenAndRepeatTurnPhase.awaitingSpeech ||
+          state.phase == ListenAndRepeatTurnPhase.speaking) {
+        _stopForEvaluation(promptId: promptId, referenceText: referenceText);
+      }
+    });
+  }
+
+  /// 计算录音最大时长：`max(2.5 × sentenceDuration + 5s, 10s)`。
+  Duration _computeMaxRecordingDuration(Duration sentenceDuration) {
+    final computed =
+        sentenceDuration * _maxRecordingMultiplier + _maxRecordingBuffer;
+    return computed < _maxRecordingFloor ? _maxRecordingFloor : computed;
+  }
+
   void _cancelAllTimers() {
     _cancelAwaitingSpeechTimers();
     _cancelReviewCountdown();
+    _maxDurationTimer?.cancel();
+    _maxDurationTimer = null;
+    _autoRetryTimer?.cancel();
+    _autoRetryTimer = null;
   }
 }

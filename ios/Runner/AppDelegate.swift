@@ -20,7 +20,13 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
   private let eventChannel: FlutterEventChannel
   private var eventSink: FlutterEventSink?
 
+  // 引擎级资源（页面常驻，warmup 创建，shutdown 释放）
   private var audioEngine: AVAudioEngine?
+  private var cachedRecognizer: SFSpeechRecognizer?
+  private var isEngineRunning = false
+  private var isRecording = false
+
+  // 句子级资源（每次录音创建/释放）
   private var audioFile: AVAudioFile?
   private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
   private var recognitionTask: SFSpeechRecognitionTask?
@@ -63,12 +69,16 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
       result(permissionMap())
     case "requestPermissions":
       requestPermissions(result: result)
+    case "warmup":
+      warmup(call.arguments as? [String: Any], result: result)
     case "startSession":
       startSession(call.arguments as? [String: Any], result: result)
     case "stopSession":
       stopSession(result: result)
     case "cancelSession":
       cancelSession(result: result)
+    case "shutdown":
+      shutdown(result: result)
     case "deleteRecording":
       deleteRecording(call.arguments as? [String: Any], result: result)
     default:
@@ -128,7 +138,8 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
     }
   }
 
-  private func startSession(_ arguments: [String: Any]?, result: @escaping FlutterResult) {
+  /// 预热引擎：创建 AVAudioEngine + installTap + start，页面进入时调用。
+  private func warmup(_ arguments: [String: Any]?, result: @escaping FlutterResult) {
     guard microphonePermissionStatus() == "granted", speechPermissionStatus() == "granted" else {
       result(FlutterError(
         code: SpeechPracticeError.permissionDenied.rawValue,
@@ -138,35 +149,14 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
       return
     }
 
-    guard
-      let promptId = arguments?["promptId"] as? String,
-      !promptId.isEmpty
-    else {
-      result(FlutterError(
-        code: SpeechPracticeError.invalidArguments.rawValue,
-        message: "Missing promptId",
-        details: nil
-      ))
+    // 已在运行则直接返回。
+    if isEngineRunning {
+      result([:])
       return
     }
 
     let localeIdentifier = (arguments?["locale"] as? String) ?? "en-US"
-    guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: localeIdentifier)),
-          recognizer.isAvailable
-    else {
-      result(FlutterError(
-        code: SpeechPracticeError.notAvailable.rawValue,
-        message: "Speech recognizer unavailable",
-        details: nil
-      ))
-      return
-    }
-
-    cleanupLiveSession(cancelRecognition: true, restorePlayback: true)
-
-    let fileName = sanitizedFileName(promptId)
-    let fileURL = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("\(fileName)-\(Int(Date().timeIntervalSince1970 * 1000)).caf")
+    cachedRecognizer = SFSpeechRecognizer(locale: Locale(identifier: localeIdentifier))
 
     do {
       try configureRecordingSession()
@@ -174,30 +164,9 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
       let engine = AVAudioEngine()
       let inputNode = engine.inputNode
       let inputFormat = inputNode.outputFormat(forBus: 0)
-      let request = SFSpeechAudioBufferRecognitionRequest()
-      request.shouldReportPartialResults = true
 
-      let audioFile = try AVAudioFile(forWriting: fileURL, settings: inputFormat.settings)
-
-      currentPromptId = promptId
-      currentFileURL = fileURL
-      hasDetectedSpeech = false
-      silenceStartAt = nil
-      lastReportedSilenceMs = -1
-      recordedDurationMs = 0
-      firstDetectedSpeechMs = nil
-      lastDetectedSpeechMs = nil
-      self.audioFile = audioFile
-      recognitionRequest = request
-      audioEngine = engine
-
-      recognitionTask = recognizer.recognitionTask(with: request) { [weak self] recognitionResult, error in
-        self?.handleRecognitionCallback(recognitionResult: recognitionResult, error: error)
-      }
-
-      inputNode.removeTap(onBus: 0)
       inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self] buffer, _ in
-        guard let self else { return }
+        guard let self, self.isRecording else { return }
         self.handleVoiceActivity(buffer: buffer)
         self.recognitionRequest?.append(buffer)
         do {
@@ -213,9 +182,159 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
 
       engine.prepare()
       try engine.start()
+      audioEngine = engine
+      isEngineRunning = true
+      result([:])
+    } catch {
+      cleanupEngine()
+      result(FlutterError(
+        code: SpeechPracticeError.recordingFailed.rawValue,
+        message: "Failed to warmup audio engine",
+        details: error.localizedDescription
+      ))
+    }
+  }
+
+  private func startSession(_ arguments: [String: Any]?, result: @escaping FlutterResult) {
+    guard
+      let promptId = arguments?["promptId"] as? String,
+      !promptId.isEmpty
+    else {
+      result(FlutterError(
+        code: SpeechPracticeError.invalidArguments.rawValue,
+        message: "Missing promptId",
+        details: nil
+      ))
+      return
+    }
+
+    let localeIdentifier = (arguments?["locale"] as? String) ?? "en-US"
+
+    // 引擎已常驻：轻量启动，只创建句子级资源。
+    if isEngineRunning, let engine = audioEngine {
+      do {
+        try startSessionLightweight(engine: engine, promptId: promptId, locale: localeIdentifier, result: result)
+      } catch {
+        cleanupSentenceState(cancelRecognition: true)
+        result(FlutterError(
+          code: SpeechPracticeError.recordingFailed.rawValue,
+          message: "Failed to start lightweight session",
+          details: error.localizedDescription
+        ))
+      }
+      return
+    }
+
+    // 引擎未就绪：回退到完整初始化。
+    startSessionFull(promptId: promptId, locale: localeIdentifier, result: result)
+  }
+
+  /// 轻量启动：engine 已 running，只建句子级资源（recognitionTask + audioFile）。
+  private func startSessionLightweight(engine: AVAudioEngine, promptId: String, locale: String, result: @escaping FlutterResult) throws {
+    cleanupSentenceState(cancelRecognition: true)
+
+    let recognizer = cachedRecognizer ?? SFSpeechRecognizer(locale: Locale(identifier: locale))
+    guard let recognizer, recognizer.isAvailable else {
+      result(FlutterError(
+        code: SpeechPracticeError.notAvailable.rawValue,
+        message: "Speech recognizer unavailable",
+        details: nil
+      ))
+      return
+    }
+
+    let fileName = sanitizedFileName(promptId)
+    let fileURL = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("\(fileName)-\(Int(Date().timeIntervalSince1970 * 1000)).caf")
+
+    let inputFormat = engine.inputNode.outputFormat(forBus: 0)
+    let file = try AVAudioFile(forWriting: fileURL, settings: inputFormat.settings)
+
+    let request = SFSpeechAudioBufferRecognitionRequest()
+    request.shouldReportPartialResults = true
+
+    resetSentenceState(promptId: promptId, fileURL: fileURL, audioFile: file, request: request)
+
+    recognitionTask = recognizer.recognitionTask(with: request) { [weak self] recognitionResult, error in
+      self?.handleRecognitionCallback(recognitionResult: recognitionResult, error: error)
+    }
+
+    isRecording = true
+    result(["filePath": fileURL.path])
+  }
+
+  /// 完整初始化：warmup 未完成时的回退路径。
+  private func startSessionFull(promptId: String, locale: String, result: @escaping FlutterResult) {
+    guard microphonePermissionStatus() == "granted", speechPermissionStatus() == "granted" else {
+      result(FlutterError(
+        code: SpeechPracticeError.permissionDenied.rawValue,
+        message: "Microphone or speech permission denied",
+        details: nil
+      ))
+      return
+    }
+
+    guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: locale)),
+          recognizer.isAvailable
+    else {
+      result(FlutterError(
+        code: SpeechPracticeError.notAvailable.rawValue,
+        message: "Speech recognizer unavailable",
+        details: nil
+      ))
+      return
+    }
+
+    cleanupSentenceState(cancelRecognition: true)
+    cleanupEngine()
+
+    let fileName = sanitizedFileName(promptId)
+    let fileURL = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("\(fileName)-\(Int(Date().timeIntervalSince1970 * 1000)).caf")
+
+    do {
+      try configureRecordingSession()
+
+      let engine = AVAudioEngine()
+      let inputNode = engine.inputNode
+      let inputFormat = inputNode.outputFormat(forBus: 0)
+
+      let request = SFSpeechAudioBufferRecognitionRequest()
+      request.shouldReportPartialResults = true
+
+      let file = try AVAudioFile(forWriting: fileURL, settings: inputFormat.settings)
+
+      resetSentenceState(promptId: promptId, fileURL: fileURL, audioFile: file, request: request)
+      cachedRecognizer = recognizer
+      audioEngine = engine
+
+      recognitionTask = recognizer.recognitionTask(with: request) { [weak self] recognitionResult, error in
+        self?.handleRecognitionCallback(recognitionResult: recognitionResult, error: error)
+      }
+
+      inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self] buffer, _ in
+        guard let self, self.isRecording else { return }
+        self.handleVoiceActivity(buffer: buffer)
+        self.recognitionRequest?.append(buffer)
+        do {
+          let playbackBuffer = self.makeAmplifiedBuffer(from: buffer, gain: 2.2)
+          try self.audioFile?.write(from: playbackBuffer)
+        } catch {
+          self.emitError(
+            code: SpeechPracticeError.recordingFailed.rawValue,
+            message: "Failed to write recording buffer"
+          )
+        }
+      }
+
+      engine.prepare()
+      try engine.start()
+      isEngineRunning = true
+      isRecording = true
       result(["filePath": fileURL.path])
     } catch {
-      cleanupLiveSession(cancelRecognition: true, restorePlayback: true)
+      cleanupSentenceState(cancelRecognition: true)
+      cleanupEngine()
       result(FlutterError(
         code: SpeechPracticeError.recordingFailed.rawValue,
         message: "Failed to start live recording",
@@ -225,8 +344,7 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
   }
 
   private func stopSession(result: @escaping FlutterResult) {
-    audioEngine?.inputNode.removeTap(onBus: 0)
-    audioEngine?.stop()
+    isRecording = false
     recognitionRequest?.endAudio()
     audioFile = nil
     if let fileURL = currentFileURL {
@@ -236,7 +354,16 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
   }
 
   private func cancelSession(result: @escaping FlutterResult) {
-    cleanupLiveSession(cancelRecognition: true, restorePlayback: true)
+    isRecording = false
+    cleanupSentenceState(cancelRecognition: true)
+    result([:])
+  }
+
+  /// 彻底释放硬件资源，页面退出时调用。
+  private func shutdown(result: @escaping FlutterResult) {
+    isRecording = false
+    cleanupSentenceState(cancelRecognition: true)
+    cleanupEngine()
     result([:])
   }
 
@@ -269,7 +396,8 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
         "errorCode": SpeechPracticeError.noSpeech.rawValue,
         "errorMessage": error.localizedDescription
       ])
-      cleanupLiveSession(cancelRecognition: true, restorePlayback: true)
+      isRecording = false
+      cleanupSentenceState(cancelRecognition: true)
       return
     }
 
@@ -278,18 +406,21 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
     }
 
     let transcript = recognitionResult.bestTranscription.formattedString.trimmingCharacters(in: .whitespacesAndNewlines)
-    if !transcript.isEmpty {
+    if recognitionResult.isFinal {
+      // isFinal 时无论 transcript 是否为空都必须发送，否则 Dart 端 completer 永远收不到完成事件
       emitEvent([
-        "type": recognitionResult.isFinal
-          ? "finalTranscriptReady"
-          : "partialTranscriptUpdated",
+        "type": "finalTranscriptReady",
         "promptId": promptId,
         "transcript": transcript
       ])
-    }
-
-    if recognitionResult.isFinal {
-      cleanupLiveSession(cancelRecognition: false, restorePlayback: true)
+      isRecording = false
+      cleanupSentenceState(cancelRecognition: false)
+    } else if !transcript.isEmpty {
+      emitEvent([
+        "type": "partialTranscriptUpdated",
+        "promptId": promptId,
+        "transcript": transcript
+      ])
     }
   }
 
@@ -552,10 +683,8 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
     return buffer
   }
 
-  private func cleanupLiveSession(cancelRecognition: Bool, restorePlayback: Bool) {
-    audioEngine?.inputNode.removeTap(onBus: 0)
-    audioEngine?.stop()
-    audioEngine = nil
+  /// 句子级清理：释放 recognitionTask/request/file/VAD 状态，不动 engine。
+  private func cleanupSentenceState(cancelRecognition: Bool) {
     audioFile = nil
 
     recognitionRequest?.endAudio()
@@ -572,10 +701,33 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
     recordedDurationMs = 0
     firstDetectedSpeechMs = nil
     lastDetectedSpeechMs = nil
+  }
 
-    if restorePlayback {
-      restorePlaybackSession()
+  /// 引擎级清理：removeTap + engine.stop + 释放全部引擎资源 + 恢复 playback session。
+  private func cleanupEngine() {
+    if let engine = audioEngine {
+      engine.inputNode.removeTap(onBus: 0)
+      engine.stop()
     }
+    audioEngine = nil
+    cachedRecognizer = nil
+    isEngineRunning = false
+    isRecording = false
+    restorePlaybackSession()
+  }
+
+  /// 重置句子级状态变量。
+  private func resetSentenceState(promptId: String, fileURL: URL, audioFile: AVAudioFile, request: SFSpeechAudioBufferRecognitionRequest) {
+    currentPromptId = promptId
+    currentFileURL = fileURL
+    hasDetectedSpeech = false
+    silenceStartAt = nil
+    lastReportedSilenceMs = -1
+    recordedDurationMs = 0
+    firstDetectedSpeechMs = nil
+    lastDetectedSpeechMs = nil
+    self.audioFile = audioFile
+    recognitionRequest = request
   }
 
   private func configureRecordingSession() throws {

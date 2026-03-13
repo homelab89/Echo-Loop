@@ -19,9 +19,11 @@ class _FakeSpeechPracticeBackend implements SpeechPracticeBackend {
   SpeechPracticePermissionState permissions;
   String nextFinalTranscript = '';
   int deleteCallCount = 0;
+  int permissionCheckCount = 0;
   int _counter = 0;
   String? _activePromptId;
   SpeechPracticePlatformException? permissionError;
+  SpeechPracticePlatformException? startSessionError;
   bool autoEmitFinalOnStop;
 
   @override
@@ -32,6 +34,7 @@ class _FakeSpeechPracticeBackend implements SpeechPracticeBackend {
 
   @override
   Future<SpeechPracticePermissionState> getPermissionStatus() async {
+    permissionCheckCount += 1;
     if (permissionError != null) {
       throw permissionError!;
     }
@@ -44,10 +47,19 @@ class _FakeSpeechPracticeBackend implements SpeechPracticeBackend {
   }
 
   @override
+  Future<void> warmup({String locale = 'en-US'}) async {}
+
+  @override
+  Future<void> shutdown() async {}
+
+  @override
   Future<String> startSession({
     required String promptId,
     String locale = 'en-US',
   }) async {
+    if (startSessionError != null) {
+      throw startSessionError!;
+    }
     _counter += 1;
     _activePromptId = promptId;
     return '/tmp/$promptId-$_counter.caf';
@@ -117,6 +129,8 @@ class _FakeSpeechPracticeBackend implements SpeechPracticeBackend {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('SpeechPracticeSession', () {
     test('开始和结束录音后生成通过结果', () async {
       final backend = _FakeSpeechPracticeBackend()
@@ -276,6 +290,69 @@ void main() {
           .attempts['prompt'];
       expect(attempt?.hasDetectedSpeech, isTrue);
       expect(attempt?.silenceDuration, const Duration(seconds: 2));
+    });
+
+    test('已缓存 granted 时第二次录音跳过权限检查', () async {
+      final backend = _FakeSpeechPracticeBackend()
+        ..nextFinalTranscript = 'hello';
+      final container = ProviderContainer(
+        overrides: [speechPracticeBackendProvider.overrideWithValue(backend)],
+      );
+      addTearDown(() async {
+        container.dispose();
+        await backend.dispose();
+      });
+
+      final notifier = container.read(speechPracticeSessionProvider.notifier);
+
+      // 第一次录音：需要查权限。
+      await notifier.startRecording(promptId: 'p1');
+      await notifier.stopRecordingAndEvaluate(
+        promptId: 'p1',
+        referenceText: 'hello',
+      );
+      final checksAfterFirst = backend.permissionCheckCount;
+      expect(checksAfterFirst, greaterThan(0));
+
+      // 第二次录音：缓存已 granted，不再查权限。
+      await notifier.startRecording(promptId: 'p2');
+      expect(backend.permissionCheckCount, checksAfterFirst);
+    });
+
+    test('startSession 权限失败时异步刷新缓存', () async {
+      final backend = _FakeSpeechPracticeBackend();
+      final container = ProviderContainer(
+        overrides: [speechPracticeBackendProvider.overrideWithValue(backend)],
+      );
+      addTearDown(() async {
+        container.dispose();
+        await backend.dispose();
+      });
+
+      final notifier = container.read(speechPracticeSessionProvider.notifier);
+
+      // 第一次正常录音，缓存 granted。
+      await notifier.startRecording(promptId: 'p1');
+      await notifier.cancelActiveRecording();
+      final checksBeforeError = backend.permissionCheckCount;
+
+      // 模拟 startSession 返回权限错误。
+      backend.startSessionError = const SpeechPracticePlatformException(
+        'permissionDenied',
+        'permission revoked',
+      );
+      await notifier.startRecording(promptId: 'p2');
+
+      // 应异步刷新权限缓存。
+      await Future<void>.delayed(Duration.zero);
+      expect(backend.permissionCheckCount, greaterThan(checksBeforeError));
+      expect(
+        container
+            .read(speechPracticeSessionProvider)
+            .attempts['p2']
+            ?.status,
+        SpeechPracticeAttemptStatus.permissionDenied,
+      );
     });
   });
 }

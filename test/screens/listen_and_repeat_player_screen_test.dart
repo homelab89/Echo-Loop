@@ -61,6 +61,12 @@ class _FakeSpeechPracticeBackend implements SpeechPracticeBackend {
   }
 
   @override
+  Future<void> warmup({String locale = 'en-US'}) async {}
+
+  @override
+  Future<void> shutdown() async {}
+
+  @override
   Future<String> startSession({
     required String promptId,
     String locale = 'en-US',
@@ -377,7 +383,7 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
 
       expect(
-        find.text('Start repeating this sentence out loud.'),
+        find.text('Start speaking'),
         findsOneWidget,
       );
       // awaitingSpeech 阶段录音已激活，显示 mic 图标

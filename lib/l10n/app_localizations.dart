@@ -1802,6 +1802,48 @@ abstract class AppLocalizations {
   /// **'Recording...'**
   String get listenAndRepeatRecordingInProgress;
 
+  /// No description provided for @listenAndRepeatStartSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Start speaking'**
+  String get listenAndRepeatStartSpeaking;
+
+  /// No description provided for @listenAndRepeatAnalyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing...'**
+  String get listenAndRepeatAnalyzing;
+
+  /// No description provided for @listenAndRepeatTapToRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to record'**
+  String get listenAndRepeatTapToRecord;
+
+  /// No description provided for @listenAndRepeatRatingExcellent.
+  ///
+  /// In en, this message translates to:
+  /// **'Excellent'**
+  String get listenAndRepeatRatingExcellent;
+
+  /// No description provided for @listenAndRepeatRatingGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get listenAndRepeatRatingGood;
+
+  /// No description provided for @listenAndRepeatRatingFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get listenAndRepeatRatingFair;
+
+  /// No description provided for @listenAndRepeatRatingTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get listenAndRepeatRatingTryAgain;
+
   /// No description provided for @listenAndRepeatAwaitingFinalTranscript.
   ///
   /// In en, this message translates to:
@@ -1853,8 +1895,14 @@ abstract class AppLocalizations {
   /// No description provided for @listenAndRepeatRecognitionError.
   ///
   /// In en, this message translates to:
-  /// **'Unable to check this recording right now.'**
+  /// **'Recognition error'**
   String get listenAndRepeatRecognitionError;
+
+  /// No description provided for @listenAndRepeatRetryPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again...'**
+  String get listenAndRepeatRetryPending;
 
   /// No description provided for @listenAndRepeatCompleteTitle.
   ///

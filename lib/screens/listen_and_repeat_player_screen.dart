@@ -162,6 +162,7 @@ class _ListenAndRepeatPlayerScreenState
     await turn.startManualRecording(
       promptId: promptId,
       referenceText: currentSentence.text,
+      sentenceDuration: currentSentence.duration,
     );
   }
 
@@ -473,6 +474,7 @@ class _ListenAndRepeatPlayerScreenState
               .ensureAutoTurn(
                 promptId: currentPromptId,
                 referenceText: currentSentence.text,
+                sentenceDuration: currentSentence.duration,
               ),
         );
       });
@@ -549,128 +551,124 @@ class _ListenAndRepeatPlayerScreenState
                 durationText: durationText,
               ),
 
-              // 主体内容
+              // 主体内容：句子卡片
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.l),
-                  child: Column(
-                    children: [
-                      // 句子卡片（带★标记）
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: currentSentence != null
-                              ? _buildAnnotationCard(
-                                  currentSentence.text,
-                                  player.currentIndex,
-                                  highlightedSegments:
-                                      currentAttempt?.referenceSegments,
-                                  inlineFeedback: switch (currentAttempt) {
-                                    final attempt?
-                                        when attempt.hasFinalFeedback =>
-                                      _SpeechPracticeResultCard(
-                                        l10n: l10n,
-                                        attempt: attempt,
-                                        isPlayingAttempt:
-                                            speechState.playingPromptId ==
-                                            currentPromptId,
-                                        onPlayAttempt: attempt.hasRecording
-                                            ? () => _handleAttemptPlaybackTap(
-                                                currentPromptId,
-                                              )
-                                            : null,
-                                      ),
-                                    _ => null,
-                                  },
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.m),
-
-                      // 播放提示 / 录音面板（不使用 AnimatedSize，避免按钮位置跳变）
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 96),
-                        child: playerState.isPauseBetweenPlays
-                            ? _SpeechPracticeTurnPanel(
-                                l10n: l10n,
-                                turnState: turnState,
-                                isRecordingCurrent: isRecordingCurrent,
-                                onRecordTap: _handleRecordTap,
-                                onContinue: () {
-                                  unawaited(
-                                    ref
-                                        .read(
-                                          listenAndRepeatTurnControllerProvider
-                                              .notifier,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.l,
+                  ),
+                  child: SingleChildScrollView(
+                    child: currentSentence != null
+                        ? _buildAnnotationCard(
+                            currentSentence.text,
+                            player.currentIndex,
+                            highlightedSegments:
+                                currentAttempt?.referenceSegments,
+                            inlineFeedback: switch (currentAttempt) {
+                              final attempt?
+                                  when attempt.hasFinalFeedback =>
+                                _SpeechPracticeResultCard(
+                                  l10n: l10n,
+                                  attempt: attempt,
+                                  isPlayingAttempt:
+                                      speechState.playingPromptId ==
+                                      currentPromptId,
+                                  onPlayAttempt: attempt.hasRecording
+                                      ? () => _handleAttemptPlaybackTap(
+                                          currentPromptId,
                                         )
-                                        .handleContinue(),
-                                  );
-                                },
-                                onCountdownTap:
-                                    turnState.isReviewCountdownPaused
-                                    ? () => ref
-                                          .read(
-                                            listenAndRepeatTurnControllerProvider
-                                                .notifier,
-                                          )
-                                          .resumeReviewCountdown()
-                                    : () => ref
-                                          .read(
-                                            listenAndRepeatTurnControllerProvider
-                                                .notifier,
-                                          )
-                                          .pauseReviewCountdown(),
-                              )
-                            : Text(
-                                l10n.listenAndRepeatListenHint,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                      : null,
                                 ),
-                              ),
-                      ),
-                    ],
+                              _ => null,
+                            },
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ),
               ),
 
-              // 底部播放控制 + 遍数
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _PlaybackControls(
-                    playerState: playerState,
-                    onPrevious: () {
-                      unawaited(_prepareForExternalPlaybackAction());
-                      unawaited(player.goToPrevious());
-                    },
-                    onNext: () {
-                      unawaited(_prepareForExternalPlaybackAction());
-                      unawaited(player.goToNext());
-                    },
-                    onPlayPause: () {
-                      unawaited(_prepareForExternalPlaybackAction());
-                      if (playerState.isPauseBetweenPlays) {
-                        player.replayDuringCountdown();
-                      } else if (playerState.isPlaying) {
-                        player.pause();
-                      } else {
-                        player.resume();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    l10n.listenAndRepeatPlayCount(
-                      playerState.currentPlayCount,
-                      playerState.settings.repeatCount,
+              // 底部区域：录音/提示 + 播放控制 + 遍数
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.l,
+                  right: AppSpacing.l,
+                  bottom: AppSpacing.m,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 录音面板 / 播放提示
+                    if (playerState.isPauseBetweenPlays)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: AppSpacing.m,
+                        ),
+                        child: _SpeechPracticeTurnPanel(
+                          l10n: l10n,
+                          turnState: turnState,
+                          isRecordingCurrent: isRecordingCurrent,
+                          onRecordTap: _handleRecordTap,
+                          onContinue: () {
+                            unawaited(
+                              ref
+                                  .read(
+                                    listenAndRepeatTurnControllerProvider
+                                        .notifier,
+                                  )
+                                  .handleContinue(),
+                            );
+                          },
+                          onCountdownTap: turnState.isReviewCountdownPaused
+                              ? () => ref
+                                    .read(
+                                      listenAndRepeatTurnControllerProvider
+                                          .notifier,
+                                    )
+                                    .resumeReviewCountdown()
+                              : () => ref
+                                    .read(
+                                      listenAndRepeatTurnControllerProvider
+                                          .notifier,
+                                    )
+                                    .pauseReviewCountdown(),
+                        ),
+                      ),
+                    // 播放控制
+                    _PlaybackControls(
+                      playerState: playerState,
+                      onPrevious: () {
+                        unawaited(_prepareForExternalPlaybackAction());
+                        unawaited(player.goToPrevious());
+                      },
+                      onNext: () {
+                        unawaited(_prepareForExternalPlaybackAction());
+                        unawaited(player.goToNext());
+                      },
+                      onPlayPause: () {
+                        unawaited(_prepareForExternalPlaybackAction());
+                        if (playerState.isPauseBetweenPlays) {
+                          player.replayDuringCountdown();
+                        } else if (playerState.isPlaying) {
+                          player.pause();
+                        } else {
+                          player.resume();
+                        }
+                      },
                     ),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.5,
+                    // 遍数
+                    Text(
+                      l10n.listenAndRepeatPlayCount(
+                        playerState.currentPlayCount,
+                        playerState.settings.repeatCount,
+                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -820,45 +818,10 @@ class _SpeechPracticeTurnPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final reminderText = _reminderText(context);
-    // 提醒在上方（固定占位），按钮在下方，按钮位置不变。
-    final showReminder =
-        turnState.hasShownSpeechReminder ||
-        turnState.phase == ListenAndRepeatTurnPhase.manualFallback;
 
-    return switch (turnState.phase) {
-      ListenAndRepeatTurnPhase.awaitingSpeech ||
-      ListenAndRepeatTurnPhase.speaking ||
-      ListenAndRepeatTurnPhase.manualFallback ||
-      ListenAndRepeatTurnPhase.idle => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 提醒区：固定高度占位，有内容时显示，无内容时保持空间
-          SizedBox(
-            height: 28,
-            child: showReminder
-                ? Text(
-                    reminderText,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  )
-                : null,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          SpeechRecordButton(
-            phase: switch (turnState.phase) {
-              ListenAndRepeatTurnPhase.idle =>
-                ListenAndRepeatTurnPhase.awaitingSpeech,
-              final p => p,
-            },
-            onTap: onRecordTap,
-          ),
-        ],
-      ),
-      ListenAndRepeatTurnPhase.processing =>
-        const _SpeechPracticeProcessingIndicator(),
-      ListenAndRepeatTurnPhase.reviewCountdown => Row(
+    // reviewCountdown 走独立布局
+    if (turnState.phase == ListenAndRepeatTurnPhase.reviewCountdown) {
+      return Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           _CountdownChip(
@@ -880,16 +843,89 @@ class _SpeechPracticeTurnPanel extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    };
+      );
+    }
+
+    // 其余阶段统一布局：状态文字 + 录音按钮
+    final statusText = _statusText(turnState.phase);
+    final isProcessing =
+        turnState.phase == ListenAndRepeatTurnPhase.processing ||
+        turnState.phase == ListenAndRepeatTurnPhase.retryPending;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 状态区：固定高度，显示当前状态文字
+        SizedBox(
+          height: 24,
+          child: statusText != null
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isProcessing)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ),
+                    Text(
+                      statusText,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                )
+              : null,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        // 录音按钮：processing 时禁用（灰显），其他阶段正常
+        IgnorePointer(
+          ignoring: isProcessing,
+          child: Opacity(
+            opacity: isProcessing ? 0.45 : 1.0,
+            child: SpeechRecordButton(
+              phase: switch (turnState.phase) {
+                ListenAndRepeatTurnPhase.idle ||
+                ListenAndRepeatTurnPhase.processing ||
+                ListenAndRepeatTurnPhase.retryPending =>
+                  ListenAndRepeatTurnPhase.awaitingSpeech,
+                final p => p,
+              },
+              onTap: onRecordTap,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
-  String _reminderText(BuildContext context) {
-    final languageCode = Localizations.localeOf(context).languageCode;
-    if (languageCode == 'zh') {
-      return '开口跟读一下这句话';
-    }
-    return 'Start repeating this sentence out loud.';
+  /// 根据阶段返回状态文字，null 表示不显示。
+  String? _statusText(ListenAndRepeatTurnPhase phase) {
+    return switch (phase) {
+      ListenAndRepeatTurnPhase.idle =>
+        l10n.listenAndRepeatRecordingInProgress,
+      ListenAndRepeatTurnPhase.awaitingSpeech =>
+        turnState.hasShownSpeechReminder
+            ? l10n.listenAndRepeatStartSpeaking
+            : l10n.listenAndRepeatRecordingInProgress,
+      ListenAndRepeatTurnPhase.speaking =>
+        l10n.listenAndRepeatRecordingInProgress,
+      ListenAndRepeatTurnPhase.processing =>
+        l10n.listenAndRepeatAnalyzing,
+      ListenAndRepeatTurnPhase.manualFallback =>
+        l10n.listenAndRepeatTapToRecord,
+      ListenAndRepeatTurnPhase.retryPending =>
+        l10n.listenAndRepeatRetryPending,
+      ListenAndRepeatTurnPhase.reviewCountdown => null,
+    };
   }
 }
 
@@ -980,15 +1016,15 @@ class _SpeechPracticeResultCard extends StatelessWidget {
   String _ratingLabel() {
     final score = attempt.score ?? 0;
     if (score >= 0.85) {
-      return 'Excellent';
+      return l10n.listenAndRepeatRatingExcellent;
     }
     if (score >= 0.65) {
-      return 'Good';
+      return l10n.listenAndRepeatRatingGood;
     }
     if (score >= 0.45) {
-      return 'Fair';
+      return l10n.listenAndRepeatRatingFair;
     }
-    return 'Try again';
+    return l10n.listenAndRepeatRatingTryAgain;
   }
 
   String _feedbackText() {
@@ -1000,7 +1036,7 @@ class _SpeechPracticeResultCard extends StatelessWidget {
       SpeechPracticeAttemptStatus.unavailable =>
         l10n.listenAndRepeatRecognitionUnavailable,
       SpeechPracticeAttemptStatus.error =>
-        attempt.errorMessage ?? l10n.listenAndRepeatRecognitionError,
+        l10n.listenAndRepeatRecognitionError,
       SpeechPracticeAttemptStatus.awaitingFinal ||
       SpeechPracticeAttemptStatus.passed ||
       SpeechPracticeAttemptStatus.belowThreshold ||
@@ -1100,28 +1136,6 @@ class _RatingBadgeStyle {
   });
 }
 
-class _SpeechPracticeProcessingIndicator extends StatelessWidget {
-  const _SpeechPracticeProcessingIndicator();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SizedBox(
-      height: 56,
-      child: Center(
-        child: SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.2,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// 底部播放控制
 ///
 /// 布局：[上一句] --- [播放/暂停] --- [下一句]
@@ -1147,12 +1161,7 @@ class _PlaybackControls extends StatelessWidget {
         playerState.currentSentenceIndex < playerState.totalSentences - 1;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.l,
-        AppSpacing.xs,
-        AppSpacing.l,
-        AppSpacing.l,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
