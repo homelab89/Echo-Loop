@@ -125,9 +125,7 @@ class _ListenAndRepeatPlayerScreenState
     final ai = ref.read(sentenceAiNotifierProvider);
     final cachedTranslation = ai.getCachedTranslation(text)?.translation;
     final cachedAnalysis = ai.getCachedAnalysis(text);
-    final cachedAnalysisText = cachedAnalysis != null
-        ? '${cachedAnalysis.grammar}\n${cachedAnalysis.vocabulary}\n${cachedAnalysis.listening}'
-        : null;
+    final cachedAnalysisText = cachedAnalysis?.toDisplayString();
 
     return SentenceAnnotationCard(
       key: ValueKey(text),
@@ -142,7 +140,7 @@ class _ListenAndRepeatPlayerScreenState
       },
       onRequestAnalysis: () async {
         final result = await ai.getAnalysis(text);
-        return '${result.grammar}\n${result.vocabulary}\n${result.listening}';
+        return result.toDisplayString();
       },
       cachedTranslation: cachedTranslation,
       cachedAnalysis: cachedAnalysisText,

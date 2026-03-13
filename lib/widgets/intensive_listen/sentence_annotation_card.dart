@@ -7,6 +7,7 @@ library;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/sentence_ai_result.dart';
 import '../../theme/app_theme.dart';
 import '../common/ai_content_section.dart';
 import 'word_dictionary_sheet.dart';
@@ -201,8 +202,9 @@ class _SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
 
 /// 解析内容结构化展示
 ///
-/// 将 "grammar\nvocabulary\nusage" 格式的文本分行展示，
-/// 每行带有标签标题（primary 色 + w600）和正文。
+/// 使用 [SentenceAnalysis.parseDisplayString] 将内容按字段分隔符拆分为
+/// grammar / vocabulary / listening 三段，每段带标签标题。
+/// vocabulary 和 listening 字段内按 `\n` 拆分为多条，每条前加 bullet。
 class _AnalysisContent extends StatelessWidget {
   final String content;
 
@@ -212,14 +214,18 @@ class _AnalysisContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final lines = content.split('\n');
-    // 使用本地化标签名
+    final fields = SentenceAnalysis.parseDisplayString(content);
     final labels = [l10n.aiGrammar, l10n.aiVocabulary, l10n.aiListening];
+
+    final bodyStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+      height: 1.5,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var i = 0; i < lines.length && i < labels.length; i++) ...[
+        for (var i = 0; i < fields.length && i < labels.length; i++) ...[
           if (i > 0) const SizedBox(height: AppSpacing.s),
           // 标签标题（primary 色 + w600）
           Text(
@@ -230,16 +236,28 @@ class _AnalysisContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          // 正文
-          Text(
-            lines[i],
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.5,
-            ),
-          ),
+          // grammar（单行）直接展示；vocabulary / listening（多行）加 bullet
+          if (i == 0)
+            Text(fields[i], style: bodyStyle)
+          else
+            ..._buildBulletItems(fields[i], bodyStyle),
         ],
       ],
     );
+  }
+
+  /// 将 `\n` 分隔的多条内容渲染为带 bullet 的列表
+  List<Widget> _buildBulletItems(String field, TextStyle? style) {
+    final items = field.split('\n').where((s) => s.trim().isNotEmpty).toList();
+    if (items.length <= 1) {
+      return [Text(field, style: style)];
+    }
+    return [
+      for (final item in items)
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Text('· $item', style: style),
+        ),
+    ];
   }
 }

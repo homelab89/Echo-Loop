@@ -15,6 +15,7 @@ import '../database/providers.dart';
 import '../l10n/app_localizations.dart';
 import '../models/audio_item.dart' as model;
 import '../models/dict_entry.dart';
+import '../models/sentence_ai_result.dart';
 import '../providers/audio_engine/audio_engine_provider.dart';
 import '../providers/flashcard/flashcard_provider.dart';
 import '../providers/learning_session/bookmark_review_provider.dart';
@@ -508,11 +509,7 @@ class _BookmarkSentenceTileState extends ConsumerState<_BookmarkSentenceTile> {
         .getCachedTranslation(bm.sentenceText)
         ?.translation;
     final cachedAnalysis = ai.getCachedAnalysis(bm.sentenceText);
-    final cachedAnalysisText = cachedAnalysis != null
-        ? '${cachedAnalysis.grammar}\n'
-              '${cachedAnalysis.vocabulary}\n'
-              '${cachedAnalysis.listening}'
-        : null;
+    final cachedAnalysisText = cachedAnalysis?.toDisplayString();
 
     return Dismissible(
       key: ValueKey('bookmark_${bm.id}'),
@@ -614,9 +611,7 @@ class _BookmarkSentenceTileState extends ConsumerState<_BookmarkSentenceTile> {
                     cachedContent: cachedAnalysisText,
                     onRequest: () async {
                       final result = await ai.getAnalysis(bm.sentenceText);
-                      return '${result.grammar}\n'
-                          '${result.vocabulary}\n'
-                          '${result.listening}';
+                      return result.toDisplayString();
                     },
                     contentBuilder: (content) =>
                         _AnalysisContent(content: content),
@@ -631,6 +626,9 @@ class _BookmarkSentenceTileState extends ConsumerState<_BookmarkSentenceTile> {
 }
 
 /// 解析内容结构化展示（复用精听页面的 3 段式布局）
+///
+/// 使用 [SentenceAnalysis.parseDisplayString] 按字段分隔符拆分，
+/// vocabulary 和 listening 字段内按 `\n` 拆分为多条并加 bullet。
 class _AnalysisContent extends StatelessWidget {
   final String content;
 
@@ -640,13 +638,18 @@ class _AnalysisContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final lines = content.split('\n');
+    final fields = SentenceAnalysis.parseDisplayString(content);
     final labels = [l10n.aiGrammar, l10n.aiVocabulary, l10n.aiListening];
+
+    final bodyStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+      height: 1.5,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var i = 0; i < lines.length && i < labels.length; i++) ...[
+        for (var i = 0; i < fields.length && i < labels.length; i++) ...[
           if (i > 0) const SizedBox(height: AppSpacing.s),
           Text(
             labels[i],
@@ -656,16 +659,27 @@ class _AnalysisContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            lines[i],
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.5,
-            ),
-          ),
+          if (i == 0)
+            Text(fields[i], style: bodyStyle)
+          else
+            ..._buildBulletItems(fields[i], bodyStyle),
         ],
       ],
     );
+  }
+
+  List<Widget> _buildBulletItems(String field, TextStyle? style) {
+    final items = field.split('\n').where((s) => s.trim().isNotEmpty).toList();
+    if (items.length <= 1) {
+      return [Text(field, style: style)];
+    }
+    return [
+      for (final item in items)
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Text('· $item', style: style),
+        ),
+    ];
   }
 }
 

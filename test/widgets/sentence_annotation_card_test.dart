@@ -2,12 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fluency/models/sentence_ai_result.dart';
 import 'package:fluency/widgets/intensive_listen/sentence_annotation_card.dart';
 import 'package:fluency/widgets/common/ai_content_section.dart';
 
 import '../helpers/test_app.dart';
 
 void main() {
+  /// 字段分隔符简写
+  const sep = SentenceAnalysis.fieldSeparator;
+
   group('SentenceAnnotationCard', () {
     testWidgets('显示句子文本和难句标记', (tester) async {
       await tester.pumpWidget(
@@ -115,7 +119,7 @@ void main() {
             text: 'Hello',
             isDifficult: false,
             onToggle: () {},
-            cachedAnalysis: '语法分析\n词汇分析\n用法分析',
+            cachedAnalysis: '语法分析${sep}词汇分析${sep}用法分析',
           ),
         ),
       );
@@ -134,7 +138,7 @@ void main() {
             isDifficult: false,
             onToggle: () {},
             onRequestTranslation: () async => '翻译',
-            onRequestAnalysis: () async => '语法\n词汇\n用法',
+            onRequestAnalysis: () async => '语法${sep}词汇${sep}用法',
           ),
         ),
       );
@@ -184,7 +188,7 @@ void main() {
             text: 'Test',
             isDifficult: false,
             onToggle: () {},
-            onRequestAnalysis: () async => '语法\n词汇\n用法',
+            onRequestAnalysis: () async => '语法${sep}词汇${sep}用法',
           ),
         ),
       );
@@ -216,7 +220,7 @@ void main() {
             text: 'Test',
             isDifficult: false,
             onToggle: () {},
-            cachedAnalysis: '语法\n词汇\n用法',
+            cachedAnalysis: '语法${sep}词汇${sep}用法',
           ),
         ),
       );
@@ -241,7 +245,7 @@ void main() {
               requested = true;
               return completer.future;
             },
-            onRequestAnalysis: () async => '语法\n词汇\n用法',
+            onRequestAnalysis: () async => '语法${sep}词汇${sep}用法',
           ),
         ),
       );
@@ -290,7 +294,7 @@ void main() {
       expect(requested, isTrue);
 
       // 返回结果
-      completer.complete('语法结果\n词汇结果\n用法结果');
+      completer.complete('语法结果${sep}词汇结果${sep}用法结果');
       await tester.pumpAndSettle();
 
       // 解析内容已展示
@@ -312,7 +316,7 @@ void main() {
               callCount++;
               return Future.error('network error');
             },
-            onRequestAnalysis: () async => '语法\n词汇\n用法',
+            onRequestAnalysis: () async => '语法${sep}词汇${sep}用法',
           ),
         ),
       );
@@ -342,7 +346,7 @@ void main() {
             isDifficult: false,
             onToggle: () {},
             onRequestTranslation: () async => '翻译内容',
-            onRequestAnalysis: () async => '语法\n词汇\n用法',
+            onRequestAnalysis: () async => '语法${sep}词汇${sep}用法',
           ),
         ),
       );
@@ -366,7 +370,7 @@ void main() {
             isDifficult: false,
             onToggle: () {},
             onRequestTranslation: () async => '翻译OK',
-            onRequestAnalysis: () async => '语法OK\n词汇OK\n用法OK',
+            onRequestAnalysis: () async => '语法OK${sep}词汇OK${sep}用法OK',
           ),
         ),
       );

@@ -1001,9 +1001,7 @@ class _AnnotationModeView extends StatelessWidget {
     final ai = aiNotifier;
     final cachedTranslation = ai?.getCachedTranslation(text)?.translation;
     final cachedAnalysis = ai?.getCachedAnalysis(text);
-    final cachedAnalysisText = cachedAnalysis != null
-        ? '${cachedAnalysis.grammar}\n${cachedAnalysis.vocabulary}\n${cachedAnalysis.listening}'
-        : null;
+    final cachedAnalysisText = cachedAnalysis?.toDisplayString();
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.l),
       child: Column(
@@ -1025,7 +1023,7 @@ class _AnnotationModeView extends StatelessWidget {
                 onRequestAnalysis: ai != null
                     ? () async {
                         final result = await ai.getAnalysis(text);
-                        return '${result.grammar}\n${result.vocabulary}\n${result.listening}';
+                        return result.toDisplayString();
                       }
                     : null,
                 cachedTranslation: cachedTranslation,
