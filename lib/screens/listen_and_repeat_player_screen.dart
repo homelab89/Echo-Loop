@@ -760,32 +760,36 @@ class _CountdownChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        width: 40,
-        height: 40,
+        width: 56,
+        height: 56,
         child: Stack(
           alignment: Alignment.center,
           children: [
-            CircularProgressIndicator(
-              value: progress.clamp(0.0, 1.0),
-              strokeWidth: 3,
-              strokeCap: StrokeCap.round,
-              backgroundColor: theme.colorScheme.primary.withValues(
-                alpha: 0.12,
-              ),
-              valueColor: AlwaysStoppedAnimation(
-                theme.colorScheme.primary.withValues(alpha: 0.6),
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: CircularProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                strokeWidth: 3,
+                strokeCap: StrokeCap.round,
+                backgroundColor: theme.colorScheme.primary.withValues(
+                  alpha: 0.12,
+                ),
+                valueColor: AlwaysStoppedAnimation(
+                  theme.colorScheme.primary.withValues(alpha: 0.6),
+                ),
               ),
             ),
             if (isPaused)
               Icon(
                 Icons.play_arrow_rounded,
-                size: 20,
+                size: 28,
                 color: theme.colorScheme.primary,
               )
             else
               Text(
                 '$seconds',
-                style: theme.textTheme.labelMedium?.copyWith(
+                style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w700,
                 ),
@@ -819,28 +823,34 @@ class _SpeechPracticeTurnPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // reviewCountdown 走独立布局
+    // reviewCountdown：倒计时按钮居中（与录音按钮同位置同大小），右侧快进图标
     if (turnState.phase == ListenAndRepeatTurnPhase.reviewCountdown) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+      return Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _CountdownChip(
-            remaining: turnState.reviewCountdownRemaining,
-            total: const Duration(seconds: 5),
-            isPaused: turnState.isReviewCountdownPaused,
-            onTap: onCountdownTap,
-          ),
-          const SizedBox(width: AppSpacing.s),
-          FilledButton.tonal(
-            onPressed: onContinue,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(l10n.continueButton),
-                const SizedBox(width: 4),
-                const Icon(Icons.arrow_forward_rounded, size: 18),
-              ],
-            ),
+          const SizedBox(height: 24 + AppSpacing.xs),
+          Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              _CountdownChip(
+                remaining: turnState.reviewCountdownRemaining,
+                total: const Duration(seconds: 5),
+                isPaused: turnState.isReviewCountdownPaused,
+                onTap: onCountdownTap,
+              ),
+              Positioned(
+                left: 56 + AppSpacing.xs,
+                child: IconButton(
+                  onPressed: onContinue,
+                  icon: const Icon(Icons.fast_forward_rounded),
+                  iconSize: 24,
+                  style: IconButton.styleFrom(
+                    foregroundColor: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       );
