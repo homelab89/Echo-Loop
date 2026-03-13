@@ -173,6 +173,12 @@ class _ListenAndRepeatPlayerScreenState
       await speech.stopAttemptPlayback();
       return;
     }
+
+    // 暂停原句播放，确保同时只有一个音频在播放
+    final playerState = ref.read(listenAndRepeatPlayerProvider);
+    if (playerState.isPlaying) {
+      await ref.read(listenAndRepeatPlayerProvider.notifier).pause();
+    }
     await speech.playAttempt(promptId);
   }
 
