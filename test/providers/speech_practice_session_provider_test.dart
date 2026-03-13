@@ -92,6 +92,25 @@ class _FakeSpeechPracticeBackend implements SpeechPracticeBackend {
     );
   }
 
+  void emitSpeechStarted(String promptId) {
+    _controller.add(
+      SpeechPracticeEvent(
+        type: SpeechPracticeEventType.speechStarted,
+        promptId: promptId,
+      ),
+    );
+  }
+
+  void emitSilenceProgress(String promptId, Duration silenceDuration) {
+    _controller.add(
+      SpeechPracticeEvent(
+        type: SpeechPracticeEventType.silenceProgress,
+        promptId: promptId,
+        silenceDuration: silenceDuration,
+      ),
+    );
+  }
+
   Future<void> dispose() async {
     await _controller.close();
   }
@@ -233,6 +252,30 @@ void main() {
             ?.status,
         SpeechPracticeAttemptStatus.unavailable,
       );
+    });
+
+    test('收到 speechStarted 和 silenceProgress 时更新录音中的检测状态', () async {
+      final backend = _FakeSpeechPracticeBackend();
+      final container = ProviderContainer(
+        overrides: [speechPracticeBackendProvider.overrideWithValue(backend)],
+      );
+      addTearDown(() async {
+        container.dispose();
+        await backend.dispose();
+      });
+
+      final notifier = container.read(speechPracticeSessionProvider.notifier);
+      await notifier.startRecording(promptId: 'prompt');
+
+      backend.emitSpeechStarted('prompt');
+      backend.emitSilenceProgress('prompt', const Duration(seconds: 2));
+      await Future<void>.delayed(Duration.zero);
+
+      final attempt = container
+          .read(speechPracticeSessionProvider)
+          .attempts['prompt'];
+      expect(attempt?.hasDetectedSpeech, isTrue);
+      expect(attempt?.silenceDuration, const Duration(seconds: 2));
     });
   });
 }

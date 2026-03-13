@@ -960,6 +960,35 @@ class TestListenAndRepeatPlayer extends ListenAndRepeatPlayer {
   }
 
   @override
+  Future<void> completePausedTurn() async {
+    if (state.isPauseBetweenSentences) {
+      if (state.currentSentenceIndex >= state.totalSentences - 1) {
+        state = state.copyWith(
+          isCompleted: true,
+          isPlaying: false,
+          isPauseBetweenPlays: false,
+          isPauseBetweenSentences: false,
+        );
+        return;
+      }
+
+      state = state.copyWith(
+        currentSentenceIndex: state.currentSentenceIndex + 1,
+        currentPlayCount: 1,
+        isPauseBetweenPlays: false,
+        isPauseBetweenSentences: false,
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      currentPlayCount: state.currentPlayCount + 1,
+      isPauseBetweenPlays: false,
+      isPauseBetweenSentences: false,
+    );
+  }
+
+  @override
   Sentence? removeDifficultMark() {
     if (_testSentences.isEmpty) return null;
 

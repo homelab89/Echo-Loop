@@ -21,6 +21,7 @@ import 'package:fluency/providers/sentence_ai_provider.dart';
 import 'package:fluency/database/daos/sentence_ai_cache_dao.dart';
 import 'package:fluency/services/sentence_ai_api_client.dart';
 import 'package:fluency/services/speech_practice_platform.dart';
+import 'package:fluency/widgets/listen_and_repeat/speech_record_button.dart';
 import 'package:fluency/theme/app_theme.dart';
 
 import '../helpers/mock_providers.dart';
@@ -85,6 +86,28 @@ class _FakeSpeechPracticeBackend implements SpeechPracticeBackend {
 
   @override
   Future<void> deleteRecording(String filePath) async {}
+
+  void emitSpeechStarted({String? promptId}) {
+    _controller.add(
+      SpeechPracticeEvent(
+        type: SpeechPracticeEventType.speechStarted,
+        promptId: promptId ?? _activePromptId ?? 'shadowing:a1:0',
+      ),
+    );
+  }
+
+  void emitSilenceProgress({
+    String? promptId,
+    required Duration silenceDuration,
+  }) {
+    _controller.add(
+      SpeechPracticeEvent(
+        type: SpeechPracticeEventType.silenceProgress,
+        promptId: promptId ?? _activePromptId ?? 'shadowing:a1:0',
+        silenceDuration: silenceDuration,
+      ),
+    );
+  }
 
   void emitFinal({String? promptId, String? transcript}) {
     _controller.add(
@@ -316,10 +339,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Record'), findsNothing);
+      expect(find.byType(SpeechRecordButton), findsNothing);
     });
 
-    testWidgets('轮到用户说时显示录音按钮', (tester) async {
+    testWidgets('轮到用户说时自动开始录音并显示录音按钮', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           playerState: createPlayerState(
@@ -330,9 +353,43 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      // 使用 pump 而非 pumpAndSettle，因为 SpeechRecordButton 有循环脉冲动画
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Record'), findsOneWidget);
+      // awaitingSpeech 阶段录音已激活，显示 mic 图标（红色背景）
+      expect(find.byType(SpeechRecordButton), findsOneWidget);
+      expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
+    });
+
+    testWidgets('5 秒未开口后显示轻提醒，15 秒后回退为手动录音', (tester) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          playerState: createPlayerState(
+            isPlaying: false,
+            isPauseBetweenPlays: true,
+            pauseRemaining: const Duration(seconds: 3),
+            pauseDuration: const Duration(seconds: 3),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5));
+
+      expect(
+        find.text('Start repeating this sentence out loud.'),
+        findsOneWidget,
+      );
+      // awaitingSpeech 阶段录音已激活，显示 mic 图标
+      expect(find.byType(SpeechRecordButton), findsOneWidget);
+      expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // manualFallback 阶段同样显示 mic 图标（柔和背景色）
+      expect(find.byType(SpeechRecordButton), findsOneWidget);
+      expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
     });
 
     testWidgets('长识别结果不会挤爆底部布局', (tester) async {
@@ -357,14 +414,16 @@ void main() {
           speechBackend: speechBackend,
         ),
       );
-      await tester.pumpAndSettle();
+      // 使用 pump 而非 pumpAndSettle，因为 SpeechRecordButton 有循环脉冲动画
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-      await tester.tap(find.text('Record'));
-      await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+      expect(find.byType(SpeechRecordButton), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.stop_rounded));
-      await tester.pumpAndSettle();
+      await tester.tap(find.byType(SpeechRecordButton));
+      // 录音停止后 autoEmitFinal → reviewCountdown，倒计时有定时器，用多次 pump
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(tester.takeException(), isNull);
       expect(find.text('Your Take'), findsNothing);
@@ -426,11 +485,11 @@ void main() {
           speechBackend: speechBackend,
         ),
       );
-      await tester.pumpAndSettle();
+      // 使用 pump 而非 pumpAndSettle
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-      await tester.tap(find.text('Record'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.stop_rounded));
+      await tester.tap(find.byType(SpeechRecordButton));
       await tester.pump();
 
       expect(
@@ -443,7 +502,9 @@ void main() {
       expect(find.text('Test sentence number one'), findsNothing);
 
       speechBackend.emitFinal();
-      await tester.pumpAndSettle();
+      // reviewCountdown 有定时器，不能 pumpAndSettle
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(
         find.byWidgetPredicate(

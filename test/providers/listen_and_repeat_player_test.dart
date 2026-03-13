@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:fluency/database/enums.dart';
 import 'package:fluency/models/audio_engine_state.dart';
+import 'package:fluency/models/intensive_listen_settings.dart';
 import 'package:fluency/models/learning_progress.dart';
 import 'package:fluency/models/sentence.dart';
 import 'package:fluency/providers/audio_engine/audio_engine_provider.dart';
@@ -171,6 +172,64 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 1));
 
       expect(progressNotifier.savedIndices, contains(2));
+    });
+  });
+
+  group('ListenAndRepeatPlayer completePausedTurn', () {
+    test('遍间停顿时继续到下一遍', () async {
+      final container = ProviderContainer(
+        overrides: [
+          listenAndRepeatPlayerProvider.overrideWith(
+            () => TestListenAndRepeatPlayer(
+              const ListenAndRepeatPlayerState(
+                currentSentenceIndex: 0,
+                totalSentences: 2,
+                currentPlayCount: 1,
+                settings: IntensiveListenSettings(repeatCount: 3),
+                isPauseBetweenPlays: true,
+              ),
+              createTestSentences(count: 2),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(listenAndRepeatPlayerProvider.notifier);
+      await notifier.completePausedTurn();
+
+      final state = container.read(listenAndRepeatPlayerProvider);
+      expect(state.currentPlayCount, 2);
+      expect(state.currentSentenceIndex, 0);
+      expect(state.isPauseBetweenPlays, isFalse);
+    });
+
+    test('句间停顿时推进到下一句', () async {
+      final container = ProviderContainer(
+        overrides: [
+          listenAndRepeatPlayerProvider.overrideWith(
+            () => TestListenAndRepeatPlayer(
+              const ListenAndRepeatPlayerState(
+                currentSentenceIndex: 0,
+                totalSentences: 2,
+                currentPlayCount: 3,
+                settings: IntensiveListenSettings(repeatCount: 3),
+                isPauseBetweenPlays: true,
+                isPauseBetweenSentences: true,
+              ),
+              createTestSentences(count: 2),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(listenAndRepeatPlayerProvider.notifier);
+      await notifier.completePausedTurn();
+
+      final state = container.read(listenAndRepeatPlayerProvider);
+      expect(state.currentSentenceIndex, 1);
+      expect(state.currentPlayCount, 1);
     });
   });
 }
