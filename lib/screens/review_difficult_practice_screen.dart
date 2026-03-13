@@ -518,7 +518,7 @@ class _NormalModeView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                const Icon(Icons.star, color: Colors.amber, size: 18),
+                const Icon(Icons.bookmark, color: Colors.amber, size: 18),
               ],
             ),
           ),

@@ -359,7 +359,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
       expect(find.text('Marked difficult, tap to undo'), findsOneWidget);
     });
   });
@@ -414,7 +414,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
       expect(find.text('Marked difficult, tap to undo'), findsOneWidget);
     });
 

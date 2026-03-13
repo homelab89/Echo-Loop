@@ -525,8 +525,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // 实心星标（标注卡片内）
-      expect(find.byIcon(Icons.star), findsOneWidget);
-      expect(find.byIcon(Icons.star_border), findsNothing);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_border), findsNothing);
       // 难句文案
       expect(find.text('Auto-marked difficult, tap to undo'), findsOneWidget);
     });
@@ -544,8 +544,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // 空心星标
-      expect(find.byIcon(Icons.star_border), findsOneWidget);
-      expect(find.byIcon(Icons.star), findsNothing);
+      expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsNothing);
       // 未标记文案
       expect(find.text('Tap to mark as difficult'), findsOneWidget);
     });
@@ -596,12 +596,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // 点击标注卡片内的星标
-      await tester.tap(find.byIcon(Icons.star));
+      await tester.tap(find.byIcon(Icons.bookmark));
       await tester.pumpAndSettle();
 
       // 验证状态变更：难句集合不再包含当前句子
       // （TestIntensiveListenPlayer 会处理 toggleDifficultSentence）
-      expect(find.byIcon(Icons.star_border), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
     });
 
     testWidgets('正常模式下难句显示标记行', (tester) async {
@@ -616,7 +616,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 难句标记行：★ + 文案
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
       expect(find.text('Marked difficult, tap to undo'), findsOneWidget);
       // "听不懂"按钮仍然存在
       expect(find.text("Can't understand"), findsOneWidget);
@@ -634,7 +634,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 当前句子（索引0）不在难句集合中，显示空心星标 + 灰色文案
-      expect(find.byIcon(Icons.star_border), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
       expect(find.text('Tap to mark as difficult'), findsOneWidget);
     });
 
@@ -650,11 +650,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // 点击标记行取消难句
-      await tester.tap(find.byIcon(Icons.star));
+      await tester.tap(find.byIcon(Icons.bookmark));
       await tester.pumpAndSettle();
 
       // 取消后变为空心星标 + 灰色文案
-      expect(find.byIcon(Icons.star_border), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
       expect(find.text('Tap to mark as difficult'), findsOneWidget);
     });
 

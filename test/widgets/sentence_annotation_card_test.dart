@@ -28,7 +28,7 @@ void main() {
       expect(find.byType(RichText), findsWidgets);
 
       // 非难句状态
-      expect(find.byIcon(Icons.star_border), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
 
       // 无 AI 回调和缓存时，翻译和解析区域不显示
       expect(find.text('Translation'), findsNothing);
@@ -46,7 +46,7 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
     });
 
     testWidgets('自动标记分支显示自动文案', (tester) async {
@@ -92,7 +92,7 @@ void main() {
       );
 
       // 点击星标区域
-      await tester.tap(find.byIcon(Icons.star_border));
+      await tester.tap(find.byIcon(Icons.bookmark_border));
       expect(toggled, isTrue);
     });
 

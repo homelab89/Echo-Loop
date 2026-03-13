@@ -152,7 +152,7 @@ class _SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
               ),
               const SizedBox(width: AppSpacing.xs),
               Icon(
-                widget.isDifficult ? Icons.star : Icons.star_border,
+                widget.isDifficult ? Icons.bookmark : Icons.bookmark_border,
                 color: widget.isDifficult ? Colors.amber : Colors.grey,
                 size: 18,
               ),

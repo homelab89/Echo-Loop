@@ -476,8 +476,7 @@ class _IntensiveListenPlayerScreenState
 
     final currentSentence = player.currentSentence;
 
-    // 句子时长（如 "3.5s"）和时间戳（如 "00:32.1 - 00:35.6"）分开传递，
-    // 由 _ProgressSection 用不同样式渲染以建立视觉层级。
+    // 句子时长（如 "2.8秒"）
     final hasDuration =
         currentSentence != null && currentSentence.duration > Duration.zero;
     final durationText = hasDuration
@@ -486,10 +485,6 @@ class _IntensiveListenPlayerScreenState
               1,
             ),
           )
-        : null;
-    final timestampText = hasDuration
-        ? '${_formatTimestamp(currentSentence.startTime)}'
-              ' - ${_formatTimestamp(currentSentence.endTime)}'
         : null;
 
     return LearningHotkeyScope(
@@ -539,7 +534,6 @@ class _IntensiveListenPlayerScreenState
                 playerState: playerState,
                 l10n: l10n,
                 durationText: durationText,
-                timestampText: timestampText,
               ),
 
               // 主体内容
@@ -630,17 +624,13 @@ class _ProgressSection extends StatelessWidget {
   final IntensiveListenState playerState;
   final AppLocalizations l10n;
 
-  /// 句子时长文本（如 "3.5s"），为 null 时不显示
+  /// 句子时长文本（如 "2.8秒"），为 null 时不显示
   final String? durationText;
-
-  /// 句子时间戳文本（如 "00:11.6 - 00:22.5"），为 null 时不显示
-  final String? timestampText;
 
   const _ProgressSection({
     required this.playerState,
     required this.l10n,
     this.durationText,
-    this.timestampText,
   });
 
   @override
@@ -651,10 +641,6 @@ class _ProgressSection extends StatelessWidget {
     final progress = total > 0 ? current / total : 0.0;
     final subtitleStyle = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
-    );
-    // 时间戳：更小字号 + 半透明，视觉退后
-    final timestampStyle = theme.textTheme.labelSmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
     );
 
     return Padding(
@@ -677,10 +663,6 @@ class _ProgressSection extends StatelessWidget {
               ),
               const Spacer(),
               if (durationText case final dur?) Text(dur, style: subtitleStyle),
-              if (timestampText case final ts?) ...[
-                const SizedBox(width: 6),
-                Text(ts, style: timestampStyle),
-              ],
             ],
           ),
         ],
@@ -749,7 +731,7 @@ class _NormalModeView extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Icon(
-                  isDifficult ? Icons.star : Icons.star_border,
+                  isDifficult ? Icons.bookmark : Icons.bookmark_border,
                   color: isDifficult ? Colors.amber.shade700 : Colors.grey,
                   size: 18,
                 ),
@@ -1228,19 +1210,3 @@ String _getSubStageName(SubStageType type, AppLocalizations l10n) =>
       SubStageType.reviewRetellSummary => 'Summary retelling',
     };
 
-/// 格式化时间戳为 MM:SS.m 格式（如 01:02.3）
-///
-/// 仅保留十分之一秒精度，减少视觉噪音。
-/// 超过 1 小时时显示 H:MM:SS.m（如 1:02:30.5）。
-String _formatTimestamp(Duration d) {
-  final hours = d.inHours;
-  final minutes = d.inMinutes % 60;
-  final seconds = d.inSeconds % 60;
-  final tenths = (d.inMilliseconds % 1000) ~/ 100;
-  final mm = minutes.toString().padLeft(2, '0');
-  final ss = seconds.toString().padLeft(2, '0');
-  if (hours > 0) {
-    return '$hours:$mm:$ss.$tenths';
-  }
-  return '$mm:$ss.$tenths';
-}
