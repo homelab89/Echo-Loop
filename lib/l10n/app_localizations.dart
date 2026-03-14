@@ -2693,14 +2693,20 @@ abstract class AppLocalizations {
   /// No description provided for @overdueDays.
   ///
   /// In en, this message translates to:
-  /// **'Overdue {count}d'**
+  /// **'Review due · due {count}d ago'**
   String overdueDays(int count);
 
   /// No description provided for @overdueHours.
   ///
   /// In en, this message translates to:
-  /// **'Overdue {count}h'**
+  /// **'Review due · due {count}h ago'**
   String overdueHours(int count);
+
+  /// No description provided for @reviewDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Review due'**
+  String get reviewDue;
 
   /// No description provided for @availableInDays.
   ///

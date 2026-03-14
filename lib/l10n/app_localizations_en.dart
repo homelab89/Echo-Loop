@@ -1492,13 +1492,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String overdueDays(int count) {
-    return 'Overdue ${count}d';
+    return 'Review due · due ${count}d ago';
   }
 
   @override
   String overdueHours(int count) {
-    return 'Overdue ${count}h';
+    return 'Review due · due ${count}h ago';
   }
+
+  @override
+  String get reviewDue => 'Review due';
 
   @override
   String availableInDays(int count) {

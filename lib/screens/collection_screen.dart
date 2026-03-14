@@ -341,18 +341,10 @@ class _CollectionListTile extends ConsumerWidget {
           collection.name,
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
-        subtitle: Row(
-          children: [
-            Text(
-              l10n.audioCount(collectionState.getAudioCount(collection.id)),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              l10n.addedOn(_formatDate(collection.createdDate)),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
+        subtitle: Text(
+          '${l10n.audioCount(collectionState.getAudioCount(collection.id))} · ${l10n.addedOn(_formatDate(collection.createdDate))}',
+          style: Theme.of(context).textTheme.bodySmall,
+          overflow: TextOverflow.ellipsis,
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

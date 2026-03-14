@@ -231,8 +231,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 新格式："Overdue 3h"
-    expect(find.textContaining('Overdue 3h'), findsOneWidget);
+    // 新格式："Review due · due 3h ago"
+    expect(find.textContaining('due 3h ago'), findsOneWidget);
     // 任务卡片有 Review 按钮
     final reviewButtons = find.widgetWithText(FilledButton, 'Review');
     expect(reviewButtons, findsAtLeast(1));

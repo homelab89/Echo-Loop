@@ -427,7 +427,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get learningPlanNotStarted => '未开始';
 
   @override
-  String get firstStudy => '首学';
+  String get firstStudy => '首次学习';
 
   @override
   String get review => '复习';
@@ -1454,13 +1454,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String overdueDays(int count) {
-    return '逾期 $count 天';
+    return '待复习 · $count天前到期';
   }
 
   @override
   String overdueHours(int count) {
-    return '逾期 $count 小时';
+    return '待复习 · $count小时前到期';
   }
+
+  @override
+  String get reviewDue => '待复习';
 
   @override
   String availableInDays(int count) {

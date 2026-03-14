@@ -66,8 +66,8 @@ class LearningPlanScreen extends ConsumerStatefulWidget {
 }
 
 class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
-  /// 首学区域是否展开（默认展开）
-  bool _isFirstLearnExpanded = true;
+  /// 首学区域是否展开（首学阶段默认展开，进入复习阶段后默认折叠）
+  bool? _isFirstLearnExpanded;
 
   /// 各复习轮次的展开状态（key 为复习大阶段）
   final Map<LearningStage, bool> _reviewRoundExpandedMap = {};
@@ -584,9 +584,9 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
                   progress: progress,
                   collectionId: widget.collectionId,
                   audioItemId: widget.audioItemId,
-                  isExpanded: _isFirstLearnExpanded,
+                  isExpanded: _isFirstLearnExpanded ??= progress?.isCurrentStage(LearningStage.firstLearn) ?? true,
                   onToggle: () => setState(
-                    () => _isFirstLearnExpanded = !_isFirstLearnExpanded,
+                    () => _isFirstLearnExpanded = !(_isFirstLearnExpanded ?? true),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.l),
@@ -672,12 +672,13 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
   /// 读取复习轮次展开态（仅首次按默认规则初始化）
   ///
   /// 默认规则：
-  /// - 已完成轮次：展开
-  /// - 未完成轮次：折叠
+  /// - 已完成轮次：折叠
+  /// - 当前进行中轮次：展开
+  /// - 未来轮次：折叠
   bool _isReviewRoundExpanded(LearningStage stage, LearningProgress? progress) {
     return _reviewRoundExpandedMap.putIfAbsent(
       stage,
-      () => progress?.isStageCompleted(stage) ?? false,
+      () => progress?.isCurrentStage(stage) ?? false,
     );
   }
 
@@ -851,6 +852,8 @@ class _FirstStudySection extends ConsumerWidget {
     final theme = Theme.of(context);
     final completedCount = progress?.completedFirstStudySteps ?? 0;
     final firstLearnStage = LearningStage.firstLearn;
+    final isFirstLearnCompleted =
+        progress?.isStageCompleted(LearningStage.firstLearn) ?? false;
 
     /// 子步骤的 UI 数据映射
     final stepDataMap = {
@@ -892,19 +895,37 @@ class _FirstStudySection extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.school, color: theme.colorScheme.primary, size: 20),
+                const Text('🌱', style: TextStyle(fontSize: 20)),
                 const SizedBox(width: AppSpacing.s),
-                Text(
-                  l10n.firstStudy,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          l10n.firstStudy,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: isFirstLearnCompleted
+                                ? Colors.green
+                                : null,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        isFirstLearnCompleted ? '✅' : progress?.isCurrentStage(LearningStage.firstLearn) ?? false ? '📖' : '🔒',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: AppSpacing.s),
                 Text(
                   l10n.stepProgress(completedCount, subStages.length),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: isFirstLearnCompleted
+                        ? Colors.green
+                        : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
@@ -1368,49 +1389,39 @@ class _ReviewRoundSection extends ConsumerWidget {
       return _formatOverdueText(context, progress!.overdueDurationAt(now));
     }
 
-    return l10n.reviewUnlocked;
+    return l10n.reviewDue;
   }
 
   /// 解锁状态文案（非当前轮次、非已完成轮次显示）。
   ///
-  /// 基于首学完成时间 + 阶段间隔计算解锁时间。
+  /// 已完成：不显示文案（由 ✅ emoji 传达）。
+  /// 当前轮次：由 _reviewTimingText 处理。
+  /// 未来阶段：返回 null，回退到固定间隔文案。
   String? _unlockStatusText() {
     if (progress == null) return null;
-    // 已完成的轮次显示"已解锁"
-    if (progress!.isStageCompleted(review.stage)) return l10n.reviewUnlocked;
+    // 已完成的轮次：不显示文案（✅ emoji 已传达完成语义）
+    if (progress!.isStageCompleted(review.stage)) return null;
     // 当前轮次由 _reviewTimingText 处理
     if (progress!.isCurrentStage(review.stage)) return null;
-
-    final firstLearnCompleted = progress!.firstLearnCompletedAt;
-    if (firstLearnCompleted == null) return null;
-
-    final unlockAt = firstLearnCompleted.add(
-      Duration(hours: review.stage.intervalHours),
-    );
-
-    if (now.isBefore(unlockAt)) {
-      final diff = unlockAt.difference(now);
-      if (diff.inDays > 0) {
-        return l10n.reviewUnlockIn(diff.inDays);
-      }
-      return l10n.reviewUnlockInHours(diff.inHours.clamp(1, 999));
-    }
-
-    return l10n.reviewUnlocked;
+    // 未来阶段：返回 null，由固定间隔文案兜底
+    return null;
   }
 
+  /// 逾期措辞：短期保留时间信息，长期只显示"待复习"。
+  ///
+  /// - 无时长 / >7天 → "待复习"
+  /// - ≤7天 → "待复习 · X天前到期"
+  /// - <1天 → "待复习 · X小时前到期"
   String _formatOverdueText(BuildContext context, Duration? overdue) {
-    final isZh = Localizations.localeOf(context).languageCode == 'zh';
-    if (overdue == null) {
-      return isZh ? '已逾期' : 'Overdue';
+    // 无时长信息或长期逾期（>7天）只显示"待复习"
+    if (overdue == null || overdue.inDays > 7) {
+      return l10n.reviewDue;
     }
     if (overdue.inDays > 0) {
-      return isZh
-          ? '已逾期 ${overdue.inDays} 天'
-          : 'Overdue by ${overdue.inDays} day(s)';
+      return l10n.overdueDays(overdue.inDays);
     }
     final hours = overdue.inHours.clamp(1, 999);
-    return isZh ? '已逾期 $hours 小时' : 'Overdue by $hours hour(s)';
+    return l10n.overdueHours(hours);
   }
 
   /// 复习子阶段名称与描述映射
@@ -1565,74 +1576,87 @@ class _ReviewRoundSection extends ConsumerWidget {
     final unlockText = _unlockStatusText();
     // 当前轮次显示实时状态，其余轮次显示解锁状态，都没有则显示固定间隔
     final statusText = timingText ?? unlockText ?? review.interval;
-    final isHighlighted = timingText != null || unlockText != null;
+    final isCompleted = progress?.isStageCompleted(review.stage) ?? false;
+    final isCurrent = progress?.isCurrentStage(review.stage) ?? false;
+    final isFuture = !isCompleted && !isCurrent;
+    // 标题颜色：已完成→绿色，当前→默认，未来→弱化
+    final titleColor = isCompleted
+        ? Colors.green
+        : isFuture
+            ? theme.colorScheme.onSurfaceVariant
+            : null;
+    // 状态文案颜色：已完成→绿色，当前轮次→onSurfaceVariant，固定间隔→onSurfaceVariant
+    final statusColor = theme.colorScheme.onSurfaceVariant;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InkWell(
-          onTap: onToggle,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xs,
-              vertical: AppSpacing.xs,
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.refresh,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: AppSpacing.s),
-                    Expanded(
-                      child: Text(
-                        review.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+        Opacity(
+          opacity: isFuture ? 0.7 : 1.0,
+          child: InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xs,
+                vertical: AppSpacing.xs,
+              ),
+              child: Row(
+                children: [
+                  const Text('🔁', style: TextStyle(fontSize: 20)),
+                  const SizedBox(width: AppSpacing.s),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            review.name,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: titleColor,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          isCompleted ? '✅' : isCurrent ? '📖' : '🔒',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        // 状态文案内联到标题行（已完成阶段不显示）
+                        if (!isCompleted) ...[
+                          const SizedBox(width: AppSpacing.s),
+                          Text(
+                            statusText,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(width: AppSpacing.s),
-                    Text(
-                      l10n.stepProgress(completedCount, subStages.length),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                  ),
+                  const SizedBox(width: AppSpacing.s),
+                  Text(
+                    l10n.stepProgress(completedCount, subStages.length),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: isCompleted
+                          ? Colors.green
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
-                    const SizedBox(width: AppSpacing.xs),
-                    AnimatedRotation(
-                      turns: isExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        Icons.expand_more,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.expand_more,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Row(
-                  children: [
-                    Text(
-                      statusText,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: isHighlighted
-                            ? theme.colorScheme.tertiary
-                            : theme.colorScheme.onSurfaceVariant,
-                        fontWeight: isHighlighted
-                            ? FontWeight.w500
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
               ],
             ),
           ),
+        ),
         ),
         if (isExpanded)
           Column(

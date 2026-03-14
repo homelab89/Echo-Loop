@@ -613,6 +613,8 @@ String _actionLabel(AppLocalizations l10n, StudyTask task) {
 }
 
 /// 状态文案（逾期、距离可复习时间等）
+///
+/// 逾期分级：无时长/>7天→"待复习"，≤7天→"待复习 · X天前到期"，<1天→"待复习 · X小时前到期"
 String _statusText(
   BuildContext context,
   AppLocalizations l10n,
@@ -621,7 +623,7 @@ String _statusText(
 ) {
   if (task.isOverdue) {
     final overdue = task.overdueDuration;
-    if (overdue == null) return '';
+    if (overdue == null || overdue.inDays > 7) return l10n.reviewDue;
     if (overdue.inDays > 0) return l10n.overdueDays(overdue.inDays);
     final hours = overdue.inHours.clamp(1, 999);
     return l10n.overdueHours(hours);

@@ -178,31 +178,33 @@ void main() {
       await tester.pumpAndSettle();
 
       // 滚动到首轮复习并检查其子阶段
+      // 新策略：当前轮次默认展开，首学默认折叠（因已进入复习阶段）
       await tester.scrollUntilVisible(find.text('Review 1'), 200);
       await tester.pumpAndSettle();
       expect(find.text('Review 1'), findsOneWidget);
-      expect(find.text('0/2 completed'), findsOneWidget); // 默认折叠
       final expandedBeforeTap = tester
           .widgetList<AnimatedRotation>(find.byType(AnimatedRotation))
           .where((widget) => widget.turns == 0.5)
           .length;
-      expect(expandedBeforeTap, 1); // 仅首学展开
+      expect(expandedBeforeTap, 1); // 仅当前轮次(review0)展开
 
+      // 折叠当前轮次
       await tester.tap(find.text('Review 1'));
       await tester.pumpAndSettle();
       final expandedAfterFirstTap = tester
           .widgetList<AnimatedRotation>(find.byType(AnimatedRotation))
           .where((widget) => widget.turns == 0.5)
           .length;
-      expect(expandedAfterFirstTap, 2); // 首学 + 首轮复习展开
+      expect(expandedAfterFirstTap, 0); // 全部折叠
 
+      // 重新展开
       await tester.tap(find.text('Review 1'));
       await tester.pumpAndSettle();
       final expandedAfterSecondTap = tester
           .widgetList<AnimatedRotation>(find.byType(AnimatedRotation))
           .where((widget) => widget.turns == 0.5)
           .length;
-      expect(expandedAfterSecondTap, 1); // 再次折叠后仅首学展开
+      expect(expandedAfterSecondTap, 1); // 再次展开当前轮次
       expect(find.text('Unlocks in 1 hours'), findsOneWidget);
       expect(find.text('After 6 hours'), findsNothing);
     });
@@ -235,7 +237,7 @@ void main() {
       await tester.scrollUntilVisible(find.text('Review 1'), 200);
       await tester.pumpAndSettle();
 
-      expect(find.text('Overdue by 2 hour(s)'), findsOneWidget);
+      expect(find.textContaining('due 2h ago'), findsOneWidget);
       expect(find.text('After 6 hours'), findsNothing);
     });
 
@@ -420,7 +422,7 @@ void main() {
 
       expect(find.text('学习进度'), findsOneWidget);
       expect(find.text('未开始'), findsOneWidget);
-      expect(find.text('首学'), findsOneWidget);
+      expect(find.text('首次学习'), findsOneWidget);
       expect(find.text('0/4 完成'), findsOneWidget);
       expect(find.text('全文盲听'), findsWidgets);
       expect(find.text('开始学习'), findsOneWidget);
@@ -581,7 +583,7 @@ void main() {
       expect(find.textContaining('Difficulty:'), findsOneWidget);
     });
 
-    testWidgets('未到解锁时间的复习轮次显示"X天后解锁"', (tester) async {
+    testWidgets('未来复习轮次显示固定间隔文案而非动态解锁倒计时', (tester) async {
       tester.view.physicalSize = const Size(1200, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -608,16 +610,16 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // 滚动到 Review 2（review1 阶段，需要 1 天解锁）
+      // 滚动到 Review 2（review1 阶段，未来阶段）
       await tester.scrollUntilVisible(find.text('Review 2'), 200);
       await tester.pumpAndSettle();
 
-      // 未到解锁时间，应显示解锁倒计时
-      // review1 需要 24h，现在才过 12h，还差 12h
-      expect(find.textContaining('Unlocks in'), findsAtLeast(1));
+      // 未来阶段显示固定间隔文案（如"After 1 day"），不显示动态倒计时
+      expect(find.textContaining('Unlocks in'), findsNothing);
+      expect(find.text('After 1 day'), findsAtLeast(1));
     });
 
-    testWidgets('已到解锁时间的复习轮次显示"已解锁"', (tester) async {
+    testWidgets('已完成复习轮次不显示"已解锁"文案', (tester) async {
       tester.view.physicalSize = const Size(1200, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -644,12 +646,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // 滚动到 Review 2（review1 阶段）
+      // 滚动到 Review 2（review1 阶段，未来阶段）
       await tester.scrollUntilVisible(find.text('Review 2'), 200);
       await tester.pumpAndSettle();
 
-      // 已到解锁时间，应显示"Unlocked"
-      expect(find.text('Unlocked'), findsAtLeast(1));
+      // 未来阶段不再显示"Unlocked"，显示固定间隔文案
+      expect(find.text('Unlocked'), findsNothing);
+      expect(find.text('After 1 day'), findsAtLeast(1));
     });
 
     testWidgets('已完成步骤圆形背景使用较深绿色（非 shade50）', (tester) async {

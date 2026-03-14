@@ -828,14 +828,15 @@
   "goToLibrary": "Go to Library",
   "allDoneTitle": "All done for now!",
   "allDoneHint": "Great work today. Come back later for reviews.",
-  "overdueDays": "Overdue {count}d",
+  "overdueDays": "Review due · due {count}d ago",
   "@overdueDays": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "overdueHours": "Overdue {count}h",
+  "overdueHours": "Review due · due {count}h ago",
   "@overdueHours": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "reviewDue": "Review due",
   "availableInDays": "in {count}d",
   "@availableInDays": {
     "placeholders": { "count": { "type": "int" } }
