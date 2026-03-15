@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/app_update_info.dart';
+import '../providers/app_update_provider.dart';
 import '../providers/audio_library_provider.dart';
 import '../providers/collection_provider.dart';
 import '../providers/learning_progress_provider.dart';
@@ -16,6 +18,7 @@ import '../providers/review_reminder_provider.dart';
 import '../providers/study_task_provider.dart';
 import '../providers/tag_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_update_dialog.dart';
 
 /// 主导航壳组件 — 包含 NavigationRail / NavigationBar + 内容区域
 class MainShell extends ConsumerStatefulWidget {
@@ -30,6 +33,7 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> {
   ProviderSubscription<int>? _pendingTaskCountSubscription;
+  ProviderSubscription<AppUpdateState>? _appUpdateSubscription;
 
   @override
   void initState() {
@@ -50,13 +54,38 @@ class _MainShellState extends ConsumerState<MainShell> {
         },
         fireImmediately: true,
       );
+
+      // 监听版本更新状态，弹出对话框
+      _appUpdateSubscription = ref.listenManual<AppUpdateState>(
+        appUpdateProvider,
+        (_, next) {
+          if (next is AppUpdateResult && next.type != AppUpdateType.none) {
+            _showUpdateDialog(next);
+          }
+        },
+      );
     });
   }
 
   @override
   void dispose() {
     _pendingTaskCountSubscription?.close();
+    _appUpdateSubscription?.close();
     super.dispose();
+  }
+
+  /// 显示版本更新对话框
+  void _showUpdateDialog(AppUpdateResult result) {
+    if (!mounted || result.info == null) return;
+    final isForce = result.type == AppUpdateType.forceUpdate;
+    final downloadUrl = AppUpdate.getDownloadUrl(result.info!);
+    showAppUpdateDialog(
+      context: context,
+      info: result.info!,
+      isForceUpdate: isForce,
+      downloadUrl: downloadUrl,
+      onDismiss: () => ref.read(appUpdateProvider.notifier).dismiss(),
+    );
   }
 
   Future<void> _syncDailyReminder(int pendingTaskCount) async {

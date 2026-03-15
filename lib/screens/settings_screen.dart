@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../database/providers.dart';
 import '../l10n/app_localizations.dart';
+import '../models/app_update_info.dart';
+import '../providers/app_update_provider.dart';
 import '../providers/developer_options_provider.dart';
 import '../providers/package_info_provider.dart';
 import '../providers/sentence_ai_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/word_ai_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_update_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -137,27 +141,103 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   /// 构建关于信息区域
+  ///
+  /// 包含检查更新、服务条款、隐私政策、意见反馈四个入口，
+  /// 以及底部居中灰色版本号标签。
   Widget _buildAboutSection(
     BuildContext context,
     WidgetRef ref,
     AppLocalizations l10n,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return _buildSection(
-      context,
-      title: l10n.about,
+    final version = ref.watch(packageInfoProvider).version;
+    final updateState = ref.watch(appUpdateProvider);
+    final isChecking = updateState is AppUpdateChecking;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
-          leading: _emojiIcon('ℹ️'),
-          title: Text(l10n.version),
-          trailing: Text(
-            ref.watch(packageInfoProvider).version,
-            style: TextStyle(color: colorScheme.onSurfaceVariant),
+        _buildSection(
+          context,
+          title: l10n.about,
+          children: [
+            ListTile(
+              leading: _emojiIcon('🔄'),
+              title: Text(l10n.checkForUpdate),
+              trailing: isChecking
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right),
+              onTap: isChecking
+                  ? null
+                  : () => _checkForUpdate(context, ref, l10n),
+            ),
+            ListTile(
+              leading: _emojiIcon('📜'),
+              title: Text(l10n.termsOfService),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () =>
+                  launchUrl(Uri.parse('https://www.echo-loop.top/terms')),
+            ),
+            ListTile(
+              leading: _emojiIcon('🔒'),
+              title: Text(l10n.privacyPolicy),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () =>
+                  launchUrl(Uri.parse('https://www.echo-loop.top/privacy')),
+            ),
+            ListTile(
+              leading: _emojiIcon('✉️'),
+              title: Text(l10n.writeFeedback),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () =>
+                  launchUrl(Uri.parse('mailto:support@echo-loop.top')),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s),
+        Center(
+          child: Text(
+            'v$version',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
-        ListTile(leading: _emojiIcon('📖'), title: Text(l10n.appDescription)),
       ],
     );
+  }
+
+  /// 手动检查更新
+  Future<void> _checkForUpdate(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final result = await ref.read(appUpdateProvider.notifier).manualCheck();
+    if (!context.mounted) return;
+
+    if (result.type == AppUpdateType.none || result.info == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.info == null ? l10n.checkUpdateFailed : l10n.alreadyLatest,
+          ),
+        ),
+      );
+    } else {
+      final isForce = result.type == AppUpdateType.forceUpdate;
+      final downloadUrl = AppUpdate.getDownloadUrl(result.info!);
+      showAppUpdateDialog(
+        context: context,
+        info: result.info!,
+        isForceUpdate: isForce,
+        downloadUrl: downloadUrl,
+        onDismiss: () => ref.read(appUpdateProvider.notifier).dismiss(),
+      );
+    }
   }
 
   /// 构建开发者选项区域

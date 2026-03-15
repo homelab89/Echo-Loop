@@ -386,12 +386,6 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get save;
 
-  /// No description provided for @appDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Professional English listening practice app'**
-  String get appDescription;
-
   /// No description provided for @enableLoop.
   ///
   /// In en, this message translates to:
@@ -3181,6 +3175,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No difficult sentences to practice. Auto-completed.'**
   String get autoCompletedNoDifficultReview;
+
+  /// No description provided for @termsOfService.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @writeFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Write Feedback'**
+  String get writeFeedback;
+
+  /// No description provided for @updateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'New Version v{version}'**
+  String updateAvailable(String version);
+
+  /// No description provided for @updateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Now'**
+  String get updateNow;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get updateLater;
+
+  /// No description provided for @forceUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Required'**
+  String get forceUpdateTitle;
+
+  /// No description provided for @forceUpdateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current version is no longer supported. Please update to continue.'**
+  String get forceUpdateMessage;
+
+  /// No description provided for @copyDownloadLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Download Link'**
+  String get copyDownloadLink;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get linkCopied;
+
+  /// No description provided for @checkForUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for Updates'**
+  String get checkForUpdate;
+
+  /// No description provided for @alreadyLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Already up to date'**
+  String get alreadyLatest;
+
+  /// No description provided for @checkUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Check failed, please check your network'**
+  String get checkUpdateFailed;
 }
 
 class _AppLocalizationsDelegate

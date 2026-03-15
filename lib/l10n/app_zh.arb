@@ -48,7 +48,6 @@
   "about": "关于",
   "version": "版本",
   "save": "保存",
-  "appDescription": "专业的英语听力练习应用",
   "enableLoop": "启用循环",
   "loopSettings": "循环设置",
   "displaySettings": "显示设置",
@@ -726,5 +725,24 @@
   "clearCacheEmpty": "缓存已为空",
   "confirm": "确认",
   "autoCompletedNoDifficult": "精听全部听懂，已自动完成",
-  "autoCompletedNoDifficultReview": "无需补练的难句，已自动完成"
+  "autoCompletedNoDifficultReview": "无需补练的难句，已自动完成",
+  "termsOfService": "服务条款",
+  "privacyPolicy": "隐私政策",
+  "writeFeedback": "意见反馈",
+
+  "updateAvailable": "发现新版本 v{version}",
+  "@updateAvailable": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "updateNow": "立即更新",
+  "updateLater": "稍后提醒",
+  "forceUpdateTitle": "需要更新",
+  "forceUpdateMessage": "当前版本已不再受支持，请更新以继续使用。",
+  "copyDownloadLink": "复制下载链接",
+  "linkCopied": "已复制",
+  "checkForUpdate": "检查更新",
+  "alreadyLatest": "已是最新版本",
+  "checkUpdateFailed": "检查失败，请检查网络"
 }

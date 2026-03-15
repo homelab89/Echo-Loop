@@ -155,9 +155,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get save => '保存';
 
   @override
-  String get appDescription => '专业的英语听力练习应用';
-
-  @override
   String get enableLoop => '启用循环';
 
   @override
@@ -1729,4 +1726,45 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get autoCompletedNoDifficultReview => '无需补练的难句，已自动完成';
+
+  @override
+  String get termsOfService => '服务条款';
+
+  @override
+  String get privacyPolicy => '隐私政策';
+
+  @override
+  String get writeFeedback => '意见反馈';
+
+  @override
+  String updateAvailable(String version) {
+    return '发现新版本 v$version';
+  }
+
+  @override
+  String get updateNow => '立即更新';
+
+  @override
+  String get updateLater => '稍后提醒';
+
+  @override
+  String get forceUpdateTitle => '需要更新';
+
+  @override
+  String get forceUpdateMessage => '当前版本已不再受支持，请更新以继续使用。';
+
+  @override
+  String get copyDownloadLink => '复制下载链接';
+
+  @override
+  String get linkCopied => '已复制';
+
+  @override
+  String get checkForUpdate => '检查更新';
+
+  @override
+  String get alreadyLatest => '已是最新版本';
+
+  @override
+  String get checkUpdateFailed => '检查失败，请检查网络';
 }

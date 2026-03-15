@@ -155,9 +155,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
-  String get appDescription => 'Professional English listening practice app';
-
-  @override
   String get enableLoop => 'Enable Loop';
 
   @override
@@ -1775,4 +1772,46 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get autoCompletedNoDifficultReview =>
       'No difficult sentences to practice. Auto-completed.';
+
+  @override
+  String get termsOfService => 'Terms of Service';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get writeFeedback => 'Write Feedback';
+
+  @override
+  String updateAvailable(String version) {
+    return 'New Version v$version';
+  }
+
+  @override
+  String get updateNow => 'Update Now';
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
+  String get forceUpdateTitle => 'Update Required';
+
+  @override
+  String get forceUpdateMessage =>
+      'Your current version is no longer supported. Please update to continue.';
+
+  @override
+  String get copyDownloadLink => 'Copy Download Link';
+
+  @override
+  String get linkCopied => 'Link copied';
+
+  @override
+  String get checkForUpdate => 'Check for Updates';
+
+  @override
+  String get alreadyLatest => 'Already up to date';
+
+  @override
+  String get checkUpdateFailed => 'Check failed, please check your network';
 }

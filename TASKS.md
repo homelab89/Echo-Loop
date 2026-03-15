@@ -340,6 +340,23 @@
 
 ---
 
+## 已完成：App 版本更新提醒机制
+
+- [x] 后端 `version.json` 静态文件（`../fluency-frontend/apps/app/public/version.json`）
+- [x] 版本比较工具（`lib/utils/version_compare.dart`，容错 semver 比较）
+- [x] 数据模型（`lib/models/app_update_info.dart`，AppUpdateInfo + sealed AppUpdateState）
+- [x] 网络服务（`lib/services/app_update_checker.dart`，独立 Dio + 5s 超时 + 静默失败）
+- [x] 状态管理（`lib/providers/app_update_provider.dart`，keepAlive + 自然日节流 + 忽略逻辑）
+- [x] UI 对话框（`lib/widgets/app_update_dialog.dart`，soft/force update + 复制链接逃生通道）
+- [x] 国际化（10 个新 key，en + zh）
+- [x] MainShell 集成（`ref.listenManual` 监听状态变化弹出对话框）
+- [x] 设置页"检查更新"入口（手动检查绕过节流，SnackBar 反馈）
+- [x] 测试覆盖（version_compare 20 + app_update_info 12 + app_update_checker 5 + provider 8 + widget 4 = 49 个新测试）
+
+  **完成时间**: 2026-03-15
+
+---
+
 ## 意群划分功能
 
 ## 增加自由练习功能

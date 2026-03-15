@@ -55,7 +55,6 @@
   "about": "About",
   "version": "Version",
   "save": "Save",
-  "appDescription": "Professional English listening practice app",
   "enableLoop": "Enable Loop",
   "loopSettings": "Loop Settings",
   "displaySettings": "Display Settings",
@@ -977,5 +976,24 @@
   "clearCacheEmpty": "Cache is already empty",
   "confirm": "Confirm",
   "autoCompletedNoDifficult": "All sentences understood. Auto-completed.",
-  "autoCompletedNoDifficultReview": "No difficult sentences to practice. Auto-completed."
+  "autoCompletedNoDifficultReview": "No difficult sentences to practice. Auto-completed.",
+  "termsOfService": "Terms of Service",
+  "privacyPolicy": "Privacy Policy",
+  "writeFeedback": "Write Feedback",
+
+  "updateAvailable": "New Version v{version}",
+  "@updateAvailable": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "updateNow": "Update Now",
+  "updateLater": "Later",
+  "forceUpdateTitle": "Update Required",
+  "forceUpdateMessage": "Your current version is no longer supported. Please update to continue.",
+  "copyDownloadLink": "Copy Download Link",
+  "linkCopied": "Link copied",
+  "checkForUpdate": "Check for Updates",
+  "alreadyLatest": "Already up to date",
+  "checkUpdateFailed": "Check failed, please check your network"
 }

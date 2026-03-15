@@ -34,8 +34,10 @@ import 'package:fluency/models/speech_practice_models.dart';
 import 'package:fluency/providers/transcription_task_provider.dart';
 import 'package:fluency/services/transcription_api_client.dart';
 import 'package:fluency/database/enums.dart';
+import 'package:fluency/models/app_update_info.dart';
 import 'package:fluency/models/learning_progress.dart';
 import 'package:fluency/models/sentence.dart';
+import 'package:fluency/providers/app_update_provider.dart';
 
 // ========== 测试数据工厂 ==========
 
@@ -101,6 +103,22 @@ Tag createTestTag({
 }
 
 // ========== 测试 Notifier ==========
+
+/// 测试用 AppUpdate — 不访问网络和 SharedPreferences
+class TestAppUpdate extends AppUpdate {
+  @override
+  AppUpdateState build() => const AppUpdateInitial();
+
+  @override
+  Future<AppUpdateResult> manualCheck() async {
+    return const AppUpdateResult(type: AppUpdateType.none);
+  }
+
+  @override
+  Future<void> dismiss() async {
+    state = const AppUpdateDismissed();
+  }
+}
 
 /// 测试用 AppSettings — 不访问 SharedPreferences
 class TestAppSettings extends AppSettings {

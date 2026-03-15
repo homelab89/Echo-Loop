@@ -6,6 +6,7 @@ library;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:fluency/providers/app_update_provider.dart';
 import 'package:fluency/providers/developer_options_provider.dart';
 import 'package:fluency/screens/settings_screen.dart';
 import 'package:fluency/providers/settings_provider.dart';
@@ -38,6 +39,7 @@ void main() {
       listeningPracticeProvider.overrideWith(() => TestListeningPractice()),
       audioEngineProvider.overrideWith(() => TestAudioEngine()),
       packageInfoProvider.overrideWithValue(testPackageInfo),
+      appUpdateProvider.overrideWith(() => TestAppUpdate()),
     ];
   }
 
@@ -72,8 +74,10 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('About'), findsOneWidget);
-        expect(find.text('Version'), findsOneWidget);
-        expect(find.text('1.0.0'), findsOneWidget);
+        expect(find.text('Terms of Service'), findsOneWidget);
+        expect(find.text('Privacy Policy'), findsOneWidget);
+        expect(find.text('Write Feedback'), findsOneWidget);
+        expect(find.text('v1.0.0'), findsOneWidget);
       });
 
       testWidgets('显示外观标题', (tester) async {
@@ -103,6 +107,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        // 滚动到开发者区域
+        await tester.scrollUntilVisible(find.text('Time Machine'), 200);
+        await tester.pumpAndSettle();
+
         expect(find.text('Developer'), findsOneWidget);
         expect(find.text('Time Machine'), findsOneWidget);
         expect(find.text('Using system time'), findsOneWidget);
@@ -119,6 +127,10 @@ void main() {
             ),
           ),
         );
+        await tester.pumpAndSettle();
+
+        // 滚动到开发者区域
+        await tester.scrollUntilVisible(find.text('Time Machine'), 200);
         await tester.pumpAndSettle();
 
         expect(find.text('Debug time: 2026-03-11 22:15'), findsOneWidget);
@@ -182,6 +194,11 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        await tester.scrollUntilVisible(
+          find.text('Time Machine'),
+          200,
+        );
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Time Machine'));
         await tester.pumpAndSettle();
 
@@ -203,6 +220,11 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        await tester.scrollUntilVisible(
+          find.text('Time Machine'),
+          200,
+        );
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Time Machine'));
         await tester.pumpAndSettle();
 
