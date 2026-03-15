@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:drift/native.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,9 +21,18 @@ import 'package:fluency/models/playback_settings.dart';
 import 'package:fluency/models/sentence.dart';
 import 'package:fluency/database/providers.dart';
 import 'package:fluency/database/daos/bookmark_dao.dart';
-import 'package:fluency/database/app_database.dart' show Bookmark;
+import 'package:fluency/database/app_database.dart';
 
 import '../../helpers/mock_providers.dart';
+
+/// 创建内存数据库（用于测试 StudyTimeService 依赖注入）
+AppDatabase _createTestDb() {
+  return AppDatabase(
+    NativeDatabase.memory(
+      setup: (db) => db.execute('PRAGMA foreign_keys = ON'),
+    ),
+  );
+}
 
 class _DaoFallbackLearningProgressNotifier
     extends TestLearningProgressNotifier {
@@ -257,6 +267,7 @@ void main() {
     ) {
       return ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(_createTestDb()),
           audioEngineProvider.overrideWith(() => TestAudioEngine()),
           listeningPracticeProvider.overrideWith(() => TestListeningPractice()),
           learningProgressNotifierProvider.overrideWith(() => progressNotifier),
@@ -375,6 +386,7 @@ void main() {
       testAudioEngine = TestAudioEngine(isPlaying: isPlaying);
       final c = ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(_createTestDb()),
           audioEngineProvider.overrideWith(() => testAudioEngine),
           listeningPracticeProvider.overrideWith(() => TestListeningPractice()),
           learningProgressNotifierProvider.overrideWith(
@@ -550,6 +562,7 @@ void main() {
     ) {
       return ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(_createTestDb()),
           audioEngineProvider.overrideWith(() => TestAudioEngine()),
           listeningPracticeProvider.overrideWith(() => TestListeningPractice()),
           learningProgressNotifierProvider.overrideWith(() => progressNotifier),

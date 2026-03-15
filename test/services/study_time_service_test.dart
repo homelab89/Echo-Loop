@@ -1,22 +1,36 @@
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluency/database/app_database.dart';
 import 'package:fluency/services/study_time_service.dart';
 
-void main() {
-  group('StudyTimeService', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-    });
+AppDatabase _createTestDb() {
+  return AppDatabase(
+    NativeDatabase.memory(
+      setup: (db) => db.execute('PRAGMA foreign_keys = ON'),
+    ),
+  );
+}
 
+void main() {
+  late AppDatabase db;
+  late StudyTimeService service;
+
+  setUp(() async {
+    db = _createTestDb();
+    service = StudyTimeService(db.dailyStudyRecordDao);
+  });
+
+  tearDown(() async {
+    await db.close();
+  });
+
+  group('StudyTimeService', () {
     test('首次调用 getTodayStudyTime 返回 0', () async {
-      final service = StudyTimeService();
       final result = await service.getTodayStudyTime();
       expect(result, 0);
     });
 
     test('addStudyTime 累加到今日 key', () async {
-      final service = StudyTimeService();
-
       await service.addStudyTime(30);
       expect(await service.getTodayStudyTime(), 30);
 
@@ -25,23 +39,18 @@ void main() {
     });
 
     test('addStudyTime(0) 不改变已有值', () async {
-      final service = StudyTimeService();
-
       await service.addStudyTime(60);
       await service.addStudyTime(0);
       expect(await service.getTodayStudyTime(), 60);
     });
 
     test('负数被忽略', () async {
-      final service = StudyTimeService();
-
       await service.addStudyTime(60);
       await service.addStudyTime(-10);
       expect(await service.getTodayStudyTime(), 60);
     });
 
     test('自定义日期 key 读写正确', () async {
-      final service = StudyTimeService();
       final customDate = DateTime(2026, 1, 15);
 
       await service.addStudyTime(120, date: customDate);
@@ -52,8 +61,6 @@ void main() {
     });
 
     test('跨天时 key 自动切换', () async {
-      final service = StudyTimeService();
-
       final day1 = DateTime(2026, 3, 5);
       final day2 = DateTime(2026, 3, 6);
 
@@ -66,12 +73,7 @@ void main() {
   });
 
   group('StudyTimeService - streak', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-    });
-
     test('无学习记录时 streak 为 0', () async {
-      final service = StudyTimeService();
       final streak = await service.getStudyStreak(
         now: DateTime(2026, 3, 8),
       );
@@ -79,7 +81,6 @@ void main() {
     });
 
     test('仅今天有记录时 streak 为 1', () async {
-      final service = StudyTimeService();
       final today = DateTime(2026, 3, 8);
       await service.addStudyTime(60, date: today);
 
@@ -88,7 +89,6 @@ void main() {
     });
 
     test('连续 3 天学习 streak 为 3', () async {
-      final service = StudyTimeService();
       final today = DateTime(2026, 3, 8);
       await service.addStudyTime(60, date: DateTime(2026, 3, 6));
       await service.addStudyTime(60, date: DateTime(2026, 3, 7));
@@ -99,7 +99,6 @@ void main() {
     });
 
     test('中间断一天则 streak 中断', () async {
-      final service = StudyTimeService();
       final today = DateTime(2026, 3, 8);
       await service.addStudyTime(60, date: DateTime(2026, 3, 5));
       // 3月6日无记录
@@ -111,7 +110,6 @@ void main() {
     });
 
     test('今天无记录但昨天有则 streak 从昨天开始计', () async {
-      final service = StudyTimeService();
       final today = DateTime(2026, 3, 8);
       await service.addStudyTime(60, date: DateTime(2026, 3, 6));
       await service.addStudyTime(60, date: DateTime(2026, 3, 7));
@@ -123,12 +121,7 @@ void main() {
   });
 
   group('StudyTimeService - weeklyStudyTimes', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-    });
-
     test('无记录时返回全 0', () async {
-      final service = StudyTimeService();
       final times = await service.getWeeklyStudyTimes(
         now: DateTime(2026, 3, 8),
       );
@@ -136,7 +129,6 @@ void main() {
     });
 
     test('返回过去 7 天的正确数据', () async {
-      final service = StudyTimeService();
       final today = DateTime(2026, 3, 8); // Sunday
       await service.addStudyTime(100, date: DateTime(2026, 3, 2)); // Mon
       await service.addStudyTime(200, date: DateTime(2026, 3, 5)); // Thu
@@ -148,7 +140,6 @@ void main() {
     });
 
     test('列表长度固定为 7', () async {
-      final service = StudyTimeService();
       final times = await service.getWeeklyStudyTimes(
         now: DateTime(2026, 3, 8),
       );
@@ -157,12 +148,7 @@ void main() {
   });
 
   group('StudyTimeService - weekTotalStudyTime', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-    });
-
     test('无记录时返回 0', () async {
-      final service = StudyTimeService();
       final total = await service.getWeekTotalStudyTime(
         now: DateTime(2026, 3, 8),
       );
@@ -170,7 +156,6 @@ void main() {
     });
 
     test('累加本周一至今的学习时长', () async {
-      final service = StudyTimeService();
       // 2026-3-8 是周日，本周一是 3-2
       final today = DateTime(2026, 3, 8);
       await service.addStudyTime(100, date: DateTime(2026, 3, 2)); // Mon
@@ -184,7 +169,6 @@ void main() {
     });
 
     test('周一时只计当天', () async {
-      final service = StudyTimeService();
       final monday = DateTime(2026, 3, 2); // Monday
       await service.addStudyTime(150, date: monday);
       // 上周日不计入
@@ -196,17 +180,11 @@ void main() {
   });
 
   group('StudyTimeService - inputWords', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-    });
-
     test('首次读取返回 0', () async {
-      final service = StudyTimeService();
       expect(await service.getTodayInputWords(), 0);
     });
 
     test('addInputWords 累加', () async {
-      final service = StudyTimeService();
       await service.addInputWords(50);
       expect(await service.getTodayInputWords(), 50);
 
@@ -215,7 +193,6 @@ void main() {
     });
 
     test('count <= 0 时忽略', () async {
-      final service = StudyTimeService();
       await service.addInputWords(100);
       await service.addInputWords(0);
       await service.addInputWords(-5);
@@ -223,7 +200,6 @@ void main() {
     });
 
     test('自定义日期隔离', () async {
-      final service = StudyTimeService();
       final day1 = DateTime(2026, 3, 5);
       final day2 = DateTime(2026, 3, 6);
 
@@ -236,17 +212,11 @@ void main() {
   });
 
   group('StudyTimeService - outputWords', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-    });
-
     test('首次读取返回 0', () async {
-      final service = StudyTimeService();
       expect(await service.getTodayOutputWords(), 0);
     });
 
     test('addOutputWords 累加', () async {
-      final service = StudyTimeService();
       await service.addOutputWords(40);
       expect(await service.getTodayOutputWords(), 40);
 
@@ -255,7 +225,6 @@ void main() {
     });
 
     test('count <= 0 时忽略', () async {
-      final service = StudyTimeService();
       await service.addOutputWords(50);
       await service.addOutputWords(0);
       await service.addOutputWords(-1);
@@ -263,7 +232,6 @@ void main() {
     });
 
     test('输入与输出互不干扰', () async {
-      final service = StudyTimeService();
       await service.addInputWords(100);
       await service.addOutputWords(50);
 
@@ -273,17 +241,11 @@ void main() {
   });
 
   group('StudyTimeService - inputTime', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-    });
-
     test('首次读取返回 0', () async {
-      final service = StudyTimeService();
       expect(await service.getTodayInputTime(), 0);
     });
 
     test('addInputTime 累加', () async {
-      final service = StudyTimeService();
       await service.addInputTime(30);
       expect(await service.getTodayInputTime(), 30);
 
@@ -292,7 +254,6 @@ void main() {
     });
 
     test('seconds <= 0 时忽略', () async {
-      final service = StudyTimeService();
       await service.addInputTime(60);
       await service.addInputTime(0);
       await service.addInputTime(-5);
@@ -300,7 +261,6 @@ void main() {
     });
 
     test('自定义日期隔离', () async {
-      final service = StudyTimeService();
       final day1 = DateTime(2026, 3, 5);
       final day2 = DateTime(2026, 3, 6);
 
@@ -312,7 +272,6 @@ void main() {
     });
 
     test('getWeeklyInputTimes 返回过去 7 天数据', () async {
-      final service = StudyTimeService();
       final today = DateTime(2026, 3, 8);
       await service.addInputTime(100, date: DateTime(2026, 3, 2));
       await service.addInputTime(200, date: DateTime(2026, 3, 5));
@@ -325,17 +284,11 @@ void main() {
   });
 
   group('StudyTimeService - outputTime', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-    });
-
     test('首次读取返回 0', () async {
-      final service = StudyTimeService();
       expect(await service.getTodayOutputTime(), 0);
     });
 
     test('addOutputTime 累加', () async {
-      final service = StudyTimeService();
       await service.addOutputTime(20);
       expect(await service.getTodayOutputTime(), 20);
 
@@ -344,7 +297,6 @@ void main() {
     });
 
     test('seconds <= 0 时忽略', () async {
-      final service = StudyTimeService();
       await service.addOutputTime(40);
       await service.addOutputTime(0);
       await service.addOutputTime(-1);
@@ -352,7 +304,6 @@ void main() {
     });
 
     test('getWeeklyOutputTimes 返回过去 7 天数据', () async {
-      final service = StudyTimeService();
       final today = DateTime(2026, 3, 8);
       await service.addOutputTime(50, date: DateTime(2026, 3, 3));
       await service.addOutputTime(80, date: today);
@@ -363,7 +314,6 @@ void main() {
     });
 
     test('输入时间与输出时间互不干扰', () async {
-      final service = StudyTimeService();
       await service.addInputTime(100);
       await service.addOutputTime(50);
 

@@ -6757,6 +6757,485 @@ class LearnedWordFormsCompanion extends UpdateCompanion<LearnedWordForm> {
   }
 }
 
+class $DailyStudyRecordsTable extends DailyStudyRecords
+    with TableInfo<$DailyStudyRecordsTable, DailyStudyRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyStudyRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _studyTimeSecondsMeta = const VerificationMeta(
+    'studyTimeSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> studyTimeSeconds = GeneratedColumn<int>(
+    'study_time_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _inputWordsMeta = const VerificationMeta(
+    'inputWords',
+  );
+  @override
+  late final GeneratedColumn<int> inputWords = GeneratedColumn<int>(
+    'input_words',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _outputWordsMeta = const VerificationMeta(
+    'outputWords',
+  );
+  @override
+  late final GeneratedColumn<int> outputWords = GeneratedColumn<int>(
+    'output_words',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _inputTimeSecondsMeta = const VerificationMeta(
+    'inputTimeSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> inputTimeSeconds = GeneratedColumn<int>(
+    'input_time_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _outputTimeSecondsMeta = const VerificationMeta(
+    'outputTimeSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> outputTimeSeconds = GeneratedColumn<int>(
+    'output_time_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    date,
+    studyTimeSeconds,
+    inputWords,
+    outputWords,
+    inputTimeSeconds,
+    outputTimeSeconds,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_study_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DailyStudyRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('study_time_seconds')) {
+      context.handle(
+        _studyTimeSecondsMeta,
+        studyTimeSeconds.isAcceptableOrUnknown(
+          data['study_time_seconds']!,
+          _studyTimeSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('input_words')) {
+      context.handle(
+        _inputWordsMeta,
+        inputWords.isAcceptableOrUnknown(data['input_words']!, _inputWordsMeta),
+      );
+    }
+    if (data.containsKey('output_words')) {
+      context.handle(
+        _outputWordsMeta,
+        outputWords.isAcceptableOrUnknown(
+          data['output_words']!,
+          _outputWordsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('input_time_seconds')) {
+      context.handle(
+        _inputTimeSecondsMeta,
+        inputTimeSeconds.isAcceptableOrUnknown(
+          data['input_time_seconds']!,
+          _inputTimeSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('output_time_seconds')) {
+      context.handle(
+        _outputTimeSecondsMeta,
+        outputTimeSeconds.isAcceptableOrUnknown(
+          data['output_time_seconds']!,
+          _outputTimeSecondsMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DailyStudyRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyStudyRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date'],
+      )!,
+      studyTimeSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}study_time_seconds'],
+      )!,
+      inputWords: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}input_words'],
+      )!,
+      outputWords: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}output_words'],
+      )!,
+      inputTimeSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}input_time_seconds'],
+      )!,
+      outputTimeSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}output_time_seconds'],
+      )!,
+    );
+  }
+
+  @override
+  $DailyStudyRecordsTable createAlias(String alias) {
+    return $DailyStudyRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class DailyStudyRecord extends DataClass
+    implements Insertable<DailyStudyRecord> {
+  /// 自增主键
+  final int id;
+
+  /// 日期（唯一），只保留年月日
+  final DateTime date;
+
+  /// 当日累计学习时长（秒）
+  final int studyTimeSeconds;
+
+  /// 当日输入词数（听了多少词）
+  final int inputWords;
+
+  /// 当日输出词数（跟读/复述了多少词）
+  final int outputWords;
+
+  /// 当日输入时间（秒）— 音频播放时间
+  final int inputTimeSeconds;
+
+  /// 当日输出时间（秒）— 跟读/复述暂停时间
+  final int outputTimeSeconds;
+  const DailyStudyRecord({
+    required this.id,
+    required this.date,
+    required this.studyTimeSeconds,
+    required this.inputWords,
+    required this.outputWords,
+    required this.inputTimeSeconds,
+    required this.outputTimeSeconds,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['date'] = Variable<DateTime>(date);
+    map['study_time_seconds'] = Variable<int>(studyTimeSeconds);
+    map['input_words'] = Variable<int>(inputWords);
+    map['output_words'] = Variable<int>(outputWords);
+    map['input_time_seconds'] = Variable<int>(inputTimeSeconds);
+    map['output_time_seconds'] = Variable<int>(outputTimeSeconds);
+    return map;
+  }
+
+  DailyStudyRecordsCompanion toCompanion(bool nullToAbsent) {
+    return DailyStudyRecordsCompanion(
+      id: Value(id),
+      date: Value(date),
+      studyTimeSeconds: Value(studyTimeSeconds),
+      inputWords: Value(inputWords),
+      outputWords: Value(outputWords),
+      inputTimeSeconds: Value(inputTimeSeconds),
+      outputTimeSeconds: Value(outputTimeSeconds),
+    );
+  }
+
+  factory DailyStudyRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyStudyRecord(
+      id: serializer.fromJson<int>(json['id']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      studyTimeSeconds: serializer.fromJson<int>(json['studyTimeSeconds']),
+      inputWords: serializer.fromJson<int>(json['inputWords']),
+      outputWords: serializer.fromJson<int>(json['outputWords']),
+      inputTimeSeconds: serializer.fromJson<int>(json['inputTimeSeconds']),
+      outputTimeSeconds: serializer.fromJson<int>(json['outputTimeSeconds']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'date': serializer.toJson<DateTime>(date),
+      'studyTimeSeconds': serializer.toJson<int>(studyTimeSeconds),
+      'inputWords': serializer.toJson<int>(inputWords),
+      'outputWords': serializer.toJson<int>(outputWords),
+      'inputTimeSeconds': serializer.toJson<int>(inputTimeSeconds),
+      'outputTimeSeconds': serializer.toJson<int>(outputTimeSeconds),
+    };
+  }
+
+  DailyStudyRecord copyWith({
+    int? id,
+    DateTime? date,
+    int? studyTimeSeconds,
+    int? inputWords,
+    int? outputWords,
+    int? inputTimeSeconds,
+    int? outputTimeSeconds,
+  }) => DailyStudyRecord(
+    id: id ?? this.id,
+    date: date ?? this.date,
+    studyTimeSeconds: studyTimeSeconds ?? this.studyTimeSeconds,
+    inputWords: inputWords ?? this.inputWords,
+    outputWords: outputWords ?? this.outputWords,
+    inputTimeSeconds: inputTimeSeconds ?? this.inputTimeSeconds,
+    outputTimeSeconds: outputTimeSeconds ?? this.outputTimeSeconds,
+  );
+  DailyStudyRecord copyWithCompanion(DailyStudyRecordsCompanion data) {
+    return DailyStudyRecord(
+      id: data.id.present ? data.id.value : this.id,
+      date: data.date.present ? data.date.value : this.date,
+      studyTimeSeconds: data.studyTimeSeconds.present
+          ? data.studyTimeSeconds.value
+          : this.studyTimeSeconds,
+      inputWords: data.inputWords.present
+          ? data.inputWords.value
+          : this.inputWords,
+      outputWords: data.outputWords.present
+          ? data.outputWords.value
+          : this.outputWords,
+      inputTimeSeconds: data.inputTimeSeconds.present
+          ? data.inputTimeSeconds.value
+          : this.inputTimeSeconds,
+      outputTimeSeconds: data.outputTimeSeconds.present
+          ? data.outputTimeSeconds.value
+          : this.outputTimeSeconds,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyStudyRecord(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('studyTimeSeconds: $studyTimeSeconds, ')
+          ..write('inputWords: $inputWords, ')
+          ..write('outputWords: $outputWords, ')
+          ..write('inputTimeSeconds: $inputTimeSeconds, ')
+          ..write('outputTimeSeconds: $outputTimeSeconds')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    date,
+    studyTimeSeconds,
+    inputWords,
+    outputWords,
+    inputTimeSeconds,
+    outputTimeSeconds,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyStudyRecord &&
+          other.id == this.id &&
+          other.date == this.date &&
+          other.studyTimeSeconds == this.studyTimeSeconds &&
+          other.inputWords == this.inputWords &&
+          other.outputWords == this.outputWords &&
+          other.inputTimeSeconds == this.inputTimeSeconds &&
+          other.outputTimeSeconds == this.outputTimeSeconds);
+}
+
+class DailyStudyRecordsCompanion extends UpdateCompanion<DailyStudyRecord> {
+  final Value<int> id;
+  final Value<DateTime> date;
+  final Value<int> studyTimeSeconds;
+  final Value<int> inputWords;
+  final Value<int> outputWords;
+  final Value<int> inputTimeSeconds;
+  final Value<int> outputTimeSeconds;
+  const DailyStudyRecordsCompanion({
+    this.id = const Value.absent(),
+    this.date = const Value.absent(),
+    this.studyTimeSeconds = const Value.absent(),
+    this.inputWords = const Value.absent(),
+    this.outputWords = const Value.absent(),
+    this.inputTimeSeconds = const Value.absent(),
+    this.outputTimeSeconds = const Value.absent(),
+  });
+  DailyStudyRecordsCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime date,
+    this.studyTimeSeconds = const Value.absent(),
+    this.inputWords = const Value.absent(),
+    this.outputWords = const Value.absent(),
+    this.inputTimeSeconds = const Value.absent(),
+    this.outputTimeSeconds = const Value.absent(),
+  }) : date = Value(date);
+  static Insertable<DailyStudyRecord> custom({
+    Expression<int>? id,
+    Expression<DateTime>? date,
+    Expression<int>? studyTimeSeconds,
+    Expression<int>? inputWords,
+    Expression<int>? outputWords,
+    Expression<int>? inputTimeSeconds,
+    Expression<int>? outputTimeSeconds,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (date != null) 'date': date,
+      if (studyTimeSeconds != null) 'study_time_seconds': studyTimeSeconds,
+      if (inputWords != null) 'input_words': inputWords,
+      if (outputWords != null) 'output_words': outputWords,
+      if (inputTimeSeconds != null) 'input_time_seconds': inputTimeSeconds,
+      if (outputTimeSeconds != null) 'output_time_seconds': outputTimeSeconds,
+    });
+  }
+
+  DailyStudyRecordsCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? date,
+    Value<int>? studyTimeSeconds,
+    Value<int>? inputWords,
+    Value<int>? outputWords,
+    Value<int>? inputTimeSeconds,
+    Value<int>? outputTimeSeconds,
+  }) {
+    return DailyStudyRecordsCompanion(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      studyTimeSeconds: studyTimeSeconds ?? this.studyTimeSeconds,
+      inputWords: inputWords ?? this.inputWords,
+      outputWords: outputWords ?? this.outputWords,
+      inputTimeSeconds: inputTimeSeconds ?? this.inputTimeSeconds,
+      outputTimeSeconds: outputTimeSeconds ?? this.outputTimeSeconds,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (studyTimeSeconds.present) {
+      map['study_time_seconds'] = Variable<int>(studyTimeSeconds.value);
+    }
+    if (inputWords.present) {
+      map['input_words'] = Variable<int>(inputWords.value);
+    }
+    if (outputWords.present) {
+      map['output_words'] = Variable<int>(outputWords.value);
+    }
+    if (inputTimeSeconds.present) {
+      map['input_time_seconds'] = Variable<int>(inputTimeSeconds.value);
+    }
+    if (outputTimeSeconds.present) {
+      map['output_time_seconds'] = Variable<int>(outputTimeSeconds.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyStudyRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('studyTimeSeconds: $studyTimeSeconds, ')
+          ..write('inputWords: $inputWords, ')
+          ..write('outputWords: $outputWords, ')
+          ..write('inputTimeSeconds: $inputTimeSeconds, ')
+          ..write('outputTimeSeconds: $outputTimeSeconds')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6780,6 +7259,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LearnedWordFormsTable learnedWordForms = $LearnedWordFormsTable(
     this,
   );
+  late final $DailyStudyRecordsTable dailyStudyRecords =
+      $DailyStudyRecordsTable(this);
   late final AudioItemDao audioItemDao = AudioItemDao(this as AppDatabase);
   late final CollectionDao collectionDao = CollectionDao(this as AppDatabase);
   late final BookmarkDao bookmarkDao = BookmarkDao(this as AppDatabase);
@@ -6800,6 +7281,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final LearnedWordFormDao learnedWordFormDao = LearnedWordFormDao(
     this as AppDatabase,
   );
+  late final DailyStudyRecordDao dailyStudyRecordDao = DailyStudyRecordDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6817,6 +7301,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     sentenceAiCache,
     savedWords,
     learnedWordForms,
+    dailyStudyRecords,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -12077,6 +12562,261 @@ typedef $$LearnedWordFormsTableProcessedTableManager =
       LearnedWordForm,
       PrefetchHooks Function()
     >;
+typedef $$DailyStudyRecordsTableCreateCompanionBuilder =
+    DailyStudyRecordsCompanion Function({
+      Value<int> id,
+      required DateTime date,
+      Value<int> studyTimeSeconds,
+      Value<int> inputWords,
+      Value<int> outputWords,
+      Value<int> inputTimeSeconds,
+      Value<int> outputTimeSeconds,
+    });
+typedef $$DailyStudyRecordsTableUpdateCompanionBuilder =
+    DailyStudyRecordsCompanion Function({
+      Value<int> id,
+      Value<DateTime> date,
+      Value<int> studyTimeSeconds,
+      Value<int> inputWords,
+      Value<int> outputWords,
+      Value<int> inputTimeSeconds,
+      Value<int> outputTimeSeconds,
+    });
+
+class $$DailyStudyRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $DailyStudyRecordsTable> {
+  $$DailyStudyRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get studyTimeSeconds => $composableBuilder(
+    column: $table.studyTimeSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get inputWords => $composableBuilder(
+    column: $table.inputWords,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get outputWords => $composableBuilder(
+    column: $table.outputWords,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get inputTimeSeconds => $composableBuilder(
+    column: $table.inputTimeSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get outputTimeSeconds => $composableBuilder(
+    column: $table.outputTimeSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DailyStudyRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DailyStudyRecordsTable> {
+  $$DailyStudyRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get studyTimeSeconds => $composableBuilder(
+    column: $table.studyTimeSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get inputWords => $composableBuilder(
+    column: $table.inputWords,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get outputWords => $composableBuilder(
+    column: $table.outputWords,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get inputTimeSeconds => $composableBuilder(
+    column: $table.inputTimeSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get outputTimeSeconds => $composableBuilder(
+    column: $table.outputTimeSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DailyStudyRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DailyStudyRecordsTable> {
+  $$DailyStudyRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<int> get studyTimeSeconds => $composableBuilder(
+    column: $table.studyTimeSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get inputWords => $composableBuilder(
+    column: $table.inputWords,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get outputWords => $composableBuilder(
+    column: $table.outputWords,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get inputTimeSeconds => $composableBuilder(
+    column: $table.inputTimeSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get outputTimeSeconds => $composableBuilder(
+    column: $table.outputTimeSeconds,
+    builder: (column) => column,
+  );
+}
+
+class $$DailyStudyRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DailyStudyRecordsTable,
+          DailyStudyRecord,
+          $$DailyStudyRecordsTableFilterComposer,
+          $$DailyStudyRecordsTableOrderingComposer,
+          $$DailyStudyRecordsTableAnnotationComposer,
+          $$DailyStudyRecordsTableCreateCompanionBuilder,
+          $$DailyStudyRecordsTableUpdateCompanionBuilder,
+          (
+            DailyStudyRecord,
+            BaseReferences<
+              _$AppDatabase,
+              $DailyStudyRecordsTable,
+              DailyStudyRecord
+            >,
+          ),
+          DailyStudyRecord,
+          PrefetchHooks Function()
+        > {
+  $$DailyStudyRecordsTableTableManager(
+    _$AppDatabase db,
+    $DailyStudyRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyStudyRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyStudyRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DailyStudyRecordsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> date = const Value.absent(),
+                Value<int> studyTimeSeconds = const Value.absent(),
+                Value<int> inputWords = const Value.absent(),
+                Value<int> outputWords = const Value.absent(),
+                Value<int> inputTimeSeconds = const Value.absent(),
+                Value<int> outputTimeSeconds = const Value.absent(),
+              }) => DailyStudyRecordsCompanion(
+                id: id,
+                date: date,
+                studyTimeSeconds: studyTimeSeconds,
+                inputWords: inputWords,
+                outputWords: outputWords,
+                inputTimeSeconds: inputTimeSeconds,
+                outputTimeSeconds: outputTimeSeconds,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime date,
+                Value<int> studyTimeSeconds = const Value.absent(),
+                Value<int> inputWords = const Value.absent(),
+                Value<int> outputWords = const Value.absent(),
+                Value<int> inputTimeSeconds = const Value.absent(),
+                Value<int> outputTimeSeconds = const Value.absent(),
+              }) => DailyStudyRecordsCompanion.insert(
+                id: id,
+                date: date,
+                studyTimeSeconds: studyTimeSeconds,
+                inputWords: inputWords,
+                outputWords: outputWords,
+                inputTimeSeconds: inputTimeSeconds,
+                outputTimeSeconds: outputTimeSeconds,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DailyStudyRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DailyStudyRecordsTable,
+      DailyStudyRecord,
+      $$DailyStudyRecordsTableFilterComposer,
+      $$DailyStudyRecordsTableOrderingComposer,
+      $$DailyStudyRecordsTableAnnotationComposer,
+      $$DailyStudyRecordsTableCreateCompanionBuilder,
+      $$DailyStudyRecordsTableUpdateCompanionBuilder,
+      (
+        DailyStudyRecord,
+        BaseReferences<
+          _$AppDatabase,
+          $DailyStudyRecordsTable,
+          DailyStudyRecord
+        >,
+      ),
+      DailyStudyRecord,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -12104,4 +12844,6 @@ class $AppDatabaseManager {
       $$SavedWordsTableTableManager(_db, _db.savedWords);
   $$LearnedWordFormsTableTableManager get learnedWordForms =>
       $$LearnedWordFormsTableTableManager(_db, _db.learnedWordForms);
+  $$DailyStudyRecordsTableTableManager get dailyStudyRecords =>
+      $$DailyStudyRecordsTableTableManager(_db, _db.dailyStudyRecords);
 }

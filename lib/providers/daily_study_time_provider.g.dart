@@ -6,11 +6,11 @@ part of 'daily_study_time_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$dailyStudyTimeHash() => r'ab6d53900ade8e018e155e21185c9db29cbf06f2';
+String _$dailyStudyTimeHash() => r'7008f1036f97a628b5d9bedae706f44f6ade3964';
 
 /// 今日学习时长 Provider（秒）
 ///
-/// 从 SharedPreferences 读取今日累计学习秒数。
+/// 从 SQLite 读取今日累计学习秒数。
 /// 每次进入/退出学习模式后刷新。
 ///
 /// Copied from [DailyStudyTime].

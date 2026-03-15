@@ -1,7 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:fluency/database/app_database.dart';
 import 'package:fluency/database/providers.dart';
@@ -21,7 +20,6 @@ void main() {
   late ProviderContainer container;
 
   setUp(() async {
-    SharedPreferences.setMockInitialValues({});
     db = _createTestDb();
     container = ProviderContainer(
       overrides: [appDatabaseProvider.overrideWithValue(db)],
@@ -35,7 +33,7 @@ void main() {
 
   test('StudyStatsNotifier 聚合已学习词形统计', () async {
     final now = DateTime.now();
-    final service = StudyTimeService();
+    final service = StudyTimeService(db.dailyStudyRecordDao);
     await service.addStudyTime(1800, date: now);
     await service.addInputWords(42, date: now);
     await service.addOutputWords(21, date: now);

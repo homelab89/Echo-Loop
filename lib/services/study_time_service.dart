@@ -1,20 +1,18 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import '../database/daos/daily_study_record_dao.dart';
 
 /// 学习时长存储服务
 ///
-/// 使用 SharedPreferences 按日累计学习秒数。
-/// Key 格式：`study_time_YYYY-MM-DD`，value 为当日累计秒数。
+/// 使用 Drift (SQLite) daily_study_records 表按日累计学习统计。
+/// 每天一行，5 个计数器（学习时长、输入/输出词数、输入/输出时间）。
 class StudyTimeService {
-  static const String _keyPrefix = 'study_time_';
-  static const String _inputWordsPrefix = 'input_words_';
-  static const String _outputWordsPrefix = 'output_words_';
-  static const String _inputTimePrefix = 'input_time_';
-  static const String _outputTimePrefix = 'output_time_';
+  final DailyStudyRecordDao _dao;
+
+  StudyTimeService(this._dao);
 
   /// 获取指定日期的学习时长（秒）
   Future<int> getStudyTime(DateTime date) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_keyFor(date)) ?? 0;
+    final record = await _dao.getByDate(date);
+    return record?.studyTimeSeconds ?? 0;
   }
 
   /// 获取今日学习时长（秒）
@@ -26,35 +24,14 @@ class StudyTimeService {
   /// [date] 默认为今天。
   Future<void> addStudyTime(int seconds, {DateTime? date}) async {
     if (seconds <= 0) return;
-
-    final targetDate = date ?? DateTime.now();
-    final prefs = await SharedPreferences.getInstance();
-    final key = _keyFor(targetDate);
-    final current = prefs.getInt(key) ?? 0;
-    await prefs.setInt(key, current + seconds);
+    await _dao.upsertAdd(date ?? DateTime.now(), studyTime: seconds);
   }
 
   /// 获取连续学习天数（streak）
   ///
   /// 从昨天往回数连续有学习记录的天数，今天有学习则 +1。
-  /// 上限 365 天，避免无限循环。
-  Future<int> getStudyStreak({DateTime? now}) async {
-    final today = _dateOnly(now ?? DateTime.now());
-    final prefs = await SharedPreferences.getInstance();
-
-    int streak = 0;
-    final todaySeconds = prefs.getInt(_keyFor(today)) ?? 0;
-    if (todaySeconds > 0) streak = 1;
-
-    // 从昨天开始往回数
-    for (int i = 1; i <= 365; i++) {
-      final date = today.subtract(Duration(days: i));
-      final seconds = prefs.getInt(_keyFor(date)) ?? 0;
-      if (seconds <= 0) break;
-      streak++;
-    }
-
-    return streak;
+  Future<int> getStudyStreak({DateTime? now}) {
+    return _dao.getStreak(now: now);
   }
 
   /// 获取过去 7 天每天的学习时长（秒）
@@ -62,11 +39,20 @@ class StudyTimeService {
   /// 返回长度为 7 的列表，索引 0 = 6 天前，索引 6 = 今天。
   Future<List<int>> getWeeklyStudyTimes({DateTime? now}) async {
     final today = _dateOnly(now ?? DateTime.now());
-    final prefs = await SharedPreferences.getInstance();
+    final start = today.subtract(const Duration(days: 6));
+    final records = await _dao.getBetween(start, today);
+
+    // 按日期建立查找表
+    final Map<int, int> dayMap = {};
+    for (final r in records) {
+      final key = _dayKey(r.date);
+      dayMap[key] = r.studyTimeSeconds;
+    }
+
     final result = <int>[];
     for (int i = 6; i >= 0; i--) {
       final date = today.subtract(Duration(days: i));
-      result.add(prefs.getInt(_keyFor(date)) ?? 0);
+      result.add(dayMap[_dayKey(date)] ?? 0);
     }
     return result;
   }
@@ -74,13 +60,13 @@ class StudyTimeService {
   /// 获取本周一至今的累计学习时长（秒）
   Future<int> getWeekTotalStudyTime({DateTime? now}) async {
     final today = _dateOnly(now ?? DateTime.now());
-    final prefs = await SharedPreferences.getInstance();
-    // weekday: 1=Monday, 7=Sunday
     final daysSinceMonday = today.weekday - 1;
+    final monday = today.subtract(Duration(days: daysSinceMonday));
+    final records = await _dao.getBetween(monday, today);
+
     int total = 0;
-    for (int i = 0; i <= daysSinceMonday; i++) {
-      final date = today.subtract(Duration(days: daysSinceMonday - i));
-      total += prefs.getInt(_keyFor(date)) ?? 0;
+    for (final r in records) {
+      total += r.studyTimeSeconds;
     }
     return total;
   }
@@ -89,8 +75,8 @@ class StudyTimeService {
 
   /// 获取指定日期的输入词数
   Future<int> getInputWords(DateTime date) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_wordKeyFor(_inputWordsPrefix, date)) ?? 0;
+    final record = await _dao.getByDate(date);
+    return record?.inputWords ?? 0;
   }
 
   /// 获取今日输入词数
@@ -101,19 +87,15 @@ class StudyTimeService {
   /// [count] 必须 > 0，否则忽略。
   Future<void> addInputWords(int count, {DateTime? date}) async {
     if (count <= 0) return;
-    final targetDate = date ?? DateTime.now();
-    final prefs = await SharedPreferences.getInstance();
-    final key = _wordKeyFor(_inputWordsPrefix, targetDate);
-    final current = prefs.getInt(key) ?? 0;
-    await prefs.setInt(key, current + count);
+    await _dao.upsertAdd(date ?? DateTime.now(), inputWords: count);
   }
 
   // ========== 输出词数 ==========
 
   /// 获取指定日期的输出词数
   Future<int> getOutputWords(DateTime date) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_wordKeyFor(_outputWordsPrefix, date)) ?? 0;
+    final record = await _dao.getByDate(date);
+    return record?.outputWords ?? 0;
   }
 
   /// 获取今日输出词数
@@ -124,19 +106,15 @@ class StudyTimeService {
   /// [count] 必须 > 0，否则忽略。
   Future<void> addOutputWords(int count, {DateTime? date}) async {
     if (count <= 0) return;
-    final targetDate = date ?? DateTime.now();
-    final prefs = await SharedPreferences.getInstance();
-    final key = _wordKeyFor(_outputWordsPrefix, targetDate);
-    final current = prefs.getInt(key) ?? 0;
-    await prefs.setInt(key, current + count);
+    await _dao.upsertAdd(date ?? DateTime.now(), outputWords: count);
   }
 
   // ========== 输入时间（秒） ==========
 
   /// 获取指定日期的输入时间（秒）
   Future<int> getInputTime(DateTime date) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_wordKeyFor(_inputTimePrefix, date)) ?? 0;
+    final record = await _dao.getByDate(date);
+    return record?.inputTimeSeconds ?? 0;
   }
 
   /// 获取今日输入时间（秒）
@@ -147,11 +125,7 @@ class StudyTimeService {
   /// [seconds] 必须 > 0，否则忽略。
   Future<void> addInputTime(int seconds, {DateTime? date}) async {
     if (seconds <= 0) return;
-    final targetDate = date ?? DateTime.now();
-    final prefs = await SharedPreferences.getInstance();
-    final key = _wordKeyFor(_inputTimePrefix, targetDate);
-    final current = prefs.getInt(key) ?? 0;
-    await prefs.setInt(key, current + seconds);
+    await _dao.upsertAdd(date ?? DateTime.now(), inputTime: seconds);
   }
 
   /// 获取过去 7 天每天的输入时间（秒）
@@ -159,11 +133,18 @@ class StudyTimeService {
   /// 返回长度为 7 的列表，索引 0 = 6 天前，索引 6 = 今天。
   Future<List<int>> getWeeklyInputTimes({DateTime? now}) async {
     final today = _dateOnly(now ?? DateTime.now());
-    final prefs = await SharedPreferences.getInstance();
+    final start = today.subtract(const Duration(days: 6));
+    final records = await _dao.getBetween(start, today);
+
+    final Map<int, int> dayMap = {};
+    for (final r in records) {
+      dayMap[_dayKey(r.date)] = r.inputTimeSeconds;
+    }
+
     final result = <int>[];
     for (int i = 6; i >= 0; i--) {
       final date = today.subtract(Duration(days: i));
-      result.add(prefs.getInt(_wordKeyFor(_inputTimePrefix, date)) ?? 0);
+      result.add(dayMap[_dayKey(date)] ?? 0);
     }
     return result;
   }
@@ -172,8 +153,8 @@ class StudyTimeService {
 
   /// 获取指定日期的输出时间（秒）
   Future<int> getOutputTime(DateTime date) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_wordKeyFor(_outputTimePrefix, date)) ?? 0;
+    final record = await _dao.getByDate(date);
+    return record?.outputTimeSeconds ?? 0;
   }
 
   /// 获取今日输出时间（秒）
@@ -184,11 +165,7 @@ class StudyTimeService {
   /// [seconds] 必须 > 0，否则忽略。
   Future<void> addOutputTime(int seconds, {DateTime? date}) async {
     if (seconds <= 0) return;
-    final targetDate = date ?? DateTime.now();
-    final prefs = await SharedPreferences.getInstance();
-    final key = _wordKeyFor(_outputTimePrefix, targetDate);
-    final current = prefs.getInt(key) ?? 0;
-    await prefs.setInt(key, current + seconds);
+    await _dao.upsertAdd(date ?? DateTime.now(), outputTime: seconds);
   }
 
   /// 获取过去 7 天每天的输出时间（秒）
@@ -196,32 +173,25 @@ class StudyTimeService {
   /// 返回长度为 7 的列表，索引 0 = 6 天前，索引 6 = 今天。
   Future<List<int>> getWeeklyOutputTimes({DateTime? now}) async {
     final today = _dateOnly(now ?? DateTime.now());
-    final prefs = await SharedPreferences.getInstance();
+    final start = today.subtract(const Duration(days: 6));
+    final records = await _dao.getBetween(start, today);
+
+    final Map<int, int> dayMap = {};
+    for (final r in records) {
+      dayMap[_dayKey(r.date)] = r.outputTimeSeconds;
+    }
+
     final result = <int>[];
     for (int i = 6; i >= 0; i--) {
       final date = today.subtract(Duration(days: i));
-      result.add(prefs.getInt(_wordKeyFor(_outputTimePrefix, date)) ?? 0);
+      result.add(dayMap[_dayKey(date)] ?? 0);
     }
     return result;
   }
 
-  /// 生成词数存储 key
-  String _wordKeyFor(String prefix, DateTime date) {
-    final d = _dateOnly(date);
-    final y = d.year.toString().padLeft(4, '0');
-    final m = d.month.toString().padLeft(2, '0');
-    final day = d.day.toString().padLeft(2, '0');
-    return '$prefix$y-$m-$day';
-  }
-
-  /// 生成日期对应的存储 key
-  String _keyFor(DateTime date) {
-    final y = date.year.toString().padLeft(4, '0');
-    final m = date.month.toString().padLeft(2, '0');
-    final d = date.day.toString().padLeft(2, '0');
-    return '$_keyPrefix$y-$m-$d';
-  }
-
   /// 截断时间部分，只保留日期
   DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+
+  /// 将日期转换为用于 Map key 的整数（yyyymmdd）
+  int _dayKey(DateTime dt) => dt.year * 10000 + dt.month * 100 + dt.day;
 }

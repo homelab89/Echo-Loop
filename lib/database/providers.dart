@@ -11,6 +11,8 @@ import 'daos/tag_dao.dart';
 import 'daos/sentence_ai_cache_dao.dart';
 import 'daos/saved_word_dao.dart';
 import 'daos/learned_word_form_dao.dart';
+import 'daos/daily_study_record_dao.dart';
+import '../services/study_time_service.dart';
 
 /// 数据库 Provider
 /// 在 main.dart 中通过 ProviderScope override 注入实例
@@ -66,4 +68,14 @@ final savedWordDaoProvider = Provider<SavedWordDao>((ref) {
 /// LearnedWordForm DAO Provider
 final learnedWordFormDaoProvider = Provider<LearnedWordFormDao>((ref) {
   return ref.watch(appDatabaseProvider).learnedWordFormDao;
+});
+
+/// DailyStudyRecord DAO Provider
+final dailyStudyRecordDaoProvider = Provider<DailyStudyRecordDao>((ref) {
+  return ref.watch(appDatabaseProvider).dailyStudyRecordDao;
+});
+
+/// StudyTimeService Provider
+final studyTimeServiceProvider = Provider<StudyTimeService>((ref) {
+  return StudyTimeService(ref.watch(dailyStudyRecordDaoProvider));
 });

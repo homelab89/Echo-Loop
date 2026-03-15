@@ -11,6 +11,7 @@ import 'package:just_audio/just_audio.dart' as ja;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../models/playback_settings.dart';
 import '../../models/sentence.dart';
+import '../../database/providers.dart';
 import '../../services/study_time_service.dart';
 import '../../utils/word_counter.dart';
 import '../daily_study_time_provider.dart';
@@ -27,7 +28,6 @@ import 'listen_and_repeat_player_provider.dart';
 import 'retell_player_provider.dart';
 import 'review_difficult_practice_provider.dart';
 import 'sentence_playback_engine.dart';
-import '../../database/providers.dart';
 
 part 'learning_session_provider.g.dart';
 
@@ -155,10 +155,11 @@ class LearningSession extends _$LearningSession {
   late final AppLifecycleListener _lifecycleListener;
 
   /// 学习时长存储服务
-  final StudyTimeService _studyTimeService = StudyTimeService();
+  late final StudyTimeService _studyTimeService;
 
   @override
   LearningSessionState build() {
+    _studyTimeService = ref.read(studyTimeServiceProvider);
     _lifecycleListener = AppLifecycleListener(
       onStateChange: _onAppLifecycleStateChanged,
     );

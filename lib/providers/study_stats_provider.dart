@@ -1,7 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../database/providers.dart';
-import '../services/study_time_service.dart';
 
 part 'study_stats_provider.g.dart';
 
@@ -70,7 +69,7 @@ class StudyStatsNotifier extends _$StudyStatsNotifier {
   }
 
   Future<StudyStats> _load() async {
-    final service = StudyTimeService();
+    final service = ref.read(studyTimeServiceProvider);
     final learnedWordFormDao = ref.read(learnedWordFormDaoProvider);
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);

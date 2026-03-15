@@ -22,6 +22,7 @@ import '../../models/audio_item.dart';
 import '../../models/bookmark_sentence.dart';
 import '../../models/difficult_practice_settings.dart';
 import '../../models/sentence.dart';
+import '../../database/providers.dart';
 import '../../services/study_time_service.dart';
 import '../../utils/word_counter.dart';
 import '../audio_engine/audio_engine_provider.dart';
@@ -49,7 +50,7 @@ class BookmarkReview extends _$BookmarkReview {
   late dynamic Function(String) _getAudioItemById;
 
   /// 学习时长存储服务
-  final StudyTimeService _studyTimeService = StudyTimeService();
+  late final StudyTimeService _studyTimeService;
 
   /// 学习计时器
   final Stopwatch _studyStopwatch = Stopwatch();
@@ -65,6 +66,7 @@ class BookmarkReview extends _$BookmarkReview {
 
   @override
   ReviewDifficultPracticeState build() {
+    _studyTimeService = ref.read(studyTimeServiceProvider);
     _engine = SentencePlaybackEngine(
       getEngine: () => ref.read(audioEngineProvider.notifier),
     );

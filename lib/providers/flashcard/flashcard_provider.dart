@@ -149,7 +149,7 @@ class FlashcardNotifier extends _$FlashcardNotifier {
   final FlashcardTimer _timer = FlashcardTimer();
 
   /// 学习时长存储服务
-  final StudyTimeService _studyTimeService = StudyTimeService();
+  late final StudyTimeService _studyTimeService;
 
   /// 学习计时器
   final Stopwatch _studyStopwatch = Stopwatch();
@@ -162,6 +162,7 @@ class FlashcardNotifier extends _$FlashcardNotifier {
 
   @override
   FlashcardState build() {
+    _studyTimeService = ref.read(studyTimeServiceProvider);
     ref.onDispose(() {
       _timer.cancel();
       _inputTimePlayerStateSub?.cancel();

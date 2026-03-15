@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'tables/audio_items.dart';
 import 'tables/collections.dart';
@@ -17,6 +18,7 @@ import 'tables/audio_item_tags.dart';
 import 'tables/sentence_ai_cache.dart';
 import 'tables/saved_words.dart';
 import 'tables/learned_word_forms.dart';
+import 'tables/daily_study_records.dart';
 import 'daos/audio_item_dao.dart';
 import 'daos/collection_dao.dart';
 import 'daos/bookmark_dao.dart';
@@ -27,13 +29,14 @@ import 'daos/tag_dao.dart';
 import 'daos/sentence_ai_cache_dao.dart';
 import 'daos/saved_word_dao.dart';
 import 'daos/learned_word_form_dao.dart';
+import 'daos/daily_study_record_dao.dart';
 
 part 'app_database.g.dart';
 
 /// Fluency 应用数据库
-/// 包含 12 张表：audio_items, collections, collection_audio_items, bookmarks,
+/// 包含 13 张表：audio_items, collections, collection_audio_items, bookmarks,
 /// playback_states, learning_progresses, stage_completions, tags, audio_item_tags,
-/// sentence_ai_cache, saved_words, learned_word_forms
+/// sentence_ai_cache, saved_words, learned_word_forms, daily_study_records
 @DriftDatabase(
   tables: [
     AudioItems,
@@ -48,6 +51,7 @@ part 'app_database.g.dart';
     SentenceAiCache,
     SavedWords,
     LearnedWordForms,
+    DailyStudyRecords,
   ],
   daos: [
     AudioItemDao,
@@ -60,13 +64,14 @@ part 'app_database.g.dart';
     SentenceAiCacheDao,
     SavedWordDao,
     LearnedWordFormDao,
+    DailyStudyRecordDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration {
@@ -155,6 +160,11 @@ class AppDatabase extends _$AppDatabase {
             'INTEGER',
           );
         }
+        // v18→v19：新增 daily_study_records 表 + 从 SP 迁移数据
+        if (from < 19) {
+          await m.createTable(dailyStudyRecords);
+          await _migrateStudyDataFromSP();
+        }
         // v12→v13：audio_items 新增 transcript_source, audio_sha256, transcript_language 列
         if (from < 13) {
           await _addColumnIfNotExists(
@@ -209,6 +219,71 @@ class AppDatabase extends _$AppDatabase {
         }
       },
     );
+  }
+
+  /// 从 SharedPreferences 迁移学习统计数据到 daily_study_records 表
+  ///
+  /// 扫描 5 种前缀的 SP key，按日期分组后写入 SQLite，最后删除旧 key。
+  Future<void> _migrateStudyDataFromSP() async {
+    final prefs = await SharedPreferences.getInstance();
+    final allKeys = prefs.getKeys();
+
+    const prefixes = [
+      'study_time_',
+      'input_words_',
+      'output_words_',
+      'input_time_',
+      'output_time_',
+    ];
+
+    // 按日期聚合数据
+    final Map<String, Map<String, int>> dateMap = {};
+    final List<String> keysToRemove = [];
+
+    for (final key in allKeys) {
+      for (final prefix in prefixes) {
+        if (key.startsWith(prefix)) {
+          final dateStr = key.substring(prefix.length);
+          final value = prefs.getInt(key) ?? 0;
+          if (value > 0) {
+            dateMap.putIfAbsent(dateStr, () => {});
+            dateMap[dateStr]![prefix] = value;
+          }
+          keysToRemove.add(key);
+          break;
+        }
+      }
+    }
+
+    // 写入 SQLite
+    for (final entry in dateMap.entries) {
+      final parts = entry.key.split('-');
+      if (parts.length != 3) continue;
+      final year = int.tryParse(parts[0]);
+      final month = int.tryParse(parts[1]);
+      final day = int.tryParse(parts[2]);
+      if (year == null || month == null || day == null) continue;
+
+      final date = DateTime(year, month, day);
+      final data = entry.value;
+
+      await into(dailyStudyRecords).insert(
+        DailyStudyRecordsCompanion.insert(
+          date: date,
+          studyTimeSeconds: Value(data['study_time_'] ?? 0),
+          inputWords: Value(data['input_words_'] ?? 0),
+          outputWords: Value(data['output_words_'] ?? 0),
+          inputTimeSeconds: Value(data['input_time_'] ?? 0),
+          outputTimeSeconds: Value(data['output_time_'] ?? 0),
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+
+    // 删除旧 SP key
+    for (final key in keysToRemove) {
+      await prefs.remove(key);
+    }
   }
 
   /// 防御性补列：检查列是否存在，不存在则添加
