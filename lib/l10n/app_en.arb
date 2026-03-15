@@ -544,7 +544,7 @@
       "total": { "type": "int" }
     }
   },
-  "listenAndRepeatNoDifficultSentences": "No difficult sentences marked. Skipping listen & repeat.",
+  "listenAndRepeatNoDifficultSentences": "All sentences understood. Listen & repeat auto-completed.",
   "exitListenAndRepeatTitle": "Exit Listen & Repeat?",
   "exitListenAndRepeatMessage": "Your progress will be saved. You can continue from where you left off.",
   "listenAndRepeatBriefingTitle": "Listen & Repeat",
@@ -699,7 +699,7 @@
       "total": { "type": "int" }
     }
   },
-  "reviewDifficultPracticeNone": "No difficult sentences to practice.",
+  "reviewDifficultPracticeNone": "No difficult sentences to practice. Auto-completed.",
   "exitReviewDifficultPracticeTitle": "Exit Practice?",
   "exitReviewDifficultPracticeMessage": "Your progress will not be saved for this step.",
   "exitReviewDifficultPracticeConfirmMessage": "Your progress will be saved and you can continue next time.",
@@ -961,5 +961,7 @@
   "clearCacheConfirm": "This will clear all cached data such as AI translations and analyses. They will be re-fetched when needed. Continue?",
   "clearCacheSuccess": "Cache cleared",
   "clearCacheEmpty": "Cache is already empty",
-  "confirm": "Confirm"
+  "confirm": "Confirm",
+  "autoCompletedNoDifficult": "All sentences understood. Auto-completed.",
+  "autoCompletedNoDifficultReview": "No difficult sentences to practice. Auto-completed."
 }

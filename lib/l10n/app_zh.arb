@@ -141,10 +141,10 @@
   "stepBlindListeningDesc": "不看字幕完整听 1-2 遍",
   "stepIntensiveListening": "逐句精听",
   "stepIntensiveListeningDesc": "逐句盲听，标记难句",
-  "stepShadowing": "跟读",
-  "stepShadowingDesc": "跟读难句",
-  "stepRetelling": "段级复述",
-  "stepRetellingDesc": "用自己的话复述",
+  "stepShadowing": "难句跟读",
+  "stepShadowingDesc": "针对难句反复跟读，直到更顺口",
+  "stepRetelling": "段落复述",
+  "stepRetellingDesc": "听完一段，用自己的话（英文）复述",
   "reviewRound0": "首轮复习",
   "reviewRound1": "第二轮复习",
   "reviewRound2": "第三轮复习",
@@ -387,7 +387,7 @@
       "total": { "type": "int" }
     }
   },
-  "listenAndRepeatNoDifficultSentences": "没有标记难句，跳过跟读环节。",
+  "listenAndRepeatNoDifficultSentences": "精听全部听懂，跟读已自动完成",
   "exitListenAndRepeatTitle": "退出跟读？",
   "exitListenAndRepeatMessage": "进度已保存，下次可从断点继续。",
   "listenAndRepeatBriefingTitle": "难句跟读",
@@ -542,7 +542,7 @@
       "total": { "type": "int" }
     }
   },
-  "reviewDifficultPracticeNone": "没有需要补练的难句。",
+  "reviewDifficultPracticeNone": "无需补练的难句，已自动完成",
   "exitReviewDifficultPracticeTitle": "退出补练？",
   "exitReviewDifficultPracticeMessage": "当前步骤的进度不会保存。",
   "exitReviewDifficultPracticeConfirmMessage": "进度会保存，下次可继续。",
@@ -710,5 +710,7 @@
   "clearCacheConfirm": "将清除所有缓存数据（如 AI 翻译和解析结果），需要时会重新获取。是否继续？",
   "clearCacheSuccess": "缓存已清除",
   "clearCacheEmpty": "缓存已为空",
-  "confirm": "确认"
+  "confirm": "确认",
+  "autoCompletedNoDifficult": "精听全部听懂，已自动完成",
+  "autoCompletedNoDifficultReview": "无需补练的难句，已自动完成"
 }

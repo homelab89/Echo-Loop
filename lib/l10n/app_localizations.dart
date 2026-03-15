@@ -1919,7 +1919,7 @@ abstract class AppLocalizations {
   /// No description provided for @listenAndRepeatNoDifficultSentences.
   ///
   /// In en, this message translates to:
-  /// **'No difficult sentences marked. Skipping listen & repeat.'**
+  /// **'All sentences understood. Listen & repeat auto-completed.'**
   String get listenAndRepeatNoDifficultSentences;
 
   /// No description provided for @exitListenAndRepeatTitle.
@@ -2291,7 +2291,7 @@ abstract class AppLocalizations {
   /// No description provided for @reviewDifficultPracticeNone.
   ///
   /// In en, this message translates to:
-  /// **'No difficult sentences to practice.'**
+  /// **'No difficult sentences to practice. Auto-completed.'**
   String get reviewDifficultPracticeNone;
 
   /// No description provided for @exitReviewDifficultPracticeTitle.
@@ -3157,6 +3157,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm'**
   String get confirm;
+
+  /// No description provided for @autoCompletedNoDifficult.
+  ///
+  /// In en, this message translates to:
+  /// **'All sentences understood. Auto-completed.'**
+  String get autoCompletedNoDifficult;
+
+  /// No description provided for @autoCompletedNoDifficultReview.
+  ///
+  /// In en, this message translates to:
+  /// **'No difficult sentences to practice. Auto-completed.'**
+  String get autoCompletedNoDifficultReview;
 }
 
 class _AppLocalizationsDelegate

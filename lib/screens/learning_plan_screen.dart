@@ -216,20 +216,41 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
   }
 
   /// 复习难句补练：进入 ReviewDifficultPracticeScreen
+  ///
+  /// 先检查书签数量，无难句时自动完成并跳到下一复述子阶段。
   Future<void> _startReviewDifficultPractice(BuildContext context) async {
     final lpState = ref.read(listeningPracticeProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     if (lpState.sentences.isEmpty) {
       // 无字幕 → 跳过
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.reviewDifficultPracticeNone,
-            ),
-          ),
+          SnackBar(content: Text(l10n.reviewDifficultPracticeNone)),
         );
       }
+      return;
+    }
+
+    // 检查书签数量（难句数）
+    final bookmarkDao = ref.read(bookmarkDaoProvider);
+    final bookmarks = await BookmarkManager.loadBookmarks(
+      widget.audioItemId,
+      dao: bookmarkDao,
+    );
+    if (!context.mounted) return;
+
+    if (bookmarks.isEmpty) {
+      // 无难句 → 自动完成补练，推进到下一子阶段
+      await ref
+          .read(learningProgressNotifierProvider.notifier)
+          .completeCurrentSubStage(widget.audioItemId);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.reviewDifficultPracticeNone)),
+      );
+      // 根据新的 currentSubStage 导航到对应复述入口
+      _navigateToReviewRetellFromPlan(context);
       return;
     }
 
@@ -246,6 +267,21 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
         widget.audioItemId,
       ),
     );
+  }
+
+  /// 从计划页导航到复习复述（跳过难句补练后使用）
+  void _navigateToReviewRetellFromPlan(BuildContext context) {
+    final progress = ref
+        .read(learningProgressNotifierProvider)
+        .progressMap[widget.audioItemId];
+    if (progress == null) return;
+
+    final nextSubStage = progress.currentSubStage;
+    if (nextSubStage == SubStageType.reviewRetellParagraph) {
+      _startReviewRetell(context, isSummary: false);
+    } else if (nextSubStage == SubStageType.reviewRetellSummary) {
+      _startReviewRetell(context, isSummary: true);
+    }
   }
 
   /// 复习复述：复用 RetellPlayerScreen
@@ -424,9 +460,15 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
     if (!context.mounted) return;
 
     if (difficultIndices.isEmpty) {
+      // 无难句 → 自动完成跟读，推进到复述
+      await ref
+          .read(learningProgressNotifierProvider.notifier)
+          .completeCurrentSubStage(widget.audioItemId);
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.listenAndRepeatNoDifficultSentences)),
       );
+      _startRetelling(context);
       return;
     }
 
@@ -976,8 +1018,11 @@ class _FirstStudySection extends ConsumerWidget {
                   subtitle = _buildIntensiveListenSubtitle(ref, l10n);
                 }
               } else if (subStage == SubStageType.listenAndRepeat) {
-                // 跟读：仅当前或已完成步骤显示统计
-                if (isCompleted || isCurrent) {
+                // 跟读：已完成且无难句时显示自动完成提示
+                if (isCompleted &&
+                    (progress?.intensiveListenDifficultCount ?? -1) == 0) {
+                  subtitle = l10n.autoCompletedNoDifficult;
+                } else if (isCompleted || isCurrent) {
                   subtitle = _buildShadowingSubtitle(ref, l10n);
                 }
               } else if (subStage == SubStageType.retell) {
@@ -996,7 +1041,16 @@ class _FirstStudySection extends ConsumerWidget {
                 onTap = () => _startFreePlayIntensiveListen(context, ref);
               } else if (isCompleted &&
                   subStage == SubStageType.listenAndRepeat) {
-                onTap = () => _startFreePlayListenAndRepeat(context, ref);
+                // 无难句自动完成的跟读步骤：点击只显示提示
+                if ((progress?.intensiveListenDifficultCount ?? -1) == 0) {
+                  onTap = () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.autoCompletedNoDifficult)),
+                    );
+                  };
+                } else {
+                  onTap = () => _startFreePlayListenAndRepeat(context, ref);
+                }
               } else if (isCompleted && subStage == SubStageType.retell) {
                 onTap = () => _startFreePlayRetell(context, ref);
               }
@@ -1464,10 +1518,10 @@ class _ReviewRoundSection extends ConsumerWidget {
       ),
       SubStageType.reviewRetellParagraph => _StepData(
         icon: Icons.notes,
-        name: isZh ? '段级复述' : 'Paragraph retelling',
+        name: isZh ? '段落复述' : 'Paragraph retelling',
         description: isZh
-            ? '按段复述本轮复习内容。'
-            : 'Retell this review round paragraph by paragraph.',
+            ? '听完一段，用自己的话（英文）复述。'
+            : 'Listen to a paragraph, then retell it in your own words.',
       ),
       SubStageType.reviewRetellSummary => _StepData(
         icon: Icons.summarize,
@@ -1674,22 +1728,42 @@ class _ReviewRoundSection extends ConsumerWidget {
               final isCurrent =
                   progress?.isCurrentSubStage(review.stage, subStage) ?? false;
 
+              // 已完成且无难句的补练步骤显示自动完成提示
+              String? subtitle;
+              if (subStage == SubStageType.reviewDifficultPractice &&
+                  isCompleted &&
+                  (progress?.intensiveListenDifficultCount ?? -1) == 0) {
+                subtitle = l10n.autoCompletedNoDifficultReview;
+              }
+
               // 已完成的复习子步骤支持点击进入自由练习
               VoidCallback? onTap;
               if (isCompleted) {
-                onTap = switch (subStage) {
-                  SubStageType.blindListen => () => _startFreePlayBlindListen(
-                    context,
-                    ref,
-                  ),
-                  SubStageType.reviewDifficultPractice =>
-                    () => _startFreePlayDifficultPractice(context, ref),
-                  SubStageType.reviewRetellParagraph =>
-                    () => _startFreePlayRetell(context, ref, isSummary: false),
-                  SubStageType.reviewRetellSummary =>
-                    () => _startFreePlayRetell(context, ref, isSummary: true),
-                  _ => null,
-                };
+                // 无难句自动完成的补练步骤：点击只显示提示
+                if (subStage == SubStageType.reviewDifficultPractice &&
+                    (progress?.intensiveListenDifficultCount ?? -1) == 0) {
+                  onTap = () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.autoCompletedNoDifficultReview),
+                      ),
+                    );
+                  };
+                } else {
+                  onTap = switch (subStage) {
+                    SubStageType.blindListen =>
+                      () => _startFreePlayBlindListen(context, ref),
+                    SubStageType.reviewDifficultPractice =>
+                      () => _startFreePlayDifficultPractice(context, ref),
+                    SubStageType.reviewRetellParagraph =>
+                      () => _startFreePlayRetell(
+                        context, ref, isSummary: false),
+                    SubStageType.reviewRetellSummary =>
+                      () => _startFreePlayRetell(
+                        context, ref, isSummary: true),
+                    _ => null,
+                  };
+                }
               }
 
               return _StepCard(
@@ -1700,6 +1774,7 @@ class _ReviewRoundSection extends ConsumerWidget {
                 isCompleted: isCompleted,
                 isCurrent: isCurrent,
                 isLast: index == subStages.length - 1,
+                subtitle: subtitle,
                 onTap: onTap,
               );
             }),

@@ -1026,7 +1026,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listenAndRepeatNoDifficultSentences =>
-      'No difficult sentences marked. Skipping listen & repeat.';
+      'All sentences understood. Listen & repeat auto-completed.';
 
   @override
   String get exitListenAndRepeatTitle => 'Exit Listen & Repeat?';
@@ -1256,7 +1256,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reviewDifficultPracticeNone =>
-      'No difficult sentences to practice.';
+      'No difficult sentences to practice. Auto-completed.';
 
   @override
   String get exitReviewDifficultPracticeTitle => 'Exit Practice?';
@@ -1757,4 +1757,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirm => 'Confirm';
+
+  @override
+  String get autoCompletedNoDifficult =>
+      'All sentences understood. Auto-completed.';
+
+  @override
+  String get autoCompletedNoDifficultReview =>
+      'No difficult sentences to practice. Auto-completed.';
 }

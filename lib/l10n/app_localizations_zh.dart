@@ -450,16 +450,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stepIntensiveListeningDesc => '逐句盲听，标记难句';
 
   @override
-  String get stepShadowing => '跟读';
+  String get stepShadowing => '难句跟读';
 
   @override
-  String get stepShadowingDesc => '跟读难句';
+  String get stepShadowingDesc => '针对难句反复跟读，直到更顺口';
 
   @override
-  String get stepRetelling => '段级复述';
+  String get stepRetelling => '段落复述';
 
   @override
-  String get stepRetellingDesc => '用自己的话复述';
+  String get stepRetellingDesc => '听完一段，用自己的话（英文）复述';
 
   @override
   String get reviewRound0 => '首轮复习';
@@ -1004,7 +1004,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get listenAndRepeatNoDifficultSentences => '没有标记难句，跳过跟读环节。';
+  String get listenAndRepeatNoDifficultSentences => '精听全部听懂，跟读已自动完成';
 
   @override
   String get exitListenAndRepeatTitle => '退出跟读？';
@@ -1224,7 +1224,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get reviewDifficultPracticeNone => '没有需要补练的难句。';
+  String get reviewDifficultPracticeNone => '无需补练的难句，已自动完成';
 
   @override
   String get exitReviewDifficultPracticeTitle => '退出补练？';
@@ -1713,4 +1713,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get confirm => '确认';
+
+  @override
+  String get autoCompletedNoDifficult => '精听全部听懂，已自动完成';
+
+  @override
+  String get autoCompletedNoDifficultReview => '无需补练的难句，已自动完成';
 }

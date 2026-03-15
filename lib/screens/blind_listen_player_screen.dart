@@ -33,6 +33,12 @@ import '../theme/app_theme.dart';
 import '../widgets/blind_listen_complete_dialog.dart';
 import '../widgets/dialogs/free_play_complete_dialog.dart';
 import '../widgets/player_hotkey_scope.dart';
+import '../widgets/retell/retell_briefing_sheet.dart';
+import '../database/providers.dart';
+import '../models/retell_settings.dart';
+import '../providers/listening_practice/bookmark_manager.dart';
+import '../utils/keyword_extraction.dart';
+import '../utils/paragraph_grouping.dart';
 
 /// 盲听播放器页面
 class BlindListenPlayerScreen extends ConsumerStatefulWidget {
@@ -319,13 +325,36 @@ class _BlindListenPlayerScreenState
         );
       }
     } else if (nextSubStage == SubStageType.reviewDifficultPractice) {
-      // 复习盲听后 → 进入难句补练
+      // 复习盲听后 → 检查难句数，决定进入补练或跳过
       await ref.read(learningSessionProvider.notifier).exitLearningMode();
       if (!mounted) return;
 
       final lpState = ref.read(listeningPracticeProvider);
       if (lpState.sentences.isEmpty) {
         if (mounted) context.pop();
+        return;
+      }
+
+      // 检查书签数量（难句数）
+      final bookmarkDao = ref.read(bookmarkDaoProvider);
+      final bookmarks = await BookmarkManager.loadBookmarks(
+        widget.audioItemId,
+        dao: bookmarkDao,
+      );
+      if (!mounted) return;
+
+      if (bookmarks.isEmpty) {
+        // 无难句 → 自动完成补练，推进到下一子阶段
+        final l10n = AppLocalizations.of(context)!;
+        await ref
+            .read(learningProgressNotifierProvider.notifier)
+            .completeCurrentSubStage(widget.audioItemId);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.reviewDifficultPracticeNone)),
+        );
+        // 导航到下一子阶段（段级复述或全文总结复述）
+        _navigateToReviewRetell();
         return;
       }
 
@@ -347,6 +376,87 @@ class _BlindListenPlayerScreenState
       // 其他子步骤 → 返回计划页
       await ref.read(learningSessionProvider.notifier).exitLearningMode();
       if (mounted) context.pop();
+    }
+  }
+
+  /// 导航到复习复述（跳过难句补练后使用）
+  ///
+  /// 读取更新后的进度，根据当前子阶段决定进入段级复述还是全文总结。
+  void _navigateToReviewRetell() {
+    final progress = ref
+        .read(learningProgressNotifierProvider)
+        .progressMap[widget.audioItemId];
+    if (progress == null || !mounted) {
+      if (mounted) context.pop();
+      return;
+    }
+
+    final lpState = ref.read(listeningPracticeProvider);
+    if (lpState.sentences.isEmpty) {
+      context.pop();
+      return;
+    }
+
+    final nextSubStage = progress.currentSubStage;
+    if (nextSubStage == SubStageType.reviewRetellSummary) {
+      // 全文总结复述：全文作为单个段落
+      final keywordsMap = extractKeywords(
+        lpState.sentences,
+        ratio: KeywordRatio.oneThird,
+      );
+      ref
+          .read(learningSessionProvider.notifier)
+          .enterRetellMode(
+            widget.audioItemId,
+            [lpState.sentences],
+            keywordsMap,
+          )
+          .then((_) {
+        if (mounted) {
+          context.pushReplacement(
+            AppRoutes.retellPlayer(
+              widget.collectionId,
+              widget.audioItemId,
+            ),
+          );
+        }
+      });
+    } else if (nextSubStage == SubStageType.reviewRetellParagraph) {
+      // 段级复述：弹简报面板让用户选择段落时长
+      final currentStage = progress.currentStage;
+      showRetellBriefingSheet(
+        context: context,
+        sentences: lpState.sentences,
+        defaultSeconds: retellDefaultSeconds(currentStage),
+        onStartPractice: (targetDuration) async {
+          final paragraphs = groupSentencesIntoParagraphs(
+            lpState.sentences,
+            targetDuration,
+          );
+          final keywordsMap = extractKeywords(
+            lpState.sentences,
+            ratio: KeywordRatio.oneThird,
+          );
+          await ref
+              .read(learningSessionProvider.notifier)
+              .enterRetellMode(
+                widget.audioItemId,
+                paragraphs,
+                keywordsMap,
+              );
+          if (mounted) {
+            context.pushReplacement(
+              AppRoutes.retellPlayer(
+                widget.collectionId,
+                widget.audioItemId,
+              ),
+            );
+          }
+        },
+      );
+    } else {
+      // 意外情况 → 返回计划页
+      context.pop();
     }
   }
 

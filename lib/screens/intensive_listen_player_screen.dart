@@ -28,6 +28,10 @@ import '../widgets/dialogs/step_complete_dialog.dart';
 import '../widgets/intensive_listen/sentence_annotation_card.dart';
 import '../widgets/common/countdown_chip.dart';
 import '../widgets/player_hotkey_scope.dart';
+import '../widgets/retell/retell_briefing_sheet.dart';
+import '../models/retell_settings.dart';
+import '../utils/keyword_extraction.dart';
+import '../utils/paragraph_grouping.dart';
 
 /// 精听播放器页面
 class IntensiveListenPlayerScreen extends ConsumerStatefulWidget {
@@ -242,7 +246,7 @@ class _IntensiveListenPlayerScreenState
   ///
   /// 精听完成后调用，读取难句书签并进入跟读。
   /// 0 个难句时显示 SnackBar 提示并 pop 回计划页。
-  void _startListenAndRepeat() {
+  Future<void> _startListenAndRepeat() async {
     final l10n = AppLocalizations.of(context)!;
     final lpState = ref.read(listeningPracticeProvider);
 
@@ -251,37 +255,80 @@ class _IntensiveListenPlayerScreenState
       return;
     }
 
-    _loadTotalDifficultCount().then((difficultCount) {
+    final difficultCount = await _loadTotalDifficultCount();
+    if (!mounted) return;
+
+    if (difficultCount == 0) {
+      // 无难句 → 自动完成跟读，推进到复述
+      await ref
+          .read(learningProgressNotifierProvider.notifier)
+          .completeCurrentSubStage(widget.audioItemId);
       if (!mounted) return;
-
-      if (difficultCount == 0) {
-        // 无难句 → 跳过跟读，回到计划页
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.listenAndRepeatNoDifficultSentences)),
-        );
-        context.pop();
-        return;
-      }
-
-      showListenAndRepeatBriefingSheet(
-        context: context,
-        difficultCount: difficultCount,
-        playCount: 3, // 默认遍数（实际由难度决定，此处为预览估值）
-        onStartPractice: () async {
-          await ref
-              .read(learningSessionProvider.notifier)
-              .enterListenAndRepeatMode(widget.audioItemId, lpState.sentences);
-          if (mounted) {
-            context.pushReplacement(
-              AppRoutes.listenAndRepeatPlayer(
-                widget.collectionId,
-                widget.audioItemId,
-              ),
-            );
-          }
-        },
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.listenAndRepeatNoDifficultSentences)),
       );
-    });
+      // 退出精听模式后导航到段级复述
+      await ref.read(learningSessionProvider.notifier).exitLearningMode();
+      if (!mounted) return;
+      _navigateToRetell();
+      return;
+    }
+
+    showListenAndRepeatBriefingSheet(
+      context: context,
+      difficultCount: difficultCount,
+      playCount: 3, // 默认遍数（实际由难度决定，此处为预览估值）
+      onStartPractice: () async {
+        await ref
+            .read(learningSessionProvider.notifier)
+            .enterListenAndRepeatMode(widget.audioItemId, lpState.sentences);
+        if (mounted) {
+          context.pushReplacement(
+            AppRoutes.listenAndRepeatPlayer(
+              widget.collectionId,
+              widget.audioItemId,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  /// 导航到段级复述（跳过跟读后使用）
+  void _navigateToRetell() {
+    final lpState = ref.read(listeningPracticeProvider);
+    if (lpState.sentences.isEmpty) {
+      context.pop();
+      return;
+    }
+
+    showRetellBriefingSheet(
+      context: context,
+      sentences: lpState.sentences,
+      defaultSeconds: retellDefaultSeconds(LearningStage.firstLearn),
+      onStartPractice: (targetDuration) async {
+        final paragraphs = groupSentencesIntoParagraphs(
+          lpState.sentences,
+          targetDuration,
+        );
+        final keywordsMap = extractKeywords(
+          lpState.sentences,
+          ratio: KeywordRatio.oneThird,
+        );
+
+        await ref
+            .read(learningSessionProvider.notifier)
+            .enterRetellMode(widget.audioItemId, paragraphs, keywordsMap);
+        if (mounted) {
+          context.pushReplacement(
+            AppRoutes.retellPlayer(
+              widget.collectionId,
+              widget.audioItemId,
+            ),
+          );
+        }
+      },
+    );
   }
 
   /// 获取当前步骤的上下文信息
