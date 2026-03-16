@@ -4,6 +4,15 @@
 /// 控制精听播放器的每句循环次数和句间停顿行为。
 library;
 
+/// 跟读控制模式
+enum ShadowingControlMode {
+  /// 自动模式：自动开始录音、自动停止、自动推进下一句
+  auto,
+
+  /// 手动模式：用户手动点击录音/停止/下一句
+  manual,
+}
+
 /// 停顿模式
 enum PauseMode {
   /// 智能间隔：2 倍句子时长，最短 2 秒
@@ -29,6 +38,9 @@ class IntensiveListenSettings {
 
   /// 句长倍数（默认 2.0）
   final double pauseMultiplier;
+
+  /// 跟读控制模式（默认 auto，仅跟读页使用）
+  final ShadowingControlMode controlMode;
 
   /// 固定间隔可选值
   static const List<int> fixedPauseOptions = [
@@ -65,19 +77,25 @@ class IntensiveListenSettings {
     this.pauseMode = PauseMode.smart,
     this.fixedPauseSeconds = 5,
     this.pauseMultiplier = 2.0,
+    this.controlMode = ShadowingControlMode.auto,
   });
+
+  /// 是否为手动控制模式
+  bool get isManualMode => controlMode == ShadowingControlMode.manual;
 
   IntensiveListenSettings copyWith({
     int? repeatCount,
     PauseMode? pauseMode,
     int? fixedPauseSeconds,
     double? pauseMultiplier,
+    ShadowingControlMode? controlMode,
   }) {
     return IntensiveListenSettings(
       repeatCount: repeatCount ?? this.repeatCount,
       pauseMode: pauseMode ?? this.pauseMode,
       fixedPauseSeconds: fixedPauseSeconds ?? this.fixedPauseSeconds,
       pauseMultiplier: pauseMultiplier ?? this.pauseMultiplier,
+      controlMode: controlMode ?? this.controlMode,
     );
   }
 
@@ -86,6 +104,7 @@ class IntensiveListenSettings {
     'pauseMode': pauseMode.name,
     'fixedPauseSeconds': fixedPauseSeconds,
     'pauseMultiplier': pauseMultiplier,
+    'controlMode': controlMode.name,
   };
 
   /// 防御性解析：非法值回退默认
@@ -95,6 +114,7 @@ class IntensiveListenSettings {
       pauseMode: _parsePauseMode(json['pauseMode']),
       fixedPauseSeconds: _parseFixedPauseSeconds(json['fixedPauseSeconds']),
       pauseMultiplier: _parsePauseMultiplier(json['pauseMultiplier']),
+      controlMode: _parseControlMode(json['controlMode']),
     );
   }
 
@@ -124,5 +144,12 @@ class IntensiveListenSettings {
     final value = raw.toDouble();
     if (!multiplierOptions.contains(value)) return 2.0;
     return value;
+  }
+
+  /// 解析控制模式：非法值回退 auto
+  static ShadowingControlMode _parseControlMode(dynamic raw) {
+    if (raw is! String) return ShadowingControlMode.auto;
+    return ShadowingControlMode.values.where((e) => e.name == raw).firstOrNull ??
+        ShadowingControlMode.auto;
   }
 }

@@ -407,6 +407,11 @@
   "listenAndRepeatRemoveDifficult": "已标记难句，点此取消收藏",
   "listenAndRepeatSettings": "跟读设置",
   "listenAndRepeatSettingsTemporaryHint": "设置仅对本次跟读有效",
+  "listenAndRepeatControlModeLabel": "控制模式",
+  "listenAndRepeatControlModeAuto": "自动",
+  "listenAndRepeatControlModeManual": "手动",
+  "listenAndRepeatControlModeAutoDesc": "自动录音、自动停止、自动下一句",
+  "listenAndRepeatControlModeManualDesc": "手动录音、手动停止、手动下一句",
   "listenAndRepeatPauseSmartDesc": "根据难度、句子长度和学习阶段自动调整",
   "sentenceDuration": "{duration}秒",
   "@sentenceDuration": {

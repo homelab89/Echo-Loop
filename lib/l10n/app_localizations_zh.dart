@@ -1038,6 +1038,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get listenAndRepeatSettingsTemporaryHint => '设置仅对本次跟读有效';
 
   @override
+  String get listenAndRepeatControlModeLabel => '控制模式';
+
+  @override
+  String get listenAndRepeatControlModeAuto => '自动';
+
+  @override
+  String get listenAndRepeatControlModeManual => '手动';
+
+  @override
+  String get listenAndRepeatControlModeAutoDesc => '自动录音、自动停止、自动下一句';
+
+  @override
+  String get listenAndRepeatControlModeManualDesc => '手动录音、手动停止、手动下一句';
+
+  @override
   String get listenAndRepeatPauseSmartDesc => '根据难度、句子长度和学习阶段自动调整';
 
   @override

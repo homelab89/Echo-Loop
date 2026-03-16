@@ -1976,6 +1976,36 @@ abstract class AppLocalizations {
   /// **'Settings apply to this session only'**
   String get listenAndRepeatSettingsTemporaryHint;
 
+  /// No description provided for @listenAndRepeatControlModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Control Mode'**
+  String get listenAndRepeatControlModeLabel;
+
+  /// No description provided for @listenAndRepeatControlModeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get listenAndRepeatControlModeAuto;
+
+  /// No description provided for @listenAndRepeatControlModeManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get listenAndRepeatControlModeManual;
+
+  /// No description provided for @listenAndRepeatControlModeAutoDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-record, auto-stop, auto-advance'**
+  String get listenAndRepeatControlModeAutoDesc;
+
+  /// No description provided for @listenAndRepeatControlModeManualDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to record, tap to stop, tap next'**
+  String get listenAndRepeatControlModeManualDesc;
+
   /// No description provided for @listenAndRepeatPauseSmartDesc.
   ///
   /// In en, this message translates to:

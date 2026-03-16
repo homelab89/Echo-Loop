@@ -67,13 +67,17 @@ class _ListenAndRepeatPlayerScreenState
     super.initState();
     // 进入后自动开始播放，注册 TurnController 回调
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(listenAndRepeatTurnControllerProvider.notifier)
-          .setOnContinue(
-            () => ref
-                .read(listenAndRepeatPlayerProvider.notifier)
-                .completePausedTurn(),
-          );
+      final turnController =
+          ref.read(listenAndRepeatTurnControllerProvider.notifier);
+      turnController.setOnContinue(
+        () => ref
+            .read(listenAndRepeatPlayerProvider.notifier)
+            .completePausedTurn(),
+      );
+      // 同步初始控制模式
+      turnController.setManualMode(
+        ref.read(listenAndRepeatPlayerProvider).settings.isManualMode,
+      );
       ref.read(listenAndRepeatPlayerProvider.notifier).startPlaying();
     });
   }
@@ -452,13 +456,30 @@ class _ListenAndRepeatPlayerScreenState
     final speechState = ref.watch(speechPracticeSessionProvider);
     final turnState = ref.watch(listenAndRepeatTurnControllerProvider);
 
-    // 监听完成状态
+    // 监听完成状态 + 控制模式变化
     ref.listen<ListenAndRepeatPlayerState>(listenAndRepeatPlayerProvider, (
       prev,
       next,
     ) {
       if (next.isCompleted && !(prev?.isCompleted ?? false)) {
         _handleCompleted();
+      }
+      // 控制模式切换时同步到 TurnController，并取消正在进行的自动录音
+      if (prev?.settings.controlMode != next.settings.controlMode) {
+        final turnController =
+            ref.read(listenAndRepeatTurnControllerProvider.notifier);
+        turnController.setManualMode(next.settings.isManualMode);
+        if (next.settings.isManualMode) {
+          final turnState = ref.read(listenAndRepeatTurnControllerProvider);
+          if (turnState.isActive) {
+            unawaited(
+              ref
+                  .read(speechPracticeSessionProvider.notifier)
+                  .cancelActiveRecording(),
+            );
+            turnController.clearTurn();
+          }
+        }
       }
     });
 
@@ -478,9 +499,13 @@ class _ListenAndRepeatPlayerScreenState
         if (latestTurn.phase != ListenAndRepeatTurnPhase.idle) {
           return;
         }
-        final playerNotifier = ref.read(listenAndRepeatPlayerProvider.notifier);
-        if (!ref.read(listenAndRepeatPlayerProvider).isCountdownPaused) {
-          playerNotifier.pauseCountdown();
+        final latestPlayer = ref.read(listenAndRepeatPlayerProvider);
+        if (!latestPlayer.isCountdownPaused) {
+          ref.read(listenAndRepeatPlayerProvider.notifier).pauseCountdown();
+        }
+        // 手动模式下不自动开始录音，等用户点击录音按钮
+        if (latestPlayer.settings.isManualMode) {
+          return;
         }
         unawaited(
           ref
@@ -616,6 +641,7 @@ class _ListenAndRepeatPlayerScreenState
                           l10n: l10n,
                           turnState: turnState,
                           isRecordingCurrent: isRecordingCurrent,
+                          isManualMode: playerState.settings.isManualMode,
                           onRecordTap: _handleRecordTap,
                           onFastForward: () {
                             ref
@@ -662,15 +688,18 @@ class _ListenAndRepeatPlayerScreenState
                         }
                       },
                     ),
-                    // 遍数
-                    Text(
-                      l10n.listenAndRepeatPlayCount(
-                        playerState.currentPlayCount,
-                        playerState.settings.repeatCount,
-                      ),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.5,
+                    // 遍数（手动模式下隐藏文字但保留占位）
+                    Opacity(
+                      opacity: playerState.settings.isManualMode ? 0 : 1,
+                      child: Text(
+                        l10n.listenAndRepeatPlayCount(
+                          playerState.currentPlayCount,
+                          playerState.settings.repeatCount,
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          ),
                         ),
                       ),
                     ),

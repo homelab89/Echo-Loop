@@ -20,6 +20,9 @@ class SpeechPracticeTurnPanel extends StatelessWidget {
   final VoidCallback onFastForward;
   final VoidCallback onCountdownTap;
 
+  /// 手动控制模式：idle 阶段显示"点击录音"而非"录音中"
+  final bool isManualMode;
+
   const SpeechPracticeTurnPanel({
     super.key,
     required this.l10n,
@@ -28,6 +31,7 @@ class SpeechPracticeTurnPanel extends StatelessWidget {
     required this.onRecordTap,
     required this.onFastForward,
     required this.onCountdownTap,
+    this.isManualMode = false,
   });
 
   @override
@@ -115,7 +119,10 @@ class SpeechPracticeTurnPanel extends StatelessWidget {
             opacity: isProcessing ? 0.45 : 1.0,
             child: SpeechRecordButton(
               phase: switch (turnState.phase) {
-                ListenAndRepeatTurnPhase.idle ||
+                // 手动模式 idle 保持蓝色待录音态，自动模式映射为红色（即将开始录音）
+                ListenAndRepeatTurnPhase.idle => isManualMode
+                    ? ListenAndRepeatTurnPhase.manualFallback
+                    : ListenAndRepeatTurnPhase.awaitingSpeech,
                 ListenAndRepeatTurnPhase.processing ||
                 ListenAndRepeatTurnPhase.retryPending =>
                   ListenAndRepeatTurnPhase.awaitingSpeech,
@@ -132,7 +139,9 @@ class SpeechPracticeTurnPanel extends StatelessWidget {
   /// 根据阶段返回状态文字，null 表示不显示。
   String? _statusText(ListenAndRepeatTurnPhase phase) {
     return switch (phase) {
-      ListenAndRepeatTurnPhase.idle => l10n.listenAndRepeatRecordingInProgress,
+      ListenAndRepeatTurnPhase.idle => isManualMode
+          ? l10n.listenAndRepeatTapToRecord
+          : l10n.listenAndRepeatRecordingInProgress,
       ListenAndRepeatTurnPhase.awaitingSpeech =>
         turnState.hasShownSpeechReminder
             ? l10n.listenAndRepeatStartSpeaking

@@ -247,6 +247,9 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
   int _consecutiveFailureCount = 0;
   bool _isStopping = false;
 
+  /// 手动控制模式标志：录音评估后不自动倒计时推进。
+  bool _isManualMode = false;
+
   /// 外部注入的"继续"回调，由使用方（跟读页/难句补练页）注册。
   Future<void> Function()? _onContinue;
 
@@ -269,6 +272,14 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
   /// 注册"继续"回调，由使用方在 initState 中调用。
   void setOnContinue(Future<void> Function()? callback) {
     _onContinue = callback;
+  }
+
+  /// 设置手动控制模式。
+  ///
+  /// 手动模式下录音评估完成后不自动启动倒计时推进，
+  /// 用户需手动点击下一句。
+  void setManualMode(bool value) {
+    _isManualMode = value;
   }
 
   Future<void> ensureTurn({
@@ -302,14 +313,17 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
       return;
     }
 
-    _scheduleMaxDurationTimer(
-      promptId: promptId,
-      referenceText: referenceText,
-      sentenceDuration: sentenceDuration,
-    );
+    // 手动模式：不启动任何自动计时器，完全由用户控制
+    if (!_isManualMode) {
+      _scheduleMaxDurationTimer(
+        promptId: promptId,
+        referenceText: referenceText,
+        sentenceDuration: sentenceDuration,
+      );
 
-    if (allowAutoFallback) {
-      _scheduleAwaitingSpeechTimers(promptId);
+      if (allowAutoFallback) {
+        _scheduleAwaitingSpeechTimers(promptId);
+      }
     }
   }
 
@@ -439,12 +453,19 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
     }
   }
 
+  /// 清除当前回合状态（保留页面级配置 _isManualMode / _onContinue）。
   void clearTurn() {
     _cancelAllTimers();
     _isStopping = false;
     _consecutiveFailureCount = 0;
-    _onContinue = null;
     state = const ListenAndRepeatTurnState();
+  }
+
+  /// 完全重置（页面 dispose 时调用）。
+  void fullReset() {
+    clearTurn();
+    _isManualMode = false;
+    _onContinue = null;
   }
 
   void _handleSpeechPracticeStateChanged(
@@ -487,6 +508,12 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
           attempt.status == SpeechPracticeAttemptStatus.error ||
           (attempt.score ?? 0) < _fairScoreThreshold;
       if (isFailed) {
+        // 手动模式下不自动重试，回到 idle 让用户自行操作
+        if (_isManualMode) {
+          _cancelAllTimers();
+          state = state.copyWith(phase: ListenAndRepeatTurnPhase.idle);
+          return;
+        }
         _consecutiveFailureCount++;
         if (_consecutiveFailureCount >= _maxConsecutiveFailures) {
           _consecutiveFailureCount = 0;
@@ -499,7 +526,13 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
         }
       } else {
         _consecutiveFailureCount = 0;
-        activateReviewCountdown(promptId: promptId);
+        if (_isManualMode) {
+          // 手动模式：评估成功后回到 idle，由用户手动点击下一句
+          _cancelAllTimers();
+          state = state.copyWith(phase: ListenAndRepeatTurnPhase.idle);
+        } else {
+          activateReviewCountdown(promptId: promptId);
+        }
       }
       return;
     }
@@ -515,7 +548,10 @@ class ListenAndRepeatTurnController extends Notifier<ListenAndRepeatTurnState> {
       state = state.copyWith(phase: ListenAndRepeatTurnPhase.speaking);
     }
 
-    if (state.phase == ListenAndRepeatTurnPhase.speaking && !_isStopping) {
+    // 手动模式：不做静音检测/转录停滞检测，完全由用户点击停止
+    if (state.phase == ListenAndRepeatTurnPhase.speaking &&
+        !_isStopping &&
+        !_isManualMode) {
       _handleSpeakingAttemptUpdate(
         promptId: promptId,
         attempt: attempt,

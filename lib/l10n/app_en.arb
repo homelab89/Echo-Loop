@@ -564,6 +564,11 @@
   "listenAndRepeatRemoveDifficult": "Marked difficult, tap to remove",
   "listenAndRepeatSettings": "Repeat Settings",
   "listenAndRepeatSettingsTemporaryHint": "Settings apply to this session only",
+  "listenAndRepeatControlModeLabel": "Control Mode",
+  "listenAndRepeatControlModeAuto": "Auto",
+  "listenAndRepeatControlModeManual": "Manual",
+  "listenAndRepeatControlModeAutoDesc": "Auto-record, auto-stop, auto-advance",
+  "listenAndRepeatControlModeManualDesc": "Tap to record, tap to stop, tap next",
   "listenAndRepeatPauseSmartDesc": "Auto-adjusted based on difficulty, sentence length, and learning stage",
   "sentenceDuration": "{duration}s",
   "@sentenceDuration": {

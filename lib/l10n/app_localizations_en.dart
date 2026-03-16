@@ -1064,6 +1064,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Settings apply to this session only';
 
   @override
+  String get listenAndRepeatControlModeLabel => 'Control Mode';
+
+  @override
+  String get listenAndRepeatControlModeAuto => 'Auto';
+
+  @override
+  String get listenAndRepeatControlModeManual => 'Manual';
+
+  @override
+  String get listenAndRepeatControlModeAutoDesc =>
+      'Auto-record, auto-stop, auto-advance';
+
+  @override
+  String get listenAndRepeatControlModeManualDesc =>
+      'Tap to record, tap to stop, tap next';
+
+  @override
   String get listenAndRepeatPauseSmartDesc =>
       'Auto-adjusted based on difficulty, sentence length, and learning stage';
 

@@ -192,5 +192,78 @@ void main() {
       expect(IntensiveListenSettings.multiplierOptions, contains(5.0));
       expect(IntensiveListenSettings.multiplierOptions.length, 7);
     });
+
+    group('ShadowingControlMode', () {
+      test('默认控制模式为 auto', () {
+        const settings = IntensiveListenSettings();
+        expect(settings.controlMode, ShadowingControlMode.auto);
+        expect(settings.isManualMode, false);
+      });
+
+      test('copyWith 更新控制模式', () {
+        const settings = IntensiveListenSettings();
+        final manual = settings.copyWith(
+          controlMode: ShadowingControlMode.manual,
+        );
+        expect(manual.controlMode, ShadowingControlMode.manual);
+        expect(manual.isManualMode, true);
+        // 其他字段不变
+        expect(manual.repeatCount, 1);
+        expect(manual.pauseMode, PauseMode.smart);
+      });
+
+      test('toJson 序列化控制模式', () {
+        const settings = IntensiveListenSettings(
+          controlMode: ShadowingControlMode.manual,
+        );
+        expect(settings.toJson()['controlMode'], 'manual');
+
+        const autoSettings = IntensiveListenSettings();
+        expect(autoSettings.toJson()['controlMode'], 'auto');
+      });
+
+      test('fromJson 往返验证控制模式', () {
+        const original = IntensiveListenSettings(
+          controlMode: ShadowingControlMode.manual,
+        );
+        final restored = IntensiveListenSettings.fromJson(original.toJson());
+        expect(restored.controlMode, ShadowingControlMode.manual);
+      });
+
+      test('fromJson 控制模式非法值回退 auto', () {
+        expect(
+          IntensiveListenSettings.fromJson({
+            'controlMode': 'unknown',
+          }).controlMode,
+          ShadowingControlMode.auto,
+        );
+        expect(
+          IntensiveListenSettings.fromJson({
+            'controlMode': 123,
+          }).controlMode,
+          ShadowingControlMode.auto,
+        );
+      });
+
+      test('fromJson 缺少控制模式字段回退 auto', () {
+        final settings = IntensiveListenSettings.fromJson({});
+        expect(settings.controlMode, ShadowingControlMode.auto);
+      });
+
+      test('isManualMode 便捷属性', () {
+        expect(
+          const IntensiveListenSettings(
+            controlMode: ShadowingControlMode.auto,
+          ).isManualMode,
+          false,
+        );
+        expect(
+          const IntensiveListenSettings(
+            controlMode: ShadowingControlMode.manual,
+          ).isManualMode,
+          true,
+        );
+      });
+    });
   });
 }

@@ -424,9 +424,13 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
     final wordCount = countWords(sentence.text);
     final session = ref.read(learningSessionProvider.notifier);
 
+    // 手动模式：只播一遍，不循环
+    final effectiveRepeatCount =
+        state.settings.isManualMode ? 1 : state.settings.repeatCount;
+
     await _engine.playSentenceLoop(
       sentence: sentence,
-      repeatCount: state.settings.repeatCount,
+      repeatCount: effectiveRepeatCount,
       startPlayCount: startPlayCount,
       pauseCalculator: _buildPauseCalculator(),
       onPlayCountChanged: (playCount) {
