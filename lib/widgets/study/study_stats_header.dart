@@ -118,6 +118,16 @@ class _TodayCard extends StatelessWidget {
                     timeText: _formatTimeShort(clampedInput),
                     wordText:
                         '${_formatWordCount(stats.todayInputWords)}${l10n.localeName == 'zh' ? '词' : 'w'}',
+                    onTap: () => _showStatsTip(
+                      context: context,
+                      icon: Icons.headphones_outlined,
+                      iconColor: Colors.teal,
+                      title: l10n.localeName == 'zh' ? '听' : 'Listening',
+                      description: l10n.localeName == 'zh'
+                          ? '今日音频播放时长和听到的总词数'
+                          : 'Audio play time and total words heard today',
+                      highlightColumn: _HighlightColumn.listening,
+                    ),
                   ),
                 ),
                 Container(
@@ -133,6 +143,16 @@ class _TodayCard extends StatelessWidget {
                     timeText: _formatTimeShort(clampedOutput),
                     wordText:
                         '${_formatWordCount(stats.todayOutputWords)}${l10n.localeName == 'zh' ? '词' : 'w'}',
+                    onTap: () => _showStatsTip(
+                      context: context,
+                      icon: Icons.mic_outlined,
+                      iconColor: Colors.deepPurple,
+                      title: l10n.localeName == 'zh' ? '说' : 'Speaking',
+                      description: l10n.localeName == 'zh'
+                          ? '今日跟读和复述时长及对应词数'
+                          : 'Shadowing and retelling time and words today',
+                      highlightColumn: _HighlightColumn.speaking,
+                    ),
                   ),
                 ),
                 Container(
@@ -165,44 +185,54 @@ class _ListenSpeakItem extends StatelessWidget {
   final Color iconColor;
   final String timeText;
   final String wordText;
+  final VoidCallback? onTap;
 
   const _ListenSpeakItem({
     required this.icon,
     required this.iconColor,
     required this.timeText,
     required this.wordText,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 14, color: iconColor),
-          const SizedBox(width: 4),
-          Text(
-            timeText,
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+    final baseStyle = theme.textTheme.labelSmall!.copyWith(fontSize: 12);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: iconColor),
+            const SizedBox(width: 4),
+            Text(
+              timeText,
+              style: baseStyle.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
-          ),
-          Text(
-            ' · ',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            Text(
+              ' · ',
+              style: baseStyle.copyWith(
+                fontSize: 10,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
             ),
-          ),
-          Text(
-            wordText,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            Text(
+              wordText,
+              style: baseStyle.copyWith(
+                fontSize: 10,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -221,25 +251,27 @@ class _VocabItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final baseStyle = theme.textTheme.labelSmall!.copyWith(fontSize: 12);
     return GestureDetector(
       onTap: onTap,
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(Icons.spellcheck_rounded, size: 14, color: Colors.indigo),
             const SizedBox(width: 4),
             Text(
               '+${_formatWordCount(todayNew)}',
-              style: theme.textTheme.labelMedium?.copyWith(
+              style: baseStyle.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onSurface,
               ),
             ),
             Text(
               l10n.localeName == 'zh' ? '词' : 'w',
-              style: theme.textTheme.labelSmall?.copyWith(
+              style: baseStyle.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
@@ -504,4 +536,310 @@ String _formatTime(AppLocalizations l10n, int seconds) {
   final hours = totalMinutes ~/ 60;
   final minutes = totalMinutes % 60;
   return l10n.studyTimeHoursMinutes(hours, minutes);
+}
+
+/// 高亮列类型：听弹窗或说弹窗
+enum _HighlightColumn { listening, speaking }
+
+/// 显示统计指标说明弹窗（含 CEFR 推荐学习时长表格）
+void _showStatsTip({
+  required BuildContext context,
+  required IconData icon,
+  required Color iconColor,
+  required String title,
+  required String description,
+  required _HighlightColumn highlightColumn,
+}) {
+  final theme = Theme.of(context);
+  final isZh = AppLocalizations.of(context)!.localeName == 'zh';
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Icon(icon, size: 32, color: iconColor),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _CefrRecommendationTable(
+              highlightColumn: highlightColumn,
+              isZh: isZh,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// CEFR 每日推荐练习量表格
+///
+/// 三行（初/中/高级）× 三列（阶段 | 听力 | 口语）的对齐表格。
+/// 听力列显示听时长+输入词数，口语列显示说时长+输出词数。
+/// [highlightColumn] 控制哪一列用强调色，另一列弱化显示。
+/// 该组件被听/说两个弹窗共享，仅高亮列不同。
+class _CefrRecommendationTable extends StatelessWidget {
+  final _HighlightColumn highlightColumn;
+  final bool isZh;
+
+  const _CefrRecommendationTable({
+    required this.highlightColumn,
+    required this.isZh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isListening = highlightColumn == _HighlightColumn.listening;
+
+    // 基于 CEFR 各级别参考数据（取中间值）：
+    //   初级: 日总 ~53min, 输入 30–45min → 38min, 输出 10–15min → 13min
+    //   中级: 日总 ~68min, 输入 35–45min → 40min, 输出 25–30min → 28min
+    //   高级: 日总 ~75min, 输入 30–45min → 38min, 输出 30–45min → 38min
+    final levels = [
+      _CefrLevel('A1–A2', isZh ? '初级' : 'Beginner', '38', '13', '5,000', '1,700'),
+      _CefrLevel('B1–B2', isZh ? '中级' : 'Intermediate', '40', '28', '5,500', '3,500'),
+      _CefrLevel('C1–C2', isZh ? '高级' : 'Advanced', '38', '38', '6,000', '5,000'),
+    ];
+
+    final listenHeader = isZh ? '听力（输入）' : 'Listening (input)';
+    final speakHeader = isZh ? '口语（输出）' : 'Speaking (output)';
+    final minLabel = isZh ? '分钟' : 'min';
+    final wordSuffix = isZh ? '词' : 'w';
+    final footnote = isZh
+        ? '输入输出比随水平提升从 ~3:1 趋近 ~1:1'
+        : 'Input/output ratio trends from ~3:1 to ~1:1 as level rises';
+    final sectionTitle = isZh ? '每日推荐练习量' : 'Daily recommendation';
+
+    final tealBg = Colors.teal.withValues(alpha: isListening ? 0.08 : 0.03);
+    final purpleBg = Colors.deepPurple.withValues(alpha: isListening ? 0.03 : 0.08);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      child: Column(
+        children: [
+          // 小节标题
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              sectionTitle,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // 表格
+          Table(
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            columnWidths: const {
+              0: FlexColumnWidth(1.0),
+              1: FlexColumnWidth(1.3),
+              2: FlexColumnWidth(1.3),
+            },
+            children: [
+              // 表头
+              TableRow(
+                children: [
+                  const SizedBox.shrink(),
+                  _buildHeaderCell(
+                    context,
+                    listenHeader,
+                    Colors.teal,
+                    muted: !isListening,
+                  ),
+                  _buildHeaderCell(
+                    context,
+                    speakHeader,
+                    Colors.deepPurple,
+                    muted: isListening,
+                  ),
+                ],
+              ),
+              // 数据行
+              for (var i = 0; i < levels.length; i++)
+                TableRow(
+                  children: [
+                    // 阶段列（结构与数据列一致：Container + Column）
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 4,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            levels[i].name,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            levels[i].cefr,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 10,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 听力列
+                    _buildDataCell(
+                      context,
+                      time: '${levels[i].listenMin}$minLabel',
+                      words: '~${levels[i].inputWords}$wordSuffix',
+                      bgColor: tealBg,
+                      accentColor: Colors.teal,
+                      muted: !isListening,
+                    ),
+                    // 口语列
+                    _buildDataCell(
+                      context,
+                      time: '${levels[i].speakMin}$minLabel',
+                      words: '~${levels[i].outputWords}$wordSuffix',
+                      bgColor: purpleBg,
+                      accentColor: Colors.deepPurple,
+                      muted: isListening,
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            footnote,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建表头单元格
+  Widget _buildHeaderCell(
+    BuildContext context,
+    String text,
+    Color color, {
+    required bool muted,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: muted ? 0.03 : 0.08),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: muted
+              ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
+              : color,
+        ),
+      ),
+    );
+  }
+
+  /// 构建数据单元格（时长 + 词数，上下两行）
+  Widget _buildDataCell(
+    BuildContext context, {
+    required String time,
+    required String words,
+    required Color bgColor,
+    required Color accentColor,
+    required bool muted,
+  }) {
+    final theme = Theme.of(context);
+    final textColor = muted
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75)
+        : theme.colorScheme.onSurface;
+    final subColor = muted
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6)
+        : accentColor.withValues(alpha: 0.7);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      color: bgColor,
+      child: Column(
+        children: [
+          Text(
+            time,
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            words,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontSize: 10,
+              color: subColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// CEFR 等级推荐数据
+class _CefrLevel {
+  final String cefr;
+  final String name;
+  final String listenMin;
+  final String speakMin;
+  final String inputWords;
+  final String outputWords;
+
+  const _CefrLevel(
+    this.cefr,
+    this.name,
+    this.listenMin,
+    this.speakMin,
+    this.inputWords,
+    this.outputWords,
+  );
 }

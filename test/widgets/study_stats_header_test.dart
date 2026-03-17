@@ -304,6 +304,117 @@ void main() {
     });
   });
 
+  group('StudyStatsHeader — 听/说弹窗推荐表格', () {
+    testWidgets('点击听区域弹窗显示完整推荐表（英文）', (tester) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          stats: const StudyStats(
+            todaySeconds: 600,
+            todayInputSeconds: 300,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.headphones_outlined));
+      await tester.pumpAndSettle();
+
+      // 弹窗标题
+      expect(find.text('Listening'), findsOneWidget);
+      // 小节标题 + 表头
+      expect(find.text('Daily recommendation'), findsOneWidget);
+      expect(find.text('Listening (input)'), findsOneWidget);
+      expect(find.text('Speaking (output)'), findsOneWidget);
+      // 等级标签
+      expect(find.text('Beginner'), findsOneWidget);
+      expect(find.text('Intermediate'), findsOneWidget);
+      expect(find.text('Advanced'), findsOneWidget);
+      // 听力时长（初级38/高级38 出现2次, 中级40）
+      expect(find.text('38min'), findsAtLeast(2));
+      expect(find.text('40min'), findsOneWidget);
+      // 说的时长
+      expect(find.text('13min'), findsOneWidget);
+      expect(find.text('28min'), findsOneWidget);
+      // 输入 + 输出词数（~5,000w 出现 2 次：初级输入 + 高级输出）
+      expect(find.text('~5,000w'), findsNWidgets(2));
+      expect(find.text('~1,700w'), findsOneWidget);
+      // 脚注
+      expect(
+        find.text(
+          'Input/output ratio trends from ~3:1 to ~1:1 as level rises',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('点击说区域弹窗显示完整推荐表（英文）', (tester) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          stats: const StudyStats(
+            todaySeconds: 600,
+            todayOutputSeconds: 300,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.mic_outlined));
+      await tester.pumpAndSettle();
+
+      // 弹窗标题 + 表头
+      expect(find.text('Speaking'), findsOneWidget);
+      expect(find.text('Listening (input)'), findsOneWidget);
+      expect(find.text('Speaking (output)'), findsOneWidget);
+      // 听 + 说时长都出现
+      expect(find.text('38min'), findsAtLeast(2));
+      expect(find.text('13min'), findsOneWidget);
+      expect(find.text('28min'), findsOneWidget);
+      // 输出词数（~5,000w 出现 2 次：初级输入 + 高级输出）
+      expect(find.text('~1,700w'), findsOneWidget);
+      expect(find.text('~3,500w'), findsOneWidget);
+      expect(find.text('~5,000w'), findsNWidgets(2));
+    });
+
+    testWidgets('点击听区域弹窗显示完整推荐表（中文）', (tester) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          stats: const StudyStats(
+            todaySeconds: 600,
+            todayInputSeconds: 300,
+          ),
+          locale: const Locale('zh'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.headphones_outlined));
+      await tester.pumpAndSettle();
+
+      // 弹窗标题
+      expect(find.text('听'), findsOneWidget);
+      // 小节标题
+      expect(find.text('每日推荐练习量'), findsOneWidget);
+      // 表头
+      expect(find.text('听力（输入）'), findsOneWidget);
+      expect(find.text('口语（输出）'), findsOneWidget);
+      // 中文等级名
+      expect(find.text('初级'), findsOneWidget);
+      expect(find.text('中级'), findsOneWidget);
+      expect(find.text('高级'), findsOneWidget);
+      // 听力时长
+      expect(find.text('38分钟'), findsAtLeast(2));
+      expect(find.text('40分钟'), findsOneWidget);
+      // 说的时长
+      expect(find.text('13分钟'), findsOneWidget);
+      expect(find.text('28分钟'), findsOneWidget);
+      // 中文脚注
+      expect(
+        find.text('输入输出比随水平提升从 ~3:1 趋近 ~1:1'),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('StudyStatsHeader — 中文本地化', () {
     testWidgets('中文标签', (tester) async {
       await tester.pumpWidget(
