@@ -22,6 +22,9 @@ class ListeningPractice extends _$ListeningPractice {
   StreamSubscription? _positionSub;
   StreamSubscription? _playerStateSub;
 
+  /// 追踪正在进行的音频加载，避免重复调用时跳过未完成的加载
+  Completer<void>? _loadingCompleter;
+
   /// 连续播放模式的全曲循环计数（重新播放时重置）
   int _audioLoopCount = 0;
 
@@ -157,9 +160,14 @@ class ListeningPractice extends _$ListeningPractice {
     // 同一音频且字幕未变化时跳过
     if (state.currentAudioItem?.id == audioItem.id &&
         state.currentAudioItem?.transcriptPath == audioItem.transcriptPath) {
+      // 如果当前正在加载，等待加载完成（而不是直接跳过）
+      if (_loadingCompleter != null && !_loadingCompleter!.isCompleted) {
+        return _loadingCompleter!.future;
+      }
       return;
     }
 
+    _loadingCompleter = Completer<void>();
     state = state.copyWith(isLoading: true);
 
     try {
@@ -247,6 +255,9 @@ class ListeningPractice extends _$ListeningPractice {
       state = state.copyWith(clearCurrentAudioItem: true);
     } finally {
       state = state.copyWith(isLoading: false);
+      if (_loadingCompleter != null && !_loadingCompleter!.isCompleted) {
+        _loadingCompleter!.complete();
+      }
     }
   }
 
