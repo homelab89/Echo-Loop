@@ -22,6 +22,7 @@ import '../router/app_router.dart';
 import '../services/subtitle_parser.dart';
 import '../theme/app_theme.dart';
 import '../models/blind_listen_settings.dart';
+import '../models/intensive_listen_settings.dart' show PauseMode;
 import '../models/retell_settings.dart';
 import '../utils/keyword_extraction.dart';
 import '../utils/paragraph_grouping.dart';
@@ -29,6 +30,7 @@ import '../widgets/blind_listen_briefing_sheet.dart';
 import '../widgets/blind_listen_paragraph_sheet.dart';
 import '../widgets/intensive_listen/intensive_listen_briefing_sheet.dart';
 import '../widgets/listen_and_repeat/listen_and_repeat_briefing_sheet.dart';
+import '../providers/learning_session/retell_player_provider.dart';
 import '../widgets/retell/retell_briefing_sheet.dart';
 import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/manage_subtitles_sheet.dart';
@@ -241,7 +243,7 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
           sentences,
           targetDuration,
         );
-        final settings = BlindListenSettings(pauseMultiplier: pauseMultiplier);
+        final settings = BlindListenSettings.fromMultiplier(pauseMultiplier);
         await ref
             .read(learningSessionProvider.notifier)
             .enterBlindListenMode(
@@ -380,7 +382,7 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
       context: context,
       sentences: lpState.sentences,
       defaultSeconds: retellDefaultSeconds(currentStage),
-      onStartPractice: (targetDuration) async {
+      onStartPractice: (targetDuration, pauseMultiplier) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
           targetDuration,
@@ -392,12 +394,27 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
         await ref
             .read(learningSessionProvider.notifier)
             .enterRetellMode(widget.audioItemId, paragraphs, keywordsMap);
+        _applyRetellPauseMultiplier(pauseMultiplier);
         if (!context.mounted) return;
         context.push(
           AppRoutes.retellPlayer(widget.collectionId, widget.audioItemId),
         );
       },
     );
+  }
+
+  /// 将弹窗选择的停顿倍数应用到 RetellPlayer 的初始设置
+  ///
+  /// -1.0 = 智能模式（默认），>0 = 段长倍数模式
+  void _applyRetellPauseMultiplier(double pauseMultiplier) {
+    if (pauseMultiplier >= 0) {
+      final player = ref.read(retellPlayerProvider.notifier);
+      final current = ref.read(retellPlayerProvider).settings;
+      player.updateSettings(current.copyWith(
+        pauseMode: PauseMode.multiplier,
+        pauseMultiplier: pauseMultiplier,
+      ));
+    }
   }
 
   /// 进入全文盲听
@@ -432,9 +449,8 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
               sentences,
               targetDuration,
             );
-            final settings = BlindListenSettings(
-              pauseMultiplier: pauseMultiplier,
-            );
+            final settings =
+                BlindListenSettings.fromMultiplier(pauseMultiplier);
             await ref
                 .read(learningSessionProvider.notifier)
                 .enterBlindListenMode(
@@ -613,7 +629,7 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
       context: context,
       sentences: lpState.sentences,
       defaultSeconds: retellDefaultSeconds(LearningStage.firstLearn),
-      onStartPractice: (targetDuration) async {
+      onStartPractice: (targetDuration, pauseMultiplier) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
           targetDuration,
@@ -626,6 +642,7 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
         await ref
             .read(learningSessionProvider.notifier)
             .enterRetellMode(widget.audioItemId, paragraphs, keywordsMap);
+        _applyRetellPauseMultiplier(pauseMultiplier);
         if (!context.mounted) return;
         context.push(
           AppRoutes.retellPlayer(widget.collectionId, widget.audioItemId),
@@ -1212,7 +1229,7 @@ class _FirstStudySection extends ConsumerWidget {
           sentences,
           targetDuration,
         );
-        final settings = BlindListenSettings(pauseMultiplier: pauseMultiplier);
+        final settings = BlindListenSettings.fromMultiplier(pauseMultiplier);
         await ref
             .read(learningSessionProvider.notifier)
             .enterBlindListenMode(
@@ -1287,7 +1304,7 @@ class _FirstStudySection extends ConsumerWidget {
       context: context,
       sentences: lpState.sentences,
       defaultSeconds: retellDefaultSeconds(LearningStage.firstLearn),
-      onStartPractice: (targetDuration) async {
+      onStartPractice: (targetDuration, pauseMultiplier) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
           targetDuration,
@@ -1305,6 +1322,14 @@ class _FirstStudySection extends ConsumerWidget {
               keywordsMap,
               isFreePlay: true,
             );
+        if (pauseMultiplier >= 0) {
+          final player = ref.read(retellPlayerProvider.notifier);
+          final current = ref.read(retellPlayerProvider).settings;
+          player.updateSettings(current.copyWith(
+            pauseMode: PauseMode.multiplier,
+            pauseMultiplier: pauseMultiplier,
+          ));
+        }
         if (context.mounted) {
           context.push(AppRoutes.retellPlayer(collectionId, audioItemId));
         }
@@ -1656,7 +1681,7 @@ class _ReviewRoundSection extends ConsumerWidget {
           sentences,
           targetDuration,
         );
-        final settings = BlindListenSettings(pauseMultiplier: pauseMultiplier);
+        final settings = BlindListenSettings.fromMultiplier(pauseMultiplier);
         await ref
             .read(learningSessionProvider.notifier)
             .enterBlindListenMode(
@@ -1730,7 +1755,7 @@ class _ReviewRoundSection extends ConsumerWidget {
       context: context,
       sentences: lpState.sentences,
       defaultSeconds: retellDefaultSeconds(review.stage),
-      onStartPractice: (targetDuration) async {
+      onStartPractice: (targetDuration, pauseMultiplier) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
           targetDuration,
@@ -1747,6 +1772,14 @@ class _ReviewRoundSection extends ConsumerWidget {
               keywordsMap,
               isFreePlay: true,
             );
+        if (pauseMultiplier >= 0) {
+          final player = ref.read(retellPlayerProvider.notifier);
+          final current = ref.read(retellPlayerProvider).settings;
+          player.updateSettings(current.copyWith(
+            pauseMode: PauseMode.multiplier,
+            pauseMultiplier: pauseMultiplier,
+          ));
+        }
         if (context.mounted) {
           context.push(AppRoutes.retellPlayer(collectionId, audioItemId));
         }

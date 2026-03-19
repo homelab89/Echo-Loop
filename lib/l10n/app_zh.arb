@@ -523,7 +523,7 @@
   "retellKeywordMethodAiComingSoon": "即将推出",
   "retellKeywordRatio": "可见词比例",
 
-  "pauseModeSmart": "智能",
+  "pauseModeSmart": "自动",
   "pauseModeFixed": "固定",
   "pauseModeMultiplier": "倍数",
   "fixedPauseSeconds": "固定间隔",

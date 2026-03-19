@@ -114,6 +114,7 @@ class _RetellSettingsSheet extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               child: SegmentedButton<KeywordMethod>(
+              showSelectedIcon: false,
               segments: [
                 ButtonSegment(
                   value: KeywordMethod.off,
@@ -151,24 +152,13 @@ class _RetellSettingsSheet extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.s),
-              Wrap(
-                spacing: AppSpacing.s,
-                children: [
-                  for (final ratio in KeywordRatio.values)
-                    ChoiceChip(
-                      label: Text('${ratio.numerator}/${ratio.denominator}'),
-                      selected: settings.keywordRatio == ratio,
-                      onSelected: (selected) {
-                        if (selected) {
-                          ref
-                              .read(retellPlayerProvider.notifier)
-                              .updateSettings(
-                                settings.copyWith(keywordRatio: ratio),
-                              );
-                        }
-                      },
-                    ),
-                ],
+              _buildChipGrid(
+                items: KeywordRatio.values,
+                labelBuilder: (r) => '${r.numerator}/${r.denominator}',
+                selected: (r) => settings.keywordRatio == r,
+                onSelected: (r) => ref
+                    .read(retellPlayerProvider.notifier)
+                    .updateSettings(settings.copyWith(keywordRatio: r)),
               ),
             ],
           ],
@@ -289,6 +279,7 @@ class _RetellSettingsSheet extends ConsumerWidget {
     return SizedBox(
       width: double.infinity,
       child: SegmentedButton<PauseMode>(
+        showSelectedIcon: false,
         segments: [
           ButtonSegment(
             value: PauseMode.smart,
@@ -313,16 +304,15 @@ class _RetellSettingsSheet extends ConsumerWidget {
     );
   }
 
-  /// 停顿模式详情区域（与跟读设置对齐：smart 显示 info 描述）
+  /// 停顿模式详情区域
   Widget _buildPauseModeDetail(
     AppLocalizations l10n,
     ThemeData theme,
     RetellSettings settings,
     WidgetRef ref,
   ) {
-    switch (settings.pauseMode) {
-      case PauseMode.smart:
-        return Row(
+    return switch (settings.pauseMode) {
+      PauseMode.smart => Row(
           children: [
             Icon(
               Icons.info_outline,
@@ -339,53 +329,72 @@ class _RetellSettingsSheet extends ConsumerWidget {
               ),
             ),
           ],
-        );
+        ),
+      PauseMode.fixed => _buildChipGrid(
+          items: RetellSettings.fixedPauseOptions,
+          labelBuilder: (v) => '${v}s',
+          selected: (v) => settings.fixedPauseSeconds == v,
+          onSelected: (v) => ref
+              .read(retellPlayerProvider.notifier)
+              .updateSettings(settings.copyWith(fixedPauseSeconds: v)),
+        ),
+      PauseMode.multiplier => _buildChipGrid(
+          items: RetellSettings.multiplierOptions,
+          labelBuilder: (v) =>
+              v == v.roundToDouble() ? '${v.toInt()}x' : '${v}x',
+          selected: (v) => settings.pauseMultiplier == v,
+          onSelected: (v) => ref
+              .read(retellPlayerProvider.notifier)
+              .updateSettings(settings.copyWith(pauseMultiplier: v)),
+        ),
+    };
+  }
 
-      case PauseMode.fixed:
-        return Wrap(
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: RetellSettings.fixedPauseOptions.map((seconds) {
-            return ChoiceChip(
-              label: Text('${seconds}s'),
-              selected: settings.fixedPauseSeconds == seconds,
-              onSelected: (selected) {
-                if (selected) {
-                  ref.read(retellPlayerProvider.notifier).updateSettings(
-                        settings.copyWith(fixedPauseSeconds: seconds),
-                      );
-                }
-              },
-            );
-          }).toList(),
-        );
+  /// 等宽网格排列 ChoiceChip，每行 4 个
+  Widget _buildChipGrid<T>({
+    required List<T> items,
+    required String Function(T) labelBuilder,
+    required bool Function(T) selected,
+    required void Function(T) onSelected,
+  }) {
+    const columns = 4;
+    final rows = (items.length / columns).ceil();
 
-      case PauseMode.multiplier:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(l10n.pauseMultiplier, style: theme.textTheme.bodyLarge),
-            DropdownButton<double>(
-              value: settings.pauseMultiplier,
-              underline: const SizedBox.shrink(),
-              items: RetellSettings.multiplierOptions.map((value) {
-                return DropdownMenuItem(
-                  value: value,
-                  child: Text(
-                    '${value.toStringAsFixed(value == value.roundToDouble() ? 0 : 1)}x',
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(retellPlayerProvider.notifier).updateSettings(
-                        settings.copyWith(pauseMultiplier: value),
-                      );
-                }
-              },
-            ),
-          ],
+    return Column(
+      children: List.generate(rows, (row) {
+        final start = row * columns;
+        final end = (start + columns).clamp(0, items.length);
+        final rowItems = items.sublist(start, end);
+
+        return Padding(
+          padding: EdgeInsets.only(top: row > 0 ? AppSpacing.xs : 0),
+          child: Row(
+            children: [
+              for (var i = 0; i < columns; i++) ...[
+                if (i > 0) const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: i < rowItems.length
+                      ? ChoiceChip(
+                          showCheckmark: false,
+                          label: SizedBox(
+                            width: double.infinity,
+                            child: Text(
+                              labelBuilder(rowItems[i]),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          selected: selected(rowItems[i]),
+                          onSelected: (s) {
+                            if (s) onSelected(rowItems[i]);
+                          },
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ],
+          ),
         );
-    }
+      }),
+    );
   }
 }

@@ -1231,7 +1231,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retellKeywordRatio => 'Visible ratio';
 
   @override
-  String get pauseModeSmart => 'Smart';
+  String get pauseModeSmart => 'Auto';
 
   @override
   String get pauseModeFixed => 'Fixed';

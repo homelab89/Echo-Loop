@@ -680,7 +680,7 @@
   "retellKeywordMethodAiComingSoon": "Coming soon",
   "retellKeywordRatio": "Visible ratio",
 
-  "pauseModeSmart": "Smart",
+  "pauseModeSmart": "Auto",
   "pauseModeFixed": "Fixed",
   "pauseModeMultiplier": "Multiplier",
   "fixedPauseSeconds": "Fixed pause",

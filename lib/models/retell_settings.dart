@@ -89,15 +89,15 @@ class RetellSettings {
   bool get isManualMode => controlMode == ShadowingControlMode.manual;
 
   /// 固定间隔可选值（秒）
-  static const List<int> fixedPauseOptions = [5, 8, 10, 15, 20, 25, 30];
+  static const List<int> fixedPauseOptions = [10, 20, 30, 45, 60, 90, 120, 180];
 
   /// 倍数可选值
-  static const List<double> multiplierOptions = [0.5, 0.8, 1.0, 1.5, 2.0];
+  static const List<double> multiplierOptions = [0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0];
 
   const RetellSettings({
     this.repeatCount = 1,
     this.pauseMode = PauseMode.smart,
-    this.fixedPauseSeconds = 15,
+    this.fixedPauseSeconds = 30,
     this.pauseMultiplier = 0.5,
     this.keywordMethod = KeywordMethod.random,
     this.keywordRatio = KeywordRatio.oneThird,

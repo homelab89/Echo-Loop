@@ -2249,7 +2249,7 @@ abstract class AppLocalizations {
   /// No description provided for @pauseModeSmart.
   ///
   /// In en, this message translates to:
-  /// **'Smart'**
+  /// **'Auto'**
   String get pauseModeSmart;
 
   /// No description provided for @pauseModeFixed.

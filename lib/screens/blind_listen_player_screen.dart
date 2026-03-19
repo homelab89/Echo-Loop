@@ -341,7 +341,7 @@ class _BlindListenPlayerScreenState
         context: context,
         sentences: lpState.sentences,
         defaultSeconds: retellDefaultSeconds(currentStage),
-        onStartPractice: (targetDuration) async {
+        onStartPractice: (targetDuration, _) async {
           final paragraphs = groupSentencesIntoParagraphs(
             lpState.sentences,
             targetDuration,

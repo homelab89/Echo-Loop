@@ -1199,7 +1199,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retellKeywordRatio => '可见词比例';
 
   @override
-  String get pauseModeSmart => '智能';
+  String get pauseModeSmart => '自动';
 
   @override
   String get pauseModeFixed => '固定';

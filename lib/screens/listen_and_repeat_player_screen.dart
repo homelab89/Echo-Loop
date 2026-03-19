@@ -425,7 +425,7 @@ class _ListenAndRepeatPlayerScreenState
       context: context,
       sentences: lpState.sentences,
       defaultSeconds: retellDefaultSeconds(LearningStage.firstLearn),
-      onStartPractice: (targetDuration) async {
+      onStartPractice: (targetDuration, _) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
           targetDuration,

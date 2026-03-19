@@ -127,6 +127,10 @@ class _BlindListenSettingsSheet extends ConsumerWidget {
                 showSelectedIcon: false,
                 segments: [
                   ButtonSegment(
+                    value: PauseMode.smart,
+                    label: Text(l10n.pauseModeSmart),
+                  ),
+                  ButtonSegment(
                     value: PauseMode.fixed,
                     label: Text(l10n.pauseModeFixed),
                   ),
@@ -163,7 +167,25 @@ class _BlindListenSettingsSheet extends ConsumerWidget {
     WidgetRef ref,
   ) {
     return switch (settings.pauseMode) {
-      PauseMode.smart || PauseMode.multiplier => _buildChipGrid(
+      PauseMode.smart => Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              size: 16,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                l10n.listenAndRepeatPauseSmartDesc,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+      PauseMode.multiplier => _buildChipGrid(
           items: BlindListenSettings.multiplierOptions,
           labelBuilder: (v) =>
               v == v.roundToDouble() ? '${v.toInt()}x' : '${v}x',
