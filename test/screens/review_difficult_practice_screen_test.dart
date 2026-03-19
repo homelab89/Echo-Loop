@@ -148,8 +148,8 @@ void main() {
         speechPracticeSessionProvider.overrideWith(
           () => TestSpeechPracticeSession(),
         ),
-        listenAndRepeatTurnControllerProvider.overrideWith(
-          () => TestListenAndRepeatTurnController(initialPhase: turnPhase),
+        shadowingRecordingControllerProvider.overrideWith(
+          () => TestShadowingRecordingController(initialPhase: turnPhase),
         ),
         sentenceAiNotifierProvider.overrideWithValue(
           SentenceAiNotifier(

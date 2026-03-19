@@ -1531,12 +1531,12 @@ class TestSpeechPracticeSession extends SpeechPracticeSession {
   SpeechPracticeAttempt? attemptFor(String promptId) => null;
 }
 
-/// 测试用 ListenAndRepeatTurnController — 不依赖平台通道
-class TestListenAndRepeatTurnController extends ListenAndRepeatTurnController {
+/// 测试用 ShadowingRecordingController — 不依赖平台通道
+class TestShadowingRecordingController extends ShadowingRecordingController {
   /// 初始阶段（默认 idle）
   final ListenAndRepeatTurnPhase initialPhase;
 
-  TestListenAndRepeatTurnController({
+  TestShadowingRecordingController({
     this.initialPhase = ListenAndRepeatTurnPhase.idle,
   });
 
@@ -1545,58 +1545,29 @@ class TestListenAndRepeatTurnController extends ListenAndRepeatTurnController {
       ListenAndRepeatTurnState(phase: initialPhase);
 
   @override
-  void setOnContinue(Future<void> Function()? callback) {}
-
-  @override
-  Future<void> ensureTurn({
+  Future<void> startRecording({
     required String promptId,
     required String referenceText,
-    bool allowAutoFallback = true,
-    Duration sentenceDuration = Duration.zero,
   }) async {}
 
   @override
-  Future<void> ensureAutoTurn({
-    required String promptId,
-    required String referenceText,
-    Duration sentenceDuration = Duration.zero,
-  }) async {}
+  Future<void> stopAndEvaluate({required String referenceText}) async {}
 
   @override
-  Future<void> startManualRecording({
-    required String promptId,
-    required String referenceText,
-    Duration sentenceDuration = Duration.zero,
-  }) async {}
+  Future<void> cancelActiveRecording() async {}
 
   @override
-  void clearTurn() {
+  void clearRecording() {
     state = const ListenAndRepeatTurnState();
   }
 
   @override
-  Future<void> handleManualStop() async {}
+  Future<void> fullReset() async {
+    state = const ListenAndRepeatTurnState();
+  }
 
   @override
-  Future<void> handleContinue() async {}
-
-  @override
-  void pauseReviewCountdown() {}
-
-  @override
-  void resumeReviewCountdown() {}
-
-  @override
-  void fastForwardReviewCountdown() {}
-
-  @override
-  void resetReviewCountdownOnPlayback() {}
-
-  @override
-  void activateReviewCountdown({required String promptId}) {}
-
-  @override
-  void enterProcessing(String promptId) {}
+  Future<void> deleteRecording(String filePath) async {}
 }
 
 /// 测试用 TranscriptionApiClient Provider 值
