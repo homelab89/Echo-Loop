@@ -1112,7 +1112,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Listen to a paragraph, then retell in your own words. Keywords help you recall the content.';
 
   @override
-  String get retellBriefingTargetDuration => 'Target paragraph duration';
+  String get retellBriefingTargetDuration => 'Paragraph duration';
 
   @override
   String retellBriefingParagraphCount(int count) {
@@ -1841,4 +1841,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get practiceRemoveMark => 'Unmark';
+
+  @override
+  String blindListenSegmentProgress(int current, int total) {
+    return 'Paragraph $current/$total';
+  }
+
+  @override
+  String blindListenSegmentDuration(int duration) {
+    return 'Duration ${duration}s';
+  }
+
+  @override
+  String get blindListenListeningHint => 'Listen carefully...';
+
+  @override
+  String blindListenRepeatInfo(int current, int total) {
+    return 'Round $current/$total';
+  }
+
+  @override
+  String get blindListenSettingsTitle => 'Listening Settings';
+
+  @override
+  String get blindListenPauseBetween => 'Pause between paragraphs';
+
+  @override
+  String get blindListenTargetDuration => 'Paragraph duration';
+
+  @override
+  String get blindListenDisplayHideAll => 'Hide Subtitles';
+
+  @override
+  String get blindListenDisplayShowAll => 'Show Subtitles';
+
+  @override
+  String get blindListenRecallHint => 'Try to recall what you just heard';
+
+  @override
+  String blindListenParagraphCount(int count) {
+    return '$count paragraphs';
+  }
 }

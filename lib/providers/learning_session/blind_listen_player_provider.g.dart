@@ -6,12 +6,9 @@ part of 'blind_listen_player_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$blindListenPlayerHash() => r'fa1ffeec41088fa9abf8a9922d52b98c075d4575';
+String _$blindListenPlayerHash() => r'bf33d8ad477ff06c9111dfb7b4769a6d7f95c0ef';
 
 /// 盲听专用播放器 Provider
-///
-/// 直接操作 AudioEngine，只提供盲听所需的最小控制集：
-/// 播放、暂停、拖动进度条、完成检测、重播。
 ///
 /// Copied from [BlindListenPlayer].
 @ProviderFor(BlindListenPlayer)

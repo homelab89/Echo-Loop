@@ -373,6 +373,24 @@
 
 ---
 
+## 已完成：全文盲听页面改造 — 段落分段播放
+
+- [x] 提取共用 UI 组件：`ParagraphBottomControls` + `ParagraphProgressHeader`
+- [x] 修改 `retell_player_screen.dart` 使用共用组件（纯机械替换，行为不变）
+- [x] 新增 `BlindListenSettings` 模型（重复次数 + 段间停顿秒数）
+- [x] 重写 `BlindListenPlayerProvider`（段落播放 + 句子高亮 + 段间倒计时 + 遍数循环 + 兼容极简模式）
+- [x] 修改 `BlindListenBriefingSheet`（新增段落时长 + 段间停顿选择器 + 段落数预览）
+- [x] 新增 `BlindListenSettingsSheet`（每段重复次数 + 段间停顿）
+- [x] 修改 `LearningSessionProvider.enterBlindListenMode`（支持段落模式 / 极简模式双通道）
+- [x] 重写 `BlindListenPlayerScreen`（段落模式：句子列表 + 导航 + 倒计时 | 极简模式：大播放按钮 + 进度条）
+- [x] 修改 `LearningPlanScreen` 所有盲听入口（首次学习 / 复习 / 自由练习）传入 sentences 和段落参数
+- [x] 国际化新增 11 个 key（en + zh）
+- [x] 修复测试文件签名不匹配（mock_providers + test_notifiers + briefing_sheet_test）
+
+  **完成时间**: 2026-03-18
+
+---
+
 ## 已完成：文本 Embedding 相似度计算（NLEmbedding + MethodChannel）
 
 - [x] Dart 侧平台桥接 `TextEmbeddingPlatform`（MethodChannel `top.echo-loop/text_embedding`，`embed` 方法）

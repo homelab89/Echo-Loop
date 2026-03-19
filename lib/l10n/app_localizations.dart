@@ -2051,7 +2051,7 @@ abstract class AppLocalizations {
   /// No description provided for @retellBriefingTargetDuration.
   ///
   /// In en, this message translates to:
-  /// **'Target paragraph duration'**
+  /// **'Paragraph duration'**
   String get retellBriefingTargetDuration;
 
   /// No description provided for @retellBriefingParagraphCount.
@@ -3301,6 +3301,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unmark'**
   String get practiceRemoveMark;
+
+  /// No description provided for @blindListenSegmentProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Paragraph {current}/{total}'**
+  String blindListenSegmentProgress(int current, int total);
+
+  /// No description provided for @blindListenSegmentDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration {duration}s'**
+  String blindListenSegmentDuration(int duration);
+
+  /// No description provided for @blindListenListeningHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen carefully...'**
+  String get blindListenListeningHint;
+
+  /// No description provided for @blindListenRepeatInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {current}/{total}'**
+  String blindListenRepeatInfo(int current, int total);
+
+  /// No description provided for @blindListenSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening Settings'**
+  String get blindListenSettingsTitle;
+
+  /// No description provided for @blindListenPauseBetween.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause between paragraphs'**
+  String get blindListenPauseBetween;
+
+  /// No description provided for @blindListenTargetDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Paragraph duration'**
+  String get blindListenTargetDuration;
+
+  /// No description provided for @blindListenDisplayHideAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Subtitles'**
+  String get blindListenDisplayHideAll;
+
+  /// No description provided for @blindListenDisplayShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Subtitles'**
+  String get blindListenDisplayShowAll;
+
+  /// No description provided for @blindListenRecallHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Try to recall what you just heard'**
+  String get blindListenRecallHint;
+
+  /// No description provided for @blindListenParagraphCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} paragraphs'**
+  String blindListenParagraphCount(int count);
 }
 
 class _AppLocalizationsDelegate

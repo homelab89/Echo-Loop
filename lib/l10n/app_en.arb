@@ -597,7 +597,7 @@
 
   "retellBriefingTitle": "Paragraph Retelling",
   "retellBriefingSubtitle": "Listen to a paragraph, then retell in your own words. Keywords help you recall the content.",
-  "retellBriefingTargetDuration": "Target paragraph duration",
+  "retellBriefingTargetDuration": "Paragraph duration",
   "retellBriefingParagraphCount": "Will be divided into {count} paragraphs",
   "@retellBriefingParagraphCount": {
     "placeholders": {
@@ -1003,5 +1003,39 @@
   "checkUpdateFailed": "Check failed, please check your network",
   "demoMode": "Demo Mode",
   "demoModeSubtitle": "Use demo data for screenshots and presentations",
-  "practiceRemoveMark": "Unmark"
+  "practiceRemoveMark": "Unmark",
+
+  "blindListenSegmentProgress": "Paragraph {current}/{total}",
+  "@blindListenSegmentProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "blindListenSegmentDuration": "Duration {duration}s",
+  "@blindListenSegmentDuration": {
+    "placeholders": {
+      "duration": {"type": "int"}
+    }
+  },
+  "blindListenListeningHint": "Listen carefully...",
+  "blindListenRepeatInfo": "Round {current}/{total}",
+  "@blindListenRepeatInfo": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "blindListenSettingsTitle": "Listening Settings",
+  "blindListenPauseBetween": "Pause between paragraphs",
+  "blindListenTargetDuration": "Paragraph duration",
+  "blindListenDisplayHideAll": "Hide Subtitles",
+  "blindListenDisplayShowAll": "Show Subtitles",
+  "blindListenRecallHint": "Try to recall what you just heard",
+  "blindListenParagraphCount": "{count} paragraphs",
+  "@blindListenParagraphCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
 }

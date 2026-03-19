@@ -1082,7 +1082,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retellBriefingSubtitle => '听一段音频，然后尝试复述。关键词会帮助你回忆内容。';
 
   @override
-  String get retellBriefingTargetDuration => '目标段落时长';
+  String get retellBriefingTargetDuration => '段落时长';
 
   @override
   String retellBriefingParagraphCount(int count) {
@@ -1791,4 +1791,45 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get practiceRemoveMark => '取消标记';
+
+  @override
+  String blindListenSegmentProgress(int current, int total) {
+    return '段落 $current/$total';
+  }
+
+  @override
+  String blindListenSegmentDuration(int duration) {
+    return '段落时长 ${duration}s';
+  }
+
+  @override
+  String get blindListenListeningHint => '认真听...';
+
+  @override
+  String blindListenRepeatInfo(int current, int total) {
+    return '第 $current/$total 遍';
+  }
+
+  @override
+  String get blindListenSettingsTitle => '盲听设置';
+
+  @override
+  String get blindListenPauseBetween => '段间停顿';
+
+  @override
+  String get blindListenTargetDuration => '段落时长';
+
+  @override
+  String get blindListenDisplayHideAll => '隐藏字幕';
+
+  @override
+  String get blindListenDisplayShowAll => '显示字幕';
+
+  @override
+  String get blindListenRecallHint => '试着回忆刚才听到的内容';
+
+  @override
+  String blindListenParagraphCount(int count) {
+    return '$count 个段落';
+  }
 }

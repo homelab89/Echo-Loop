@@ -21,10 +21,12 @@ import '../l10n/app_localizations.dart';
 import '../router/app_router.dart';
 import '../services/subtitle_parser.dart';
 import '../theme/app_theme.dart';
+import '../models/blind_listen_settings.dart';
 import '../models/retell_settings.dart';
 import '../utils/keyword_extraction.dart';
 import '../utils/paragraph_grouping.dart';
 import '../widgets/blind_listen_briefing_sheet.dart';
+import '../widgets/blind_listen_paragraph_sheet.dart';
 import '../widgets/intensive_listen/intensive_listen_briefing_sheet.dart';
 import '../widgets/listen_and_repeat/listen_and_repeat_briefing_sheet.dart';
 import '../widgets/retell/retell_briefing_sheet.dart';
@@ -224,14 +226,37 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
     }
   }
 
-  /// 复习盲听：复用 BlindListenPlayerScreen，1 遍、无难度选择
+  /// 复习盲听：弹段落选择弹窗后进入段落播放
   Future<void> _startReviewBlindListen(BuildContext context) async {
-    await ref
-        .read(learningSessionProvider.notifier)
-        .enterBlindListenMode(widget.audioItemId);
+    final lpState = await _ensureAudioLoaded();
     if (!context.mounted) return;
-    context.push(
-      AppRoutes.blindListenPlayer(widget.collectionId, widget.audioItemId),
+    final sentences = lpState?.sentences ?? const [];
+    if (sentences.isEmpty) return;
+
+    showBlindListenParagraphSheet(
+      context: context,
+      sentences: sentences,
+      onStartPractice: (targetDuration, pauseMultiplier) async {
+        final paragraphs = groupSentencesIntoParagraphs(
+          sentences,
+          targetDuration,
+        );
+        final settings = BlindListenSettings(pauseMultiplier: pauseMultiplier);
+        await ref
+            .read(learningSessionProvider.notifier)
+            .enterBlindListenMode(
+              widget.audioItemId,
+              paragraphs: paragraphs,
+              settings: settings,
+            );
+        if (!context.mounted) return;
+        context.push(
+          AppRoutes.blindListenPlayer(
+            widget.collectionId,
+            widget.audioItemId,
+          ),
+        );
+      },
     );
   }
 
@@ -376,6 +401,9 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
   }
 
   /// 进入全文盲听
+  ///
+  /// 先弹简报弹窗，点"开始练习"后等待音频加载，
+  /// 有字幕时再弹段落选择弹窗，无字幕时直接进入极简播放。
   void _startBlindListen(BuildContext context, LearningProgress? progress) {
     final isFirstStudy =
         progress == null || progress.currentStage == LearningStage.firstLearn;
@@ -389,15 +417,39 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
       audioDuration: totalDuration,
       estimatedDuration: totalDuration,
       onStartPractice: () async {
-        await ref
-            .read(learningSessionProvider.notifier)
-            .enterBlindListenMode(widget.audioItemId);
+        // 等待音频加载完成，获取字幕
+        final lpState = await _ensureAudioLoaded();
         if (!context.mounted) return;
-        context.push(
-          AppRoutes.blindListenPlayer(
-            widget.collectionId,
-            widget.audioItemId,
-          ),
+        final sentences = lpState?.sentences ?? const [];
+
+        if (sentences.isEmpty) return;
+
+        showBlindListenParagraphSheet(
+          context: context,
+          sentences: sentences,
+          onStartPractice: (targetDuration, pauseMultiplier) async {
+            final paragraphs = groupSentencesIntoParagraphs(
+              sentences,
+              targetDuration,
+            );
+            final settings = BlindListenSettings(
+              pauseMultiplier: pauseMultiplier,
+            );
+            await ref
+                .read(learningSessionProvider.notifier)
+                .enterBlindListenMode(
+                  widget.audioItemId,
+                  paragraphs: paragraphs,
+                  settings: settings,
+                );
+            if (!context.mounted) return;
+            context.push(
+              AppRoutes.blindListenPlayer(
+                widget.collectionId,
+                widget.audioItemId,
+              ),
+            );
+          },
         );
       },
     );
@@ -1144,17 +1196,38 @@ class _FirstStudySection extends ConsumerWidget {
     return parts.isNotEmpty ? parts.join(' · ') : null;
   }
 
-  /// 进入自由练习盲听模式（直接进入，不弹 briefing sheet）
+  /// 进入自由练习盲听模式
   Future<void> _startFreePlayBlindListen(
     BuildContext context,
     WidgetRef ref,
   ) async {
-    await ref
-        .read(learningSessionProvider.notifier)
-        .enterBlindListenMode(audioItemId, isFreePlay: true);
-    if (context.mounted) {
-      context.push(AppRoutes.blindListenPlayer(collectionId, audioItemId));
-    }
+    final sentences = ref.read(listeningPracticeProvider).sentences;
+    if (sentences.isEmpty) return;
+
+    showBlindListenParagraphSheet(
+      context: context,
+      sentences: sentences,
+      onStartPractice: (targetDuration, pauseMultiplier) async {
+        final paragraphs = groupSentencesIntoParagraphs(
+          sentences,
+          targetDuration,
+        );
+        final settings = BlindListenSettings(pauseMultiplier: pauseMultiplier);
+        await ref
+            .read(learningSessionProvider.notifier)
+            .enterBlindListenMode(
+              audioItemId,
+              isFreePlay: true,
+              paragraphs: paragraphs,
+              settings: settings,
+            );
+        if (context.mounted) {
+          context.push(
+            AppRoutes.blindListenPlayer(collectionId, audioItemId),
+          );
+        }
+      },
+    );
   }
 
   /// 进入自由练习精听模式（直接进入，不弹 briefing sheet）
@@ -1572,12 +1645,33 @@ class _ReviewRoundSection extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    await ref
-        .read(learningSessionProvider.notifier)
-        .enterBlindListenMode(audioItemId, isFreePlay: true);
-    if (context.mounted) {
-      context.push(AppRoutes.blindListenPlayer(collectionId, audioItemId));
-    }
+    final sentences = ref.read(listeningPracticeProvider).sentences;
+    if (sentences.isEmpty) return;
+
+    showBlindListenParagraphSheet(
+      context: context,
+      sentences: sentences,
+      onStartPractice: (targetDuration, pauseMultiplier) async {
+        final paragraphs = groupSentencesIntoParagraphs(
+          sentences,
+          targetDuration,
+        );
+        final settings = BlindListenSettings(pauseMultiplier: pauseMultiplier);
+        await ref
+            .read(learningSessionProvider.notifier)
+            .enterBlindListenMode(
+              audioItemId,
+              isFreePlay: true,
+              paragraphs: paragraphs,
+              settings: settings,
+            );
+        if (context.mounted) {
+          context.push(
+            AppRoutes.blindListenPlayer(collectionId, audioItemId),
+          );
+        }
+      },
+    );
   }
 
   /// 进入自由练习难句补练模式

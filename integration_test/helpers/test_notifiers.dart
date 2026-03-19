@@ -18,6 +18,7 @@ import 'package:fluency/models/audio_engine_state.dart';
 import 'package:fluency/models/intensive_listen_settings.dart';
 import 'package:fluency/models/learning_progress.dart';
 import 'package:fluency/models/playback_settings.dart';
+import 'package:fluency/models/blind_listen_settings.dart';
 import 'package:fluency/models/sentence.dart';
 import 'package:fluency/database/enums.dart';
 import 'package:fluency/database/app_database.dart'
@@ -745,6 +746,8 @@ class TestLearningSession extends LearningSession {
   Future<void> enterBlindListenMode(
     String audioItemId, {
     bool isFreePlay = false,
+    required List<List<Sentence>> paragraphs,
+    BlindListenSettings? settings,
   }) async {
     state = state.copyWith(
       learningMode: LearningMode.blindListen,
@@ -828,12 +831,7 @@ class TestBlindListenPlayer extends BlindListenPlayer {
   BlindListenPlayerState build() => const BlindListenPlayerState();
 
   @override
-  void initialize(Duration totalDuration) {
-    state = BlindListenPlayerState(totalDuration: totalDuration);
-  }
-
-  @override
-  Future<void> play() async {
+  Future<void> startPlaying() async {
     state = state.copyWith(isPlaying: true, isCompleted: false);
   }
 
@@ -843,32 +841,14 @@ class TestBlindListenPlayer extends BlindListenPlayer {
   }
 
   @override
-  Future<void> seekTo(Duration pos) async {
-    state = state.copyWith(position: pos, isCompleted: false);
+  Future<void> resume() async {
+    state = state.copyWith(isPlaying: true);
   }
 
   @override
-  void onDragStart() {
-    state = state.copyWith(isDragging: true);
-  }
-
-  @override
-  void onDragUpdate(Duration pos) {
-    state = state.copyWith(position: pos);
-  }
-
-  @override
-  Future<void> onDragEnd(Duration pos) async {
-    state = state.copyWith(isDragging: false, position: pos);
-  }
-
-  @override
-  Future<void> resetAndPlay() async {
-    state = state.copyWith(
-      position: Duration.zero,
-      isPlaying: true,
-      isCompleted: false,
-    );
+  Future<void> restart() async {
+    state = const BlindListenPlayerState();
+    state = state.copyWith(isPlaying: true);
   }
 
   @override

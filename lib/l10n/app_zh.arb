@@ -440,7 +440,7 @@
 
   "retellBriefingTitle": "段落复述",
   "retellBriefingSubtitle": "听一段音频，然后尝试复述。关键词会帮助你回忆内容。",
-  "retellBriefingTargetDuration": "目标段落时长",
+  "retellBriefingTargetDuration": "段落时长",
   "retellBriefingParagraphCount": "将分为 {count} 个段落",
   "@retellBriefingParagraphCount": {
     "placeholders": {
@@ -752,5 +752,17 @@
   "checkUpdateFailed": "检查失败，请检查网络",
   "demoMode": "演示模式",
   "demoModeSubtitle": "开启后使用演示数据，方便截图展示",
-  "practiceRemoveMark": "取消标记"
+  "practiceRemoveMark": "取消标记",
+
+  "blindListenSegmentProgress": "段落 {current}/{total}",
+  "blindListenSegmentDuration": "段落时长 {duration}s",
+  "blindListenListeningHint": "认真听...",
+  "blindListenRepeatInfo": "第 {current}/{total} 遍",
+  "blindListenSettingsTitle": "盲听设置",
+  "blindListenPauseBetween": "段间停顿",
+  "blindListenTargetDuration": "段落时长",
+  "blindListenDisplayHideAll": "隐藏字幕",
+  "blindListenDisplayShowAll": "显示字幕",
+  "blindListenRecallHint": "试着回忆刚才听到的内容",
+  "blindListenParagraphCount": "{count} 个段落"
 }

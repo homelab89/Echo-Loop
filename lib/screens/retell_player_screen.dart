@@ -33,6 +33,8 @@ import '../widgets/common/speech_rating_badge.dart';
 import '../widgets/common/countdown_chip.dart';
 import '../widgets/retell/retell_sentence_tile.dart';
 import '../widgets/retell/retell_settings_sheet.dart';
+import '../widgets/common/paragraph_bottom_controls.dart';
+import '../widgets/common/paragraph_progress_header.dart';
 import '../widgets/player_hotkey_scope.dart';
 
 /// 复述播放器页面
@@ -92,11 +94,6 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
     _playbackSub?.cancel();
     _playbackService.dispose();
     super.dispose();
-  }
-
-  /// 格式化时长（纯秒数 + 单位）
-  String _formatDuration(Duration d) {
-    return '${d.inSeconds}s';
   }
 
   /// 构造当前段落的 promptId
@@ -650,33 +647,10 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
               LinearProgressIndicator(value: progress),
 
               // 段落进度文字
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.m,
-                  vertical: AppSpacing.s,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      l10n.retellParagraphProgress(
-                        state.currentParagraphIndex + 1,
-                        state.totalParagraphs,
-                      ),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      l10n.retellParagraphDuration(
-                        _formatDuration(paragraphDuration),
-                      ),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+              ParagraphProgressHeader(
+                currentIndex: state.currentParagraphIndex,
+                totalParagraphs: state.totalParagraphs,
+                paragraphDuration: paragraphDuration,
               ),
 
               // 句子列表
@@ -811,13 +785,20 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
               const SizedBox(height: AppSpacing.m),
 
               // 播放控制栏
-              _BottomControls(
-                state: state,
-                player: player,
-                l10n: l10n,
-                onNext: _goToNextParagraph,
+              ParagraphBottomControls(
+                canGoPrev: state.currentParagraphIndex > 0,
+                isLastParagraph: state.currentParagraphIndex >=
+                    state.totalParagraphs - 1,
+                centerIcon: state.phase == RetellPhase.listening
+                    ? (state.isPlaying
+                        ? Icons.pause_rounded
+                        : Icons.play_arrow_rounded)
+                    : Icons.play_arrow_rounded,
+                onCenter: state.phase == RetellPhase.listening
+                    ? (state.isPlaying ? player.pause : player.resume)
+                    : _handleReplay,
                 onPrevious: _goToPreviousParagraph,
-                onReplay: _handleReplay,
+                onNext: _goToNextParagraph,
               ),
 
               // 遍数（手动模式下隐藏）
@@ -887,114 +868,3 @@ class _DisplayModeSegmentLabel extends StatelessWidget {
   }
 }
 
-/// 底部控制栏：[上一段] --- [播放/暂停] --- [下一段]
-class _BottomControls extends StatelessWidget {
-  final RetellPlayerState state;
-  final RetellPlayer player;
-  final AppLocalizations l10n;
-  final VoidCallback onNext;
-  final VoidCallback onPrevious;
-  final VoidCallback onReplay;
-
-  const _BottomControls({
-    required this.state,
-    required this.player,
-    required this.l10n,
-    required this.onNext,
-    required this.onPrevious,
-    required this.onReplay,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final canGoPrev = state.currentParagraphIndex > 0;
-    final isLastParagraph =
-        state.currentParagraphIndex >= state.totalParagraphs - 1;
-
-    final IconData centerIcon;
-    final VoidCallback? centerOnPressed;
-    if (state.phase == RetellPhase.listening) {
-      centerIcon = state.isPlaying
-          ? Icons.pause_rounded
-          : Icons.play_arrow_rounded;
-      centerOnPressed = state.isPlaying ? player.pause : player.resume;
-    } else {
-      centerIcon = Icons.play_arrow_rounded;
-      centerOnPressed = onReplay;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _NavButton(
-            icon: Icons.skip_previous_rounded,
-            enabled: canGoPrev,
-            onTap: canGoPrev ? onPrevious : null,
-          ),
-          const SizedBox(width: 48),
-
-          GestureDetector(
-            onTap: centerOnPressed,
-            child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  centerIcon,
-                  size: 28,
-                  color: theme.colorScheme.onPrimary,
-                ),
-              ),
-          ),
-          const SizedBox(width: 48),
-
-          _NavButton(
-            icon: isLastParagraph
-                ? Icons.check_circle_rounded
-                : Icons.skip_next_rounded,
-            enabled: true,
-            onTap: onNext,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 导航按钮（上一段/下一段）
-class _NavButton extends StatelessWidget {
-  final IconData icon;
-  final bool enabled;
-  final VoidCallback? onTap;
-
-  const _NavButton({required this.icon, required this.enabled, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedOpacity(
-        opacity: enabled ? 0.6 : 0.15,
-        duration: const Duration(milliseconds: 150),
-        child: Icon(
-          icon,
-          size: 32,
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-      ),
-    );
-  }
-}

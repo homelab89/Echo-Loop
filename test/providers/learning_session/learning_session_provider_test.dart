@@ -451,7 +451,7 @@ void main() {
       container = createContainer();
       final s = session(container);
 
-      await s.enterBlindListenMode('audio-1');
+      await s.enterBlindListenMode('audio-1', paragraphs: const []);
 
       expect(s.isStudyTimerRunning, true);
     });
@@ -460,7 +460,7 @@ void main() {
       container = createContainer(isPlaying: false);
       final s = session(container);
 
-      await s.enterBlindListenMode('audio-1');
+      await s.enterBlindListenMode('audio-1', paragraphs: const []);
       expect(s.isStudyTimerRunning, true);
 
       // 模拟：音频未播放时切到后台
@@ -474,7 +474,7 @@ void main() {
       container = createContainer(isPlaying: true);
       final s = session(container);
 
-      await s.enterBlindListenMode('audio-1');
+      await s.enterBlindListenMode('audio-1', paragraphs: const []);
       expect(s.isStudyTimerRunning, true);
 
       // 模拟：音频播放中息屏（iOS 不挂起 app）
@@ -488,7 +488,7 @@ void main() {
       container = createContainer(isPlaying: false);
       final s = session(container);
 
-      await s.enterBlindListenMode('audio-1');
+      await s.enterBlindListenMode('audio-1', paragraphs: const []);
 
       // 模拟：切到后台（音频未播放），计时暂停
       testAudioEngine.isPlaying = false;
@@ -518,7 +518,7 @@ void main() {
       container = createContainer(isPlaying: false);
       final s = session(container);
 
-      await s.enterBlindListenMode('audio-1');
+      await s.enterBlindListenMode('audio-1', paragraphs: const []);
       expect(s.isStudyTimerRunning, true);
 
       // hidden 状态（多任务切换画面）也应暂停
