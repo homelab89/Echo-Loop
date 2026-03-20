@@ -205,7 +205,10 @@ class LearningSession extends _$LearningSession {
         return;
       }
       _studyStopwatch.stop();
-      final seconds = _studyStopwatch.elapsed.inSeconds.clamp(0, _maxSessionSeconds);
+      final seconds = _studyStopwatch.elapsed.inSeconds.clamp(
+        0,
+        _maxSessionSeconds,
+      );
       _studyStopwatch.reset();
       if (seconds > 0) {
         await _studyTimeService.addStudyTime(seconds);
@@ -219,14 +222,20 @@ class LearningSession extends _$LearningSession {
   /// 保存已累计的输入/输出时间
   Future<void> _saveInputOutputTime() async {
     _inputStopwatch.stop();
-    final inputSeconds = _inputStopwatch.elapsed.inSeconds.clamp(0, _maxSessionSeconds);
+    final inputSeconds = _inputStopwatch.elapsed.inSeconds.clamp(
+      0,
+      _maxSessionSeconds,
+    );
     _inputStopwatch.reset();
     if (inputSeconds > 0) {
       await _studyTimeService.addInputTime(inputSeconds);
     }
 
     _outputStopwatch.stop();
-    final outputSeconds = _outputStopwatch.elapsed.inSeconds.clamp(0, _maxSessionSeconds);
+    final outputSeconds = _outputStopwatch.elapsed.inSeconds.clamp(
+      0,
+      _maxSessionSeconds,
+    );
     _outputStopwatch.reset();
     if (outputSeconds > 0) {
       await _studyTimeService.addOutputTime(outputSeconds);
@@ -415,11 +424,14 @@ class LearningSession extends _$LearningSession {
       learningProgressNotifierProvider.notifier,
     );
 
-    // 进入前统一读取最新持久化断点，避免命中旧内存态。
-    final progress = await progressNotifier.getLatestOrEnsureProgress(
-      audioItemId,
-    );
-    final startIndex = progress.intensiveListenSentenceIndex ?? 0;
+    // 自由练习：读取断点续学索引。正常学习：从头开始。
+    int startIndex = 0;
+    if (isFreePlay) {
+      final progress = await progressNotifier.getLatestOrEnsureProgress(
+        audioItemId,
+      );
+      startIndex = progress.intensiveListenSentenceIndex ?? 0;
+    }
 
     state = state.copyWith(
       learningMode: LearningMode.intensiveListen,
@@ -476,7 +488,8 @@ class LearningSession extends _$LearningSession {
     final progress = await ref
         .read(learningProgressNotifierProvider.notifier)
         .getLatestOrEnsureProgress(audioItemId);
-    final startIndex = progress.shadowingSentenceIndex ?? 0;
+    // 自由练习：读取断点续学索引。正常学习：从头开始。
+    final startIndex = isFreePlay ? (progress.shadowingSentenceIndex ?? 0) : 0;
     final difficultyValue = progress.difficulty.value;
     final targetPlayCount = targetPlayCountForDifficulty(difficultyValue);
 
@@ -516,11 +529,15 @@ class LearningSession extends _$LearningSession {
     final practice = ref.read(listeningPracticeProvider.notifier);
     final currentSettings = ref.read(listeningPracticeProvider).settings;
 
-    // 复述断点保存的是段首句子的全局索引，进入时需要读取最新持久化值。
-    final progress = await ref
-        .read(learningProgressNotifierProvider.notifier)
-        .getLatestOrEnsureProgress(audioItemId);
-    final startSentenceIndex = progress.retellParagraphIndex;
+    // 自由练习：读取断点续学索引，从上次退出的段落继续。
+    // 正常学习：每次从头开始，避免上一阶段/自由练习的遗留索引干扰。
+    int? startSentenceIndex;
+    if (isFreePlay) {
+      final progress = await ref
+          .read(learningProgressNotifierProvider.notifier)
+          .getLatestOrEnsureProgress(audioItemId);
+      startSentenceIndex = progress.retellParagraphIndex;
+    }
 
     state = state.copyWith(
       learningMode: LearningMode.retell,
@@ -575,11 +592,13 @@ class LearningSession extends _$LearningSession {
         .where((s) => bookmarkedIndices.contains(s.index))
         .toList();
 
-    // 难句补练进入时优先恢复最新持久化断点。
+    // 自由练习：读取断点续学索引。正常学习：从头开始。
     final progress = await ref
         .read(learningProgressNotifierProvider.notifier)
         .getLatestOrEnsureProgress(audioItemId);
-    final startIndex = progress.difficultPracticeSentenceIndex ?? 0;
+    final startIndex = isFreePlay
+        ? (progress.difficultPracticeSentenceIndex ?? 0)
+        : 0;
 
     state = state.copyWith(
       learningMode: LearningMode.reviewDifficultPractice,

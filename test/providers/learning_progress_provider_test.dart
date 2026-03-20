@@ -323,6 +323,149 @@ void main() {
       expect(companion.subStage.value, SubStageType.blindListen.key);
     });
 
+    test('完成精听后仅清除 intensiveListenSentenceIndex，其他索引不变', () async {
+      final now = DateTime(2026, 3, 1, 10, 0);
+      final progress = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.firstLearn,
+        currentSubStage: SubStageType.intensiveListen,
+        currentStageStartedAt: now,
+        intensiveListenSentenceIndex: 5,
+        shadowingSentenceIndex: 3,
+        difficultPracticeSentenceIndex: 2,
+        retellParagraphIndex: 1,
+        updatedAt: now,
+      );
+
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': progress}),
+        nowGetter: () => now,
+      );
+
+      await notifier(container).completeCurrentSubStage('a1');
+
+      final after = readProgress(container, 'a1')!;
+      expect(after.intensiveListenSentenceIndex, isNull, reason: '精听断点应被清除');
+      expect(after.shadowingSentenceIndex, 3, reason: '跟读断点不应受影响');
+      expect(after.difficultPracticeSentenceIndex, 2, reason: '难句补练断点不应受影响');
+      expect(after.retellParagraphIndex, 1, reason: '复述断点不应受影响');
+    });
+
+    test('完成难句补练后仅清除 difficultPracticeSentenceIndex', () async {
+      final now = DateTime(2026, 3, 5, 10, 0);
+      final completedAt = now.subtract(const Duration(days: 2));
+      final progress = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.review1,
+        currentSubStage: SubStageType.reviewDifficultPractice,
+        lastStageCompletedAt: completedAt,
+        currentStageStartedAt: now,
+        intensiveListenSentenceIndex: 5,
+        shadowingSentenceIndex: 3,
+        difficultPracticeSentenceIndex: 7,
+        retellParagraphIndex: 1,
+        updatedAt: now,
+      );
+
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': progress}),
+        nowGetter: () => now,
+      );
+
+      await notifier(container).completeCurrentSubStage('a1');
+
+      final after = readProgress(container, 'a1')!;
+      expect(
+        after.difficultPracticeSentenceIndex,
+        isNull,
+        reason: '难句补练断点应被清除',
+      );
+      expect(after.intensiveListenSentenceIndex, 5, reason: '精听断点不应受影响');
+      expect(after.shadowingSentenceIndex, 3, reason: '跟读断点不应受影响');
+      expect(after.retellParagraphIndex, 1, reason: '复述断点不应受影响');
+    });
+
+    test('跨大阶段完成最后子步骤时清除该步骤对应索引', () async {
+      final now = DateTime(2026, 3, 5, 10, 0);
+      final completedAt = now.subtract(const Duration(days: 2));
+      // review1 最后一步是 reviewRetellParagraph
+      final progress = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.review1,
+        currentSubStage: SubStageType.reviewRetellParagraph,
+        firstLearnCompletedAt: DateTime(2026, 3, 1),
+        lastStageCompletedAt: completedAt,
+        currentStageStartedAt: now,
+        difficultPracticeSentenceIndex: 4,
+        retellParagraphIndex: 6,
+        updatedAt: now,
+      );
+
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': progress}),
+        nowGetter: () => now,
+      );
+
+      await notifier(container).completeCurrentSubStage('a1');
+
+      final after = readProgress(container, 'a1')!;
+      expect(after.currentStage, LearningStage.review2);
+      expect(after.retellParagraphIndex, isNull, reason: '复述断点应被清除（跨阶段）');
+      expect(after.difficultPracticeSentenceIndex, 4, reason: '难句补练断点不应受影响');
+    });
+
+    test('完成跟读后仅清除 shadowingSentenceIndex', () async {
+      final now = DateTime(2026, 3, 1, 10, 0);
+      final progress = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.firstLearn,
+        currentSubStage: SubStageType.listenAndRepeat,
+        currentStageStartedAt: now,
+        shadowingSentenceIndex: 8,
+        intensiveListenSentenceIndex: 5,
+        updatedAt: now,
+      );
+
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': progress}),
+        nowGetter: () => now,
+      );
+
+      await notifier(container).completeCurrentSubStage('a1');
+
+      final after = readProgress(container, 'a1')!;
+      expect(after.shadowingSentenceIndex, isNull, reason: '跟读断点应被清除');
+      expect(after.intensiveListenSentenceIndex, 5, reason: '精听断点不应受影响');
+    });
+
+    test('完成盲听时不清除任何断点索引', () async {
+      final now = DateTime(2026, 3, 1, 10, 0);
+      final progress = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.firstLearn,
+        currentSubStage: SubStageType.blindListen,
+        currentStageStartedAt: now,
+        intensiveListenSentenceIndex: 5,
+        shadowingSentenceIndex: 3,
+        difficultPracticeSentenceIndex: 2,
+        retellParagraphIndex: 1,
+        updatedAt: now,
+      );
+
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': progress}),
+        nowGetter: () => now,
+      );
+
+      await notifier(container).completeCurrentSubStage('a1');
+
+      final after = readProgress(container, 'a1')!;
+      expect(after.intensiveListenSentenceIndex, 5);
+      expect(after.shadowingSentenceIndex, 3);
+      expect(after.difficultPracticeSentenceIndex, 2);
+      expect(after.retellParagraphIndex, 1);
+    });
+
     test('复习未到时间时不推进进度（已有测试）', () async {
       final now = DateTime(2026, 2, 25, 12, 0);
       final initialProgress = LearningProgress(

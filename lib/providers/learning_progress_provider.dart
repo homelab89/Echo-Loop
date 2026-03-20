@@ -173,6 +173,17 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
 
     final newTotalDuration = progress.totalStudyDurationMs + durationMs;
 
+    // 完成当前子步骤时，清除该步骤对应的断点索引
+    final completedSubStage = progress.currentSubStage;
+    final clearIntensive = completedSubStage == SubStageType.intensiveListen;
+    final clearShadowing = completedSubStage == SubStageType.listenAndRepeat;
+    final clearDifficult =
+        completedSubStage == SubStageType.reviewDifficultPractice;
+    final clearRetell =
+        completedSubStage == SubStageType.retell ||
+        completedSubStage == SubStageType.reviewRetellParagraph ||
+        completedSubStage == SubStageType.reviewRetellSummary;
+
     LearningProgress updated;
 
     if (currentIdx + 1 < subStages.length) {
@@ -182,6 +193,10 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
         currentStageStartedAt: now,
         totalStudyDurationMs: newTotalDuration,
         updatedAt: now,
+        clearIntensiveListenSentenceIndex: clearIntensive,
+        clearShadowingSentenceIndex: clearShadowing,
+        clearDifficultPracticeSentenceIndex: clearDifficult,
+        clearRetellParagraphIndex: clearRetell,
       );
     } else {
       // 进入下一个大阶段
@@ -198,6 +213,10 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
         firstLearnCompletedAt: stage == LearningStage.firstLearn
             ? now
             : progress.firstLearnCompletedAt,
+        clearIntensiveListenSentenceIndex: clearIntensive,
+        clearShadowingSentenceIndex: clearShadowing,
+        clearDifficultPracticeSentenceIndex: clearDifficult,
+        clearRetellParagraphIndex: clearRetell,
       );
     }
 
