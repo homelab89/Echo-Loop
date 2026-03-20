@@ -220,9 +220,13 @@
 ## 优化UI，使得用户看起来更舒服而不单调
 - [x] AudioListTile 优化：左侧改为环形进度图标（未学习/进行中/已完成），副标题元数据用 `·` 分隔，桌面端加宽内边距
 - [x] 弹窗合并：创建 4 个共享弹窗组件（StepCompleteDialog、FreePlayCompleteDialog、ConfirmDialog、TextInputDialog），迁移 9 个文件，删除约 650 行重复代码
+- [x] StepCompleteDialog 从 Overlay 迁移到 showDialog + useRootNavigator，删除 overlay_dialog.dart 和 blind_listen_complete_dialog.dart
+- [x] AudioListTile 菜单新增"重置学习进度"选项（仅有进度时显示，带确认弹窗）
+- [x] 盲听入口简化：移除简报弹窗，直接弹出段落选择
 - [ ] 支持自定义背景、背景音
 
   **完成时间**: 2026-03-09
+  **弹窗/菜单优化**: 2026-03-20
 
 ## 已完成：词典功能优化
 - [x] 增加发音功能，调用平台自己的能力即可。
