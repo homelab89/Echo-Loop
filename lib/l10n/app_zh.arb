@@ -773,5 +773,13 @@
   "resetLearningProgress": "重置学习进度",
   "resetLearningProgressConfirmTitle": "重置学习进度？",
   "resetLearningProgressConfirmMessage": "将清除「{name}」的所有学习进度，此操作不可撤销。",
-  "resetLearningProgressDone": "学习进度已重置"
+  "resetLearningProgressDone": "学习进度已重置",
+
+  "reviewReminderBody": "{audioName} · 第{round}轮复习时间到了",
+  "@reviewReminderBody": {
+    "placeholders": {
+      "audioName": { "type": "String" },
+      "round": { "type": "int" }
+    }
+  }
 }

@@ -177,8 +177,10 @@ class _FluencyAppState extends ConsumerState<FluencyApp> {
   void _handleNotificationIntent(NotificationIntent intent) {
     if (!mounted) return;
     switch (intent) {
-      case NotificationIntent.openStudyTasks:
+      case OpenStudyTasks():
         ref.read(appRouterProvider).go(AppRoutes.study);
+      case OpenAudioLearningPlan(:final audioId):
+        ref.read(appRouterProvider).go(AppRoutes.audioLearningPlan(audioId));
     }
   }
 

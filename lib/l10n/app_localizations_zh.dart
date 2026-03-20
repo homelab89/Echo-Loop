@@ -1858,4 +1858,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resetLearningProgressDone => '学习进度已重置';
+
+  @override
+  String reviewReminderBody(String audioName, int round) {
+    return '$audioName · 第$round轮复习时间到了';
+  }
 }

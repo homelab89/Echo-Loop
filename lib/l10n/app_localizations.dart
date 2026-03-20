@@ -3415,6 +3415,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Learning progress has been reset'**
   String get resetLearningProgressDone;
+
+  /// No description provided for @reviewReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{audioName} · Review round {round} is ready'**
+  String reviewReminderBody(String audioName, int round);
 }
 
 class _AppLocalizationsDelegate

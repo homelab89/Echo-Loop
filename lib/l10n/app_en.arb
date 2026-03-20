@@ -1051,5 +1051,13 @@
       "name": { "type": "String" }
     }
   },
-  "resetLearningProgressDone": "Learning progress has been reset"
+  "resetLearningProgressDone": "Learning progress has been reset",
+
+  "reviewReminderBody": "{audioName} · Review round {round} is ready",
+  "@reviewReminderBody": {
+    "placeholders": {
+      "audioName": { "type": "String" },
+      "round": { "type": "int" }
+    }
+  }
 }

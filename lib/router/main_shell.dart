@@ -17,6 +17,8 @@ import '../providers/learning_progress_provider.dart';
 import '../providers/review_reminder_provider.dart';
 import '../providers/study_task_provider.dart';
 import '../providers/tag_provider.dart';
+import '../providers/time_provider.dart';
+import '../services/review_reminder_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_update_dialog.dart';
 
@@ -89,9 +91,48 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Future<void> _syncDailyReminder(int pendingTaskCount) async {
-    await ref
-        .read(reviewReminderServiceProvider)
-        .syncDailyReminder(pendingTaskCount: pendingTaskCount);
+    final service = ref.read(reviewReminderServiceProvider);
+    await service.syncDailyReminder(pendingTaskCount: pendingTaskCount);
+    await _syncPerAudioReminders(service);
+  }
+
+  /// 收集当前处于复习阶段且 nextReviewAt 在未来的音频，调度单条通知
+  Future<void> _syncPerAudioReminders(ReviewReminderService service) async {
+    final progressMap = ref.read(
+      learningProgressNotifierProvider.select((s) => s.progressMap),
+    );
+    final audioItems = ref.read(audioLibraryProvider).audioItems;
+
+    // 按 id 建索引以便快速查找名称
+    final audioNameById = {for (final a in audioItems) a.id: a.name};
+
+    final now = ref.read(nowProvider)();
+    final reminders = <PerAudioReminderInfo>[];
+
+    for (final entry in progressMap.entries) {
+      final progress = entry.value;
+      if (!progress.isInReviewStage) continue;
+      final reviewAt = progress.nextReviewAt;
+      if (reviewAt == null || !reviewAt.isAfter(now)) continue;
+
+      final name = audioNameById[entry.key];
+      if (name == null) continue;
+
+      reminders.add(
+        PerAudioReminderInfo(
+          audioId: entry.key,
+          audioName: name,
+          triggerAt: reviewAt,
+          reviewRound: progress.completedReviewStages + 1,
+        ),
+      );
+    }
+
+    // 按 triggerAt 升序，取前 60 条（iOS 64 限制留余量）
+    reminders.sort((a, b) => a.triggerAt.compareTo(b.triggerAt));
+    final capped = reminders.length > 60 ? reminders.sublist(0, 60) : reminders;
+
+    await service.syncPerAudioReminders(capped);
   }
 
   @override

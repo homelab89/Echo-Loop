@@ -1,9 +1,19 @@
 import 'dart:async';
 
-/// 通知点击意图
-enum NotificationIntent {
-  /// 打开学习任务列表页
-  openStudyTasks,
+/// 通知点击意图（sealed class，支持携带数据）
+sealed class NotificationIntent {
+  const NotificationIntent();
+}
+
+/// 打开学习任务列表页
+class OpenStudyTasks extends NotificationIntent {
+  const OpenStudyTasks();
+}
+
+/// 打开指定音频的学习计划页
+class OpenAudioLearningPlan extends NotificationIntent {
+  final String audioId;
+  const OpenAudioLearningPlan(this.audioId);
 }
 
 /// 通知点击到路由层的桥接器

@@ -1910,4 +1910,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetLearningProgressDone => 'Learning progress has been reset';
+
+  @override
+  String reviewReminderBody(String audioName, int round) {
+    return '$audioName · Review round $round is ready';
+  }
 }
