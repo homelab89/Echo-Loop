@@ -447,9 +447,14 @@ class RetellPlayer extends _$RetellPlayer {
     await _playCurrentParagraph();
   }
 
-  /// 设置显示模式
+  /// 设置显示模式（用户手动切换）
   void setDisplayMode(RetellDisplayMode mode) {
     state = state.copyWith(displayMode: mode, userOverrodeDisplayMode: true);
+  }
+
+  /// 设置显示模式（系统自动切换，不影响用户覆盖标记）
+  void setDisplayModeWithoutOverride(RetellDisplayMode mode) {
+    state = state.copyWith(displayMode: mode);
   }
 
   /// 更新设置
@@ -504,6 +509,9 @@ class RetellPlayer extends _$RetellPlayer {
       isPlaying: true,
       playingSentenceIndex: 0,
       isRetellCountdown: false,
+      displayMode: state.userOverrodeDisplayMode
+          ? null
+          : RetellDisplayMode.hideAll,
     );
     _persistCurrentParagraphIndexAsync();
 

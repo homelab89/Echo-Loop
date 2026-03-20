@@ -571,6 +571,13 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
       (prev, next) {
         if (prev?.phase == RetellRecordingPhase.processing &&
             next.phase == RetellRecordingPhase.idle) {
+          // 评估完成 → 切换到全部显示，方便用户检查（用户手动切换过则不干预）
+          final currentPlayerState = ref.read(retellPlayerProvider);
+          if (!currentPlayerState.userOverrodeDisplayMode) {
+            ref.read(retellPlayerProvider.notifier)
+                .setDisplayModeWithoutOverride(RetellDisplayMode.showAll);
+          }
+
           final latestState = ref.read(retellPlayerProvider);
           if (latestState.phase == RetellPhase.retelling &&
               !latestState.settings.isManualMode &&
