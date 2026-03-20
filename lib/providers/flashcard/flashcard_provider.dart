@@ -223,13 +223,26 @@ class FlashcardNotifier extends _$FlashcardNotifier {
       // 翻到背面：记录练习统计
       // 输入词数由 _BackContent 在 TTS/例句播放完成后计入
       _recordPracticeStats();
+
+      // 有自动播放时，隐藏倒计时，等播放完成后再显示（由 onAutoPlayCompleted 触发）
+      final hasAutoPlay =
+          state.settings.autoPlayWord ||
+          (state.settings.autoPlaySentence &&
+              state.currentWord?.savedWord.sentenceText != null);
+      if (hasAutoPlay) {
+        _countdown.cancel();
+        state = state.copyWith(
+          countdownRemaining: Duration.zero,
+          countdownTotal: Duration.zero,
+        );
+      } else {
+        _startCountdown();
+      }
     } else {
       // 翻回正面：朗读单词
       _speakCurrentWord();
+      _startCountdown();
     }
-
-    // 重启倒计时
-    _startCountdown();
   }
 
   /// 下一张卡片
@@ -364,6 +377,15 @@ class FlashcardNotifier extends _$FlashcardNotifier {
     return _addInputWords(wordCount);
   }
 
+  /// 背面自动播放完成后启动倒计时
+  ///
+  /// 由 _BackContent widget 在 TTS + 例句全部播完后调用。
+  void onAutoPlayCompleted() {
+    if (state.isShowingBack && !state.isCompleted) {
+      _startCountdown();
+    }
+  }
+
   /// TTS 朗读当前单词
   void speakCurrentWord() {
     _speakCurrentWord();
@@ -430,62 +452,30 @@ class FlashcardNotifier extends _$FlashcardNotifier {
     final total = Duration(seconds: seconds);
     state = state.copyWith(countdownRemaining: total, countdownTotal: total);
 
-    _countdown
-        .start(total, (remaining) {
-          state = state.copyWith(countdownRemaining: remaining);
-        })
-        .then((_) {
-          // 倒计时自然结束（非 cancel）时触发
-          if (state.countdownRemaining <= Duration.zero) {
-            _onCountdownExpired();
-          }
-        });
+    _countdown.start(total, (remaining) {
+      state = state.copyWith(countdownRemaining: remaining);
+      if (remaining <= Duration.zero) {
+        // 延迟到微任务执行，避免在 _tick() 内部重入导致新 onTick 被清空
+        Future.microtask(_onCountdownExpired);
+      }
+    });
   }
 
   /// 获取当前倒计时秒数
-  ///
-  /// 背面且开启自动播放例句时，额外追加例句音频时长 + TTS/延迟缓冲，
-  /// 避免例句还没播完就被倒计时截断自动跳到下一张。
   int _getTimerSeconds() {
-    int baseSeconds;
     switch (state.settings.timerMode) {
       case FlashcardTimerMode.fixed:
-        baseSeconds = state.settings.fixedTimerSeconds;
+        return state.settings.fixedTimerSeconds;
       case FlashcardTimerMode.smart:
         final word = state.currentWord?.savedWord;
         if (word == null) return 8;
-        baseSeconds = FlashcardSettings.calculateSmartSeconds(
+        return FlashcardSettings.calculateSmartSeconds(
           wordLength: word.word.length,
           practiceCount: word.practiceCount,
         );
       case FlashcardTimerMode.off:
         return 0;
     }
-
-    // 背面 + 自动播放例句：追加例句音频时长
-    if (state.isShowingBack && state.settings.autoPlaySentence) {
-      baseSeconds += _getExampleSentenceExtraSeconds();
-    }
-
-    return baseSeconds;
-  }
-
-  /// 计算例句自动播放所需的额外秒数
-  ///
-  /// 包含：TTS 朗读单词时长 (~1s) + 600ms 延迟 + 例句音频时长。
-  int _getExampleSentenceExtraSeconds() {
-    final word = state.currentWord?.savedWord;
-    if (word == null || word.sentenceText == null) return 0;
-
-    // 例句音频时长（毫秒）
-    int sentenceDurationMs = 0;
-    if (word.sentenceStartMs != null && word.sentenceEndMs != null) {
-      sentenceDurationMs = word.sentenceEndMs! - word.sentenceStartMs!;
-    }
-
-    // TTS 朗读（~1s）+ 延迟 600ms + 例句音频
-    final ttsBufferMs = state.settings.autoPlayWord ? 1600 : 600;
-    return ((ttsBufferMs + sentenceDurationMs) / 1000).ceil();
   }
 
   /// 倒计时到期回调

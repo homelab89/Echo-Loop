@@ -296,45 +296,4 @@ void main() {
       expect(scoreOld, greaterThan(scoreRecent));
     });
   });
-
-  // ========== 背面例句额外秒数计算 ==========
-
-  group('背面例句额外秒数逻辑', () {
-    test('无例句文本返回 0', () {
-      // 模拟 _getExampleSentenceExtraSeconds 逻辑
-      final word = _createWord(id: 1, word: 'test', sentenceText: null);
-      expect(word.sentenceText, isNull);
-      // 无例句 → 不追加时间
-    });
-
-    test('有例句 + 有时间戳: 计入音频时长 + 缓冲', () {
-      // sentenceStartMs=1000, sentenceEndMs=4000 → 音频 3000ms
-      // autoPlayWord=true → ttsBuffer=1600ms
-      // total = 1600 + 3000 = 4600ms → ceil(4.6) = 5s
-      const sentenceDurationMs = 3000;
-      const ttsBufferMs = 1600; // autoPlayWord=true
-      final extraSeconds = ((ttsBufferMs + sentenceDurationMs) / 1000).ceil();
-      expect(extraSeconds, 5);
-    });
-
-    test('有例句 + 无时间戳: 仅缓冲时间', () {
-      // sentenceStartMs=null → sentenceDurationMs=0
-      // autoPlayWord=true → ttsBuffer=1600ms
-      // total = 1600ms → ceil(1.6) = 2s
-      const sentenceDurationMs = 0;
-      const ttsBufferMs = 1600;
-      final extraSeconds = ((ttsBufferMs + sentenceDurationMs) / 1000).ceil();
-      expect(extraSeconds, 2);
-    });
-
-    test('autoPlayWord=false 时缓冲更短', () {
-      // autoPlayWord=false → ttsBuffer=600ms（仅延迟）
-      // sentenceDurationMs=3000
-      // total = 600 + 3000 = 3600ms → ceil(3.6) = 4s
-      const sentenceDurationMs = 3000;
-      const ttsBufferMs = 600; // autoPlayWord=false
-      final extraSeconds = ((ttsBufferMs + sentenceDurationMs) / 1000).ceil();
-      expect(extraSeconds, 4);
-    });
-  });
 }

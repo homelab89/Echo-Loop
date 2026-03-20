@@ -242,7 +242,7 @@ class _BottomControls extends StatelessWidget {
                 onTap: onTogglePause,
               )
             else
-              const SizedBox(width: 56),
+              const SizedBox(width: 56, height: 56),
 
             // 下一张
             IconButton(

@@ -266,6 +266,8 @@ class _BackContentState extends ConsumerState<_BackContent> {
   }
 
   /// 翻转到背面时的自动播放逻辑
+  ///
+  /// TTS + 例句全部播完后通知 Provider 启动倒计时。
   Future<void> _autoPlayOnFlipToBack() async {
     // TTS 朗读单词
     if (widget.autoPlayWord) {
@@ -279,8 +281,12 @@ class _BackContentState extends ConsumerState<_BackContent> {
     if (widget.autoPlaySentence && widget.item.savedWord.sentenceText != null) {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
-      _playSentence();
+      await _playSentence();
+      if (!mounted) return;
     }
+
+    // 全部播放完成，通知 Provider 启动倒计时
+    ref.read(flashcardNotifierProvider.notifier).onAutoPlayCompleted();
   }
 
   @override
