@@ -109,6 +109,9 @@ class IntensiveListenState {
   /// 倒计时是否快进中（10 倍速）
   final bool isCountdownFastForward;
 
+  /// 当前步骤是否自然完成（用于 Screen 层检测完成信号）
+  final bool stepFinished;
+
   const IntensiveListenState({
     this.currentSentenceIndex = 0,
     this.totalSentences = 0,
@@ -128,6 +131,7 @@ class IntensiveListenState {
     this.isCurrentSentenceAutoMarked = false,
     this.isCountdownPaused = false,
     this.isCountdownFastForward = false,
+    this.stepFinished = false,
   });
 
   IntensiveListenState copyWith({
@@ -149,6 +153,7 @@ class IntensiveListenState {
     bool? isCurrentSentenceAutoMarked,
     bool? isCountdownPaused,
     bool? isCountdownFastForward,
+    bool? stepFinished,
   }) {
     return IntensiveListenState(
       currentSentenceIndex: currentSentenceIndex ?? this.currentSentenceIndex,
@@ -174,6 +179,7 @@ class IntensiveListenState {
       isCountdownPaused: isCountdownPaused ?? this.isCountdownPaused,
       isCountdownFastForward:
           isCountdownFastForward ?? this.isCountdownFastForward,
+      stepFinished: stepFinished ?? this.stepFinished,
     );
   }
 }
@@ -546,6 +552,7 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
       currentPlayCount: 1,
       isPauseBetweenPlays: false,
       isPauseBetweenSentences: false,
+      stepFinished: false,
       annotationReplayRemaining: Duration.zero,
       annotationReplayDuration: Duration.zero,
       isCountdownPaused: false,
@@ -663,7 +670,7 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
     if (!engine.isActiveSession(sessionId)) return;
 
     if (isLastSentence) {
-      // 最后一句停顿结束 → 发出完成信号（screen listener 检测增量触发弹窗）
+      // 最后一句停顿结束 → 发出完成信号（screen listener 检测 stepFinished 触发弹窗）
       state = state.copyWith(
         isPlaying: false,
         isAnnotationMode: false,
@@ -672,6 +679,7 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
         isCountdownPaused: false,
         isCountdownFastForward: false,
         isCurrentSentenceAutoMarked: false,
+        stepFinished: true,
       );
     } else {
       // 非最后一句 → 推进到下一句

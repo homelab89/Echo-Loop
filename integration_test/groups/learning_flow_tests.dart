@@ -98,8 +98,11 @@ void learningFlowTests() {
       ));
       await _pumpUi(tester, 100);
 
-      // 再设为"播放结束"触发完成
-      player.setState(player.state.copyWith(isPlaying: false));
+      // 再设为"播放结束"触发完成（stepFinished=true 表示自然完成）
+      player.setState(player.state.copyWith(
+        isPlaying: false,
+        stepFinished: true,
+      ));
       await tester.pumpAndSettle();
 
       // === 5. 完成对话框 → 选择难度 → 点击"返回计划" ===

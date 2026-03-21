@@ -88,6 +88,21 @@ void main() {
       expect(state.isTextRevealed, false);
       expect(state.difficultSentences, isEmpty);
       expect(state.isCurrentSentenceAutoMarked, false);
+      expect(state.stepFinished, false);
+    });
+
+    test('stepFinished — copyWith 设置和保留', () {
+      const state = IntensiveListenState();
+      final finished = state.copyWith(stepFinished: true);
+      expect(finished.stepFinished, true);
+
+      // copyWith 不传值时保留原值
+      final updated = finished.copyWith(isPlaying: true);
+      expect(updated.stepFinished, true);
+
+      // 重置
+      final reset = finished.copyWith(stepFinished: false);
+      expect(reset.stepFinished, false);
     });
 
     test('copyWith 更新播放状态', () {

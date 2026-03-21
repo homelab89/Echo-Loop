@@ -23,6 +23,22 @@ void main() {
       expect(state.isAnnotationMode, false);
       expect(state.isTextRevealed, false);
       expect(state.targetRepeatCount, 3);
+      expect(state.stepFinished, false);
+    });
+
+    test('stepFinished — copyWith 设置和重置', () {
+      const state = ReviewDifficultPracticeState();
+      final finished = state.copyWith(stepFinished: true);
+      expect(finished.stepFinished, true);
+
+      final reset = finished.copyWith(stepFinished: false);
+      expect(reset.stepFinished, false);
+    });
+
+    test('stepFinished — copyWith 不传值时保留原值', () {
+      const state = ReviewDifficultPracticeState(stepFinished: true);
+      final updated = state.copyWith(isPlaying: true);
+      expect(updated.stepFinished, true);
     });
 
     test('copyWith — 更新单个字段', () {

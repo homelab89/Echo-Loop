@@ -187,6 +187,24 @@ class CountdownNavigationTestAudioEngine extends AudioEngine {
 }
 
 void main() {
+  group('RetellPlayerState', () {
+    test('stepFinished — 默认为 false，copyWith 可设置和保留', () {
+      const state = RetellPlayerState();
+      expect(state.stepFinished, false);
+
+      final finished = state.copyWith(stepFinished: true);
+      expect(finished.stepFinished, true);
+
+      // 不传值时保留
+      final updated = finished.copyWith(isPlaying: true);
+      expect(updated.stepFinished, true);
+
+      // 重置
+      final reset = finished.copyWith(stepFinished: false);
+      expect(reset.stepFinished, false);
+    });
+  });
+
   group('RetellPlayer', () {
     late ProviderContainer container;
     late SequencedTestAudioEngine engine;

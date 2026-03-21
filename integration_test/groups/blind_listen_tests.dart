@@ -134,8 +134,11 @@ void blindListenTests() {
       ));
       await _pumpUi(tester, 100);
 
-      // 再设为"播放结束"（isPlaying=false, isPauseCountdown=false）
-      player.setState(player.state.copyWith(isPlaying: false));
+      // 再设为"播放结束"（stepFinished=true 表示自然完成）
+      player.setState(player.state.copyWith(
+        isPlaying: false,
+        stepFinished: true,
+      ));
       await tester.pumpAndSettle();
 
       // 验证完成对话框弹出
@@ -177,7 +180,10 @@ void blindListenTests() {
       ));
       await _pumpUi(tester, 100);
 
-      player.setState(player.state.copyWith(isPlaying: false));
+      player.setState(player.state.copyWith(
+        isPlaying: false,
+        stepFinished: true,
+      ));
       await _pumpUi(tester, 800);
 
       // 选择 "Okay"（medium）难度

@@ -462,14 +462,9 @@ class _ReviewDifficultPracticeScreenState
             .read(shadowingRecordingControllerProvider.notifier)
             .clearRecording();
       }
-      // 最后一句自动推进完成 → 触发完成弹窗
+      // 监听自然完成信号 → 触发完成弹窗
       if (prev != null && !_isExiting) {
-        final isLast = next.currentSentenceIndex >= next.totalSentences - 1;
-        final wasAlsoLast =
-            prev.currentSentenceIndex >= prev.totalSentences - 1;
-        final sentencePauseJustEnded =
-            prev.isPauseBetweenSentences && !next.isPauseBetweenSentences;
-        if (isLast && wasAlsoLast && sentencePauseJustEnded && !next.isPlaying) {
+        if (!prev.stepFinished && next.stepFinished) {
           _handleCompleted();
         }
       }

@@ -77,6 +77,9 @@ class RetellPlayerState {
   /// 用户是否在当前段落中手动更改过显示模式
   final bool userOverrodeDisplayMode;
 
+  /// 当前步骤是否自然完成（用于 Screen 层检测完成信号）
+  final bool stepFinished;
+
   const RetellPlayerState({
     this.currentParagraphIndex = 0,
     this.totalParagraphs = 0,
@@ -92,6 +95,7 @@ class RetellPlayerState {
     this.isCountdownPaused = false,
     this.isCountdownFastForward = false,
     this.userOverrodeDisplayMode = false,
+    this.stepFinished = false,
   });
 
   RetellPlayerState copyWith({
@@ -109,6 +113,7 @@ class RetellPlayerState {
     bool? isCountdownPaused,
     bool? isCountdownFastForward,
     bool? userOverrodeDisplayMode,
+    bool? stepFinished,
   }) {
     return RetellPlayerState(
       currentParagraphIndex:
@@ -128,6 +133,7 @@ class RetellPlayerState {
           isCountdownFastForward ?? this.isCountdownFastForward,
       userOverrodeDisplayMode:
           userOverrodeDisplayMode ?? this.userOverrodeDisplayMode,
+      stepFinished: stepFinished ?? this.stepFinished,
     );
   }
 }
@@ -367,7 +373,11 @@ class RetellPlayer extends _$RetellPlayer {
     // 最后一段 → 停止播放，由 screen 处理完成逻辑
     if (state.currentParagraphIndex >= state.totalParagraphs - 1) {
       await _cancelAll();
-      state = state.copyWith(isPlaying: false, isRetellCountdown: false);
+      state = state.copyWith(
+        isPlaying: false,
+        isRetellCountdown: false,
+        stepFinished: true,
+      );
       return;
     }
 
@@ -509,6 +519,7 @@ class RetellPlayer extends _$RetellPlayer {
       isPlaying: true,
       playingSentenceIndex: 0,
       isRetellCountdown: false,
+      stepFinished: false,
       displayMode: state.userOverrodeDisplayMode
           ? null
           : RetellDisplayMode.hideAll,

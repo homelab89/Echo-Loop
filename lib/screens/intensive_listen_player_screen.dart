@@ -431,13 +431,10 @@ class _IntensiveListenPlayerScreenState
     final playerState = ref.watch(intensiveListenPlayerProvider);
     final player = ref.read(intensiveListenPlayerProvider.notifier);
 
-    // 监听最后一句自动推进完成 → 触发完成弹窗
+    // 监听自然完成信号 → 触发完成弹窗
     ref.listen(intensiveListenPlayerProvider, (prev, next) {
       if (_isExiting || prev == null) return;
-      final isLast = next.currentSentenceIndex >= next.totalSentences - 1;
-      final sentencePauseJustEnded =
-          prev.isPauseBetweenSentences && !next.isPauseBetweenSentences;
-      if (isLast && sentencePauseJustEnded && !next.isPlaying && !next.isAnnotationMode) {
+      if (!prev.stepFinished && next.stepFinished) {
         _handleCompleted();
       }
     });

@@ -546,17 +546,10 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
     final state = ref.watch(retellPlayerProvider);
     final player = ref.read(retellPlayerProvider.notifier);
 
-    // 监听最后一段复述倒计时结束 → 触发完成弹窗
-    // 只检测倒计时结束（不检测 isPlaying），避免听力→复述切换时误触发
+    // 监听自然完成信号 → 触发完成弹窗
     ref.listen(retellPlayerProvider, (prev, next) {
       if (_isExiting || prev == null) return;
-      final isLast =
-          next.currentParagraphIndex >= next.totalParagraphs - 1;
-      final wasAlsoLast =
-          prev.currentParagraphIndex >= prev.totalParagraphs - 1;
-      final countdownJustEnded =
-          prev.isRetellCountdown && !next.isRetellCountdown;
-      if (isLast && wasAlsoLast && countdownJustEnded && !next.isPlaying) {
+      if (!prev.stepFinished && next.stepFinished) {
         _handleCompleted();
       }
     });

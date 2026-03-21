@@ -433,7 +433,7 @@ class BookmarkReview extends _$BookmarkReview {
         isAnnotationMode: false,
       );
       if (isLastSentence) {
-        state = state.copyWith(isPlaying: false);
+        state = state.copyWith(isPlaying: false, stepFinished: true);
       } else {
         state = state.copyWith(
           currentSentenceIndex: state.currentSentenceIndex + 1,
@@ -577,6 +577,7 @@ class BookmarkReview extends _$BookmarkReview {
       currentPlayCount: 1,
       isPauseBetweenPlays: false,
       isPauseBetweenSentences: false,
+      stepFinished: false,
     );
 
     // 盲听循环：1 遍时无遍间停顿，多遍时使用跟读停顿策略
@@ -644,6 +645,7 @@ class BookmarkReview extends _$BookmarkReview {
       isTextRevealed: false,
       isCountdownPaused: false,
       isCountdownFastForward: false,
+      stepFinished: false,
     );
 
     _engine.playSentenceLoop(
@@ -781,6 +783,7 @@ class BookmarkReview extends _$BookmarkReview {
             isPlaying: false,
             isPauseBetweenPlays: false,
             isPauseBetweenSentences: false,
+            stepFinished: true,
           );
         } else {
           state = state.copyWith(

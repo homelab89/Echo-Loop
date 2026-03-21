@@ -83,6 +83,24 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  group('ListenAndRepeatPlayerState', () {
+    test('stepFinished — 默认为 false，copyWith 可设置和保留', () {
+      const state = ListenAndRepeatPlayerState();
+      expect(state.stepFinished, false);
+
+      final finished = state.copyWith(stepFinished: true);
+      expect(finished.stepFinished, true);
+
+      // 不传值时保留
+      final updated = finished.copyWith(isPlaying: true);
+      expect(updated.stepFinished, true);
+
+      // 重置
+      final reset = finished.copyWith(stepFinished: false);
+      expect(reset.stepFinished, false);
+    });
+  });
+
   group('ListenAndRepeatPlayer 开始播放时保存断点', () {
     test('startPlaying 会异步保存当前句索引', () async {
       final progressNotifier = _RecordingLearningProgressNotifier(

@@ -73,6 +73,9 @@ class ReviewDifficultPracticeState {
   /// 是否处于评估后倒计时中（对应复述页面的 isRetellCountdown）
   final bool isPostEvalCountdown;
 
+  /// 当前步骤是否自然完成（用于 Screen 层检测完成信号）
+  final bool stepFinished;
+
   const ReviewDifficultPracticeState({
     this.currentSentenceIndex = 0,
     this.totalSentences = 0,
@@ -88,6 +91,7 @@ class ReviewDifficultPracticeState {
     this.isCountdownPaused = false,
     this.isCountdownFastForward = false,
     this.isPostEvalCountdown = false,
+    this.stepFinished = false,
   });
 
   ReviewDifficultPracticeState copyWith({
@@ -105,6 +109,7 @@ class ReviewDifficultPracticeState {
     bool? isCountdownPaused,
     bool? isCountdownFastForward,
     bool? isPostEvalCountdown,
+    bool? stepFinished,
   }) {
     return ReviewDifficultPracticeState(
       currentSentenceIndex: currentSentenceIndex ?? this.currentSentenceIndex,
@@ -123,6 +128,7 @@ class ReviewDifficultPracticeState {
       isCountdownFastForward:
           isCountdownFastForward ?? this.isCountdownFastForward,
       isPostEvalCountdown: isPostEvalCountdown ?? this.isPostEvalCountdown,
+      stepFinished: stepFinished ?? this.stepFinished,
     );
   }
 }
@@ -526,7 +532,7 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
         isAnnotationMode: false,
       );
       if (isLastSentence) {
-        state = state.copyWith(isPlaying: false);
+        state = state.copyWith(isPlaying: false, stepFinished: true);
       } else {
         state = state.copyWith(
           currentSentenceIndex: state.currentSentenceIndex + 1,
@@ -584,6 +590,7 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
       isTextRevealed: false,
       isCountdownPaused: false,
       isCountdownFastForward: false,
+      stepFinished: false,
     );
 
     _engine.playSentenceLoop(
@@ -650,6 +657,7 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
       currentPlayCount: 1,
       isPauseBetweenPlays: false,
       isPauseBetweenSentences: false,
+      stepFinished: false,
     );
     _persistCurrentSentenceIndexAsync();
 
@@ -737,6 +745,7 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
             isPlaying: false,
             isPauseBetweenPlays: false,
             isPauseBetweenSentences: false,
+            stepFinished: true,
           );
         } else {
           // 推进到下一句

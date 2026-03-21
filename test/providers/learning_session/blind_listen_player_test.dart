@@ -15,6 +15,7 @@ void main() {
       expect(state.isPauseCountdown, false);
       expect(state.isCountdownPaused, false);
       expect(state.displayMode, BlindListenDisplayMode.hideAll);
+      expect(state.stepFinished, false);
     });
 
     test('copyWith 设置播放中状态', () {
@@ -85,6 +86,23 @@ void main() {
       expect(resetState.totalParagraphs, 0);
       // 原状态不受影响（immutable）
       expect(state.isPlaying, true);
+    });
+
+    test('stepFinished — copyWith 设置和重置', () {
+      const state = BlindListenPlayerState();
+      expect(state.stepFinished, false);
+
+      final finished = state.copyWith(stepFinished: true);
+      expect(finished.stepFinished, true);
+
+      final reset = finished.copyWith(stepFinished: false);
+      expect(reset.stepFinished, false);
+    });
+
+    test('stepFinished — copyWith 不传值时保留原值', () {
+      const state = BlindListenPlayerState(stepFinished: true);
+      final updated = state.copyWith(isPlaying: true);
+      expect(updated.stepFinished, true);
     });
   });
 

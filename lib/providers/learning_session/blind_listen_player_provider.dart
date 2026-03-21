@@ -65,6 +65,9 @@ class BlindListenPlayerState {
   /// 盲听设置
   final BlindListenSettings settings;
 
+  /// 当前步骤是否自然完成（用于 Screen 层检测完成信号）
+  final bool stepFinished;
+
   const BlindListenPlayerState({
     this.currentParagraphIndex = 0,
     this.totalParagraphs = 0,
@@ -77,6 +80,7 @@ class BlindListenPlayerState {
     this.isCountdownPaused = false,
     this.displayMode = BlindListenDisplayMode.hideAll,
     this.settings = const BlindListenSettings(),
+    this.stepFinished = false,
   });
 
   BlindListenPlayerState copyWith({
@@ -91,6 +95,7 @@ class BlindListenPlayerState {
     bool? isCountdownPaused,
     BlindListenDisplayMode? displayMode,
     BlindListenSettings? settings,
+    bool? stepFinished,
   }) {
     return BlindListenPlayerState(
       currentParagraphIndex:
@@ -105,6 +110,7 @@ class BlindListenPlayerState {
       isCountdownPaused: isCountdownPaused ?? this.isCountdownPaused,
       displayMode: displayMode ?? this.displayMode,
       settings: settings ?? this.settings,
+      stepFinished: stepFinished ?? this.stepFinished,
     );
   }
 }
@@ -328,6 +334,7 @@ class BlindListenPlayer extends _$BlindListenPlayer {
       isPlaying: true,
       playingSentenceIndex: 0,
       isPauseCountdown: false,
+      stepFinished: false,
     );
 
     _startPositionTracking(sentences);
@@ -351,7 +358,13 @@ class BlindListenPlayer extends _$BlindListenPlayer {
 
     // 手动模式：播放完直接停止，等待用户操作
     if (state.settings.isManualMode) {
-      state = state.copyWith(isPlaying: false, playingSentenceIndex: -1);
+      final isLastParagraph =
+          state.currentParagraphIndex >= state.totalParagraphs - 1;
+      state = state.copyWith(
+        isPlaying: false,
+        playingSentenceIndex: -1,
+        stepFinished: isLastParagraph,
+      );
       return;
     }
 
@@ -433,7 +446,11 @@ class BlindListenPlayer extends _$BlindListenPlayer {
       await goToNextParagraph();
     } else {
       // 最后一段最后一遍 → 停止
-      state = state.copyWith(isPauseCountdown: false, isPlaying: false);
+      state = state.copyWith(
+        isPauseCountdown: false,
+        isPlaying: false,
+        stepFinished: true,
+      );
     }
   }
 

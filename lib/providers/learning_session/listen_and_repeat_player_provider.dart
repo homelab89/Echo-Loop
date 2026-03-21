@@ -66,6 +66,9 @@ class ListenAndRepeatPlayerState {
   /// 是否处于评估后倒计时中（对应复述页面的 isRetellCountdown）
   final bool isPostEvalCountdown;
 
+  /// 当前步骤是否自然完成（用于 Screen 层检测完成信号）
+  final bool stepFinished;
+
   const ListenAndRepeatPlayerState({
     this.currentSentenceIndex = 0,
     this.totalSentences = 0,
@@ -80,6 +83,7 @@ class ListenAndRepeatPlayerState {
     this.isCountdownPaused = false,
     this.isCountdownFastForward = false,
     this.isPostEvalCountdown = false,
+    this.stepFinished = false,
   });
 
   ListenAndRepeatPlayerState copyWith({
@@ -96,6 +100,7 @@ class ListenAndRepeatPlayerState {
     bool? isCountdownPaused,
     bool? isCountdownFastForward,
     bool? isPostEvalCountdown,
+    bool? stepFinished,
   }) {
     return ListenAndRepeatPlayerState(
       currentSentenceIndex: currentSentenceIndex ?? this.currentSentenceIndex,
@@ -113,6 +118,7 @@ class ListenAndRepeatPlayerState {
       isCountdownFastForward:
           isCountdownFastForward ?? this.isCountdownFastForward,
       isPostEvalCountdown: isPostEvalCountdown ?? this.isPostEvalCountdown,
+      stepFinished: stepFinished ?? this.stepFinished,
     );
   }
 }
@@ -398,7 +404,7 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
           state.currentSentenceIndex >= state.totalSentences - 1;
       if (isLastSentence) {
         AppLogger.log('Player', '→ 完成（最后一句）');
-        state = state.copyWith(isPlaying: false);
+        state = state.copyWith(isPlaying: false, stepFinished: true);
         return;
       }
 
@@ -529,6 +535,7 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
       currentPlayCount: startPlayCount,
       isPauseBetweenPlays: false,
       isPauseBetweenSentences: false,
+      stepFinished: false,
     );
     _persistCurrentSentenceIndexAsync();
 
@@ -618,6 +625,7 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
             isPlaying: false,
             isPauseBetweenPlays: false,
             isPauseBetweenSentences: false,
+            stepFinished: true,
           );
         } else {
           // 非最后一句 → 推进到下一句

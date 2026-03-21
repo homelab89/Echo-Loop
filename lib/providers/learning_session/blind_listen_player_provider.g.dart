@@ -6,7 +6,7 @@ part of 'blind_listen_player_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$blindListenPlayerHash() => r'4e06164848700aac179951c91f44348d31766c87';
+String _$blindListenPlayerHash() => r'e49d77d93cc2bbb50e19c399400e6e9b3211db89';
 
 /// 盲听专用播放器 Provider
 ///
