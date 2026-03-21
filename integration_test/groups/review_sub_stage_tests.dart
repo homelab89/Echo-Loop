@@ -61,10 +61,7 @@ void reviewSubStageTests() {
       // 验证 review0 标题显示
       expect(find.text('Review 1'), findsOneWidget);
 
-      // 点击展开 Review 1 区域查看子步骤
-      await tester.tap(find.text('Review 1'));
-      await tester.pumpAndSettle();
-
+      // review0 是当前阶段，默认已展开，无需点击
       // 验证 2 个复习子步骤名称
       expect(find.text('Difficult sentence practice'), findsOneWidget);
       expect(find.text('Paragraph retelling'), findsOneWidget);
@@ -158,7 +155,7 @@ void reviewSubStageTests() {
       // 应该直接弹出复述简报（含时长选择），而非先弹复习简报
       // 验证显示的是复述时长选择弹窗
       expect(find.text('Paragraph Retelling'), findsOneWidget);
-      expect(find.text('Target paragraph duration'), findsOneWidget);
+      expect(find.text('Paragraph duration'), findsOneWidget);
 
       // 验证只有一个"Start Practice"按钮（不是两个弹窗叠加）
       expect(find.text('Start Practice'), findsOneWidget);
@@ -191,11 +188,8 @@ void reviewSubStageTests() {
       // 验证 review1 标题显示
       expect(find.text('Review 2'), findsOneWidget);
 
-      // 点击展开 Review 2 区域查看子步骤
-      await tester.tap(find.text('Review 2'));
-      await tester.pumpAndSettle();
-
-      // 验证 3 个子步骤名称（review0 已完成也自动展开，故可能出现多个同名步骤）
+      // review1 是当前阶段，默认已展开，无需点击
+      // 验证 3 个子步骤名称（review0 已完成也可能展开，故可能出现多个同名步骤）
       expect(find.text('Blind Listening'), findsWidgets);
       expect(find.text('Difficult sentence practice'), findsWidgets);
       expect(find.text('Paragraph retelling'), findsWidgets);
@@ -265,7 +259,7 @@ void reviewSubStageTests() {
 
       // 验证操作按钮：偷看 + 听不懂
       expect(find.text('Peek'), findsOneWidget);
-      expect(find.text("Can't understand"), findsOneWidget);
+      expect(find.text('Unclear'), findsOneWidget);
 
       // 验证底部播放控制按钮
       expect(find.byIcon(Icons.skip_previous_rounded), findsOneWidget);
@@ -333,16 +327,17 @@ void reviewSubStageTests() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      // 最后一句时，下一步按钮图标变为 check_circle_rounded
+      await tester.tap(find.byIcon(Icons.check_circle_rounded));
       await tester.pumpAndSettle();
 
       // 验证完成对话框出现
       expect(find.text('Difficult Practice Complete'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
 
-      // 验证有"Continue"和"Back to Plan"按钮
+      // 验证有"Done"和"Continue:"按钮
       // review0 当前是第 1 步（共 2 步），还有下一步（reviewRetellParagraph）
-      expect(find.text('Back'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
       // 下一步名称包含 "Continue:"
       expect(find.textContaining('Continue:'), findsOneWidget);
     });

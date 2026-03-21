@@ -12,6 +12,8 @@ import 'package:fluency/providers/learning_session/blind_listen_player_provider.
 import 'package:fluency/providers/learning_session/learning_session_provider.dart';
 import 'package:fluency/router/app_router.dart';
 import 'package:fluency/screens/blind_listen_player_screen.dart';
+import 'package:fluency/widgets/common/countdown_chip.dart';
+import 'package:fluency/widgets/common/paragraph_bottom_controls.dart';
 import 'package:fluency/widgets/dialogs/step_complete_dialog.dart';
 
 import '../helpers/test_notifiers.dart';
@@ -47,37 +49,38 @@ void blindListenTests() {
       // 验证 AppBar 标题
       expect(find.text('Full Listening'), findsOneWidget);
 
-      // 验证耳机图标
+      // 验证耳机图标（播放中时出现在状态提示区域）
       expect(find.byIcon(Icons.headphones), findsOneWidget);
 
-      // 验证播放按钮区域存在（进入后自动播放，所以显示 pause）
-      expect(find.byIcon(Icons.pause), findsOneWidget);
+      // 验证播放按钮区域存在（进入后自动播放，所以显示 pause_rounded）
+      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
 
-      // 验证进度条
-      expect(find.byType(Slider), findsOneWidget);
+      // 验证段落底部控制栏和进度条
+      expect(find.byType(ParagraphBottomControls), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
     });
 
     testWidgets('播放/暂停切换', (tester) async {
       await tester.pumpWidget(createTestAppWithAudio());
       await navigateToBlindListen(tester);
 
-      // 进入后自动播放，显示 pause 图标
-      expect(find.byIcon(Icons.pause), findsOneWidget);
+      // 进入后自动播放，显示 pause_rounded 图标
+      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
 
-      // 点击暂停
-      await tester.tap(find.byIcon(Icons.pause));
+      // 点击暂停（通过 GestureDetector 包裹的圆形按钮）
+      await tester.tap(find.byIcon(Icons.pause_rounded));
       await tester.pumpAndSettle();
 
-      // 验证变为 play_arrow
-      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
-      expect(find.byIcon(Icons.pause), findsNothing);
+      // 验证变为 play_arrow_rounded
+      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.pause_rounded), findsNothing);
 
       // 再点击恢复播放
-      await tester.tap(find.byIcon(Icons.play_arrow));
+      await tester.tap(find.byIcon(Icons.play_arrow_rounded));
       await tester.pumpAndSettle();
 
-      // 验证变回 pause
-      expect(find.byIcon(Icons.pause), findsOneWidget);
+      // 验证变回 pause_rounded
+      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
     });
 
     testWidgets('第一遍完成显示倒计时覆盖层', (tester) async {
@@ -86,26 +89,20 @@ void blindListenTests() {
 
       final container = getContainer(tester);
 
-      // 设置会话状态：第 1 遍，目标 2 遍（hasRemainingPasses = true）
-      final session =
-          container.read(learningSessionProvider.notifier) as TestLearningSession;
-      session.setState(const LearningSessionState(
-        learningMode: LearningMode.blindListen,
-        audioItemId: 'test-audio-1',
-        blindListenPassCount: 1,
-        targetBlindListenPasses: 2,
-        blindListenCompleted: false,
+      // 直接设置 blindListenPlayer 状态为段间停顿倒计时
+      // 这模拟段落播放完成后进入倒计时的状态
+      final player =
+          container.read(blindListenPlayerProvider.notifier) as TestBlindListenPlayer;
+      player.setState(player.state.copyWith(
+        isPlaying: false,
+        isPauseCountdown: true,
+        pauseRemaining: const Duration(seconds: 3),
+        pauseDuration: const Duration(seconds: 5),
       ));
       await tester.pumpAndSettle();
 
-      // 触发 blindListenCompleted = true（模拟播放完成）
-      session.setState(session.state.copyWith(blindListenCompleted: true));
-      await tester.pumpAndSettle();
-
-      // 验证内联倒计时指示器出现（文案格式: "Next play in Xs"）
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
-      // 验证跳过按钮
-      expect(find.text('Skip'), findsOneWidget);
+      // 验证倒计时芯片出现（CountdownChip 在 isPauseCountdown=true 时渲染）
+      expect(find.byType(CountdownChip), findsOneWidget);
     });
 
     testWidgets('达到目标遍数弹出完成对话框', (tester) async {
@@ -122,22 +119,32 @@ void blindListenTests() {
         audioItemId: 'test-audio-1',
         blindListenPassCount: 2,
         targetBlindListenPasses: 2,
-        blindListenCompleted: false,
       ));
       await tester.pumpAndSettle();
 
-      // 触发完成
-      session.setState(session.state.copyWith(blindListenCompleted: true));
+      // 通过 blindListenPlayer 状态变化触发完成回调：
+      // ref.listen 检查：最后一段 + 之前活跃 + 现在空闲
+      final player =
+          container.read(blindListenPlayerProvider.notifier) as TestBlindListenPlayer;
+      // 先设为"正在播放最后一段"
+      player.setState(player.state.copyWith(
+        isPlaying: true,
+        currentParagraphIndex: 0,
+        totalParagraphs: 1,
+      ));
+      await _pumpUi(tester, 100);
+
+      // 再设为"播放结束"（isPlaying=false, isPauseCountdown=false）
+      player.setState(player.state.copyWith(isPlaying: false));
       await tester.pumpAndSettle();
 
       // 验证完成对话框弹出
       expect(find.byType(StepCompleteDialog), findsOneWidget);
-      expect(find.text('Listening Complete'), findsOneWidget);
+      expect(find.text('Blind Listen Complete'), findsOneWidget);
       // 验证难度选择存在
       expect(find.text('How did it feel?'), findsOneWidget);
-      // 验证双按钮："返回计划"和"继续：逐句精听"，以及"再听一遍"
-      expect(find.text('Listen Again'), findsOneWidget);
-      expect(find.text('Back'), findsOneWidget);
+      // 验证按钮："Done"和"Continue: Intensive Listening"
+      expect(find.text('Done'), findsOneWidget);
       expect(find.text('Continue: Intensive Listening'), findsOneWidget);
       // 验证步骤进度
       expect(find.textContaining('1/4'), findsOneWidget);
@@ -157,20 +164,28 @@ void blindListenTests() {
         audioItemId: 'test-audio-1',
         blindListenPassCount: 2,
         targetBlindListenPasses: 2,
-        blindListenCompleted: false,
       ));
-      await _pumpUi(tester, 600);
+      await _pumpUi(tester, 100);
 
-      // 触发完成
-      session.setState(session.state.copyWith(blindListenCompleted: true));
+      // 通过 blindListenPlayer 状态变化触发完成
+      final player =
+          container.read(blindListenPlayerProvider.notifier) as TestBlindListenPlayer;
+      player.setState(player.state.copyWith(
+        isPlaying: true,
+        currentParagraphIndex: 0,
+        totalParagraphs: 1,
+      ));
+      await _pumpUi(tester, 100);
+
+      player.setState(player.state.copyWith(isPlaying: false));
       await _pumpUi(tester, 800);
 
       // 选择 "Okay"（medium）难度
       await tester.tap(find.text('Okay'));
       await _pumpUi(tester, 600);
 
-      // 点击"返回计划"
-      await tester.tap(find.text('Back'));
+      // 点击"Done"返回计划
+      await tester.tap(find.text('Done'));
       await _pumpUi(tester, 1000);
 
       // 验证盲听页面已退出（不再显示盲听播放器）

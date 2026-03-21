@@ -84,12 +84,12 @@ void statsDisplayTests() {
         isPlaying: false,
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      await tester.tap(find.byIcon(Icons.check_circle_rounded));
       await tester.pumpAndSettle();
 
       // 完成对话框弹出 → 点击"Back to Plan"
       expect(find.text('Intensive Listening Complete'), findsOneWidget);
-      await tester.tap(find.text('Back'));
+      await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
 
       // 验证进度已更新
@@ -231,11 +231,11 @@ void statsDisplayTests() {
         isPlaying: false,
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      await tester.tap(find.byIcon(Icons.check_circle_rounded));
       await tester.pumpAndSettle();
 
       // 自由练习完成后弹窗，点击"完成"退出
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(Dialog), findsOneWidget);
       await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
 
@@ -313,12 +313,12 @@ void statsDisplayTests() {
         isPlaying: false,
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      await tester.tap(find.byIcon(Icons.check_circle_rounded));
       await tester.pumpAndSettle();
 
       // 完成对话框弹出 → 点击"Back to Plan"
       expect(find.text('Listen & Repeat Complete'), findsOneWidget);
-      await tester.tap(find.text('Back'));
+      await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
 
       // 验证跟读遍数递增
@@ -391,7 +391,7 @@ void statsDisplayTests() {
         isPlaying: false,
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      await tester.tap(find.byIcon(Icons.check_circle_rounded));
       await tester.pumpAndSettle();
 
       // 完成对话框弹出 → 点击"Done"完成退出
@@ -501,12 +501,12 @@ void statsDisplayTests() {
         isPlaying: false,
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      await tester.tap(find.byIcon(Icons.check_circle_rounded));
       await tester.pumpAndSettle();
 
       // 点击"Back to Plan"
       expect(find.text('Intensive Listening Complete'), findsOneWidget);
-      await tester.tap(find.text('Back'));
+      await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
 
       // 验证 Provider 中遍数递增（1 → 2）

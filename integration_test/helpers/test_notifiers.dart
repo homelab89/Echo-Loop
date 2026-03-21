@@ -984,6 +984,44 @@ class TestIntensiveListenPlayer extends IntensiveListenPlayer {
   }
 
   @override
+  void stopPlayback() {
+    state = state.copyWith(isPlaying: false);
+  }
+
+  @override
+  Future<void> resetToStart() async {
+    state = state.copyWith(
+      currentSentenceIndex: 0,
+      currentPlayCount: 1,
+      isAnnotationMode: false,
+      isAnnotationReplay: false,
+      isTextRevealed: false,
+      difficultSentences: {},
+      isPlaying: true,
+    );
+  }
+
+  @override
+  void pauseCountdown() {
+    state = state.copyWith(isCountdownPaused: true);
+  }
+
+  @override
+  void resumeCountdown() {
+    state = state.copyWith(isCountdownPaused: false);
+  }
+
+  @override
+  Future<void> replayDuringCountdown() async {
+    state = state.copyWith(
+      isPauseBetweenPlays: false,
+      isPauseBetweenSentences: false,
+      isCountdownPaused: false,
+      isPlaying: true,
+    );
+  }
+
+  @override
   void disposePlayer() {
     _testSentences = [];
     state = const IntensiveListenState();
@@ -1124,6 +1162,20 @@ class TestListenAndRepeatPlayer extends ListenAndRepeatPlayer {
     );
 
     return removed;
+  }
+
+  @override
+  void stopPlayback() {
+    state = state.copyWith(isPlaying: false);
+  }
+
+  @override
+  Future<void> resetToStart() async {
+    state = state.copyWith(
+      currentSentenceIndex: 0,
+      currentPlayCount: 1,
+      isPlaying: false,
+    );
   }
 
   @override
@@ -1462,6 +1514,11 @@ class TestReviewDifficultPractice extends ReviewDifficultPractice {
         isTextRevealed: false,
       );
     }
+  }
+
+  @override
+  void stopPlayback() {
+    state = state.copyWith(isPlaying: false);
   }
 
   @override

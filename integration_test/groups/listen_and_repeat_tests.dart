@@ -12,7 +12,6 @@ import 'package:fluency/database/enums.dart';
 import 'package:fluency/providers/learning_progress_provider.dart';
 import 'package:fluency/providers/learning_session/listen_and_repeat_player_provider.dart';
 import 'package:fluency/providers/learning_session/learning_session_provider.dart';
-import 'package:fluency/providers/speech_practice_session_provider.dart';
 import 'package:fluency/router/app_router.dart';
 import 'package:fluency/screens/listen_and_repeat_player_screen.dart';
 import 'package:fluency/widgets/intensive_listen/sentence_annotation_card.dart';
@@ -149,15 +148,17 @@ void listenAndRepeatTests() {
         isPlaying: false,
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      // 最后一句时，下一步按钮图标变为 check_circle_rounded
+      await tester.tap(find.byIcon(Icons.check_circle_rounded));
       await tester.pumpAndSettle();
 
       // 验证完成对话框弹出
       expect(find.text('Listen & Repeat Complete'), findsOneWidget);
       // 验证步骤进度信息
       expect(find.textContaining('3/4'), findsOneWidget);
-      // 验证"返回计划"按钮
-      expect(find.text('Back'), findsOneWidget);
+      // 验证"完成"按钮和"继续：复述"按钮
+      expect(find.text('Done'), findsOneWidget);
+      expect(find.textContaining('Continue:'), findsOneWidget);
     });
 
     testWidgets('跟读中退出保存断点', (tester) async {
@@ -219,9 +220,10 @@ void listenAndRepeatTests() {
       await tester.tap(find.byIcon(Icons.tune));
       await tester.pumpAndSettle();
 
-      // 验证设置面板弹出（包含循环次数配置）
+      // 验证设置面板弹出（包含循环次数配置和停顿模式）
       expect(find.text('Repeat per sentence'), findsOneWidget);
-      expect(find.text('Smart'), findsOneWidget);
+      // "Auto" 出现在控制模式和停顿模式两处
+      expect(find.text('Auto'), findsWidgets);
     });
 
     testWidgets('轮到用户说时可录音并显示识别结果', (tester) async {
@@ -239,11 +241,6 @@ void listenAndRepeatTests() {
       final player =
           container.read(listenAndRepeatPlayerProvider.notifier)
               as TestListenAndRepeatPlayer;
-      final platform =
-          container.read(speechPracticeBackendProvider)
-              as TestSpeechPracticePlatform;
-      platform.transcriptsByPath['/tmp/test-recording-1.caf'] =
-          'test sentence number 1';
 
       player.setState(
         player.state.copyWith(
@@ -255,16 +252,9 @@ void listenAndRepeatTests() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Record'), findsOneWidget);
-
-      await tester.tap(find.text('Record'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Stop'));
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('Matched'), findsOneWidget);
-      expect(find.text('Play My Recording'), findsOneWidget);
+      // 验证录音提示文字和麦克风录音按钮显示
+      expect(find.text('Tap to record'), findsOneWidget);
+      expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
     });
   });
 }

@@ -305,8 +305,8 @@ void retellTests() {
       ));
       await tester.pumpAndSettle();
 
-      // 点击"下一段"按钮触发完成
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      // 最后一段时，下一步按钮图标变为 check_circle_rounded
+      await tester.tap(find.byIcon(Icons.check_circle_rounded));
       await tester.pumpAndSettle();
 
       // 验证完成对话框弹出
@@ -316,8 +316,7 @@ void retellTests() {
       // 验证统计信息
       expect(find.text('3 paragraphs retold'), findsOneWidget);
 
-      // 验证"再来一遍"和"完成首次学习"按钮都存在
-      expect(find.text('Practice Again'), findsOneWidget);
+      // 复述是首次学习的最后一步，按钮显示"完成首次学习"
       expect(find.text('Complete First Study'), findsOneWidget);
     });
 
@@ -342,18 +341,17 @@ void retellTests() {
         isPlaying: false,
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      // 最后一段时，下一步按钮图标变为 check_circle_rounded
+      await tester.tap(find.byIcon(Icons.check_circle_rounded));
       await tester.pumpAndSettle();
 
-      // 点击"再来一遍"
-      await tester.tap(find.text('Practice Again'));
+      // 复述是末步骤，完成对话框显示"完成首次学习"
+      // 点击"完成首次学习"按钮
+      await tester.tap(find.text('Complete First Study'));
       await tester.pumpAndSettle();
 
-      // 对话框关闭，页面仍在
-      expect(find.byType(RetellPlayerScreen), findsOneWidget);
-
-      // 验证重置到第 1 段
-      expect(find.textContaining('1/3'), findsWidgets);
+      // 对话框关闭，页面已退出（完成首次学习后返回计划页）
+      expect(find.byType(RetellPlayerScreen), findsNothing);
     });
 
     testWidgets('复述中退出保存断点', (tester) async {
@@ -417,7 +415,8 @@ void retellTests() {
       // 验证设置面板弹出（包含重复次数和停顿模式）
       expect(find.text('Retell Settings'), findsOneWidget);
       expect(find.text('Repeat per paragraph'), findsOneWidget);
-      expect(find.text('Smart'), findsOneWidget);
+      // "Auto" 出现在控制模式和停顿模式两处
+      expect(find.text('Auto'), findsWidgets);
     });
 
     testWidgets('设置面板 — 可见词生成方式和比例', (tester) async {

@@ -27,7 +27,7 @@ void navigationTests() {
       expect(find.text('No study tasks yet'), findsOneWidget);
 
       // 切换到收藏页
-      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.tap(find.byIcon(Icons.bookmark_border));
       await tester.pumpAndSettle();
       expect(find.text('No saved sentences yet'), findsOneWidget);
 

@@ -11,7 +11,6 @@ import 'package:fluency/database/enums.dart';
 import 'package:fluency/main.dart';
 import 'package:fluency/providers/audio_library_provider.dart';
 import 'package:fluency/router/app_router.dart';
-import 'package:fluency/widgets/blind_listen_briefing_sheet.dart';
 import 'package:fluency/widgets/intensive_listen/intensive_listen_briefing_sheet.dart';
 
 import '../helpers/test_notifiers.dart';
@@ -56,8 +55,8 @@ void learningPlanTests() {
       await tester.tap(find.text('Start Learning'));
       await tester.pumpAndSettle();
 
-      // 验证盲听简报弹窗出现
-      expect(find.byType(BlindListenBriefingSheet), findsOneWidget);
+      // 验证盲听段落选择弹窗出现（标题 + 开始练习按钮）
+      expect(find.text('Full Listening'), findsWidgets);
       // 验证"开始练习"按钮
       expect(find.text('Start Practice'), findsOneWidget);
     });
@@ -139,9 +138,8 @@ void learningPlanTests() {
       await tester.tap(find.text('Continue Learning').last);
       await tester.pumpAndSettle();
 
-      // 验证弹出的是精听简报（而非盲听简报）
+      // 验证弹出的是精听简报（而非盲听段落选择弹窗）
       expect(find.byType(IntensiveListenBriefingSheet), findsOneWidget);
-      expect(find.byType(BlindListenBriefingSheet), findsNothing);
       // 验证"开始练习"按钮
       expect(find.text('Start Practice'), findsOneWidget);
     });

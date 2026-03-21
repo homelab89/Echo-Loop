@@ -92,7 +92,7 @@ void intensiveListenTests() {
 
       // 验证偷看和听不懂按钮
       expect(find.text('Peek'), findsOneWidget);
-      expect(find.text("Can't understand"), findsOneWidget);
+      expect(find.text('Unclear'), findsOneWidget);
     });
 
     testWidgets('偷看字幕：点击显示，再次点击隐藏', (tester) async {
@@ -172,8 +172,8 @@ void intensiveListenTests() {
       );
       await navigateToIntensiveListen(tester);
 
-      // 点击"Can't understand"进入标注模式
-      await tester.tap(find.text("Can't understand"));
+      // 点击"Unclear"进入标注模式
+      await tester.tap(find.text('Unclear'));
       await tester.pumpAndSettle();
 
       // 验证标注卡片出现
@@ -182,7 +182,7 @@ void intensiveListenTests() {
       expect(find.text('Continue'), findsOneWidget);
       // 偷看和听不懂按钮应消失
       expect(find.text('Peek'), findsNothing);
-      expect(find.text("Can't understand"), findsNothing);
+      expect(find.text('Unclear'), findsNothing);
     });
 
     testWidgets('标注模式退出', (tester) async {
@@ -197,7 +197,7 @@ void intensiveListenTests() {
       await navigateToIntensiveListen(tester);
 
       // 进入标注模式
-      await tester.tap(find.text("Can't understand"));
+      await tester.tap(find.text('Unclear'));
       await tester.pumpAndSettle();
 
       // 验证标注卡片存在
@@ -233,15 +233,16 @@ void intensiveListenTests() {
         isPlaying: false,
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      // 最后一句时，下一步按钮变为完成图标
+      await tester.tap(find.byIcon(Icons.check_circle_rounded));
       await tester.pumpAndSettle();
 
       // 验证完成对话框弹出
       expect(find.text('Intensive Listening Complete'), findsOneWidget);
       // 验证步骤进度信息
       expect(find.textContaining('2/4'), findsOneWidget);
-      // 精听后的步骤（listenAndRepeat）有播放器，显示"继续"和"返回计划"两个按钮
-      expect(find.text('Back'), findsOneWidget);
+      // 精听后的步骤（listenAndRepeat）有播放器，显示"完成"和"继续"两个按钮
+      expect(find.text('Done'), findsOneWidget);
       expect(find.textContaining('Continue'), findsOneWidget);
     });
 
@@ -300,7 +301,7 @@ void intensiveListenTests() {
       await navigateToIntensiveListen(tester);
 
       // 点击"Can't understand"进入标注模式 → 自动标记当前句子为难句
-      await tester.tap(find.text("Can't understand"));
+      await tester.tap(find.text('Unclear'));
       await tester.pumpAndSettle();
 
       // 验证进入标注模式
@@ -382,7 +383,7 @@ void intensiveListenTests() {
       await tester.pumpAndSettle();
 
       // 点击"Can't understand" → 标注模式 → 自动标记难句
-      await tester.tap(find.text("Can't understand"));
+      await tester.tap(find.text('Unclear'));
       await tester.pumpAndSettle();
 
       // 退出标注模式
@@ -424,7 +425,7 @@ void intensiveListenTests() {
       await navigateToIntensiveListen(tester);
 
       // 第 1 句：点击"看不懂"
-      await tester.tap(find.text("Can't understand"));
+      await tester.tap(find.text('Unclear'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
@@ -436,7 +437,7 @@ void intensiveListenTests() {
       await tester.pumpAndSettle();
 
       // 第 3 句：点击"看不懂"
-      await tester.tap(find.text("Can't understand"));
+      await tester.tap(find.text('Unclear'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();

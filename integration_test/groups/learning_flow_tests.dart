@@ -12,8 +12,8 @@ import 'package:fluency/main.dart';
 import 'package:fluency/providers/learning_progress_provider.dart';
 import 'package:fluency/providers/learning_session/learning_session_provider.dart';
 import 'package:fluency/router/app_router.dart';
+import 'package:fluency/providers/learning_session/blind_listen_player_provider.dart';
 import 'package:fluency/screens/blind_listen_player_screen.dart';
-import 'package:fluency/widgets/blind_listen_briefing_sheet.dart';
 import 'package:fluency/widgets/dialogs/step_complete_dialog.dart';
 
 import '../helpers/test_notifiers.dart';
@@ -59,7 +59,9 @@ void learningFlowTests() {
       await tester.tap(startLearningButton);
       await _pumpUi(tester, 1000);
 
-      expect(find.byType(BlindListenBriefingSheet), findsOneWidget);
+      // 验证盲听段落选择弹窗出现
+      expect(find.text('Full Listening'), findsWidgets);
+      expect(find.text('Start Practice'), findsOneWidget);
 
       // === 3. 点击"开始练习" → 进入盲听播放器 ===
       await tester.tap(find.text('Start Practice'));
@@ -81,14 +83,24 @@ void learningFlowTests() {
           audioItemId: 'test-audio-1',
           blindListenPassCount: 2,
           targetBlindListenPasses: 2,
-          blindListenCompleted: false,
         ),
       );
-      await _pumpUi(tester, 800);
+      await _pumpUi(tester, 100);
 
-      // 触发完成
-      session.setState(session.state.copyWith(blindListenCompleted: true));
-      await _pumpUi(tester, 1000);
+      // 通过 blindListenPlayer 状态变化触发完成回调
+      final player =
+          container.read(blindListenPlayerProvider.notifier) as TestBlindListenPlayer;
+      // 先设为"正在播放最后一段"
+      player.setState(player.state.copyWith(
+        isPlaying: true,
+        currentParagraphIndex: 0,
+        totalParagraphs: 1,
+      ));
+      await _pumpUi(tester, 100);
+
+      // 再设为"播放结束"触发完成
+      player.setState(player.state.copyWith(isPlaying: false));
+      await tester.pumpAndSettle();
 
       // === 5. 完成对话框 → 选择难度 → 点击"返回计划" ===
       expect(find.byType(StepCompleteDialog), findsOneWidget);
@@ -97,8 +109,8 @@ void learningFlowTests() {
       await tester.tap(find.text('Okay'));
       await _pumpUi(tester, 800);
 
-      // 点击 "Back"（返回计划页查看进度更新）
-      await tester.tap(find.text('Back'));
+      // 点击 "Done"（返回计划页查看进度更新）
+      await tester.tap(find.text('Done'));
       await _pumpUi(tester, 1200);
 
       // === 6. 返回学习计划页 → 验证进度更新 ===
