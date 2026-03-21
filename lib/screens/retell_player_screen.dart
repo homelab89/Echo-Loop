@@ -552,9 +552,11 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
       if (_isExiting || prev == null) return;
       final isLast =
           next.currentParagraphIndex >= next.totalParagraphs - 1;
+      final wasAlsoLast =
+          prev.currentParagraphIndex >= prev.totalParagraphs - 1;
       final countdownJustEnded =
           prev.isRetellCountdown && !next.isRetellCountdown;
-      if (isLast && countdownJustEnded && !next.isPlaying) {
+      if (isLast && wasAlsoLast && countdownJustEnded && !next.isPlaying) {
         _handleCompleted();
       }
     });
