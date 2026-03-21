@@ -17,6 +17,7 @@ import '../models/audio_item.dart' as model;
 import '../models/dict_entry.dart';
 import '../models/sentence_ai_result.dart';
 import '../providers/audio_engine/audio_engine_provider.dart';
+import '../services/tts_service.dart';
 import '../providers/flashcard/flashcard_provider.dart';
 import '../providers/learning_session/bookmark_review_provider.dart';
 import '../providers/saved_word_provider.dart';
@@ -103,10 +104,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                 // 列表（IndexedStack 保留两个 tab 的状态，切换不重建）
                 IndexedStack(
                   index: _currentView == _FavoritesView.sentences ? 0 : 1,
-                  children: const [
-                    _SentencesView(),
-                    _WordsView(),
-                  ],
+                  children: const [_SentencesView(), _WordsView()],
                 ),
 
                 // 底部悬浮复习按钮
@@ -774,11 +772,7 @@ class _SavedWordTile extends ConsumerStatefulWidget {
   /// 由父组件批量预加载的字典条目，避免每个 tile 独立异步查询
   final DictEntry? dictEntry;
 
-  const _SavedWordTile({
-    super.key,
-    required this.savedWord,
-    this.dictEntry,
-  });
+  const _SavedWordTile({super.key, required this.savedWord, this.dictEntry});
 
   @override
   ConsumerState<_SavedWordTile> createState() => _SavedWordTileState();
@@ -964,11 +958,29 @@ class _SavedWordTileState extends ConsumerState<_SavedWordTile> {
                     // 音标 + 完整释义
                     if (widget.dictEntry != null) ...[
                       if (widget.dictEntry!.phonetic.isNotEmpty)
-                        Text(
-                          '/${widget.dictEntry!.phonetic}/',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              '/${widget.dictEntry!.phonetic}/',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            // TTS 发音按钮
+                            GestureDetector(
+                              onTap: () => TtsService.instance.speak(word.word),
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  left: AppSpacing.xs,
+                                ),
+                                child: Icon(
+                                  Icons.volume_up,
+                                  size: 18,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       if (widget.dictEntry!.translation != null) ...[
                         const SizedBox(height: AppSpacing.xs),
@@ -1030,8 +1042,7 @@ class _SavedWordTileState extends ConsumerState<_SavedWordTile> {
                     ],
 
                     // 源音频引用
-                    if (_audioName != null &&
-                        word.audioItemId != null) ...[
+                    if (_audioName != null && word.audioItemId != null) ...[
                       const SizedBox(height: AppSpacing.xs),
                       Align(
                         alignment: Alignment.centerRight,
@@ -1045,8 +1056,9 @@ class _SavedWordTileState extends ConsumerState<_SavedWordTile> {
                               Icon(
                                 Icons.headphones,
                                 size: 12,
-                                color: theme.colorScheme.outline
-                                    .withValues(alpha: 0.6),
+                                color: theme.colorScheme.outline.withValues(
+                                  alpha: 0.6,
+                                ),
                               ),
                               const SizedBox(width: 4),
                               Flexible(
@@ -1056,8 +1068,9 @@ class _SavedWordTileState extends ConsumerState<_SavedWordTile> {
                                   overflow: TextOverflow.ellipsis,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     fontSize: 11,
-                                    color: theme.colorScheme.outline
-                                        .withValues(alpha: 0.6),
+                                    color: theme.colorScheme.outline.withValues(
+                                      alpha: 0.6,
+                                    ),
                                   ),
                                 ),
                               ),
