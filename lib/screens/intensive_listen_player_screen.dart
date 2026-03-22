@@ -77,7 +77,7 @@ class _IntensiveListenPlayerScreenState
 
     final session = ref.read(learningSessionProvider);
     if (session.isFreePlay) {
-      await _saveSentenceProgress();
+      await _saveSentenceProgress(isFreePlay: true);
 
       // 保存难句书签 + 难句数快照（与非 freePlay 路径一致）
       await _saveDifficultSentences();
@@ -116,7 +116,7 @@ class _IntensiveListenPlayerScreenState
     }
 
     // 保存断点 + 难句 + 难句数快照
-    await _saveSentenceProgress();
+    await _saveSentenceProgress(isFreePlay: false);
     await _saveDifficultSentences();
 
     final totalDifficultCount = await _loadTotalDifficultCount();
@@ -131,13 +131,14 @@ class _IntensiveListenPlayerScreenState
   }
 
   /// 保存精听断点进度
-  Future<void> _saveSentenceProgress() async {
+  Future<void> _saveSentenceProgress({required bool isFreePlay}) async {
     final player = ref.read(intensiveListenPlayerProvider.notifier);
     await ref
         .read(learningProgressNotifierProvider.notifier)
         .saveIntensiveListenSentenceIndex(
           widget.audioItemId,
           player.currentIndex,
+          isFreePlay: isFreePlay,
         );
   }
 
@@ -352,7 +353,11 @@ class _IntensiveListenPlayerScreenState
         onExit: () async {
           await ref
               .read(learningProgressNotifierProvider.notifier)
-              .saveIntensiveListenSentenceIndex(widget.audioItemId, null);
+              .saveIntensiveListenSentenceIndex(
+                widget.audioItemId,
+                null,
+                isFreePlay: true,
+              );
           await ref.read(learningSessionProvider.notifier).exitLearningMode();
           if (mounted) context.pop();
         },
@@ -404,7 +409,11 @@ class _IntensiveListenPlayerScreenState
     try {
       await ref
           .read(learningProgressNotifierProvider.notifier)
-          .saveIntensiveListenSentenceIndex(widget.audioItemId, null);
+          .saveIntensiveListenSentenceIndex(
+            widget.audioItemId,
+            null,
+            isFreePlay: false,
+          );
       await ref
           .read(learningProgressNotifierProvider.notifier)
           .completeCurrentSubStage(widget.audioItemId);

@@ -480,6 +480,8 @@ LearningProgress createTestLearningProgress({
   DateTime? currentStageStartedAt,
   int totalStudyDurationMs = 0,
   int blindListenPassCount = 0,
+  DateTime? newLearningBreakpointSavedAt,
+  DateTime? freePlayBreakpointSavedAt,
   DateTime? updatedAt,
 }) {
   return LearningProgress(
@@ -492,6 +494,8 @@ LearningProgress createTestLearningProgress({
     currentStageStartedAt: currentStageStartedAt,
     totalStudyDurationMs: totalStudyDurationMs,
     blindListenPassCount: blindListenPassCount,
+    newLearningBreakpointSavedAt: newLearningBreakpointSavedAt,
+    freePlayBreakpointSavedAt: freePlayBreakpointSavedAt,
     updatedAt: updatedAt ?? DateTime(2026, 1, 1),
   );
 }

@@ -329,7 +329,8 @@ void main() {
         audioItemId: 'audio-1',
         currentStage: LearningStage.firstLearn,
         currentSubStage: SubStageType.intensiveListen,
-        intensiveListenSentenceIndex: 2,
+        freePlayIntensiveListenSentenceIndex: 2,
+        freePlayBreakpointSavedAt: DateTime.now(),
         updatedAt: DateTime(2026, 3, 11),
       );
       final container = createContainer(
@@ -352,7 +353,8 @@ void main() {
         audioItemId: 'audio-1',
         currentStage: LearningStage.firstLearn,
         currentSubStage: SubStageType.intensiveListen,
-        intensiveListenSentenceIndex: 1,
+        freePlayIntensiveListenSentenceIndex: 1,
+        freePlayBreakpointSavedAt: DateTime.now(),
         updatedAt: DateTime(2026, 3, 11),
       );
       final container = createContainer(
@@ -373,14 +375,16 @@ void main() {
         audioItemId: 'audio-1',
         currentStage: LearningStage.firstLearn,
         currentSubStage: SubStageType.intensiveListen,
-        intensiveListenSentenceIndex: 0,
+        freePlayIntensiveListenSentenceIndex: 0,
+        freePlayBreakpointSavedAt: DateTime.now().subtract(const Duration(hours: 1)),
         updatedAt: DateTime(2026, 3, 11, 9),
       );
       final latest = LearningProgress(
         audioItemId: 'audio-1',
         currentStage: LearningStage.firstLearn,
         currentSubStage: SubStageType.intensiveListen,
-        intensiveListenSentenceIndex: 2,
+        freePlayIntensiveListenSentenceIndex: 2,
+        freePlayBreakpointSavedAt: DateTime.now(),
         updatedAt: DateTime(2026, 3, 11, 10),
       );
       final container = createContainer(
@@ -631,7 +635,8 @@ void main() {
         audioItemId: 'audio-1',
         currentStage: LearningStage.firstLearn,
         currentSubStage: SubStageType.listenAndRepeat,
-        shadowingSentenceIndex: 1,
+        freePlayShadowingSentenceIndex: 1,
+        freePlayBreakpointSavedAt: DateTime.now(),
         updatedAt: DateTime(2026, 3, 11),
       );
       final container = createContainer(
@@ -677,7 +682,8 @@ void main() {
         audioItemId: 'audio-1',
         currentStage: LearningStage.review1,
         currentSubStage: SubStageType.reviewDifficultPractice,
-        difficultPracticeSentenceIndex: 1,
+        freePlayDifficultPracticeSentenceIndex: 1,
+        freePlayBreakpointSavedAt: DateTime.now(),
         updatedAt: DateTime(2026, 3, 11),
       );
       final container = createContainer(
@@ -731,7 +737,8 @@ void main() {
         audioItemId: 'audio-1',
         currentStage: LearningStage.firstLearn,
         currentSubStage: SubStageType.retell,
-        retellParagraphIndex: 2,
+        freePlayRetellParagraphIndex: 2,
+        freePlayBreakpointSavedAt: DateTime.now(),
         updatedAt: DateTime(2026, 3, 11),
       );
       final paragraphs = [
@@ -758,9 +765,10 @@ void main() {
         audioItemId: 'audio-1',
         currentStage: LearningStage.firstLearn,
         currentSubStage: SubStageType.listenAndRepeat,
-        shadowingSentenceIndex: 1,
-        difficultPracticeSentenceIndex: 1,
-        retellParagraphIndex: 2,
+        freePlayShadowingSentenceIndex: 1,
+        freePlayDifficultPracticeSentenceIndex: 1,
+        freePlayRetellParagraphIndex: 2,
+        freePlayBreakpointSavedAt: DateTime.now(),
         updatedAt: DateTime(2026, 3, 11),
       );
       final paragraphs = [
@@ -803,16 +811,18 @@ void main() {
         audioItemId: 'audio-1',
         currentStage: LearningStage.firstLearn,
         currentSubStage: SubStageType.listenAndRepeat,
-        shadowingSentenceIndex: 0,
-        retellParagraphIndex: 0,
+        freePlayShadowingSentenceIndex: 0,
+        freePlayRetellParagraphIndex: 0,
+        freePlayBreakpointSavedAt: DateTime.now().subtract(const Duration(hours: 1)),
         updatedAt: DateTime(2026, 3, 11, 9),
       );
       final latest = LearningProgress(
         audioItemId: 'audio-1',
         currentStage: LearningStage.firstLearn,
         currentSubStage: SubStageType.retell,
-        shadowingSentenceIndex: 1,
-        retellParagraphIndex: 2,
+        freePlayShadowingSentenceIndex: 1,
+        freePlayRetellParagraphIndex: 2,
+        freePlayBreakpointSavedAt: DateTime.now(),
         updatedAt: DateTime(2026, 3, 11, 10),
       );
       final paragraphs = [

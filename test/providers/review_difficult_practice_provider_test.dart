@@ -44,8 +44,9 @@ class _RecordingLearningProgressNotifier extends TestLearningProgressNotifier {
   @override
   Future<void> saveDifficultPracticeSentenceIndex(
     String audioItemId,
-    int? sentenceIndex,
-  ) async {
+    int? sentenceIndex, {
+    required bool isFreePlay,
+  }) async {
     savedIndices.add(sentenceIndex);
     final progress =
         state.progressMap[audioItemId] ??

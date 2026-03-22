@@ -6,7 +6,7 @@ part of 'flashcard_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$flashcardNotifierHash() => r'323e226b836d6a3197931d7b5251f2b96d701d29';
+String _$flashcardNotifierHash() => r'dfedfcc4dcd011809182d6e5cf84ac5c4fe2ea90';
 
 /// Flashcard 主 Provider
 ///

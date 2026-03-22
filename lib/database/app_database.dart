@@ -77,7 +77,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration {
@@ -174,6 +174,52 @@ class AppDatabase extends _$AppDatabase {
         // v19→v20：新增 daily_stage_study_records 表（按阶段统计每日听说时长）
         if (from < 20) {
           await m.createTable(dailyStageStudyRecords);
+        }
+        // v20→v21：learning_progresses 新增断点来源字段（v1 方案，已被 v22 替代）
+        if (from < 21) {
+          await _addColumnIfNotExists(
+            'learning_progresses',
+            'breakpoint_from_normal_learning',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
+          await _addColumnIfNotExists(
+            'learning_progresses',
+            'breakpoint_saved_at',
+            'INTEGER',
+          );
+        }
+        // v21→v22：learning_progresses 双轨断点分离（各自独立索引 + 过期时间戳）
+        if (from < 22) {
+          await _addColumnIfNotExists(
+            'learning_progresses',
+            'free_play_intensive_listen_sentence_index',
+            'INTEGER',
+          );
+          await _addColumnIfNotExists(
+            'learning_progresses',
+            'free_play_shadowing_sentence_index',
+            'INTEGER',
+          );
+          await _addColumnIfNotExists(
+            'learning_progresses',
+            'free_play_difficult_practice_sentence_index',
+            'INTEGER',
+          );
+          await _addColumnIfNotExists(
+            'learning_progresses',
+            'free_play_retell_paragraph_index',
+            'INTEGER',
+          );
+          await _addColumnIfNotExists(
+            'learning_progresses',
+            'new_learning_breakpoint_saved_at',
+            'INTEGER',
+          );
+          await _addColumnIfNotExists(
+            'learning_progresses',
+            'free_play_breakpoint_saved_at',
+            'INTEGER',
+          );
         }
         // v12→v13：audio_items 新增 transcript_source, audio_sha256, transcript_language 列
         if (from < 13) {

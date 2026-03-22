@@ -217,6 +217,7 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
           .saveDifficultPracticeSentenceIndex(
             audioItemId,
             state.currentSentenceIndex,
+            isFreePlay: session.isFreePlay,
           ),
     );
   }

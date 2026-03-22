@@ -781,6 +781,7 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
           .saveIntensiveListenSentenceIndex(
             audioItemId,
             state.currentSentenceIndex,
+            isFreePlay: session.isFreePlay,
           ),
     );
   }

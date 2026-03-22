@@ -436,12 +436,15 @@ class LearningSession extends _$LearningSession {
       learningProgressNotifierProvider.notifier,
     );
 
-    // 自由练习：读取断点续学索引。正常学习：从头开始。
+    // 读取断点续学索引：各自读取独立字段 + 校验过期时间
+    final progress = await progressNotifier.getLatestOrEnsureProgress(
+      audioItemId,
+    );
     int startIndex = 0;
-    if (isFreePlay) {
-      final progress = await progressNotifier.getLatestOrEnsureProgress(
-        audioItemId,
-      );
+    if (isFreePlay && _isBreakpointValid(progress.freePlayBreakpointSavedAt)) {
+      startIndex = progress.freePlayIntensiveListenSentenceIndex ?? 0;
+    } else if (!isFreePlay &&
+        _isBreakpointValid(progress.newLearningBreakpointSavedAt)) {
       startIndex = progress.intensiveListenSentenceIndex ?? 0;
     }
 
@@ -500,8 +503,13 @@ class LearningSession extends _$LearningSession {
     final progress = await ref
         .read(learningProgressNotifierProvider.notifier)
         .getLatestOrEnsureProgress(audioItemId);
-    // 自由练习：读取断点续学索引。正常学习：从头开始。
-    final startIndex = isFreePlay ? (progress.shadowingSentenceIndex ?? 0) : 0;
+    int startIndex = 0;
+    if (isFreePlay && _isBreakpointValid(progress.freePlayBreakpointSavedAt)) {
+      startIndex = progress.freePlayShadowingSentenceIndex ?? 0;
+    } else if (!isFreePlay &&
+        _isBreakpointValid(progress.newLearningBreakpointSavedAt)) {
+      startIndex = progress.shadowingSentenceIndex ?? 0;
+    }
     final difficultyValue = progress.difficulty.value;
     final targetPlayCount = targetPlayCountForDifficulty(difficultyValue);
 
@@ -541,13 +549,15 @@ class LearningSession extends _$LearningSession {
     final practice = ref.read(listeningPracticeProvider.notifier);
     final currentSettings = ref.read(listeningPracticeProvider).settings;
 
-    // 自由练习：读取断点续学索引，从上次退出的段落继续。
-    // 正常学习：每次从头开始，避免上一阶段/自由练习的遗留索引干扰。
+    // 各自读取独立字段 + 校验过期时间
+    final progress = await ref
+        .read(learningProgressNotifierProvider.notifier)
+        .getLatestOrEnsureProgress(audioItemId);
     int? startSentenceIndex;
-    if (isFreePlay) {
-      final progress = await ref
-          .read(learningProgressNotifierProvider.notifier)
-          .getLatestOrEnsureProgress(audioItemId);
+    if (isFreePlay && _isBreakpointValid(progress.freePlayBreakpointSavedAt)) {
+      startSentenceIndex = progress.freePlayRetellParagraphIndex;
+    } else if (!isFreePlay &&
+        _isBreakpointValid(progress.newLearningBreakpointSavedAt)) {
       startSentenceIndex = progress.retellParagraphIndex;
     }
 
@@ -604,13 +614,17 @@ class LearningSession extends _$LearningSession {
         .where((s) => bookmarkedIndices.contains(s.index))
         .toList();
 
-    // 自由练习：读取断点续学索引。正常学习：从头开始。
+    // 各自读取独立字段 + 校验过期时间
     final progress = await ref
         .read(learningProgressNotifierProvider.notifier)
         .getLatestOrEnsureProgress(audioItemId);
-    final startIndex = isFreePlay
-        ? (progress.difficultPracticeSentenceIndex ?? 0)
-        : 0;
+    int startIndex = 0;
+    if (isFreePlay && _isBreakpointValid(progress.freePlayBreakpointSavedAt)) {
+      startIndex = progress.freePlayDifficultPracticeSentenceIndex ?? 0;
+    } else if (!isFreePlay &&
+        _isBreakpointValid(progress.newLearningBreakpointSavedAt)) {
+      startIndex = progress.difficultPracticeSentenceIndex ?? 0;
+    }
 
     state = state.copyWith(
       learningMode: LearningMode.reviewDifficultPractice,
@@ -691,6 +705,12 @@ class LearningSession extends _$LearningSession {
     ref.read(studyStatsNotifierProvider.notifier).refresh();
 
     state = const LearningSessionState();
+  }
+
+  /// 断点是否有效（距今 ≤3 天）
+  bool _isBreakpointValid(DateTime? savedAt) {
+    if (savedAt == null) return false;
+    return DateTime.now().difference(savedAt).inDays <= 3;
   }
 
   /// 等待音频引擎加载目标音频

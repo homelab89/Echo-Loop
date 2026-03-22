@@ -316,7 +316,11 @@ class RetellPlayer extends _$RetellPlayer {
     unawaited(
       ref
           .read(learningProgressNotifierProvider.notifier)
-          .saveRetellParagraphIndex(audioItemId, sentenceIndex),
+          .saveRetellParagraphIndex(
+            audioItemId,
+            sentenceIndex,
+            isFreePlay: session.isFreePlay,
+          ),
     );
   }
 

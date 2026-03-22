@@ -63,6 +63,25 @@ class LearningProgresses extends Table {
   /// 复述总完成遍数（每次完成复述 +1）
   IntColumn get retellPassCount => integer().nullable()();
 
+  /// 自由练习-精听断点句子索引
+  IntColumn get freePlayIntensiveListenSentenceIndex => integer().nullable()();
+
+  /// 自由练习-跟读断点句子索引
+  IntColumn get freePlayShadowingSentenceIndex => integer().nullable()();
+
+  /// 自由练习-难句补练断点句子索引
+  IntColumn get freePlayDifficultPracticeSentenceIndex =>
+      integer().nullable()();
+
+  /// 自由练习-复述断点段落索引
+  IntColumn get freePlayRetellParagraphIndex => integer().nullable()();
+
+  /// 新学习断点保存时间（>3天则不恢复）
+  DateTimeColumn get newLearningBreakpointSavedAt => dateTime().nullable()();
+
+  /// 自由练习断点保存时间（>3天则不恢复）
+  DateTimeColumn get freePlayBreakpointSavedAt => dateTime().nullable()();
+
   /// 最后更新时间
   DateTimeColumn get updatedAt => dateTime()();
 

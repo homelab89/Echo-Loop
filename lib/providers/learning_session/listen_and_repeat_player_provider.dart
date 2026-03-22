@@ -199,7 +199,11 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
     unawaited(
       ref
           .read(learningProgressNotifierProvider.notifier)
-          .saveShadowingSentenceIndex(audioItemId, state.currentSentenceIndex),
+          .saveShadowingSentenceIndex(
+            audioItemId,
+            state.currentSentenceIndex,
+            isFreePlay: session.isFreePlay,
+          ),
     );
   }
 

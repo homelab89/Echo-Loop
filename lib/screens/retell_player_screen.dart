@@ -227,7 +227,11 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
           .currentParagraphFirstSentenceIndex;
       await ref
           .read(learningProgressNotifierProvider.notifier)
-          .saveRetellParagraphIndex(widget.audioItemId, sentenceIndex);
+          .saveRetellParagraphIndex(
+            widget.audioItemId,
+            sentenceIndex,
+            isFreePlay: true,
+          );
       await _exit();
       return;
     }
@@ -260,7 +264,11 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
         .currentParagraphFirstSentenceIndex;
     await ref
         .read(learningProgressNotifierProvider.notifier)
-        .saveRetellParagraphIndex(widget.audioItemId, sentenceIndex);
+        .saveRetellParagraphIndex(
+          widget.audioItemId,
+          sentenceIndex,
+          isFreePlay: false,
+        );
     await _exit();
   }
 
@@ -332,7 +340,11 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
         onExit: () async {
           await ref
               .read(learningProgressNotifierProvider.notifier)
-              .saveRetellParagraphIndex(widget.audioItemId, null);
+              .saveRetellParagraphIndex(
+                widget.audioItemId,
+                null,
+                isFreePlay: true,
+              );
           await _exit();
         },
       );
@@ -365,7 +377,11 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
     if (result != null) {
       await ref
           .read(learningProgressNotifierProvider.notifier)
-          .saveRetellParagraphIndex(widget.audioItemId, null);
+          .saveRetellParagraphIndex(
+            widget.audioItemId,
+            null,
+            isFreePlay: false,
+          );
       await ref
           .read(learningProgressNotifierProvider.notifier)
           .completeCurrentSubStage(widget.audioItemId);

@@ -212,6 +212,8 @@ LearningProgress createTestLearningProgress({
   int? intensiveListenPassCount,
   int? shadowingPassCount,
   int? intensiveListenSentenceIndex,
+  DateTime? newLearningBreakpointSavedAt,
+  DateTime? freePlayBreakpointSavedAt,
   DateTime? updatedAt,
 }) {
   return LearningProgress(
@@ -228,6 +230,8 @@ LearningProgress createTestLearningProgress({
     intensiveListenPassCount: intensiveListenPassCount,
     shadowingPassCount: shadowingPassCount,
     intensiveListenSentenceIndex: intensiveListenSentenceIndex,
+    newLearningBreakpointSavedAt: newLearningBreakpointSavedAt,
+    freePlayBreakpointSavedAt: freePlayBreakpointSavedAt,
     updatedAt: updatedAt ?? DateTime(2026, 1, 1),
   );
 }
@@ -564,34 +568,56 @@ class TestLearningProgressNotifier extends LearningProgressNotifier {
   @override
   Future<void> saveIntensiveListenSentenceIndex(
     String audioItemId,
-    int? sentenceIndex,
-  ) async {
+    int? sentenceIndex, {
+    required bool isFreePlay,
+  }) async {
     final progress = state.progressMap[audioItemId];
     if (progress == null) return;
 
     final newMap = Map<String, LearningProgress>.from(state.progressMap);
-    newMap[audioItemId] = progress.copyWith(
-      intensiveListenSentenceIndex: sentenceIndex,
-      clearIntensiveListenSentenceIndex: sentenceIndex == null,
-      updatedAt: DateTime.now(),
-    );
+    if (isFreePlay) {
+      newMap[audioItemId] = progress.copyWith(
+        freePlayIntensiveListenSentenceIndex: sentenceIndex,
+        clearFreePlayIntensiveListenSentenceIndex: sentenceIndex == null,
+        freePlayBreakpointSavedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } else {
+      newMap[audioItemId] = progress.copyWith(
+        intensiveListenSentenceIndex: sentenceIndex,
+        clearIntensiveListenSentenceIndex: sentenceIndex == null,
+        newLearningBreakpointSavedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
     state = state.copyWith(progressMap: newMap);
   }
 
   @override
   Future<void> saveShadowingSentenceIndex(
     String audioItemId,
-    int? sentenceIndex,
-  ) async {
+    int? sentenceIndex, {
+    required bool isFreePlay,
+  }) async {
     final progress = state.progressMap[audioItemId];
     if (progress == null) return;
 
     final newMap = Map<String, LearningProgress>.from(state.progressMap);
-    newMap[audioItemId] = progress.copyWith(
-      shadowingSentenceIndex: sentenceIndex,
-      clearShadowingSentenceIndex: sentenceIndex == null,
-      updatedAt: DateTime.now(),
-    );
+    if (isFreePlay) {
+      newMap[audioItemId] = progress.copyWith(
+        freePlayShadowingSentenceIndex: sentenceIndex,
+        clearFreePlayShadowingSentenceIndex: sentenceIndex == null,
+        freePlayBreakpointSavedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } else {
+      newMap[audioItemId] = progress.copyWith(
+        shadowingSentenceIndex: sentenceIndex,
+        clearShadowingSentenceIndex: sentenceIndex == null,
+        newLearningBreakpointSavedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
     state = state.copyWith(progressMap: newMap);
   }
 
@@ -637,17 +663,28 @@ class TestLearningProgressNotifier extends LearningProgressNotifier {
   @override
   Future<void> saveRetellParagraphIndex(
     String audioItemId,
-    int? paragraphIndex,
-  ) async {
+    int? paragraphIndex, {
+    required bool isFreePlay,
+  }) async {
     final progress = state.progressMap[audioItemId];
     if (progress == null) return;
 
     final newMap = Map<String, LearningProgress>.from(state.progressMap);
-    newMap[audioItemId] = progress.copyWith(
-      retellParagraphIndex: paragraphIndex,
-      clearRetellParagraphIndex: paragraphIndex == null,
-      updatedAt: DateTime.now(),
-    );
+    if (isFreePlay) {
+      newMap[audioItemId] = progress.copyWith(
+        freePlayRetellParagraphIndex: paragraphIndex,
+        clearFreePlayRetellParagraphIndex: paragraphIndex == null,
+        freePlayBreakpointSavedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } else {
+      newMap[audioItemId] = progress.copyWith(
+        retellParagraphIndex: paragraphIndex,
+        clearRetellParagraphIndex: paragraphIndex == null,
+        newLearningBreakpointSavedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
     state = state.copyWith(progressMap: newMap);
   }
 
@@ -667,17 +704,28 @@ class TestLearningProgressNotifier extends LearningProgressNotifier {
   @override
   Future<void> saveDifficultPracticeSentenceIndex(
     String audioItemId,
-    int? sentenceIndex,
-  ) async {
+    int? sentenceIndex, {
+    required bool isFreePlay,
+  }) async {
     final progress = state.progressMap[audioItemId];
     if (progress == null) return;
 
     final newMap = Map<String, LearningProgress>.from(state.progressMap);
-    newMap[audioItemId] = progress.copyWith(
-      difficultPracticeSentenceIndex: sentenceIndex,
-      clearDifficultPracticeSentenceIndex: sentenceIndex == null,
-      updatedAt: DateTime.now(),
-    );
+    if (isFreePlay) {
+      newMap[audioItemId] = progress.copyWith(
+        freePlayDifficultPracticeSentenceIndex: sentenceIndex,
+        clearFreePlayDifficultPracticeSentenceIndex: sentenceIndex == null,
+        freePlayBreakpointSavedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    } else {
+      newMap[audioItemId] = progress.copyWith(
+        difficultPracticeSentenceIndex: sentenceIndex,
+        clearDifficultPracticeSentenceIndex: sentenceIndex == null,
+        newLearningBreakpointSavedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
     state = state.copyWith(progressMap: newMap);
   }
 

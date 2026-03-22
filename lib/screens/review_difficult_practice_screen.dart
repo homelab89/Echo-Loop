@@ -257,12 +257,14 @@ class _ReviewDifficultPracticeScreenState
     await ref.read(shadowingRecordingControllerProvider.notifier).fullReset();
 
     // 保存当前句子索引作为断点
+    final session = ref.read(learningSessionProvider);
     final player = ref.read(reviewDifficultPracticeProvider.notifier);
     await ref
         .read(learningProgressNotifierProvider.notifier)
         .saveDifficultPracticeSentenceIndex(
           widget.audioItemId,
           player.currentIndex,
+          isFreePlay: session.isFreePlay,
         );
 
     await ref.read(learningSessionProvider.notifier).exitLearningMode();
@@ -351,7 +353,11 @@ class _ReviewDifficultPracticeScreenState
       // 弹窗前清除断点
       await ref
           .read(learningProgressNotifierProvider.notifier)
-          .saveDifficultPracticeSentenceIndex(widget.audioItemId, null);
+          .saveDifficultPracticeSentenceIndex(
+            widget.audioItemId,
+            null,
+            isFreePlay: true,
+          );
 
       if (!mounted) return;
 
@@ -405,7 +411,11 @@ class _ReviewDifficultPracticeScreenState
     try {
       await ref
           .read(learningProgressNotifierProvider.notifier)
-          .saveDifficultPracticeSentenceIndex(widget.audioItemId, null);
+          .saveDifficultPracticeSentenceIndex(
+            widget.audioItemId,
+            null,
+            isFreePlay: false,
+          );
       await ref
           .read(learningProgressNotifierProvider.notifier)
           .completeCurrentSubStage(widget.audioItemId);

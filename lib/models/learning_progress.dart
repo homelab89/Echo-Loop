@@ -57,6 +57,24 @@ class LearningProgress {
   /// 复述总完成遍数（每次完成复述 +1）
   final int? retellPassCount;
 
+  /// 自由练习-精听断点句子索引
+  final int? freePlayIntensiveListenSentenceIndex;
+
+  /// 自由练习-跟读断点句子索引
+  final int? freePlayShadowingSentenceIndex;
+
+  /// 自由练习-难句补练断点句子索引
+  final int? freePlayDifficultPracticeSentenceIndex;
+
+  /// 自由练习-复述断点段落索引
+  final int? freePlayRetellParagraphIndex;
+
+  /// 新学习断点保存时间（>3天则不恢复）
+  final DateTime? newLearningBreakpointSavedAt;
+
+  /// 自由练习断点保存时间（>3天则不恢复）
+  final DateTime? freePlayBreakpointSavedAt;
+
   /// 最后更新时间
   final DateTime updatedAt;
 
@@ -78,6 +96,12 @@ class LearningProgress {
     this.difficultPracticeSentenceIndex,
     this.retellParagraphIndex,
     this.retellPassCount,
+    this.freePlayIntensiveListenSentenceIndex,
+    this.freePlayShadowingSentenceIndex,
+    this.freePlayDifficultPracticeSentenceIndex,
+    this.freePlayRetellParagraphIndex,
+    this.newLearningBreakpointSavedAt,
+    this.freePlayBreakpointSavedAt,
     required this.updatedAt,
   });
 
@@ -240,6 +264,18 @@ class LearningProgress {
     int? difficultPracticeSentenceIndex,
     int? retellParagraphIndex,
     int? retellPassCount,
+    int? freePlayIntensiveListenSentenceIndex,
+    bool clearFreePlayIntensiveListenSentenceIndex = false,
+    int? freePlayShadowingSentenceIndex,
+    bool clearFreePlayShadowingSentenceIndex = false,
+    int? freePlayDifficultPracticeSentenceIndex,
+    bool clearFreePlayDifficultPracticeSentenceIndex = false,
+    int? freePlayRetellParagraphIndex,
+    bool clearFreePlayRetellParagraphIndex = false,
+    DateTime? newLearningBreakpointSavedAt,
+    bool clearNewLearningBreakpointSavedAt = false,
+    DateTime? freePlayBreakpointSavedAt,
+    bool clearFreePlayBreakpointSavedAt = false,
     DateTime? updatedAt,
     bool clearIntensiveListenSentenceIndex = false,
     bool clearShadowingSentenceIndex = false,
@@ -277,6 +313,29 @@ class LearningProgress {
           ? null
           : (retellParagraphIndex ?? this.retellParagraphIndex),
       retellPassCount: retellPassCount ?? this.retellPassCount,
+      freePlayIntensiveListenSentenceIndex:
+          clearFreePlayIntensiveListenSentenceIndex
+              ? null
+              : (freePlayIntensiveListenSentenceIndex ??
+                  this.freePlayIntensiveListenSentenceIndex),
+      freePlayShadowingSentenceIndex: clearFreePlayShadowingSentenceIndex
+          ? null
+          : (freePlayShadowingSentenceIndex ??
+              this.freePlayShadowingSentenceIndex),
+      freePlayDifficultPracticeSentenceIndex:
+          clearFreePlayDifficultPracticeSentenceIndex
+              ? null
+              : (freePlayDifficultPracticeSentenceIndex ??
+                  this.freePlayDifficultPracticeSentenceIndex),
+      freePlayRetellParagraphIndex: clearFreePlayRetellParagraphIndex
+          ? null
+          : (freePlayRetellParagraphIndex ?? this.freePlayRetellParagraphIndex),
+      newLearningBreakpointSavedAt: clearNewLearningBreakpointSavedAt
+          ? null
+          : (newLearningBreakpointSavedAt ?? this.newLearningBreakpointSavedAt),
+      freePlayBreakpointSavedAt: clearFreePlayBreakpointSavedAt
+          ? null
+          : (freePlayBreakpointSavedAt ?? this.freePlayBreakpointSavedAt),
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }

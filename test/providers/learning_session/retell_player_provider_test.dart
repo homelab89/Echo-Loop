@@ -86,8 +86,9 @@ class _RecordingLearningProgressNotifier extends TestLearningProgressNotifier {
   @override
   Future<void> saveRetellParagraphIndex(
     String audioItemId,
-    int? paragraphIndex,
-  ) async {
+    int? paragraphIndex, {
+    required bool isFreePlay,
+  }) async {
     savedIndices.add(paragraphIndex);
     final progress =
         state.progressMap[audioItemId] ??
@@ -113,8 +114,9 @@ class _InMemoryLearningProgressNotifier extends TestLearningProgressNotifier {
   @override
   Future<void> saveRetellParagraphIndex(
     String audioItemId,
-    int? paragraphIndex,
-  ) async {
+    int? paragraphIndex, {
+    required bool isFreePlay,
+  }) async {
     final progress = await ensureProgress(audioItemId);
     final newMap = Map<String, LearningProgress>.from(state.progressMap);
     newMap[audioItemId] = progress.copyWith(

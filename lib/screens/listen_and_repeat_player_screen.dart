@@ -225,7 +225,7 @@ class _ListenAndRepeatPlayerScreenState
 
     final session = ref.read(learningSessionProvider);
     if (session.isFreePlay) {
-      await _saveSentenceProgress();
+      await _saveSentenceProgress(isFreePlay: true);
       await _exit();
       return;
     }
@@ -255,7 +255,7 @@ class _ListenAndRepeatPlayerScreenState
     }
 
     // 保存断点
-    await _saveSentenceProgress();
+    await _saveSentenceProgress(isFreePlay: false);
     await _exit();
   }
 
@@ -268,11 +268,15 @@ class _ListenAndRepeatPlayerScreenState
   }
 
   /// 保存跟读断点进度
-  Future<void> _saveSentenceProgress() async {
+  Future<void> _saveSentenceProgress({required bool isFreePlay}) async {
     final player = ref.read(listenAndRepeatPlayerProvider.notifier);
     await ref
         .read(learningProgressNotifierProvider.notifier)
-        .saveShadowingSentenceIndex(widget.audioItemId, player.currentIndex);
+        .saveShadowingSentenceIndex(
+          widget.audioItemId,
+          player.currentIndex,
+          isFreePlay: isFreePlay,
+        );
   }
 
   /// 构建带 AI 翻译/解析回调的句子卡片
@@ -423,7 +427,11 @@ class _ListenAndRepeatPlayerScreenState
         onExit: () async {
           await ref
               .read(learningProgressNotifierProvider.notifier)
-              .saveShadowingSentenceIndex(widget.audioItemId, null);
+              .saveShadowingSentenceIndex(
+                widget.audioItemId,
+                null,
+                isFreePlay: true,
+              );
           await _exit();
         },
       );
@@ -467,7 +475,11 @@ class _ListenAndRepeatPlayerScreenState
     try {
       await ref
           .read(learningProgressNotifierProvider.notifier)
-          .saveShadowingSentenceIndex(widget.audioItemId, null);
+          .saveShadowingSentenceIndex(
+            widget.audioItemId,
+            null,
+            isFreePlay: false,
+          );
       await ref
           .read(learningProgressNotifierProvider.notifier)
           .completeCurrentSubStage(widget.audioItemId);

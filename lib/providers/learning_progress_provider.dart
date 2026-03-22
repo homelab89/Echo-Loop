@@ -330,15 +330,28 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
   /// 保存跟读断点句子索引
   Future<void> saveShadowingSentenceIndex(
     String audioItemId,
-    int? sentenceIndex,
-  ) async {
+    int? sentenceIndex, {
+    required bool isFreePlay,
+  }) async {
     final progress = await ensureProgress(audioItemId);
+    final now = DateTime.now();
 
-    final updated = progress.copyWith(
-      shadowingSentenceIndex: sentenceIndex,
-      clearShadowingSentenceIndex: sentenceIndex == null,
-      updatedAt: DateTime.now(),
-    );
+    LearningProgress updated;
+    if (isFreePlay) {
+      updated = progress.copyWith(
+        freePlayShadowingSentenceIndex: sentenceIndex,
+        clearFreePlayShadowingSentenceIndex: sentenceIndex == null,
+        freePlayBreakpointSavedAt: now,
+        updatedAt: now,
+      );
+    } else {
+      updated = progress.copyWith(
+        shadowingSentenceIndex: sentenceIndex,
+        clearShadowingSentenceIndex: sentenceIndex == null,
+        newLearningBreakpointSavedAt: now,
+        updatedAt: now,
+      );
+    }
 
     await _persistProgress(updated);
 
@@ -350,15 +363,28 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
   /// 保存难句补练断点句子索引
   Future<void> saveDifficultPracticeSentenceIndex(
     String audioItemId,
-    int? sentenceIndex,
-  ) async {
+    int? sentenceIndex, {
+    required bool isFreePlay,
+  }) async {
     final progress = await ensureProgress(audioItemId);
+    final now = DateTime.now();
 
-    final updated = progress.copyWith(
-      difficultPracticeSentenceIndex: sentenceIndex,
-      clearDifficultPracticeSentenceIndex: sentenceIndex == null,
-      updatedAt: DateTime.now(),
-    );
+    LearningProgress updated;
+    if (isFreePlay) {
+      updated = progress.copyWith(
+        freePlayDifficultPracticeSentenceIndex: sentenceIndex,
+        clearFreePlayDifficultPracticeSentenceIndex: sentenceIndex == null,
+        freePlayBreakpointSavedAt: now,
+        updatedAt: now,
+      );
+    } else {
+      updated = progress.copyWith(
+        difficultPracticeSentenceIndex: sentenceIndex,
+        clearDifficultPracticeSentenceIndex: sentenceIndex == null,
+        newLearningBreakpointSavedAt: now,
+        updatedAt: now,
+      );
+    }
 
     await _persistProgress(updated);
 
@@ -370,15 +396,28 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
   /// 保存复述断点段落索引
   Future<void> saveRetellParagraphIndex(
     String audioItemId,
-    int? paragraphIndex,
-  ) async {
+    int? paragraphIndex, {
+    required bool isFreePlay,
+  }) async {
     final progress = await ensureProgress(audioItemId);
+    final now = DateTime.now();
 
-    final updated = progress.copyWith(
-      retellParagraphIndex: paragraphIndex,
-      clearRetellParagraphIndex: paragraphIndex == null,
-      updatedAt: DateTime.now(),
-    );
+    LearningProgress updated;
+    if (isFreePlay) {
+      updated = progress.copyWith(
+        freePlayRetellParagraphIndex: paragraphIndex,
+        clearFreePlayRetellParagraphIndex: paragraphIndex == null,
+        freePlayBreakpointSavedAt: now,
+        updatedAt: now,
+      );
+    } else {
+      updated = progress.copyWith(
+        retellParagraphIndex: paragraphIndex,
+        clearRetellParagraphIndex: paragraphIndex == null,
+        newLearningBreakpointSavedAt: now,
+        updatedAt: now,
+      );
+    }
 
     await _persistProgress(updated);
 
@@ -407,15 +446,28 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
   /// 保存精听断点句子索引
   Future<void> saveIntensiveListenSentenceIndex(
     String audioItemId,
-    int? sentenceIndex,
-  ) async {
+    int? sentenceIndex, {
+    required bool isFreePlay,
+  }) async {
     final progress = await ensureProgress(audioItemId);
+    final now = DateTime.now();
 
-    final updated = progress.copyWith(
-      intensiveListenSentenceIndex: sentenceIndex,
-      clearIntensiveListenSentenceIndex: sentenceIndex == null,
-      updatedAt: DateTime.now(),
-    );
+    LearningProgress updated;
+    if (isFreePlay) {
+      updated = progress.copyWith(
+        freePlayIntensiveListenSentenceIndex: sentenceIndex,
+        clearFreePlayIntensiveListenSentenceIndex: sentenceIndex == null,
+        freePlayBreakpointSavedAt: now,
+        updatedAt: now,
+      );
+    } else {
+      updated = progress.copyWith(
+        intensiveListenSentenceIndex: sentenceIndex,
+        clearIntensiveListenSentenceIndex: sentenceIndex == null,
+        newLearningBreakpointSavedAt: now,
+        updatedAt: now,
+      );
+    }
 
     await _persistProgress(updated);
 
@@ -452,6 +504,22 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
         ),
         retellParagraphIndex: Value(progress.retellParagraphIndex),
         retellPassCount: Value(progress.retellPassCount),
+        freePlayIntensiveListenSentenceIndex: Value(
+          progress.freePlayIntensiveListenSentenceIndex,
+        ),
+        freePlayShadowingSentenceIndex: Value(
+          progress.freePlayShadowingSentenceIndex,
+        ),
+        freePlayDifficultPracticeSentenceIndex: Value(
+          progress.freePlayDifficultPracticeSentenceIndex,
+        ),
+        freePlayRetellParagraphIndex: Value(
+          progress.freePlayRetellParagraphIndex,
+        ),
+        newLearningBreakpointSavedAt: Value(
+          progress.newLearningBreakpointSavedAt,
+        ),
+        freePlayBreakpointSavedAt: Value(progress.freePlayBreakpointSavedAt),
         updatedAt: Value(progress.updatedAt),
       ),
     );
@@ -483,6 +551,14 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
       difficultPracticeSentenceIndex: row.difficultPracticeSentenceIndex,
       retellParagraphIndex: row.retellParagraphIndex,
       retellPassCount: row.retellPassCount,
+      freePlayIntensiveListenSentenceIndex:
+          row.freePlayIntensiveListenSentenceIndex,
+      freePlayShadowingSentenceIndex: row.freePlayShadowingSentenceIndex,
+      freePlayDifficultPracticeSentenceIndex:
+          row.freePlayDifficultPracticeSentenceIndex,
+      freePlayRetellParagraphIndex: row.freePlayRetellParagraphIndex,
+      newLearningBreakpointSavedAt: row.newLearningBreakpointSavedAt,
+      freePlayBreakpointSavedAt: row.freePlayBreakpointSavedAt,
       updatedAt: row.updatedAt,
     );
   }

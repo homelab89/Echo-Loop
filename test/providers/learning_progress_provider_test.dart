@@ -507,15 +507,37 @@ void main() {
       );
     });
 
-    test('saveIntensiveListenSentenceIndex 保存断点', () async {
+    test('saveIntensiveListenSentenceIndex 保存断点（正常学习）', () async {
       final container = createContainer(
         LearningProgressState(progressMap: {'a1': baseProgress}),
       );
 
-      await notifier(container).saveIntensiveListenSentenceIndex('a1', 5);
+      await notifier(container).saveIntensiveListenSentenceIndex(
+        'a1',
+        5,
+        isFreePlay: false,
+      );
 
       final after = readProgress(container, 'a1')!;
       expect(after.intensiveListenSentenceIndex, 5);
+      expect(after.newLearningBreakpointSavedAt, isNotNull);
+    });
+
+    test('saveIntensiveListenSentenceIndex 保存断点（自由练习）', () async {
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': baseProgress}),
+      );
+
+      await notifier(container).saveIntensiveListenSentenceIndex(
+        'a1',
+        5,
+        isFreePlay: true,
+      );
+
+      final after = readProgress(container, 'a1')!;
+      expect(after.freePlayIntensiveListenSentenceIndex, 5);
+      expect(after.freePlayBreakpointSavedAt, isNotNull);
+      expect(after.intensiveListenSentenceIndex, isNull);
     });
 
     test('saveIntensiveListenSentenceIndex 清除断点', () async {
@@ -526,7 +548,11 @@ void main() {
         LearningProgressState(progressMap: {'a1': progressWithIndex}),
       );
 
-      await notifier(container).saveIntensiveListenSentenceIndex('a1', null);
+      await notifier(container).saveIntensiveListenSentenceIndex(
+        'a1',
+        null,
+        isFreePlay: false,
+      );
 
       final after = readProgress(container, 'a1')!;
       expect(after.intensiveListenSentenceIndex, isNull);
@@ -537,7 +563,11 @@ void main() {
         LearningProgressState(progressMap: {'a1': baseProgress}),
       );
 
-      await notifier(container).saveShadowingSentenceIndex('a1', 3);
+      await notifier(container).saveShadowingSentenceIndex(
+        'a1',
+        3,
+        isFreePlay: false,
+      );
 
       final after = readProgress(container, 'a1')!;
       expect(after.shadowingSentenceIndex, 3);
@@ -551,7 +581,11 @@ void main() {
         LearningProgressState(progressMap: {'a1': progressWithIndex}),
       );
 
-      await notifier(container).saveShadowingSentenceIndex('a1', null);
+      await notifier(container).saveShadowingSentenceIndex(
+        'a1',
+        null,
+        isFreePlay: false,
+      );
 
       final after = readProgress(container, 'a1')!;
       expect(after.shadowingSentenceIndex, isNull);
@@ -562,7 +596,11 @@ void main() {
         LearningProgressState(progressMap: {'a1': baseProgress}),
       );
 
-      await notifier(container).saveDifficultPracticeSentenceIndex('a1', 7);
+      await notifier(container).saveDifficultPracticeSentenceIndex(
+        'a1',
+        7,
+        isFreePlay: false,
+      );
 
       final after = readProgress(container, 'a1')!;
       expect(after.difficultPracticeSentenceIndex, 7);
@@ -576,7 +614,11 @@ void main() {
         LearningProgressState(progressMap: {'a1': progressWithIndex}),
       );
 
-      await notifier(container).saveDifficultPracticeSentenceIndex('a1', null);
+      await notifier(container).saveDifficultPracticeSentenceIndex(
+        'a1',
+        null,
+        isFreePlay: false,
+      );
 
       final after = readProgress(container, 'a1')!;
       expect(after.difficultPracticeSentenceIndex, isNull);
@@ -587,7 +629,11 @@ void main() {
         LearningProgressState(progressMap: {'a1': baseProgress}),
       );
 
-      await notifier(container).saveRetellParagraphIndex('a1', 2);
+      await notifier(container).saveRetellParagraphIndex(
+        'a1',
+        2,
+        isFreePlay: false,
+      );
 
       final after = readProgress(container, 'a1')!;
       expect(after.retellParagraphIndex, 2);
@@ -599,7 +645,11 @@ void main() {
         LearningProgressState(progressMap: {'a1': progressWithIndex}),
       );
 
-      await notifier(container).saveRetellParagraphIndex('a1', null);
+      await notifier(container).saveRetellParagraphIndex(
+        'a1',
+        null,
+        isFreePlay: false,
+      );
 
       final after = readProgress(container, 'a1')!;
       expect(after.retellParagraphIndex, isNull);
@@ -608,14 +658,26 @@ void main() {
     test('audioItemId 不存在时断点保存安全返回', () async {
       final container = createContainer(const LearningProgressState());
 
-      await notifier(
-        container,
-      ).saveIntensiveListenSentenceIndex('nonexistent', 5);
-      await notifier(container).saveShadowingSentenceIndex('nonexistent', 5);
-      await notifier(
-        container,
-      ).saveDifficultPracticeSentenceIndex('nonexistent', 5);
-      await notifier(container).saveRetellParagraphIndex('nonexistent', 5);
+      await notifier(container).saveIntensiveListenSentenceIndex(
+        'nonexistent',
+        5,
+        isFreePlay: false,
+      );
+      await notifier(container).saveShadowingSentenceIndex(
+        'nonexistent',
+        5,
+        isFreePlay: false,
+      );
+      await notifier(container).saveDifficultPracticeSentenceIndex(
+        'nonexistent',
+        5,
+        isFreePlay: false,
+      );
+      await notifier(container).saveRetellParagraphIndex(
+        'nonexistent',
+        5,
+        isFreePlay: false,
+      );
 
       final progress = readProgress(container, 'nonexistent');
       expect(progress?.intensiveListenSentenceIndex, 5);
@@ -769,6 +831,12 @@ void main() {
         difficultPracticeSentenceIndex: null,
         retellParagraphIndex: null,
         retellPassCount: null,
+        freePlayIntensiveListenSentenceIndex: null,
+        freePlayShadowingSentenceIndex: null,
+        freePlayDifficultPracticeSentenceIndex: null,
+        freePlayRetellParagraphIndex: null,
+        newLearningBreakpointSavedAt: null,
+        freePlayBreakpointSavedAt: null,
         updatedAt: DateTime(2026, 3, 11, 9, 30),
       );
       when(
@@ -813,6 +881,12 @@ void main() {
         difficultPracticeSentenceIndex: null,
         retellParagraphIndex: 7,
         retellPassCount: null,
+        freePlayIntensiveListenSentenceIndex: null,
+        freePlayShadowingSentenceIndex: null,
+        freePlayDifficultPracticeSentenceIndex: null,
+        freePlayRetellParagraphIndex: null,
+        newLearningBreakpointSavedAt: null,
+        freePlayBreakpointSavedAt: null,
         updatedAt: DateTime(2026, 3, 11, 9, 30),
       );
       when(
