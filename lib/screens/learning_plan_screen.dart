@@ -411,7 +411,7 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
       sentences: lpState.sentences,
       defaultSeconds: retellDefaultSeconds(currentStage),
       stageLabel: isReview ? reviewStageLabel(l10n, currentStage) : null,
-      estimatedDurationText: isReview && retellEstimate != null
+      estimatedDurationText: retellEstimate != null
           ? formatEstimatedDuration(l10n, retellEstimate)
           : null,
       onStartPractice: (targetDuration, pauseMultiplier) async {
@@ -466,9 +466,15 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
 
     if (sentences.isEmpty) return;
 
+    final l10n = AppLocalizations.of(context)!;
+    final totalDuration = ref.read(audioEngineProvider).totalDuration;
+
     showBlindListenParagraphSheet(
       context: context,
       sentences: sentences,
+      estimatedDurationText: totalDuration != null
+          ? formatEstimatedDuration(l10n, totalDuration)
+          : null,
       onStartPractice: (targetDuration, pauseMultiplier) async {
         final paragraphs = groupSentencesIntoParagraphs(
           sentences,
@@ -644,10 +650,16 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
       return;
     }
 
+    final totalDuration = ref.read(audioEngineProvider).totalDuration;
+    final retellEstimate = totalDuration != null ? totalDuration * 3 : null;
+
     showRetellBriefingSheet(
       context: context,
       sentences: lpState.sentences,
       defaultSeconds: retellDefaultSeconds(LearningStage.firstLearn),
+      estimatedDurationText: retellEstimate != null
+          ? formatEstimatedDuration(l10n, retellEstimate)
+          : null,
       onStartPractice: (targetDuration, pauseMultiplier) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
@@ -1248,9 +1260,15 @@ class _FirstStudySection extends ConsumerWidget {
     final sentences = ref.read(listeningPracticeProvider).sentences;
     if (sentences.isEmpty) return;
 
+    final l10n = AppLocalizations.of(context)!;
+    final totalDuration = ref.read(audioEngineProvider).totalDuration;
+
     showBlindListenParagraphSheet(
       context: context,
       sentences: sentences,
+      estimatedDurationText: totalDuration != null
+          ? formatEstimatedDuration(l10n, totalDuration)
+          : null,
       onStartPractice: (targetDuration, pauseMultiplier) async {
         final paragraphs = groupSentencesIntoParagraphs(
           sentences,
@@ -1325,10 +1343,17 @@ class _FirstStudySection extends ConsumerWidget {
     final lpState = ref.read(listeningPracticeProvider);
     if (lpState.sentences.isEmpty) return;
 
+    final l10n = AppLocalizations.of(context)!;
+    final totalDuration = ref.read(audioEngineProvider).totalDuration;
+    final retellEstimate = totalDuration != null ? totalDuration * 3 : null;
+
     showRetellBriefingSheet(
       context: context,
       sentences: lpState.sentences,
       defaultSeconds: retellDefaultSeconds(LearningStage.firstLearn),
+      estimatedDurationText: retellEstimate != null
+          ? formatEstimatedDuration(l10n, retellEstimate)
+          : null,
       onStartPractice: (targetDuration, pauseMultiplier) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
@@ -1700,9 +1725,15 @@ class _ReviewRoundSection extends ConsumerWidget {
     final sentences = ref.read(listeningPracticeProvider).sentences;
     if (sentences.isEmpty) return;
 
+    final l10n = AppLocalizations.of(context)!;
+    final totalDuration = ref.read(audioEngineProvider).totalDuration;
+
     showBlindListenParagraphSheet(
       context: context,
       sentences: sentences,
+      estimatedDurationText: totalDuration != null
+          ? formatEstimatedDuration(l10n, totalDuration)
+          : null,
       onStartPractice: (targetDuration, pauseMultiplier) async {
         final paragraphs = groupSentencesIntoParagraphs(
           sentences,
@@ -1776,10 +1807,17 @@ class _ReviewRoundSection extends ConsumerWidget {
     }
 
     // 段落复述：弹出简报面板让用户选择段落时长
+    final l10n = AppLocalizations.of(context)!;
+    final totalDuration = ref.read(audioEngineProvider).totalDuration;
+    final retellEstimate = totalDuration != null ? totalDuration * 3 : null;
+
     showRetellBriefingSheet(
       context: context,
       sentences: lpState.sentences,
       defaultSeconds: retellDefaultSeconds(review.stage),
+      estimatedDurationText: retellEstimate != null
+          ? formatEstimatedDuration(l10n, retellEstimate)
+          : null,
       onStartPractice: (targetDuration, pauseMultiplier) async {
         final paragraphs = groupSentencesIntoParagraphs(
           lpState.sentences,
