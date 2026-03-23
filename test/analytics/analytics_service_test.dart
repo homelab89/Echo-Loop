@@ -50,13 +50,11 @@ void main() {
 
     test('track 转发事件到 channel', () async {
       await service.track(Events.appOpen, {
-        EventParams.isFirstLaunch: true,
         EventParams.launchType: 'cold',
       });
 
       expect(channel.events, hasLength(1));
       expect(channel.events.first.name, Events.appOpen);
-      expect(channel.events.first.params?[EventParams.isFirstLaunch], true);
       expect(channel.events.first.params?[EventParams.launchType], 'cold');
     });
 

@@ -76,10 +76,8 @@ abstract class EventParams {
   static const audioId = 'audio_id';
   static const stage = 'stage';
   static const durationMs = 'duration_ms';
-  static const completed = 'completed';
 
   // ── 生命周期 ──
-  static const isFirstLaunch = 'is_first_launch';
   static const launchType = 'launch_type';
   static const foregroundDurationMs = 'foreground_duration_ms';
 
@@ -98,8 +96,7 @@ abstract class EventParams {
   static const totalSentences = 'total_sentences';
   static const difficultCount = 'difficult_count';
 
-  // ── 跟读/复述 ──
-  static const avgRating = 'avg_rating';
+  // ── 复述 ──
   static const totalParagraphs = 'total_paragraphs';
 
   // ── 学习进度 ──
