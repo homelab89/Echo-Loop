@@ -240,6 +240,10 @@ class RetellPlayer extends _$RetellPlayer {
       currentParagraphIndex: safeIndex,
       totalParagraphs: paragraphs.length,
     );
+    ref.read(analyticsServiceProvider).track(Events.retellStart, {
+      EventParams.audioId: ref.read(learningSessionProvider).audioItemId ?? '',
+      EventParams.totalParagraphs: paragraphs.length,
+    });
   }
 
   /// 获取当前段落第一句的全局句子索引（用于保存断点）

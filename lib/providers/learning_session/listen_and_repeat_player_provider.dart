@@ -178,6 +178,10 @@ class ListenAndRepeatPlayer extends _$ListenAndRepeatPlayer {
       targetPlayCount: targetPlayCount,
       settings: IntensiveListenSettings(repeatCount: targetPlayCount),
     );
+    ref.read(analyticsServiceProvider).track(Events.shadowingStart, {
+      EventParams.audioId: ref.read(learningSessionProvider).audioItemId ?? '',
+      EventParams.totalSentences: _sentences.length,
+    });
   }
 
   /// 获取当前句子

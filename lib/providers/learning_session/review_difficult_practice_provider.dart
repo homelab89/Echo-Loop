@@ -182,6 +182,10 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
       currentSentenceIndex: validIndex,
       totalSentences: _sentences.length,
     );
+    ref.read(analyticsServiceProvider).track(Events.difficultPracticeStart, {
+      EventParams.audioId: ref.read(learningSessionProvider).audioItemId ?? '',
+      EventParams.difficultCount: _sentences.length,
+    });
   }
 
   /// 更新练习设置（仅会话内生效）

@@ -26,12 +26,7 @@ class FirebaseChannel implements AnalyticsChannel {
 
   @override
   Future<void> logEvent(String name, Map<String, Object>? parameters) {
-    return _analytics.logEvent(
-      name: name,
-      parameters: parameters?.map(
-        (key, value) => MapEntry(key, value),
-      ),
-    );
+    return _analytics.logEvent(name: name, parameters: parameters);
   }
 
   @override

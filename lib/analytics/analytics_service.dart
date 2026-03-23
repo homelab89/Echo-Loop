@@ -38,7 +38,11 @@ class AnalyticsService {
   /// 如果用户未同意数据采集，事件将被静默丢弃。
   Future<void> track(String name, [Map<String, Object>? properties]) async {
     if (!_consent.hasConsented) return;
-    await _channel.logEvent(name, properties);
+    try {
+      await _channel.logEvent(name, properties);
+    } catch (_) {
+      // 埋点永远不应影响主业务流程，静默忽略所有异常
+    }
   }
 
   /// 设置用户 ID

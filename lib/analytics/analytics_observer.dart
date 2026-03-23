@@ -73,17 +73,19 @@ class AnalyticsObserver extends NavigatorObserver {
     return null;
   }
 
+  static final _uuidPattern = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+  );
+  static final _numericPattern = RegExp(r'^\d+$');
+
   /// 判断路径段是否为动态参数（UUID、纯数字、GoRouter 模板变量）
   static bool _isParameterSegment(String segment) {
     // GoRouter 模板参数，如 :collectionId, :audioId
     if (segment.startsWith(':')) return true;
     // UUID 格式：8-4-4-4-12 hex
-    if (RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
-        .hasMatch(segment)) {
-      return true;
-    }
+    if (_uuidPattern.hasMatch(segment)) return true;
     // 纯数字（时间戳 ID 等）
-    if (RegExp(r'^\d+$').hasMatch(segment)) return true;
+    if (_numericPattern.hasMatch(segment)) return true;
     return false;
   }
 }

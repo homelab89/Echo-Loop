@@ -171,6 +171,10 @@ class BlindListenPlayer extends _$BlindListenPlayer {
       totalParagraphs: paragraphs.length,
       settings: settings,
     );
+    ref.read(analyticsServiceProvider).track(Events.blindListenStart, {
+      EventParams.audioId: ref.read(learningSessionProvider).audioItemId ?? '',
+      EventParams.passNumber: ref.read(learningSessionProvider).blindListenPassCount,
+    });
   }
 
   /// 获取当前段落的句子列表

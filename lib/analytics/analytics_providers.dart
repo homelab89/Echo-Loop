@@ -106,6 +106,8 @@ Future<bool> _resolveIsMainlandChina(SharedPreferences prefs) async {
 AnalyticsChannel _createChannel(bool isChina) {
   if (kDebugMode) return LogOnlyChannel();
 
-  if (!Platform.isMacOS && isChina) return UmengChannel();
+  if (!Platform.isMacOS && isChina && UmengChannel.isConfigured) {
+    return UmengChannel();
+  }
   return FirebaseChannel();
 }

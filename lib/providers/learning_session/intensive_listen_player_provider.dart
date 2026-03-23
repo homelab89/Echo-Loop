@@ -234,6 +234,10 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
       totalSentences: sentences.length,
       difficultSentences: preBookmarked,
     );
+    ref.read(analyticsServiceProvider).track(Events.intensiveListenStart, {
+      EventParams.audioId: ref.read(learningSessionProvider).audioItemId ?? '',
+      EventParams.totalSentences: sentences.length,
+    });
   }
 
   /// 获取当前句子

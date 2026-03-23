@@ -18,6 +18,9 @@ class UmengChannel implements AnalyticsChannel {
   /// 友盟 Android App Key
   static const _androidAppKey = ''; // TODO: 填入友盟 Android App Key
 
+  /// Key 是否已配置（未配置时 initialize 会抛异常，由上层 fallback）
+  static bool get isConfigured => _iosAppKey.isNotEmpty || _androidAppKey.isNotEmpty;
+
   /// 渠道标识
   static const _channel = 'flutter';
 
