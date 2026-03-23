@@ -165,6 +165,9 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
   /// 自动模式最大录音时长（检测到语音后启动）
   Duration _maxRecordingDuration = _defaultMaxRecordingDuration;
 
+  /// 绝对静音兜底阈值（检测到语音后，持续静音超过此时长即停止）
+  Duration _silenceTimeout = const Duration(seconds: 20);
+
   @override
   RetellRecordingState build() {
     final backend = ref.read(speechPracticeBackendProvider);
@@ -189,9 +192,9 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     _isManualMode = value;
   }
 
-  /// 设置绝对静音兜底阈值（复述场景不使用，保留接口兼容）
+  /// 设置绝对静音兜底阈值（检测到语音后，持续静音超过此时长即停止）
   void setSilenceTimeout(Duration value) {
-    // 复述场景完全靠 maxDuration 兜底，不使用绝对静音阈值。
+    _silenceTimeout = value;
   }
 
   /// 设置最大录音时长（默认 30s，仅自动模式；手动模式固定 60s）
@@ -341,12 +344,27 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     _eventSub = null;
 
     final result = await _recordingService.stopRecording(promptId: promptId);
+
+    // 确定用于评估的 transcript：优先 final，超时时回退到 live
+    String? transcript = result.finalTranscript;
+    if (transcript == null &&
+        result.errorCode == 'timeout' &&
+        _lastKnownTranscript != null &&
+        _lastKnownTranscript!.trim().isNotEmpty) {
+      transcript = _lastKnownTranscript!.trim();
+      AppLogger.log(
+        'RetellRec',
+        '📋 final transcript 超时，回退到 live transcript: "$transcript"',
+      );
+    }
+
     AppLogger.log(
       'RetellRec',
-      '📋 final: "${result.finalTranscript ?? '(null)'}"',
+      '📋 final: "${transcript ?? '(null)'}"',
     );
 
-    if (!result.isSuccess) {
+    // 无法获得任何 transcript → 走错误分支
+    if (transcript == null || transcript.isEmpty) {
       final attempt = SpeechPracticeAttempt(promptId: promptId).copyWith(
         filePath: result.filePath,
         status: _statusFromError(result.errorCode),
@@ -367,13 +385,13 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     final matcher = ref.read(speechTranscriptMatcherProvider);
     final matchResult = matcher.evaluate(
       referenceText: referenceText,
-      transcript: result.finalTranscript!,
+      transcript: transcript,
     );
 
     final effectiveScore = await _bestScore(
       coverageScore: matchResult.score,
       referenceText: referenceText,
-      transcript: result.finalTranscript!,
+      transcript: transcript,
     );
     final effectiveStatus = effectiveScore >= 0.2
         ? SpeechPracticeAttemptStatus.passed
@@ -554,6 +572,18 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
         return;
       }
     }
+
+    // 绝对静音兜底：无规则触发但静音超过阈值，强制停止
+    if (currentSilence >= _silenceTimeout) {
+      AppLogger.log(
+        'RetellRec',
+        '⏹ 静音兜底停止: '
+            '${currentSilence.inMilliseconds}ms ≥ '
+            '${_silenceTimeout.inMilliseconds}ms | '
+            '$summary',
+      );
+      _stopForEvaluation(promptId: promptId, reason: '静音兜底${_silenceTimeout.inSeconds}s');
+    }
   }
 
   // ── 等待开口计时器 ──
@@ -633,10 +663,11 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
         }
       }
     }
-    // 无规则触发 → 不设定时器，靠 maxDuration 兜底
+    // 无规则触发 → 用静音兜底阈值
     if (shortest == null) {
-      AppLogger.log('RetellRec', '转录停滞: 无规则触发, 靠 maxDuration 兜底');
-      return;
+      shortest = _silenceTimeout;
+      desc = '转录停滞兜底${_silenceTimeout.inSeconds}s';
+      AppLogger.log('RetellRec', '转录停滞: 无规则触发, 靠静音兜底 ${_silenceTimeout.inSeconds}s');
     }
 
     AppLogger.log('RetellRec', '转录停滞阈值 ${shortest.inMilliseconds}ms | $desc');
@@ -680,6 +711,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
   // ── 自动停止 ──
 
   void _stopForEvaluation({required String promptId, String reason = ''}) {
+    if (_isStopping) return; // 已在停止中，防止重复触发
     AppLogger.log('RetellRec', '⏹ 自动停止录音 ($reason)');
     _isStopping = true;
     _enterProcessing(promptId);

@@ -142,6 +142,14 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
       return;
     }
 
+    // 自动停止刚触发（phase 已是 processing），用户也点了停止 → 标记手动操作
+    if (recState.phase == RetellRecordingPhase.processing &&
+        recState.promptId == promptId) {
+      AppLogger.log('RetellScreen', '录音已在处理中 → 标记为手动操作');
+      _manualStoppedThisParagraph = true;
+      return;
+    }
+
     // 如果在倒计时中点击录音，取消倒计时
     if (state.isRetellCountdown) {
       player.cancelCountdown();
