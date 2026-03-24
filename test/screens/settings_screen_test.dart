@@ -40,6 +40,7 @@ void main() {
       audioEngineProvider.overrideWith(() => TestAudioEngine()),
       packageInfoProvider.overrideWithValue(testPackageInfo),
       appUpdateProvider.overrideWith(() => TestAppUpdate()),
+      analyticsOverride(),
     ];
   }
 

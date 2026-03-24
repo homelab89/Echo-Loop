@@ -3,10 +3,13 @@
 /// 验证 App 能正常启动并显示首页。
 library;
 
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'package:fluency/database/app_database.dart';
+import 'package:fluency/database/providers.dart';
 import 'package:fluency/main.dart';
 import 'package:fluency/providers/settings_provider.dart';
 import 'package:fluency/providers/audio_library_provider.dart';
@@ -41,13 +44,26 @@ void main() {
             () => TestLearningProgressNotifier(),
           ),
           packageInfoProvider.overrideWithValue(packageInfo),
+          analyticsOverride(),
+          appDatabaseProvider.overrideWithValue(
+            AppDatabase(
+              NativeDatabase.memory(
+                setup: (db) => db.execute('PRAGMA foreign_keys = ON'),
+              ),
+            ),
+          ),
         ],
         child: const FluencyApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    // pump 足够帧数让 UI 渲染完成
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     // 验证 App 正常加载 — 默认显示学习任务页空状态
     expect(find.text('No study tasks yet'), findsOneWidget);
+
+    // 消耗冷启动保护定时器（5 秒），避免 pending timer 断言失败
+    await tester.pump(const Duration(seconds: 6));
   });
 }

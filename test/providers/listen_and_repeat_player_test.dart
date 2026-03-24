@@ -128,6 +128,7 @@ void main() {
               ),
             ),
           ),
+          analyticsOverride(),
         ],
       );
       addTearDown(container.dispose);
@@ -181,6 +182,7 @@ void main() {
               ),
             ),
           ),
+          analyticsOverride(),
         ],
       );
       addTearDown(container.dispose);

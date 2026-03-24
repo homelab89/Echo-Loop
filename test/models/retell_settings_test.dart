@@ -48,29 +48,29 @@ void main() {
   });
 
   group('RetellSettings.calculatePauseDuration', () {
-    test('smart 模式：2秒 + 3倍段落时长', () {
+    test('smart 模式：2秒 + 2倍段落时长', () {
       const settings = RetellSettings(pauseMode: PauseMode.smart);
-      // 段落 10 秒 → 2 + 30 = 32 秒
+      // 段落 10 秒 → 2 + 20 = 22 秒
       final result = settings.calculatePauseDuration(
         const Duration(seconds: 10),
       );
-      expect(result, const Duration(seconds: 32));
+      expect(result, const Duration(seconds: 22));
     });
 
-    test('smart 模式：最短 5 秒', () {
+    test('smart 模式：最短 3 秒', () {
       const settings = RetellSettings(pauseMode: PauseMode.smart);
-      // 段落 0 秒 → 2 + 0 = 2 秒，clamp 到 5 秒
+      // 段落 0 秒 → 2 + 0 = 2 秒，clamp 到 3 秒
       final result = settings.calculatePauseDuration(Duration.zero);
-      expect(result, const Duration(seconds: 5));
+      expect(result, const Duration(seconds: 3));
     });
 
-    test('smart 模式：最长 300 秒', () {
+    test('smart 模式：最长 60 秒', () {
       const settings = RetellSettings(pauseMode: PauseMode.smart);
-      // 段落 120 秒 → 2 + 360 = 362 秒，clamp 到 300 秒
+      // 段落 120 秒 → 2 + 240 = 242 秒，clamp 到 60 秒
       final result = settings.calculatePauseDuration(
         const Duration(seconds: 120),
       );
-      expect(result, const Duration(seconds: 300));
+      expect(result, const Duration(seconds: 60));
     });
 
     test('fixed 模式：使用固定秒数', () {

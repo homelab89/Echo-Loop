@@ -66,6 +66,15 @@ class _DaoFallbackLearningProgressNotifier
     }
     return super.ensureProgress(audioItemId);
   }
+
+  @override
+  Future<LearningProgress> getLatestOrEnsureProgress(
+    String audioItemId,
+  ) async {
+    final latest = await getLatestByAudioId(audioItemId);
+    if (latest != null) return latest;
+    return ensureProgress(audioItemId);
+  }
 }
 
 class _TestBookmarkDao implements BookmarkDao {
@@ -276,6 +285,7 @@ void main() {
           ),
           blindListenPlayerProvider.overrideWith(() => TestBlindListenPlayer()),
           dailyStudyTimeProvider.overrideWith(() => TestDailyStudyTime()),
+          analyticsOverride(),
         ],
       );
     }
@@ -421,6 +431,7 @@ void main() {
           ),
           blindListenPlayerProvider.overrideWith(() => TestBlindListenPlayer()),
           dailyStudyTimeProvider.overrideWith(() => TestDailyStudyTime()),
+          analyticsOverride(),
         ],
       );
       return c;
@@ -603,6 +614,7 @@ void main() {
           blindListenPlayerProvider.overrideWith(() => TestBlindListenPlayer()),
           dailyStudyTimeProvider.overrideWith(() => TestDailyStudyTime()),
           bookmarkDaoProvider.overrideWithValue(_TestBookmarkDao({1, 3})),
+          analyticsOverride(),
         ],
       );
     }

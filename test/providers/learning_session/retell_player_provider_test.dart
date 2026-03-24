@@ -218,6 +218,7 @@ void main() {
         overrides: [
           audioEngineProvider.overrideWith(() => engine),
           learningSessionProvider.overrideWith(TestLearningSession.new),
+          analyticsOverride(),
         ],
       );
       notifier = container.read(retellPlayerProvider.notifier);
@@ -285,6 +286,7 @@ void main() {
             ),
           ),
           learningProgressNotifierProvider.overrideWith(() => progressNotifier),
+          analyticsOverride(),
         ],
       );
       addTearDown(saveContainer.dispose);
@@ -334,6 +336,7 @@ void main() {
             ),
           ),
           learningProgressNotifierProvider.overrideWith(() => progressNotifier),
+          analyticsOverride(),
         ],
       );
       addTearDown(saveContainer.dispose);
@@ -372,6 +375,7 @@ void main() {
           learningProgressNotifierProvider.overrideWith(
             _InMemoryLearningProgressNotifier.new,
           ),
+          analyticsOverride(),
         ],
       );
       addTearDown(countdownContainer.dispose);
@@ -453,6 +457,7 @@ void main() {
           learningProgressNotifierProvider.overrideWith(
             _InMemoryLearningProgressNotifier.new,
           ),
+          analyticsOverride(),
         ],
       );
       addTearDown(testContainer.dispose);
@@ -530,6 +535,7 @@ void main() {
           learningProgressNotifierProvider.overrideWith(
             _InMemoryLearningProgressNotifier.new,
           ),
+          analyticsOverride(),
         ],
       );
       addTearDown(testContainer.dispose);
@@ -583,6 +589,7 @@ void main() {
           learningProgressNotifierProvider.overrideWith(
             _InMemoryLearningProgressNotifier.new,
           ),
+          analyticsOverride(),
         ],
       );
       addTearDown(countdownContainer.dispose);

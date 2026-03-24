@@ -84,6 +84,7 @@ void main() {
         overrides: [
           audioEngineProvider.overrideWith(() => _TestAudioEngine()),
           learningSessionProvider.overrideWith(() => TestLearningSession()),
+          analyticsOverride(),
         ],
       );
       notifier = container.read(blindListenPlayerProvider.notifier);

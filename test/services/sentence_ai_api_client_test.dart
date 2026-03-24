@@ -1,15 +1,19 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluency/services/sentence_ai_api_client.dart';
 
 class MockDio extends Mock implements Dio {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late MockDio mockDio;
   late SentenceAiApiClient client;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     mockDio = MockDio();
     client = SentenceAiApiClient.withDio(mockDio);
   });

@@ -289,7 +289,11 @@ void main() {
 
     setUp(() {
       container = ProviderContainer(
-        overrides: [audioEngineProvider.overrideWith(() => TestAudioEngine())],
+        overrides: [
+          audioEngineProvider.overrideWith(() => TestAudioEngine()),
+          learningSessionProvider.overrideWith(() => TestLearningSession()),
+          analyticsOverride(),
+        ],
       );
     });
 
@@ -356,6 +360,7 @@ void main() {
         overrides: [
           audioEngineProvider.overrideWith(() => _ReplayTestAudioEngine()),
           learningSessionProvider.overrideWith(() => TestLearningSession()),
+          analyticsOverride(),
         ],
       );
       notifier = container.read(intensiveListenPlayerProvider.notifier);
@@ -431,6 +436,7 @@ void main() {
               ),
             ),
           ),
+          analyticsOverride(),
         ],
       );
       addTearDown(container.dispose);
@@ -477,6 +483,7 @@ void main() {
               ),
             ),
           ),
+          analyticsOverride(),
         ],
       );
       addTearDown(container.dispose);
@@ -625,6 +632,7 @@ void main() {
         overrides: [
           audioEngineProvider.overrideWith(() => _ReplayTestAudioEngine()),
           learningSessionProvider.overrideWith(() => TestLearningSession()),
+          analyticsOverride(),
         ],
       );
       notifier = container.read(intensiveListenPlayerProvider.notifier);

@@ -10,6 +10,7 @@ import 'package:fluency/models/learning_progress.dart';
 import 'package:fluency/providers/learning_progress_provider.dart';
 import 'package:fluency/providers/time_provider.dart';
 import 'package:mocktail/mocktail.dart';
+import '../helpers/mock_providers.dart';
 
 // ========== Mock 类 ==========
 
@@ -83,6 +84,7 @@ void main() {
         learningProgressDaoProvider.overrideWithValue(mockDao),
         stageCompletionDaoProvider.overrideWithValue(mockStageCompletionDao),
         if (nowGetter != null) nowProvider.overrideWithValue(nowGetter),
+        analyticsOverride(),
       ],
     );
     addTearDown(container.dispose);

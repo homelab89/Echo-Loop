@@ -109,6 +109,7 @@ void main() {
               ),
             ),
           ),
+          analyticsOverride(),
         ],
       );
       addTearDown(container.dispose);

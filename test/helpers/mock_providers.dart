@@ -5,7 +5,13 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart' as ja;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluency/analytics/analytics_channel.dart';
+import 'package:fluency/analytics/analytics_providers.dart';
+import 'package:fluency/analytics/analytics_service.dart';
+import 'package:fluency/analytics/consent_manager.dart';
 import 'package:fluency/models/audio_item.dart';
 import 'package:fluency/models/collection.dart';
 import 'package:fluency/models/tag.dart';
@@ -100,6 +106,66 @@ Tag createTestTag({
     name: name,
     colorValue: colorValue,
     createdDate: createdDate ?? DateTime(2026, 1, 1),
+  );
+}
+
+// ========== 测试用分析服务 ==========
+
+/// 测试用 AnalyticsChannel — 不做任何操作
+class NoOpAnalyticsChannel implements AnalyticsChannel {
+  @override
+  String get name => 'NoOp';
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<void> logEvent(String name, Map<String, Object>? parameters) async {}
+
+  @override
+  Future<void> setUserId(String? id) async {}
+
+  @override
+  Future<void> setUserProperty(String name, String? value) async {}
+}
+
+/// 创建测试用 AnalyticsService（no-op，不会访问网络或持久化）
+///
+/// 调用前必须确保已执行 SharedPreferences.setMockInitialValues({})
+Future<AnalyticsService> createTestAnalyticsService() async {
+  final prefs = await SharedPreferences.getInstance();
+  return AnalyticsService(
+    channel: NoOpAnalyticsChannel(),
+    consent: ConsentManager(prefs),
+  );
+}
+
+/// 同步创建测试用 AnalyticsService（使用 no-op consent）
+AnalyticsService createTestAnalyticsServiceSync() {
+  return AnalyticsService(
+    channel: NoOpAnalyticsChannel(),
+    consent: _NoOpConsentManager(),
+  );
+}
+
+/// 简单的同意管理器替身（始终返回 true）
+class _NoOpConsentManager extends ConsentManager {
+  _NoOpConsentManager() : super(_DummySharedPreferences());
+
+  @override
+  bool get hasConsented => true;
+}
+
+/// SharedPreferences 占位（不会被实际使用）
+class _DummySharedPreferences implements SharedPreferences {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+/// 返回 analyticsServiceProvider 的 override（在 ProviderContainer overrides 中使用）
+Override analyticsOverride() {
+  return analyticsServiceProvider.overrideWithValue(
+    createTestAnalyticsServiceSync(),
   );
 }
 
@@ -542,6 +608,15 @@ class TestLearningProgressNotifier extends LearningProgressNotifier {
   }
 
   @override
+  Future<LearningProgress> getLatestOrEnsureProgress(
+    String audioItemId,
+  ) async {
+    final existing = state.progressMap[audioItemId];
+    if (existing != null) return existing;
+    return ensureProgress(audioItemId);
+  }
+
+  @override
   Future<void> setDifficulty(
     String audioItemId,
     DifficultyLevel difficulty,
@@ -566,6 +641,51 @@ class TestLearningProgressNotifier extends LearningProgressNotifier {
     final newMap = Map<String, LearningProgress>.from(state.progressMap);
     newMap.remove(audioItemId);
     state = state.copyWith(progressMap: newMap);
+  }
+
+  @override
+  Future<void> saveBlindListenParagraphIndex(
+    String audioItemId,
+    int? paragraphIndex, {
+    required bool isFreePlay,
+  }) async {
+    // 测试中不做持久化
+  }
+
+  @override
+  Future<void> saveIntensiveListenSentenceIndex(
+    String audioItemId,
+    int? sentenceIndex, {
+    required bool isFreePlay,
+  }) async {
+    // 测试中不做持久化
+  }
+
+  @override
+  Future<void> saveShadowingSentenceIndex(
+    String audioItemId,
+    int? sentenceIndex, {
+    required bool isFreePlay,
+  }) async {
+    // 测试中不做持久化
+  }
+
+  @override
+  Future<void> saveDifficultPracticeSentenceIndex(
+    String audioItemId,
+    int? sentenceIndex, {
+    required bool isFreePlay,
+  }) async {
+    // 测试中不做持久化
+  }
+
+  @override
+  Future<void> saveRetellParagraphIndex(
+    String audioItemId,
+    int? paragraphIndex, {
+    required bool isFreePlay,
+  }) async {
+    // 测试中不做持久化
   }
 }
 
