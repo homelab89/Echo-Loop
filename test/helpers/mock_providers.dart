@@ -36,12 +36,17 @@ import 'package:fluency/providers/learning_session/review_difficult_practice_pro
 import 'package:fluency/providers/daily_study_time_provider.dart';
 import 'package:fluency/providers/speech_practice_session_provider.dart';
 import 'package:fluency/providers/listen_and_repeat_turn_controller_provider.dart';
+import 'package:fluency/providers/retell_recording_controller_provider.dart';
 import 'package:fluency/models/speech_practice_models.dart';
 import 'package:fluency/providers/transcription_task_provider.dart';
 import 'package:fluency/services/transcription_api_client.dart';
 import 'package:fluency/database/enums.dart';
+import 'package:fluency/database/providers.dart';
 import 'package:fluency/models/app_update_info.dart';
 import 'package:fluency/models/learning_progress.dart';
+import 'package:fluency/models/study_stage.dart';
+import 'package:fluency/services/study_event_recorder.dart';
+import 'package:fluency/services/study_time_service.dart';
 import 'package:fluency/models/blind_listen_settings.dart';
 import 'package:fluency/models/sentence.dart';
 import 'package:fluency/providers/app_update_provider.dart';
@@ -749,23 +754,8 @@ class TestLearningSession extends LearningSession {
   }
 
   @override
-  void addInputWords(int count) {
-    // 测试中不访问 StudyStatsNotifier
-  }
-
-  @override
   void addOutputWords(int count) {
     // 测试中不访问 StudyStatsNotifier
-  }
-
-  @override
-  void recordLearnedSentence(String text) {
-    // 测试中不访问 LearnedVocabularyTracker
-  }
-
-  @override
-  void recordLearnedSentences(Iterable<Sentence> sentences) {
-    // 测试中不访问 LearnedVocabularyTracker
   }
 }
 
@@ -1692,9 +1682,89 @@ class TestShadowingRecordingController extends ShadowingRecordingController {
 
   @override
   Future<void> deleteRecording(String filePath) async {}
+
+  @override
+  void setRecorder(StudyEventRecorder? recorder) {
+    // 测试环境中无实际录音服务，忽略 recorder 设置。
+  }
+}
+
+/// 测试用 RetellRecordingController — 不依赖平台通道
+class TestRetellRecordingController extends RetellRecordingController {
+  @override
+  RetellRecordingState build() => const RetellRecordingState();
+
+  @override
+  void setRecorder(StudyEventRecorder? recorder) {
+    // 测试环境中无实际录音服务，忽略 recorder 设置。
+  }
 }
 
 /// 测试用 TranscriptionApiClient Provider 值
 TranscriptionApiClient createTestTranscriptionApiClient() {
   return TranscriptionApiClient(baseUrl: 'https://test.local');
+}
+
+/// 测试用 StudyTimeService + 录音控制器 Overrides
+///
+/// 返回一个 Override 列表，提供无操作的 [StudyTimeService] 和录音控制器。
+/// 用于测试需要读取 [studyTimeServiceProvider] 的 Provider（如各播放器 Provider）。
+List<Override> studyTimeOverrides() {
+  return [
+    studyTimeServiceProvider.overrideWithValue(_NoOpStudyTimeService()),
+    shadowingRecordingControllerProvider.overrideWith(
+      TestShadowingRecordingController.new,
+    ),
+    retellRecordingControllerProvider.overrideWith(
+      TestRetellRecordingController.new,
+    ),
+  ];
+}
+
+/// 无操作 StudyTimeService — 所有写入操作静默忽略，查询返回零值。
+class _NoOpStudyTimeService implements StudyTimeService {
+  @override
+  Future<int> getStudyTime(DateTime date) async => 0;
+  @override
+  Future<int> getTodayStudyTime() async => 0;
+  @override
+  Future<void> addStudyTime(int seconds, {DateTime? date, StudyStage? stage}) async {}
+  @override
+  Future<int> getStudyStreak({DateTime? now}) async => 0;
+  @override
+  Future<List<int>> getWeeklyStudyTimes({DateTime? now}) async => List.filled(7, 0);
+  @override
+  Future<int> getWeekTotalStudyTime({DateTime? now}) async => 0;
+  @override
+  Future<int> getInputWords(DateTime date) async => 0;
+  @override
+  Future<int> getTodayInputWords() async => 0;
+  @override
+  Future<void> addInputWords(int count, {DateTime? date}) async {}
+  @override
+  Future<int> getOutputWords(DateTime date) async => 0;
+  @override
+  Future<int> getTodayOutputWords() async => 0;
+  @override
+  Future<void> addOutputWords(int count, {DateTime? date}) async {}
+  @override
+  Future<int> getInputTime(DateTime date) async => 0;
+  @override
+  Future<int> getTodayInputTime() async => 0;
+  @override
+  Future<void> addInputTime(int seconds, {DateTime? date, StudyStage? stage}) async {}
+  @override
+  Future<List<int>> getWeeklyInputTimes({DateTime? now}) async => List.filled(7, 0);
+  @override
+  Future<int> getOutputTime(DateTime date) async => 0;
+  @override
+  Future<int> getTodayOutputTime() async => 0;
+  @override
+  Future<void> addOutputTime(int seconds, {DateTime? date, StudyStage? stage}) async {}
+  @override
+  Future<List<int>> getWeeklyOutputTimes({DateTime? now}) async => List.filled(7, 0);
+  @override
+  Future<List<DailyStageStudyRecordData>> getStageBreakdown(DateTime date) async => [];
+  @override
+  Future<DailyTotalData?> getDayTotal(DateTime date) async => null;
 }

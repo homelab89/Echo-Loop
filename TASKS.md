@@ -1,12 +1,26 @@
 # Fluency 任务清单
 
-> 最后更新：2026-03-23
+> 最后更新：2026-03-24
 > 当前焦点：录音+识别功能
 
 ## 历史归档
 - [Milestone 2 - 学习流程引擎](./docs/tasks-archive/milestone-2-learning-engine.md)
 - [Milestone 3 - 收藏与标注体系 + 体验优化](./docs/tasks-archive/milestone-3-completed.md)
 - [Milestone 4 - 功能完善与体验打磨](./docs/tasks-archive/milestone-4-features-and-polish.md)
+
+---
+
+## 已完成：修复听说时间统计不一致 + 集中化 StudyEventRecorder
+
+- [x] 显示层 clamp 修复：output 不再被 `total - input` 压缩到 0（4 处）
+- [x] 新增 `StudyEventRecorder`：封装按句/按录音的统计写入（inputTime + inputWords + recordSentence + outputTime）
+- [x] `SentencePlaybackEngine` 注入 recorder：`playSentenceLoop` 和 `playOnce` 每播完一遍自动记录
+- [x] `RecordingService` 追踪录音时长：`stopRecording` 时自动回调 recorder
+- [x] 录音控制器暴露 `setRecorder()`：Provider 进入模式时注入，退出时清除
+- [x] 全部 7 个 Player Provider 迁移：删除 input/output Stopwatch，改用 recorder 事件驱动
+- [x] 清理 LearningSession 死代码：删除 `addInputTime`/`addInputWords`/`recordLearnedSentence`/`_saveInputOutputTime`
+
+  **完成时间**: 2026-03-24
 
 ---
 

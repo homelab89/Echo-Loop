@@ -132,9 +132,6 @@ class _PassiveLearningSession extends TestLearningSession {
   _PassiveLearningSession([super.initialState]);
 
   @override
-  void addInputWords(int count) {}
-
-  @override
   void addOutputWords(int count) {}
 }
 
@@ -219,6 +216,7 @@ void main() {
           audioEngineProvider.overrideWith(() => engine),
           learningSessionProvider.overrideWith(TestLearningSession.new),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       notifier = container.read(retellPlayerProvider.notifier);
@@ -287,6 +285,7 @@ void main() {
           ),
           learningProgressNotifierProvider.overrideWith(() => progressNotifier),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       addTearDown(saveContainer.dispose);
@@ -337,6 +336,7 @@ void main() {
           ),
           learningProgressNotifierProvider.overrideWith(() => progressNotifier),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       addTearDown(saveContainer.dispose);
@@ -376,6 +376,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       addTearDown(countdownContainer.dispose);
@@ -458,6 +459,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       addTearDown(testContainer.dispose);
@@ -536,6 +538,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       addTearDown(testContainer.dispose);
@@ -590,6 +593,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       addTearDown(countdownContainer.dispose);

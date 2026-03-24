@@ -243,9 +243,9 @@ void main() {
       expect(find.text('25 min'), findsOneWidget);
 
       // input: min(1440, 1500) = 1440 → 24分
-      // output: min(1260, max(0, 1500-1440)) = min(1260, 60) = 60 → 1分
+      // output: min(1260, 1500) = 1260 → 21分（听说独立 clamp，不互相挤占）
       expect(find.text('24分'), findsOneWidget);
-      expect(find.text('1分'), findsOneWidget);
+      expect(find.text('21分'), findsOneWidget);
     });
 
     testWidgets('input+output <= total 时不 clamp', (tester) async {

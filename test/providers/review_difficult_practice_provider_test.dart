@@ -70,9 +70,6 @@ class _PassiveLearningSession extends TestLearningSession {
   _PassiveLearningSession(super.initialState);
 
   @override
-  void addInputWords(int count) {}
-
-  @override
   void addOutputWords(int count) {}
 }
 
@@ -110,6 +107,7 @@ void main() {
             ),
           ),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       addTearDown(container.dispose);

@@ -293,6 +293,7 @@ void main() {
           audioEngineProvider.overrideWith(() => TestAudioEngine()),
           learningSessionProvider.overrideWith(() => TestLearningSession()),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
     });
@@ -361,6 +362,7 @@ void main() {
           audioEngineProvider.overrideWith(() => _ReplayTestAudioEngine()),
           learningSessionProvider.overrideWith(() => TestLearningSession()),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       notifier = container.read(intensiveListenPlayerProvider.notifier);
@@ -437,6 +439,7 @@ void main() {
             ),
           ),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       addTearDown(container.dispose);
@@ -484,6 +487,7 @@ void main() {
             ),
           ),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       addTearDown(container.dispose);
@@ -517,6 +521,7 @@ void main() {
             ),
           ),
           audioEngineProvider.overrideWith(() => TestAudioEngine()),
+          ...studyTimeOverrides(),
         ],
       );
       notifier =
@@ -633,6 +638,7 @@ void main() {
           audioEngineProvider.overrideWith(() => _ReplayTestAudioEngine()),
           learningSessionProvider.overrideWith(() => TestLearningSession()),
           analyticsOverride(),
+          ...studyTimeOverrides(),
         ],
       );
       notifier = container.read(intensiveListenPlayerProvider.notifier);
