@@ -398,7 +398,7 @@ void main() {
       // 弹窗标题
       expect(find.text('听力详情'), findsOneWidget);
       // 小节标题
-      expect(find.text('每日推荐练习量'), findsOneWidget);
+      expect(find.text('每日推荐最少练习量'), findsOneWidget);
       // 表头
       expect(find.text('听力（输入）'), findsOneWidget);
       expect(find.text('口语（输出）'), findsOneWidget);

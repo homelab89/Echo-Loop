@@ -606,7 +606,7 @@ String _formatTime(AppLocalizations l10n, int seconds) {
 /// 高亮列类型：听弹窗或说弹窗
 enum HighlightColumn { listening, speaking }
 
-/// CEFR 每日推荐练习量表格
+/// CEFR 每日推荐最少练习量表格
 ///
 /// 三行（初/中/高级）× 三列（阶段 | 听力 | 口语）的对齐表格。
 /// 听力列显示听时长+输入词数，口语列显示说时长+输出词数。
@@ -643,7 +643,7 @@ class CefrRecommendationTable extends StatelessWidget {
     final footnote = isZh
         ? '输入输出比随水平提升从 ~3:2 趋近 ~1:1'
         : 'Input/output ratio trends from ~3:2 to ~1:1 as level rises';
-    final sectionTitle = isZh ? '每日推荐练习量' : 'Daily recommendation';
+    final sectionTitle = isZh ? '每日推荐最少练习量' : 'Daily minimum recommendation';
 
     final tealBg = Colors.teal.withValues(alpha: isListening ? 0.08 : 0.03);
     final purpleBg = Colors.deepPurple.withValues(alpha: isListening ? 0.03 : 0.08);
