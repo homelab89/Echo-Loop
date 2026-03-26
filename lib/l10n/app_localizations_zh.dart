@@ -1936,6 +1936,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stageBreakdownNoStageData => '详细分布数据从此版本开始记录';
 
   @override
+  String get chartLegendListening => '听';
+
+  @override
+  String get chartLegendSpeaking => '说';
+
+  @override
+  String get chartLegendOther => '其它';
+
+  @override
+  String get chartLegendOtherHint => '思考、停顿等';
+
+  @override
   String get reminderSectionTitle => '提醒';
 
   @override

@@ -1090,6 +1090,10 @@
   "stageBreakdownListenShort": "Listen",
   "stageBreakdownSpeakShort": "Speak",
   "stageBreakdownNoStageData": "Detailed breakdown data starts recording from this version",
+  "chartLegendListening": "Listening",
+  "chartLegendSpeaking": "Speaking",
+  "chartLegendOther": "Other",
+  "chartLegendOtherHint": "Thinking, pauses, etc.",
 
   "reminderSectionTitle": "Reminders",
   "reminderSettings": "Reminder Settings",

@@ -79,6 +79,11 @@ class DayStageBreakdownSheet extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
+            // 总览模式显示三色图例
+            if (mode == StageBreakdownMode.total) ...[
+              const SizedBox(height: 8),
+              _ChartLegend(l10n: l10n, theme: theme),
+            ],
             const SizedBox(height: 16),
             // 内容
             if (nonZero.isEmpty)
@@ -434,4 +439,53 @@ Future<void> showDayStageBreakdownSheet({
       mode: mode,
     ),
   );
+}
+
+/// 柱状图三色图例（听/说/其它）
+class _ChartLegend extends StatelessWidget {
+  final AppLocalizations l10n;
+  final ThemeData theme;
+
+  const _ChartLegend({required this.l10n, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _legendDot(kInputColor, l10n.chartLegendListening),
+        const SizedBox(width: 16),
+        _legendDot(kOutputColor, l10n.chartLegendSpeaking),
+        const SizedBox(width: 16),
+        _legendDot(
+          kOtherColor,
+          '${l10n.chartLegendOther} (${l10n.chartLegendOtherHint})',
+        ),
+      ],
+    );
+  }
+
+  Widget _legendDot(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
+  }
 }

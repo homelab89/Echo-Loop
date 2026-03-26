@@ -12,10 +12,13 @@ import 'day_stage_breakdown_sheet.dart';
 import 'learned_word_forms_sheet.dart';
 
 /// 输入（听力）主题色 — 蓝色
-const _kInputColor = Color(0xFF3B82F6);
+const kInputColor = Color(0xFF3B82F6);
 
 /// 输出（口语）主题色 — 绿色
-const _kOutputColor = Color(0xFF10B981);
+const kOutputColor = Color(0xFF10B981);
+
+/// 其它（思考、停顿等）主题色 — 灰色
+const kOtherColor = Color(0xFFD1D5DB);
 
 /// 学习统计头部组件
 ///
@@ -145,7 +148,7 @@ class _TodayCard extends StatelessWidget {
                   flex: 3,
                   child: _ListenSpeakItem(
                     icon: Icons.headphones_outlined,
-                    iconColor: _kInputColor,
+                    iconColor: kInputColor,
                     timeText: _formatTimeShort(clampedInput),
                     wordText:
                         '${_formatWordCount(stats.todayInputWords)}${l10n.localeName == 'zh' ? '词' : 'w'}',
@@ -166,7 +169,7 @@ class _TodayCard extends StatelessWidget {
                   flex: 3,
                   child: _ListenSpeakItem(
                     icon: Icons.mic_outlined,
-                    iconColor: _kOutputColor,
+                    iconColor: kOutputColor,
                     timeText: _formatTimeShort(clampedOutput),
                     wordText:
                         '${_formatWordCount(stats.todayOutputWords)}${l10n.localeName == 'zh' ? '词' : 'w'}',
@@ -419,16 +422,24 @@ class _WeeklyBarChartState extends State<_WeeklyBarChart> {
                     : widget.dailyTotalSeconds[i];
                 final rawOutput =
                     hasBreakdown ? widget.dailyOutputSeconds[i] : 0;
-                final inputSec = math.min(rawInput, totalSec);
-                final outputSec = math.min(rawOutput, totalSec);
-                if (rawInput != inputSec || rawOutput != outputSec) {
-                  debugPrint(
-                    '⚠️ 柱状图 clamp day$i: input $rawInput→$inputSec, '
-                    'output $rawOutput→$outputSec, total $totalSec',
-                  );
+                var inputSec = math.min(rawInput, totalSec);
+                var outputSec = math.min(rawOutput, totalSec);
+                // input+output 超过 total 时按比例缩放
+                final ioSum = inputSec + outputSec;
+                if (ioSum > totalSec && ioSum > 0) {
+                  final scale = totalSec / ioSum;
+                  inputSec = (inputSec * scale).round();
+                  outputSec = (outputSec * scale).round();
                 }
+                // 三段比例：听 / 说 / 其它
+                final otherSec =
+                    math.max(0, totalSec - inputSec - outputSec);
                 final inputRatio =
                     totalSec > 0 ? inputSec / totalSec : 1.0;
+                final outputRatio =
+                    totalSec > 0 ? outputSec / totalSec : 0.0;
+                final otherRatio =
+                    totalSec > 0 ? otherSec / totalSec : 0.0;
 
                 // 点击高亮效果
                 final isHighlighted = _highlightIndex == i;
@@ -460,28 +471,14 @@ class _WeeklyBarChartState extends State<_WeeklyBarChart> {
                                 ),
                               ),
                             ),
-                          // 柱体（双色堆叠或纯输入单色）
-                          if (outputSec > 0)
-                            _buildStackedBar(
-                              barHeight: barHeight,
-                              inputRatio: inputRatio,
-                              isToday: isToday,
-                            )
-                          else
-                            Container(
-                              height: barHeight,
-                              margin:
-                                  const EdgeInsets.symmetric(horizontal: 5),
-                              decoration: BoxDecoration(
-                                color: isToday
-                                    ? _kInputColor
-                                    : _kInputColor.withValues(alpha: 0.4),
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(4),
-                                  bottom: Radius.circular(2),
-                                ),
-                              ),
-                            ),
+                          // 柱体（三色堆叠：蓝=听，绿=说，灰=其它）
+                          _buildStackedBar(
+                            barHeight: barHeight,
+                            inputRatio: inputRatio,
+                            outputRatio: outputRatio,
+                            otherRatio: otherRatio,
+                            isToday: isToday,
+                          ),
                           const SizedBox(height: 5),
                           // 星期标签
                           Text(
@@ -508,41 +505,67 @@ class _WeeklyBarChartState extends State<_WeeklyBarChart> {
     );
   }
 
-  /// 构建双色堆叠柱体
+  /// 构建三色堆叠柱体（蓝=听，绿=说，灰=其它）
   Widget _buildStackedBar({
     required double barHeight,
     required double inputRatio,
+    required double outputRatio,
+    required double otherRatio,
     required bool isToday,
   }) {
-    final inputHeight = (barHeight * inputRatio).clamp(1.0, barHeight - 1);
-    final outputHeight = barHeight - inputHeight;
     final alpha = isToday ? 1.0 : 0.5;
+    // 按比例分配高度，用 ClipRect 兜底防溢出
+    final inputH = barHeight * inputRatio;
+    final outputH = barHeight * outputRatio;
+    final otherH = barHeight * otherRatio;
 
     return Container(
       height: barHeight,
       margin: const EdgeInsets.symmetric(horizontal: 5),
+      clipBehavior: Clip.hardEdge,
+      decoration: const BoxDecoration(),
       child: Column(
         children: [
-          // 顶部：输出（绿色）
-          Container(
-            height: outputHeight,
-            decoration: BoxDecoration(
-              color: _kOutputColor.withValues(alpha: alpha),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(4),
+          // 顶部：其它（灰色）
+          if (otherH > 0)
+            Container(
+              height: otherH,
+              decoration: BoxDecoration(
+                color: kOtherColor.withValues(alpha: alpha),
+                borderRadius: BorderRadius.vertical(
+                  top: const Radius.circular(4),
+                  bottom: outputH == 0 && inputH == 0
+                      ? const Radius.circular(2)
+                      : Radius.zero,
+                ),
               ),
             ),
-          ),
-          // 底部：输入（蓝色）
-          Container(
-            height: inputHeight,
-            decoration: BoxDecoration(
-              color: _kInputColor.withValues(alpha: alpha),
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(2),
+          // 中间：输出/说（绿色）
+          if (outputH > 0)
+            Container(
+              height: outputH,
+              decoration: BoxDecoration(
+                color: kOutputColor.withValues(alpha: alpha),
+                borderRadius: BorderRadius.vertical(
+                  top: otherH == 0 ? const Radius.circular(4) : Radius.zero,
+                  bottom: inputH == 0 ? const Radius.circular(2) : Radius.zero,
+                ),
               ),
             ),
-          ),
+          // 底部：输入/听（蓝色）
+          if (inputH > 0)
+            Container(
+              height: inputH,
+              decoration: BoxDecoration(
+                color: kInputColor.withValues(alpha: alpha),
+                borderRadius: BorderRadius.vertical(
+                  top: otherH == 0 && outputH == 0
+                      ? const Radius.circular(4)
+                      : Radius.zero,
+                  bottom: const Radius.circular(2),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -650,8 +673,8 @@ class CefrRecommendationTable extends StatelessWidget {
         : 'Input/output ratio trends from ~3:2 to ~1:1 as level rises';
     final sectionTitle = isZh ? '每日推荐最少练习量' : 'Daily minimum recommendation';
 
-    final inputBg = _kInputColor.withValues(alpha: isListening ? 0.08 : 0.03);
-    final outputBg = _kOutputColor.withValues(alpha: isListening ? 0.03 : 0.08);
+    final inputBg = kInputColor.withValues(alpha: isListening ? 0.08 : 0.03);
+    final outputBg = kOutputColor.withValues(alpha: isListening ? 0.03 : 0.08);
 
     return Container(
       decoration: BoxDecoration(
@@ -689,13 +712,13 @@ class CefrRecommendationTable extends StatelessWidget {
                   _buildHeaderCell(
                     context,
                     listenHeader,
-                    _kInputColor,
+                    kInputColor,
                     muted: !isListening,
                   ),
                   _buildHeaderCell(
                     context,
                     speakHeader,
-                    _kOutputColor,
+                    kOutputColor,
                     muted: isListening,
                   ),
                 ],
@@ -736,7 +759,7 @@ class CefrRecommendationTable extends StatelessWidget {
                       time: '${levels[i].listenMin}$minLabel',
                       words: '~${levels[i].inputWords}$wordSuffix',
                       bgColor: inputBg,
-                      accentColor: _kInputColor,
+                      accentColor: kInputColor,
                       muted: !isListening,
                     ),
                     // 口语列
@@ -745,7 +768,7 @@ class CefrRecommendationTable extends StatelessWidget {
                       time: '${levels[i].speakMin}$minLabel',
                       words: '~${levels[i].outputWords}$wordSuffix',
                       bgColor: outputBg,
-                      accentColor: _kOutputColor,
+                      accentColor: kOutputColor,
                       muted: isListening,
                     ),
                   ],

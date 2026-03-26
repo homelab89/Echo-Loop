@@ -812,6 +812,10 @@
   "stageBreakdownListenShort": "听",
   "stageBreakdownSpeakShort": "说",
   "stageBreakdownNoStageData": "详细分布数据从此版本开始记录",
+  "chartLegendListening": "听",
+  "chartLegendSpeaking": "说",
+  "chartLegendOther": "其它",
+  "chartLegendOtherHint": "思考、停顿等",
 
   "reminderSectionTitle": "提醒",
   "reminderSettings": "提醒设置",

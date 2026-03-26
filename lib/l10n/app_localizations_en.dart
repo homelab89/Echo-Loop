@@ -1992,6 +1992,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Detailed breakdown data starts recording from this version';
 
   @override
+  String get chartLegendListening => 'Listening';
+
+  @override
+  String get chartLegendSpeaking => 'Speaking';
+
+  @override
+  String get chartLegendOther => 'Other';
+
+  @override
+  String get chartLegendOtherHint => 'Thinking, pauses, etc.';
+
+  @override
   String get reminderSectionTitle => 'Reminders';
 
   @override

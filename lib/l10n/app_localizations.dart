@@ -3560,6 +3560,30 @@ abstract class AppLocalizations {
   /// **'Detailed breakdown data starts recording from this version'**
   String get stageBreakdownNoStageData;
 
+  /// No description provided for @chartLegendListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get chartLegendListening;
+
+  /// No description provided for @chartLegendSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get chartLegendSpeaking;
+
+  /// No description provided for @chartLegendOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get chartLegendOther;
+
+  /// No description provided for @chartLegendOtherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking, pauses, etc.'**
+  String get chartLegendOtherHint;
+
   /// No description provided for @reminderSectionTitle.
   ///
   /// In en, this message translates to:
