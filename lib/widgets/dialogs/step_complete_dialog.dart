@@ -306,9 +306,7 @@ class _StepCompleteDialogState extends State<StepCompleteDialog> {
     } else if (widget.isLastStep) {
       // 情况 2：末步骤
       final l10nCtx = AppLocalizations.of(context)!;
-      final isFirstStudy =
-          widget.stageName == l10nCtx.firstStudy ||
-          widget.stageName == LearningStage.firstLearn.label;
+      final isFirstStudy = widget.stageName == l10nCtx.firstStudy;
       final completeText = isFirstStudy
           ? l10n.completeFirstStudy
           : l10n.completeReview;

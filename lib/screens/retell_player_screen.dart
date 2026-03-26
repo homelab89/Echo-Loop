@@ -29,6 +29,7 @@ import '../utils/wakelock_mixin.dart';
 import '../widgets/intensive_listen/word_dictionary_sheet.dart';
 import '../widgets/dialogs/free_play_complete_dialog.dart';
 import '../widgets/dialogs/step_complete_dialog.dart';
+import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/listen_and_repeat/speech_record_button.dart';
 import '../widgets/common/speech_rating_badge.dart';
 import '../widgets/common/countdown_chip.dart';
@@ -290,6 +291,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
 
   /// 获取当前步骤的上下文信息
   ({int stepIndex, int totalSteps, String stageName}) _getStepContext() {
+    final l10n = AppLocalizations.of(context)!;
     final progress = ref
         .read(learningProgressNotifierProvider)
         .progressMap[widget.audioItemId];
@@ -300,7 +302,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
       return (
         stepIndex: idx,
         totalSteps: subStages.length,
-        stageName: LearningStage.firstLearn.label,
+        stageName: reviewStageLabel(l10n, LearningStage.firstLearn),
       );
     }
 
@@ -310,7 +312,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
     return (
       stepIndex: currentIdx,
       totalSteps: subStages.length,
-      stageName: stage.label,
+      stageName: reviewStageLabel(l10n, stage),
     );
   }
 

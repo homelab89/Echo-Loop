@@ -22,6 +22,7 @@ import '../providers/learning_session/blind_listen_player_provider.dart';
 import '../providers/learning_session/learning_session_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dialogs/step_complete_dialog.dart';
+import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/blind_listen_settings_sheet.dart';
 import '../widgets/common/countdown_chip.dart';
 import '../widgets/common/paragraph_bottom_controls.dart';
@@ -179,7 +180,7 @@ class _BlindListenPlayerScreenState
       return (
         stepIndex: 0,
         totalSteps: LearningStage.firstLearn.subStageCount,
-        stageName: LearningStage.firstLearn.label,
+        stageName: reviewStageLabel(l10n, LearningStage.firstLearn),
         nextStepName: _hasPlayerScreen(SubStageType.intensiveListen)
             ? _getSubStageName(SubStageType.intensiveListen, l10n)
             : null,
@@ -203,7 +204,7 @@ class _BlindListenPlayerScreenState
     return (
       stepIndex: currentIdx,
       totalSteps: subStages.length,
-      stageName: stage.label,
+      stageName: reviewStageLabel(l10n, stage),
       nextStepName: nextStepName,
       isLastStep: isLast,
     );

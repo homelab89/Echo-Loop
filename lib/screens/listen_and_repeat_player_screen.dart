@@ -36,6 +36,7 @@ import '../widgets/listen_and_repeat/speech_practice_turn_panel.dart';
 import '../widgets/common/speech_rating_badge.dart';
 import '../widgets/dialogs/free_play_complete_dialog.dart';
 import '../widgets/dialogs/step_complete_dialog.dart';
+import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/player_hotkey_scope.dart';
 
 /// 录音/倒计时区域固定高度（录音面板最高：24 状态 + 4 间距 + 56 按钮 + 16 底部 = 100）
@@ -363,7 +364,7 @@ class _ListenAndRepeatPlayerScreenState
       return (
         stepIndex: idx,
         totalSteps: subStages.length,
-        stageName: LearningStage.firstLearn.label,
+        stageName: reviewStageLabel(l10n, LearningStage.firstLearn),
         nextStepName: nextName,
         isLastStep: isLast,
       );
@@ -385,7 +386,7 @@ class _ListenAndRepeatPlayerScreenState
     return (
       stepIndex: currentIdx,
       totalSteps: subStages.length,
-      stageName: stage.label,
+      stageName: reviewStageLabel(l10n, stage),
       nextStepName: nextStepName,
       isLastStep: isLast,
     );

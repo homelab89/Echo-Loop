@@ -189,7 +189,7 @@
   "favoritesComingSoon": "Favorites feature coming soon",
   "learningPlanProgress": "Learning Progress",
   "learningPlanNotStarted": "Not started",
-  "firstStudy": "First Study",
+  "firstStudy": "Initial Learning",
   "review": "Review",
   "stepProgress": "{completed}/{total} completed",
   "@stepProgress": {
@@ -250,9 +250,9 @@
       "hours": { "type": "int" }
     }
   },
-  "blindListenBriefingTitle": "Full Listening",
-  "blindListenBriefingSubtitle": "First Study - Full Listening",
-  "blindListenBriefingReviewSubtitle": "Review {round} - Full Listening",
+  "blindListenBriefingTitle": "Blind Listening",
+  "blindListenBriefingSubtitle": "Initial Learning - Blind Listening",
+  "blindListenBriefingReviewSubtitle": "Review {round} - Blind Listening",
   "@blindListenBriefingReviewSubtitle": {
     "placeholders": {
       "round": { "type": "int" }
@@ -260,7 +260,7 @@
   },
   "blindListenBriefingTip": "Listen without subtitles, try to get the gist",
   "startPractice": "Start Practice",
-  "blindListenAppBarTitle": "Full Listening",
+  "blindListenAppBarTitle": "Blind Listening",
   "blindListenPassLabel": "Pass {count}",
   "@blindListenPassLabel": {
     "placeholders": {
@@ -395,7 +395,7 @@
   "exitIntensiveListenTitle": "Exit Intensive Listening?",
   "exitIntensiveListenMessage": "Your progress will be saved. You can continue from where you left off.",
   "intensiveListenBriefingTitle": "Intensive Listening",
-  "intensiveListenBriefingSubtitle": "First Study - Intensive Listening",
+  "intensiveListenBriefingSubtitle": "Initial Learning - Intensive Listening",
   "intensiveListenBriefingTip": "Listen sentence by sentence. Tap 'Can't understand' to reveal text and mark difficult sentences.",
   "intensiveListenBriefingSentenceCount": "{count} sentences",
   "@intensiveListenBriefingSentenceCount": {
@@ -452,7 +452,7 @@
       "step": { "type": "String" }
     }
   },
-  "completeFirstStudy": "Complete First Study",
+  "completeFirstStudy": "Complete Initial Learning",
   "completeReview": "Complete Review",
   "stepProgressLabel": "Step {current}/{total} ({stage})",
   "@stepProgressLabel": {
@@ -548,7 +548,7 @@
   "exitListenAndRepeatTitle": "Exit Listen & Repeat?",
   "exitListenAndRepeatMessage": "Your progress will be saved. You can continue from where you left off.",
   "listenAndRepeatBriefingTitle": "Listen & Repeat",
-  "listenAndRepeatBriefingSubtitle": "First Study - Listen & Repeat",
+  "listenAndRepeatBriefingSubtitle": "Initial Learning - Listen & Repeat",
   "listenAndRepeatBriefingTip": "Listen to each sentence, then repeat it aloud during the pause.",
   "listenAndRepeatBriefingDifficultCount": "{count} difficult sentences",
   "@listenAndRepeatBriefingDifficultCount": {
@@ -647,7 +647,7 @@
       "total": { "type": "int" }
     }
   },
-  "retellCompleteFirstStudy": "Complete First Study",
+  "retellCompleteFirstStudy": "Complete Initial Learning",
   "retellCompleteReview": "Complete Review",
   "retellCompleteFreePlay": "Practice Complete",
   "retellCompleteTitle": "Retelling Complete",
@@ -820,7 +820,7 @@
   "@upcomingReviewsSummary": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "firstStudySection": "First Study ({count})",
+  "firstStudySection": "Initial Learning ({count})",
   "@firstStudySection": {
     "placeholders": { "count": { "type": "int" } }
   },
@@ -850,7 +850,7 @@
   "@availableInHours": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "subStageLabelFirstLearn": "First Study - {subStage}",
+  "subStageLabelFirstLearn": "Initial Learning - {subStage}",
   "@subStageLabelFirstLearn": {
     "placeholders": { "subStage": { "type": "String" } }
   },

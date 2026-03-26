@@ -426,7 +426,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get learningPlanNotStarted => 'Not started';
 
   @override
-  String get firstStudy => 'First Study';
+  String get firstStudy => 'Initial Learning';
 
   @override
   String get review => 'Review';
@@ -542,14 +542,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get blindListenBriefingTitle => 'Full Listening';
+  String get blindListenBriefingTitle => 'Blind Listening';
 
   @override
-  String get blindListenBriefingSubtitle => 'First Study - Full Listening';
+  String get blindListenBriefingSubtitle =>
+      'Initial Learning - Blind Listening';
 
   @override
   String blindListenBriefingReviewSubtitle(int round) {
-    return 'Review $round - Full Listening';
+    return 'Review $round - Blind Listening';
   }
 
   @override
@@ -560,7 +561,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startPractice => 'Start Practice';
 
   @override
-  String get blindListenAppBarTitle => 'Full Listening';
+  String get blindListenAppBarTitle => 'Blind Listening';
 
   @override
   String blindListenPassLabel(int count) {
@@ -795,7 +796,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get intensiveListenBriefingSubtitle =>
-      'First Study - Intensive Listening';
+      'Initial Learning - Intensive Listening';
 
   @override
   String get intensiveListenBriefingTip =>
@@ -880,7 +881,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get completeFirstStudy => 'Complete First Study';
+  String get completeFirstStudy => 'Complete Initial Learning';
 
   @override
   String get completeReview => 'Complete Review';
@@ -1040,7 +1041,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listenAndRepeatBriefingTitle => 'Listen & Repeat';
 
   @override
-  String get listenAndRepeatBriefingSubtitle => 'First Study - Listen & Repeat';
+  String get listenAndRepeatBriefingSubtitle =>
+      'Initial Learning - Listen & Repeat';
 
   @override
   String get listenAndRepeatBriefingTip =>
@@ -1163,7 +1165,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get retellCompleteFirstStudy => 'Complete First Study';
+  String get retellCompleteFirstStudy => 'Complete Initial Learning';
 
   @override
   String get retellCompleteReview => 'Complete Review';
@@ -1485,7 +1487,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String firstStudySection(int count) {
-    return 'First Study ($count)';
+    return 'Initial Learning ($count)';
   }
 
   @override
@@ -1533,7 +1535,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String subStageLabelFirstLearn(String subStage) {
-    return 'First Study - $subStage';
+    return 'Initial Learning - $subStage';
   }
 
   @override

@@ -20,7 +20,7 @@ void main() {
                   contentBody: const Text('Listened 2 time(s)'),
                   stepIndex: 0,
                   totalSteps: 4,
-                  stageName: 'First Study',
+                  stageName: 'Initial Learning',
                   nextStepName: 'Intensive Listening',
                   showDifficultySelector: true,
                 );
@@ -36,7 +36,7 @@ void main() {
 
       // 验证标题和步骤进度
       expect(find.text('Blind Listen Complete'), findsOneWidget);
-      expect(find.text('Step 1/4 (First Study)'), findsOneWidget);
+      expect(find.text('Step 1/4 (Initial Learning)'), findsOneWidget);
       expect(find.text('Listened 2 time(s)'), findsOneWidget);
       expect(find.text('How did it feel?'), findsOneWidget);
 
@@ -66,7 +66,7 @@ void main() {
                   title: 'Blind Listen Complete',
                   stepIndex: 0,
                   totalSteps: 4,
-                  stageName: 'First Study',
+                  stageName: 'Initial Learning',
                   nextStepName: 'Intensive Listening',
                   showDifficultySelector: true,
                 );
@@ -105,7 +105,7 @@ void main() {
                   title: 'Blind Listen Complete',
                   stepIndex: 0,
                   totalSteps: 4,
-                  stageName: 'First Study',
+                  stageName: 'Initial Learning',
                   nextStepName: 'Intensive Listening',
                   showDifficultySelector: true,
                 );
@@ -145,7 +145,7 @@ void main() {
                   title: 'Blind Listen Complete',
                   stepIndex: 0,
                   totalSteps: 4,
-                  stageName: 'First Study',
+                  stageName: 'Initial Learning',
                   nextStepName: 'Intensive Listening',
                   showDifficultySelector: true,
                 );
@@ -188,7 +188,7 @@ void main() {
                   title: 'Test',
                   stepIndex: 0,
                   totalSteps: 2,
-                  stageName: 'First Study',
+                  stageName: 'Initial Learning',
                   nextStepName: 'Next',
                 );
               },
@@ -220,7 +220,7 @@ void main() {
                   title: 'Blind Listen Complete',
                   stepIndex: 3,
                   totalSteps: 4,
-                  stageName: 'First Study',
+                  stageName: 'Initial Learning',
                   isLastStep: true,
                   showDifficultySelector: true,
                 );
@@ -235,10 +235,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // 验证步骤进度
-      expect(find.text('Step 4/4 (First Study)'), findsOneWidget);
+      expect(find.text('Step 4/4 (Initial Learning)'), findsOneWidget);
 
       // 末步骤显示"完成首次学习"按钮
-      expect(find.text('Complete First Study'), findsOneWidget);
+      expect(find.text('Complete Initial Learning'), findsOneWidget);
 
       // 不应显示"Done"和"继续"
       expect(find.text('Done'), findsNothing);
@@ -257,7 +257,7 @@ void main() {
                   title: 'Blind Listen Complete',
                   stepIndex: 3,
                   totalSteps: 4,
-                  stageName: 'First Study',
+                  stageName: 'Initial Learning',
                   isLastStep: true,
                   showDifficultySelector: true,
                 );
@@ -274,7 +274,7 @@ void main() {
       await tester.tap(find.text('Okay'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Complete First Study'));
+      await tester.tap(find.text('Complete Initial Learning'));
       await tester.pumpAndSettle();
 
       expect(result, isNotNull);

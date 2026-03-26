@@ -23,6 +23,7 @@ import '../widgets/intensive_listen/intensive_listen_settings_sheet.dart';
 import '../providers/sentence_ai_provider.dart';
 import '../widgets/dialogs/free_play_complete_dialog.dart';
 import '../widgets/dialogs/step_complete_dialog.dart';
+import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/intensive_listen/sentence_annotation_card.dart';
 import '../widgets/common/countdown_chip.dart';
 import '../widgets/player_hotkey_scope.dart';
@@ -286,7 +287,7 @@ class _IntensiveListenPlayerScreenState
       return (
         stepIndex: idx,
         totalSteps: subStages.length,
-        stageName: LearningStage.firstLearn.label,
+        stageName: reviewStageLabel(l10n, LearningStage.firstLearn),
         nextStepName: nextName,
         isLastStep: isLast,
       );
@@ -309,7 +310,7 @@ class _IntensiveListenPlayerScreenState
     return (
       stepIndex: currentIdx,
       totalSteps: subStages.length,
-      stageName: stage.label,
+      stageName: reviewStageLabel(l10n, stage),
       nextStepName: nextStepName,
       isLastStep: isLast,
     );

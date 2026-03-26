@@ -32,6 +32,7 @@ import '../utils/wakelock_mixin.dart';
 import '../providers/sentence_ai_provider.dart';
 import '../widgets/dialogs/free_play_complete_dialog.dart';
 import '../widgets/dialogs/step_complete_dialog.dart';
+import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/difficult_practice/difficult_practice_settings_sheet.dart';
 import '../widgets/player_hotkey_scope.dart';
 import '../widgets/practice/practice_normal_mode_view.dart';
@@ -301,6 +302,7 @@ class _ReviewDifficultPracticeScreenState
     bool isLastStep,
   })
   _getStepContext() {
+    final l10n = AppLocalizations.of(context)!;
     final progress = ref
         .read(learningProgressNotifierProvider)
         .progressMap[widget.audioItemId];
@@ -329,7 +331,7 @@ class _ReviewDifficultPracticeScreenState
     return (
       stepIndex: currentIdx,
       totalSteps: subStages.length,
-      stageName: stage.label,
+      stageName: reviewStageLabel(l10n, stage),
       nextStepName: nextStepName,
       isLastStep: isLast,
     );
@@ -593,7 +595,7 @@ class _ReviewDifficultPracticeScreenState
       });
     }
 
-    // 句子时长
+    // 句子时长和时间戳
     final hasDuration =
         currentSentence != null && currentSentence.duration > Duration.zero;
     final durationText = hasDuration
@@ -602,6 +604,10 @@ class _ReviewDifficultPracticeScreenState
               1,
             ),
           )
+        : null;
+    final timestampText = hasDuration
+        ? '${_formatTimestamp(currentSentence.startTime)}'
+              ' - ${_formatTimestamp(currentSentence.endTime)}'
         : null;
     return wakelockBody(
       child: LearningHotkeyScope(
@@ -665,6 +671,7 @@ class _ReviewDifficultPracticeScreenState
                   playerState: playerState,
                   l10n: l10n,
                   durationText: durationText,
+                  timestampText: timestampText,
                 ),
 
                 // 主体内容：盲听/跟读 双态切换
@@ -777,4 +784,18 @@ class _ReviewDifficultPracticeScreenState
       ),
     );
   }
+}
+
+/// 格式化时间戳（如 01:55.5）
+String _formatTimestamp(Duration d) {
+  final hours = d.inHours;
+  final minutes = d.inMinutes % 60;
+  final seconds = d.inSeconds % 60;
+  final tenths = (d.inMilliseconds % 1000) ~/ 100;
+  final mm = minutes.toString().padLeft(2, '0');
+  final ss = seconds.toString().padLeft(2, '0');
+  if (hours > 0) {
+    return '$hours:$mm:$ss.$tenths';
+  }
+  return '$mm:$ss.$tenths';
 }

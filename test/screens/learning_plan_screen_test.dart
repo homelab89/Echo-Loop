@@ -150,7 +150,7 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('First Study'), findsOneWidget);
+      expect(find.text('Initial Learning'), findsOneWidget);
       expect(find.text('0/4 completed'), findsOneWidget);
 
       expect(find.text('Blind Listening'), findsWidgets);
@@ -361,8 +361,8 @@ void main() {
 
       await tester.tap(find.text('Continue Learning'));
       await tester.pumpAndSettle();
-      // 跳过复习简报弹窗，直接弹出段落选择弹窗
-      expect(find.text('Full Listening'), findsOneWidget);
+      // 跳过复习简报弹窗，直接弹出段落选择弹窗（步骤标签 + 弹窗标题都是 Blind Listening）
+      expect(find.text('Blind Listening'), findsAtLeast(1));
       // 显示阶段名
       expect(find.text('Review 2'), findsAtLeast(1));
       // 显示开始练习按钮
@@ -394,8 +394,8 @@ void main() {
       await tester.tap(find.text('Start Learning'));
       await tester.pumpAndSettle();
 
-      // 当前子步骤是 blindListen，应弹出简报弹窗
-      expect(find.text('Full Listening'), findsOneWidget);
+      // 当前子步骤是 blindListen，应弹出简报弹窗（步骤标签 + 弹窗标题都是 Blind Listening）
+      expect(find.text('Blind Listening'), findsAtLeast(1));
       expect(find.text('Start Practice'), findsOneWidget);
     });
 
@@ -536,8 +536,8 @@ void main() {
       await tester.tap(find.text('Blind Listening').first);
       await tester.pumpAndSettle();
 
-      // 应弹出段落选择弹窗（标题为 Full Listening）
-      expect(find.text('Full Listening'), findsOneWidget);
+      // 应弹出段落选择弹窗（步骤标签 + 弹窗标题都是 Blind Listening）
+      expect(find.text('Blind Listening'), findsAtLeast(2));
       expect(find.text('Start Practice'), findsOneWidget);
     });
 
@@ -549,8 +549,8 @@ void main() {
       await tester.tap(find.text('Blind Listening').first);
       await tester.pumpAndSettle();
 
-      // 不应弹出简报弹窗（因为没有 onTap）
-      expect(find.text('Full Listening'), findsNothing);
+      // 不应弹出简报弹窗（因为没有 onTap），步骤标签仍可见但不会多出弹窗标题
+      expect(find.text('Blind Listening'), findsOneWidget);
     });
 
     testWidgets('无字幕时显示警告横幅且禁用开始按钮', (tester) async {

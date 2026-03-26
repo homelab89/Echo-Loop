@@ -899,7 +899,7 @@ abstract class AppLocalizations {
   /// No description provided for @firstStudy.
   ///
   /// In en, this message translates to:
-  /// **'First Study'**
+  /// **'Initial Learning'**
   String get firstStudy;
 
   /// No description provided for @review.
@@ -1109,19 +1109,19 @@ abstract class AppLocalizations {
   /// No description provided for @blindListenBriefingTitle.
   ///
   /// In en, this message translates to:
-  /// **'Full Listening'**
+  /// **'Blind Listening'**
   String get blindListenBriefingTitle;
 
   /// No description provided for @blindListenBriefingSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'First Study - Full Listening'**
+  /// **'Initial Learning - Blind Listening'**
   String get blindListenBriefingSubtitle;
 
   /// No description provided for @blindListenBriefingReviewSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Review {round} - Full Listening'**
+  /// **'Review {round} - Blind Listening'**
   String blindListenBriefingReviewSubtitle(int round);
 
   /// No description provided for @blindListenBriefingTip.
@@ -1139,7 +1139,7 @@ abstract class AppLocalizations {
   /// No description provided for @blindListenAppBarTitle.
   ///
   /// In en, this message translates to:
-  /// **'Full Listening'**
+  /// **'Blind Listening'**
   String get blindListenAppBarTitle;
 
   /// No description provided for @blindListenPassLabel.
@@ -1541,7 +1541,7 @@ abstract class AppLocalizations {
   /// No description provided for @intensiveListenBriefingSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'First Study - Intensive Listening'**
+  /// **'Initial Learning - Intensive Listening'**
   String get intensiveListenBriefingSubtitle;
 
   /// No description provided for @intensiveListenBriefingTip.
@@ -1673,7 +1673,7 @@ abstract class AppLocalizations {
   /// No description provided for @completeFirstStudy.
   ///
   /// In en, this message translates to:
-  /// **'Complete First Study'**
+  /// **'Complete Initial Learning'**
   String get completeFirstStudy;
 
   /// No description provided for @completeReview.
@@ -1943,7 +1943,7 @@ abstract class AppLocalizations {
   /// No description provided for @listenAndRepeatBriefingSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'First Study - Listen & Repeat'**
+  /// **'Initial Learning - Listen & Repeat'**
   String get listenAndRepeatBriefingSubtitle;
 
   /// No description provided for @listenAndRepeatBriefingTip.
@@ -2123,7 +2123,7 @@ abstract class AppLocalizations {
   /// No description provided for @retellCompleteFirstStudy.
   ///
   /// In en, this message translates to:
-  /// **'Complete First Study'**
+  /// **'Complete Initial Learning'**
   String get retellCompleteFirstStudy;
 
   /// No description provided for @retellCompleteReview.
@@ -2681,7 +2681,7 @@ abstract class AppLocalizations {
   /// No description provided for @firstStudySection.
   ///
   /// In en, this message translates to:
-  /// **'First Study ({count})'**
+  /// **'Initial Learning ({count})'**
   String firstStudySection(int count);
 
   /// No description provided for @completedSection.
@@ -2753,7 +2753,7 @@ abstract class AppLocalizations {
   /// No description provided for @subStageLabelFirstLearn.
   ///
   /// In en, this message translates to:
-  /// **'First Study - {subStage}'**
+  /// **'Initial Learning - {subStage}'**
   String subStageLabelFirstLearn(String subStage);
 
   /// No description provided for @subStageLabelReview.
