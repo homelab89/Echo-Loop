@@ -700,28 +700,39 @@ void main() {
   });
 
   group('calculatePauseDuration', () {
-    test('smart 模式：1 倍句子时长', () {
+    test('smart 模式：1秒 + 0.6 × 句子时长', () {
+      // 3秒句子 → 1000 + 1800 = 2800ms
       final result = calculatePauseDuration(
         const Duration(seconds: 3),
         const IntensiveListenSettings(pauseMode: PauseMode.smart),
       );
-      expect(result, const Duration(seconds: 3));
+      expect(result, const Duration(milliseconds: 2800));
     });
 
-    test('smart 模式：最短 1 秒', () {
+    test('smart 模式：短句子 clamp 到最小 2 秒', () {
+      // 500ms 句子 → 1000 + 300 = 1300ms → clamp 到 2000ms
       final result = calculatePauseDuration(
         const Duration(milliseconds: 500),
         const IntensiveListenSettings(pauseMode: PauseMode.smart),
       );
-      expect(result, const Duration(milliseconds: 1000));
+      expect(result, const Duration(milliseconds: 2000));
     });
 
-    test('smart 模式：零时长句子返回 1 秒', () {
+    test('smart 模式：零时长句子返回最小 2 秒', () {
       final result = calculatePauseDuration(
         Duration.zero,
         const IntensiveListenSettings(pauseMode: PauseMode.smart),
       );
-      expect(result, const Duration(milliseconds: 1000));
+      expect(result, const Duration(milliseconds: 2000));
+    });
+
+    test('smart 模式：超长句子封顶 20 秒', () {
+      // 60秒句子 → 1000 + 36000 = 37000ms → clamp 到 20000ms
+      final result = calculatePauseDuration(
+        const Duration(seconds: 60),
+        const IntensiveListenSettings(pauseMode: PauseMode.smart),
+      );
+      expect(result, const Duration(seconds: 20));
     });
 
     test('fixed 模式：返回固定秒数', () {

@@ -35,7 +35,7 @@ part 'intensive_listen_player_provider.g.dart';
 /// 计算停顿时长（纯函数）
 ///
 /// 根据句子时长和精听设置计算停顿时间。
-/// - smart：max(句子时长 × 1, 1000ms)
+/// - smart：clamp(1秒 + 0.6 × 句子时长, 2秒, 20秒)
 /// - fixed：固定秒数
 /// - multiplier：句子时长 × 倍数
 Duration calculatePauseDuration(
@@ -44,8 +44,8 @@ Duration calculatePauseDuration(
 ) {
   switch (settings.pauseMode) {
     case PauseMode.smart:
-      final ms = sentenceDuration.inMilliseconds;
-      return Duration(milliseconds: math.max(ms, 1000));
+      final ms = 1000 + (sentenceDuration.inMilliseconds * 0.6).round();
+      return Duration(milliseconds: ms.clamp(2000, 20000));
     case PauseMode.fixed:
       return Duration(seconds: settings.fixedPauseSeconds);
     case PauseMode.multiplier:
