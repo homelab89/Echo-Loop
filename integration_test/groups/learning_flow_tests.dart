@@ -60,7 +60,7 @@ void learningFlowTests() {
       await _pumpUi(tester, 1000);
 
       // 验证盲听段落选择弹窗出现
-      expect(find.text('Full Listening'), findsWidgets);
+      expect(find.text('Blind Listening'), findsWidgets);
       expect(find.text('Start Practice'), findsOneWidget);
 
       // === 3. 点击"开始练习" → 进入盲听播放器 ===

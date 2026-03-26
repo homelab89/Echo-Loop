@@ -41,7 +41,7 @@ void learningPlanTests() {
       expect(find.text('Retelling'), findsOneWidget);
 
       // 验证首次学习标题
-      expect(find.text('First Study'), findsOneWidget);
+      expect(find.text('Initial Learning'), findsOneWidget);
 
       // 验证底部按钮显示"Start Learning"
       expect(find.text('Start Learning'), findsOneWidget);
@@ -56,7 +56,7 @@ void learningPlanTests() {
       await tester.pumpAndSettle();
 
       // 验证盲听段落选择弹窗出现（标题 + 开始练习按钮）
-      expect(find.text('Full Listening'), findsWidgets);
+      expect(find.text('Blind Listening'), findsWidgets);
       // 验证"开始练习"按钮
       expect(find.text('Start Practice'), findsOneWidget);
     });

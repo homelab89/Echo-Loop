@@ -247,7 +247,7 @@ class _StepCompleteDialogState extends State<StepCompleteDialog> {
       children: DifficultyLevel.values.map((level) {
         final isSelected = _selectedDifficulty == level;
         return ChoiceChip(
-          label: Text(difficultyLabels[level] ?? level.label),
+          label: Text(difficultyLabels[level]!),
           selected: isSelected,
           showCheckmark: false,
           onSelected: (selected) {

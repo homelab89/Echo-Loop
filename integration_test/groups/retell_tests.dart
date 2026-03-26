@@ -317,7 +317,7 @@ void retellTests() {
       expect(find.text('3 paragraphs retold'), findsOneWidget);
 
       // 复述是首次学习的最后一步，按钮显示"完成首次学习"
-      expect(find.text('Complete First Study'), findsOneWidget);
+      expect(find.text('Complete Initial Learning'), findsOneWidget);
     });
 
     testWidgets('复述完成对话框 — 再来一遍', (tester) async {
@@ -347,7 +347,7 @@ void retellTests() {
 
       // 复述是末步骤，完成对话框显示"完成首次学习"
       // 点击"完成首次学习"按钮
-      await tester.tap(find.text('Complete First Study'));
+      await tester.tap(find.text('Complete Initial Learning'));
       await tester.pumpAndSettle();
 
       // 对话框关闭，页面已退出（完成首次学习后返回计划页）

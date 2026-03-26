@@ -15,6 +15,7 @@ import '../providers/learning_progress_provider.dart';
 import '../providers/listening_practice/listening_practice_provider.dart';
 import '../providers/tag_provider.dart';
 import '../l10n/app_localizations.dart';
+import '../widgets/review/review_briefing_sheet.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import 'learning_progress_icon.dart';
@@ -251,7 +252,7 @@ class AudioListTile extends ConsumerWidget {
             child: Text(
               progress.isCompleted
                   ? l10n.learningCompleted
-                  : progress.currentStage.label,
+                  : reviewStageLabel(l10n, progress.currentStage),
               style: theme.textTheme.labelSmall?.copyWith(
                 color: progress.isCompleted
                     ? theme.colorScheme.onTertiaryContainer

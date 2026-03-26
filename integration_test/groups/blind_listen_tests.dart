@@ -47,7 +47,7 @@ void blindListenTests() {
       await navigateToBlindListen(tester);
 
       // 验证 AppBar 标题
-      expect(find.text('Full Listening'), findsOneWidget);
+      expect(find.text('Blind Listening'), findsOneWidget);
 
       // 验证耳机图标（播放中时出现在状态提示区域）
       expect(find.byIcon(Icons.headphones), findsOneWidget);
