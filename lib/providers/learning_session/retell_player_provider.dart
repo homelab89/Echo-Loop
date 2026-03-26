@@ -159,7 +159,7 @@ class RetellPlayer extends _$RetellPlayer {
   Map<int, Set<int>> _keywordsMap = {};
 
   /// 学习事件记录器
-  late final StudyEventRecorder _recorder;
+  late StudyEventRecorder _recorder;
 
   /// position 监听（用于句子高亮）
   StreamSubscription<Duration>? _positionSub;

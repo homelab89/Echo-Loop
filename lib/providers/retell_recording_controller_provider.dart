@@ -145,7 +145,7 @@ final retellRecordingControllerProvider =
 /// 录音结束后自动释放麦克风，无需调用方管理引擎生命周期。
 class RetellRecordingController extends Notifier<RetellRecordingState> {
   // ── 服务 ──
-  late final RecordingService _recordingService;
+  late RecordingService _recordingService;
   StreamSubscription<SpeechPracticeEvent>? _eventSub;
 
   // ── 计时器 ──

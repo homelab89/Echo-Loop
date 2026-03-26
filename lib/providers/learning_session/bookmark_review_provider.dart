@@ -52,13 +52,13 @@ class BookmarkReview extends _$BookmarkReview {
   late SentencePlaybackEngine _engine;
 
   /// 学习事件记录器
-  late final StudyEventRecorder _recorder;
+  late StudyEventRecorder _recorder;
 
   /// 获取 AudioItemDao 的回调（通过 ref 注入）
   late dynamic Function(String) _getAudioItemById;
 
   /// 学习时长存储服务
-  late final StudyTimeService _studyTimeService;
+  late StudyTimeService _studyTimeService;
 
   /// 学习计时器
   final Stopwatch _studyStopwatch = Stopwatch();
@@ -79,7 +79,7 @@ class BookmarkReview extends _$BookmarkReview {
   static const _maxSessionSeconds = 5 * 60; // 5 分钟
 
   /// App 生命周期监听器，用于在后台暂停计时
-  late final AppLifecycleListener _lifecycleListener;
+  late AppLifecycleListener _lifecycleListener;
 
   @override
   ReviewDifficultPracticeState build() {

@@ -14,7 +14,6 @@
 library;
 
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../analytics/analytics_providers.dart';
 import '../../analytics/models/event_names.dart';
@@ -200,7 +199,7 @@ class IntensiveListenPlayer extends _$IntensiveListenPlayer {
   List<Sentence> _sentences = [];
 
   /// 学习事件记录器
-  late final StudyEventRecorder _recorder;
+  late StudyEventRecorder _recorder;
 
   /// 可控倒计时控制器
   final CountdownController _countdown = CountdownController();

@@ -200,8 +200,14 @@ class BackupService {
         );
       }
 
-      // Step 5: 复制媒体文件
+      // Step 5: 清空旧媒体文件，再复制导入的媒体文件
       onProgress?.call(const BackupProgress(stage: 'importingMedia'));
+      for (final subdir in ['audios', 'transcripts']) {
+        final dir = Directory(p.join(docsDir.path, subdir));
+        if (await dir.exists()) {
+          await dir.delete(recursive: true);
+        }
+      }
       final mediaDir = Directory(p.join(tempDir.path, 'media'));
       if (await mediaDir.exists()) {
         await _copyDirectory(mediaDir, docsDir);

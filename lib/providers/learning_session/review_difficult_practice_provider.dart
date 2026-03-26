@@ -151,7 +151,7 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
   List<Sentence> _sentences = [];
 
   /// 学习事件记录器
-  late final StudyEventRecorder _recorder;
+  late StudyEventRecorder _recorder;
 
   /// 播放引擎
   late SentencePlaybackEngine _engine;

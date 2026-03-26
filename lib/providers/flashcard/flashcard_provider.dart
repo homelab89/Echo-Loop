@@ -150,7 +150,7 @@ class FlashcardNotifier extends _$FlashcardNotifier {
   final CountdownController _countdown = CountdownController();
 
   /// 学习时长存储服务
-  late final StudyTimeService _studyTimeService;
+  late StudyTimeService _studyTimeService;
 
   /// 学习计时器
   final Stopwatch _studyStopwatch = Stopwatch();

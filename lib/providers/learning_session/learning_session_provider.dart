@@ -146,10 +146,10 @@ class LearningSession extends _$LearningSession {
   bool get isStudyTimerRunning => _studyStopwatch.isRunning;
 
   /// App 生命周期监听器，用于在后台暂停计时
-  late final AppLifecycleListener _lifecycleListener;
+  late AppLifecycleListener _lifecycleListener;
 
   /// 学习时长存储服务
-  late final StudyTimeService _studyTimeService;
+  late StudyTimeService _studyTimeService;
 
   @override
   LearningSessionState build() {

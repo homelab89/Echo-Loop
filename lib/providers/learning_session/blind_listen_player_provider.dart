@@ -130,7 +130,7 @@ class BlindListenPlayer extends _$BlindListenPlayer {
   List<List<Sentence>> _paragraphs = [];
 
   /// 学习事件记录器
-  late final StudyEventRecorder _recorder;
+  late StudyEventRecorder _recorder;
 
   /// position 监听（句子高亮）
   StreamSubscription<Duration>? _positionSub;

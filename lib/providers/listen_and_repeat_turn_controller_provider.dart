@@ -215,7 +215,7 @@ final shadowingRecordingControllerProvider =
 /// - 评估仅用覆盖率，不使用 embedding 相似度
 class ShadowingRecordingController extends Notifier<ListenAndRepeatTurnState> {
   // ── 服务 ──
-  late final RecordingService _recordingService;
+  late RecordingService _recordingService;
   StreamSubscription<SpeechPracticeEvent>? _eventSub;
 
   // ── 计时器 ──
