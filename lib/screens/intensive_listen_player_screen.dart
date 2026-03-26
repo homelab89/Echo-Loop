@@ -25,6 +25,7 @@ import '../widgets/dialogs/free_play_complete_dialog.dart';
 import '../widgets/dialogs/step_complete_dialog.dart';
 import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/intensive_listen/sentence_annotation_card.dart';
+import '../widgets/intensive_listen/word_dictionary_sheet.dart';
 import '../widgets/common/countdown_chip.dart';
 import '../widgets/player_hotkey_scope.dart';
 import '../widgets/common/text_context_menu.dart';
@@ -580,6 +581,19 @@ class _IntensiveListenPlayerScreenState
                               ? player.resumeCountdown()
                               : player.pauseCountdown(),
                           sentenceText: currentSentence?.text,
+                          onWordTap: currentSentence != null
+                              ? (word) => showWordDictionarySheet(
+                                  context: context,
+                                  word: word,
+                                  audioItemId: widget.audioItemId,
+                                  sentenceIndex: currentSentence.index,
+                                  sentenceText: currentSentence.text,
+                                  sentenceStartMs:
+                                      currentSentence.startTime.inMilliseconds,
+                                  sentenceEndMs:
+                                      currentSentence.endTime.inMilliseconds,
+                                )
+                              : null,
                         ),
                 ),
 
@@ -834,6 +848,9 @@ class _NormalModeView extends StatelessWidget {
 
   final String? sentenceText;
 
+  /// 点击单词查词回调
+  final void Function(String word)? onWordTap;
+
   const _NormalModeView({
     required this.playerState,
     required this.l10n,
@@ -843,6 +860,7 @@ class _NormalModeView extends StatelessWidget {
     required this.onCantUnderstand,
     required this.onPauseCountdown,
     this.sentenceText,
+    this.onWordTap,
   });
 
   @override
@@ -908,13 +926,22 @@ class _NormalModeView extends StatelessWidget {
                                   details.globalPosition,
                                   sentenceText!,
                                 ),
-                            child: Text(
-                              sentenceText!,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                height: 1.6,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
+                            child: onWordTap != null
+                                ? _TappableText(
+                                    text: sentenceText!,
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
+                                          height: 1.6,
+                                        ) ??
+                                        const TextStyle(),
+                                    onWordTap: onWordTap!,
+                                  )
+                                : Text(
+                                    sentenceText!,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(height: 1.6),
+                                    textAlign: TextAlign.center,
+                                  ),
                           )
                         : _HiddenTextPlaceholder(),
                   ),
@@ -1266,3 +1293,42 @@ String _getSubStageName(SubStageType type, AppLocalizations l10n) =>
       SubStageType.reviewRetellParagraph => 'Paragraph retelling',
       SubStageType.reviewRetellSummary => 'Summary retelling',
     };
+
+/// 去除单词两端的标点符号
+String _cleanWord(String word) => word.replaceAll(
+  RegExp(
+    r'[.,!?;:\-—…、，。！？；："""'
+    '()]',
+  ),
+  '',
+);
+
+/// 逐词可点击的文本（Wrap 布局，点击单词触发查词）
+class _TappableText extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+  final void Function(String word) onWordTap;
+
+  const _TappableText({
+    required this.text,
+    required this.style,
+    required this.onWordTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = text.split(RegExp(r'\s+'));
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 4,
+      runSpacing: 2,
+      children: tokens.map((token) {
+        final clean = _cleanWord(token);
+        return GestureDetector(
+          onTap: clean.isNotEmpty ? () => onWordTap(clean) : null,
+          child: Text(token, style: style),
+        );
+      }).toList(),
+    );
+  }
+}

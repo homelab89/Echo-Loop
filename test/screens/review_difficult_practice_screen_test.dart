@@ -295,7 +295,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Test sentence number 1.'), findsOneWidget);
+      // 逐词可点击布局：每个单词是单独的 Text
+      expect(find.text('sentence'), findsOneWidget);
+      expect(find.text('number'), findsOneWidget);
     });
 
     testWidgets('偷看字幕点击切换 — 初始隐藏显示听觉图标', (tester) async {
@@ -328,7 +330,8 @@ void main() {
       await tester.tap(find.text('Peek'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Test sentence number 1.'), findsOneWidget);
+      // 逐词可点击布局：每个单词是单独的 Text
+      expect(find.text('sentence'), findsOneWidget);
       expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
     });
 
@@ -346,12 +349,12 @@ void main() {
       // 点击显示
       await tester.tap(find.text('Peek'));
       await tester.pumpAndSettle();
-      expect(find.text('Test sentence number 1.'), findsOneWidget);
+      expect(find.text('sentence'), findsOneWidget);
 
       // 再次点击隐藏
       await tester.tap(find.text('Peek'));
       await tester.pumpAndSettle();
-      expect(find.text('Test sentence number 1.'), findsNothing);
+      expect(find.text('sentence'), findsNothing);
       expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
     });
 

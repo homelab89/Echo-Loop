@@ -43,6 +43,9 @@ class PracticeNormalModeView extends StatelessWidget {
   /// 当前句子文本
   final String? sentenceText;
 
+  /// 点击单词查词回调（null 时不启用逐词点击）
+  final void Function(String word)? onWordTap;
+
   const PracticeNormalModeView({
     super.key,
     required this.playerState,
@@ -53,6 +56,7 @@ class PracticeNormalModeView extends StatelessWidget {
     required this.onRemoveMark,
     required this.onPauseCountdown,
     this.sentenceText,
+    this.onWordTap,
   });
 
   @override
@@ -99,12 +103,22 @@ class PracticeNormalModeView extends StatelessWidget {
                     child: isRevealed && sentenceText != null
                         ? GestureDetector(
                             onTap: () {}, // 拦截点击，不冒泡到外层
-                            child: Text(
-                              sentenceText!,
-                              style: theme.textTheme.titleMedium
-                                  ?.copyWith(height: 1.6),
-                              textAlign: TextAlign.center,
-                            ),
+                            child: onWordTap != null
+                                ? _TappableText(
+                                    text: sentenceText!,
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
+                                          height: 1.6,
+                                        ) ??
+                                        const TextStyle(),
+                                    onWordTap: onWordTap!,
+                                  )
+                                : Text(
+                                    sentenceText!,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(height: 1.6),
+                                    textAlign: TextAlign.center,
+                                  ),
                           )
                         : const _HiddenTextPlaceholder(),
                   ),
@@ -129,7 +143,8 @@ class PracticeNormalModeView extends StatelessWidget {
               // 倒计时（固定 56 高度占位，避免字幕区跳动）
               SizedBox(
                 height: 56,
-                child: (playerState.isPauseBetweenPlays &&
+                child:
+                    (playerState.isPauseBetweenPlays &&
                         !playerState.settings.isManualMode)
                     ? CountdownChip(
                         remaining: playerState.pauseRemaining,
@@ -149,8 +164,7 @@ class PracticeNormalModeView extends StatelessWidget {
                     TextButton(
                       onPressed: onRemoveMark,
                       style: TextButton.styleFrom(
-                        foregroundColor:
-                            theme.colorScheme.onSurfaceVariant,
+                        foregroundColor: theme.colorScheme.onSurfaceVariant,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 12,
@@ -177,11 +191,11 @@ class PracticeNormalModeView extends StatelessWidget {
                         style: theme.textTheme.titleSmall,
                       ),
                     ),
-                    ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
 
           const SizedBox(height: AppSpacing.l),
         ],
@@ -216,14 +230,52 @@ class _PeekLabel extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Text(
-          isRevealed
-              ? l10n.intensiveListenPeek
-              : l10n.intensiveListenPeek,
+          isRevealed ? l10n.intensiveListenPeek : l10n.intensiveListenPeek,
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 去除单词两端的标点符号
+String _cleanWord(String word) => word.replaceAll(
+  RegExp(
+    r'[.,!?;:\-—…、，。！？；："""'
+    '()]',
+  ),
+  '',
+);
+
+/// 逐词可点击的文本（Wrap 布局，点击单词触发查词）
+class _TappableText extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+  final void Function(String word) onWordTap;
+
+  const _TappableText({
+    required this.text,
+    required this.style,
+    required this.onWordTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 按空白字符拆分，保留标点附着在单词上
+    final tokens = text.split(RegExp(r'\s+'));
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 4,
+      runSpacing: 2,
+      children: tokens.map((token) {
+        final clean = _cleanWord(token);
+        return GestureDetector(
+          onTap: clean.isNotEmpty ? () => onWordTap(clean) : null,
+          child: Text(token, style: style),
+        );
+      }).toList(),
     );
   }
 }

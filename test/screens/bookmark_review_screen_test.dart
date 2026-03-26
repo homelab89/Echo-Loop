@@ -362,7 +362,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Bookmark sentence number 1.'), findsOneWidget);
+      // 逐词可点击布局：每个单词是单独的 Text
+      expect(find.text('Bookmark'), findsOneWidget);
+      expect(find.text('sentence'), findsOneWidget);
     });
 
     testWidgets('偷看切换隐藏句子文本', (tester) async {
@@ -378,7 +380,7 @@ void main() {
 
       // 非 revealed 时显示隐藏占位
       expect(find.byIcon(Icons.hearing), findsOneWidget);
-      expect(find.text('Bookmark sentence number 1.'), findsNothing);
+      expect(find.text('sentence'), findsNothing);
     });
 
     testWidgets('点击偷看切换文本可见性', (tester) async {
@@ -396,8 +398,8 @@ void main() {
       await tester.tap(find.text('Peek'));
       await tester.pumpAndSettle();
 
-      // 切换后文本应可见
-      expect(find.text('Bookmark sentence number 1.'), findsOneWidget);
+      // 逐词可点击布局：每个单词是单独的 Text
+      expect(find.text('sentence'), findsOneWidget);
     });
 
     testWidgets('显示收藏标记行', (tester) async {
