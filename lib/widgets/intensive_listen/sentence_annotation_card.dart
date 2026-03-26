@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/sentence_ai_result.dart';
 import '../../models/speech_practice_models.dart';
 import '../../theme/app_theme.dart';
+import '../common/tappable_wrapper.dart';
 import '../common/ai_content_section.dart';
 import '../common/text_context_menu.dart';
 import 'word_dictionary_sheet.dart';
@@ -200,8 +201,10 @@ class _SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
       children: [
         // 难句标记（可点击切换；onToggle 为 null 时不显示）
         if (widget.onToggle != null) ...[
-          GestureDetector(
+          TappableWrapper(
             onTap: widget.onToggle,
+            feedbackType: TapFeedback.opacity,
+            pressedOpacity: 0.4,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

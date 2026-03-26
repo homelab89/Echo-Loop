@@ -208,9 +208,9 @@ class PracticeShadowReadingView extends StatelessWidget {
                         onTap: rec.onCountdownTap,
                       ),
                       const SizedBox(width: 48),
-                      GestureDetector(
-                        onTap: rec.onFastForward,
-                        child: Icon(
+                      IconButton(
+                        onPressed: rec.onFastForward,
+                        icon: Icon(
                           Icons.fast_forward_rounded,
                           size: 32,
                           color: theme.colorScheme.onSurface.withValues(

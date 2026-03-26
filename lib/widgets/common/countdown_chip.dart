@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'tappable_wrapper.dart';
 
 /// 倒计时控制按钮
 ///
@@ -38,8 +39,10 @@ class CountdownChip extends StatelessWidget {
     final progress = totalMs > 0 ? 1.0 - (remainingMs / totalMs) : 1.0;
     final seconds = (remainingMs / 1000).ceil();
 
-    return GestureDetector(
+    return TappableWrapper(
       onTap: onTap,
+      feedbackType: TapFeedback.scale,
+      scaleDown: 0.90,
       child: SizedBox(
         width: 56,
         height: 56,
@@ -79,14 +82,10 @@ class CountdownChip extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: theme.colorScheme.primaryContainer,
-                  border: Border.all(
-                    color: theme.colorScheme.surface,
-                  ),
+                  border: Border.all(color: theme.colorScheme.surface),
                 ),
                 child: Icon(
-                  isPaused
-                      ? Icons.play_arrow_rounded
-                      : Icons.pause_rounded,
+                  isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
                   size: 12,
                   color: theme.colorScheme.primary,
                 ),

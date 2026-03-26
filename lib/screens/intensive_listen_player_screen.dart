@@ -27,6 +27,7 @@ import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/intensive_listen/sentence_annotation_card.dart';
 import '../widgets/intensive_listen/word_dictionary_sheet.dart';
 import '../widgets/common/countdown_chip.dart';
+import '../widgets/common/tappable_wrapper.dart';
 import '../widgets/player_hotkey_scope.dart';
 import '../widgets/common/text_context_menu.dart';
 
@@ -800,8 +801,10 @@ class _AnnotationWithBookmark extends StatelessWidget {
         children: [
           const SizedBox(height: AppSpacing.s),
           // 书签标记行（和普通模式同位置、同样式）
-          GestureDetector(
+          TappableWrapper(
             onTap: onToggleDifficult,
+            feedbackType: TapFeedback.opacity,
+            pressedOpacity: 0.4,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -876,8 +879,10 @@ class _NormalModeView extends StatelessWidget {
           const SizedBox(height: AppSpacing.s),
 
           // 难句标记行
-          GestureDetector(
+          TappableWrapper(
             onTap: onToggleDifficult,
+            feedbackType: TapFeedback.opacity,
+            pressedOpacity: 0.4,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -1206,8 +1211,10 @@ class _PlaybackControls extends StatelessWidget {
           const SizedBox(width: 48),
 
           // 播放/暂停
-          GestureDetector(
+          TappableWrapper(
             onTap: onPlayPause,
+            feedbackType: TapFeedback.scale,
+            scaleDown: 0.92,
             child: Container(
               width: 56,
               height: 56,
@@ -1260,11 +1267,20 @@ class _NavButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedOpacity(
-        opacity: enabled ? 0.6 : 0.15,
+    if (!enabled) {
+      return AnimatedOpacity(
+        opacity: 0.15,
         duration: const Duration(milliseconds: 150),
+        child: Icon(icon, size: 32, color: theme.colorScheme.onSurface),
+      );
+    }
+    return TappableWrapper(
+      onTap: onTap,
+      feedbackType: TapFeedback.opacityAndScale,
+      pressedOpacity: 0.4,
+      scaleDown: 0.85,
+      child: Opacity(
+        opacity: 0.6,
         child: Icon(icon, size: 32, color: theme.colorScheme.onSurface),
       ),
     );
@@ -1303,7 +1319,7 @@ String _cleanWord(String word) => word.replaceAll(
   '',
 );
 
-/// 逐词可点击的文本（Wrap 布局，点击单词触发查词）
+/// 逐词可点击的文本（Wrap 布局，点击单词触发查词，带按压高亮反馈）
 class _TappableText extends StatelessWidget {
   final String text;
   final TextStyle style;
@@ -1324,11 +1340,55 @@ class _TappableText extends StatelessWidget {
       runSpacing: 2,
       children: tokens.map((token) {
         final clean = _cleanWord(token);
-        return GestureDetector(
-          onTap: clean.isNotEmpty ? () => onWordTap(clean) : null,
-          child: Text(token, style: style),
+        if (clean.isEmpty) return Text(token, style: style);
+        return _TappableWord(
+          token: token,
+          style: style,
+          onTap: () => onWordTap(clean),
         );
       }).toList(),
+    );
+  }
+}
+
+/// 单个可点击单词（按压时显示浅色背景高亮）
+class _TappableWord extends StatefulWidget {
+  final String token;
+  final TextStyle style;
+  final VoidCallback onTap;
+
+  const _TappableWord({
+    required this.token,
+    required this.style,
+    required this.onTap,
+  });
+
+  @override
+  State<_TappableWord> createState() => _TappableWordState();
+}
+
+class _TappableWordState extends State<_TappableWord> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final highlightColor = Theme.of(
+      context,
+    ).colorScheme.primary.withValues(alpha: 0.1);
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+        decoration: BoxDecoration(
+          color: _isPressed ? highlightColor : null,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(widget.token, style: widget.style),
+      ),
     );
   }
 }

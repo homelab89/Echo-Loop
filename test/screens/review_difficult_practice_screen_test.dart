@@ -509,15 +509,11 @@ void main() {
       final prevIcon = find.byIcon(Icons.skip_previous_rounded);
       final nextIcon = find.byIcon(Icons.skip_next_rounded);
 
-      final prevOpacity = tester.widget<AnimatedOpacity>(
-        find
-            .ancestor(of: prevIcon, matching: find.byType(AnimatedOpacity))
-            .first,
+      final prevOpacity = tester.widget<Opacity>(
+        find.ancestor(of: prevIcon, matching: find.byType(Opacity)).first,
       );
-      final nextOpacity = tester.widget<AnimatedOpacity>(
-        find
-            .ancestor(of: nextIcon, matching: find.byType(AnimatedOpacity))
-            .first,
+      final nextOpacity = tester.widget<Opacity>(
+        find.ancestor(of: nextIcon, matching: find.byType(Opacity)).first,
       );
       expect(prevOpacity.opacity, 0.6);
       expect(nextOpacity.opacity, 0.6);

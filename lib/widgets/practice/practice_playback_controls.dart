@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../providers/learning_session/review_difficult_practice_provider.dart';
+import '../common/tappable_wrapper.dart';
 import '../../theme/app_theme.dart';
 
 /// 底部播放控制
@@ -57,8 +58,10 @@ class PracticePlaybackControls extends StatelessWidget {
           ),
           const SizedBox(width: 48),
 
-          GestureDetector(
+          TappableWrapper(
             onTap: onPlayPause,
+            feedbackType: TapFeedback.scale,
+            scaleDown: 0.92,
             child: Container(
               width: 56,
               height: 56,
@@ -97,7 +100,7 @@ class PracticePlaybackControls extends StatelessWidget {
   }
 }
 
-/// 导航按钮（上一句/下一句/完成）
+/// 导航按钮（上一句/下一句/完成，按压时 opacity 提升 + 轻微缩放）
 class _NavButton extends StatelessWidget {
   final IconData icon;
   final bool enabled;
@@ -107,11 +110,24 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedOpacity(
-        opacity: enabled ? 0.6 : 0.15,
+    if (!enabled) {
+      return AnimatedOpacity(
+        opacity: 0.15,
         duration: const Duration(milliseconds: 150),
+        child: Icon(
+          icon,
+          size: 32,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+      );
+    }
+    return TappableWrapper(
+      onTap: onTap,
+      feedbackType: TapFeedback.opacityAndScale,
+      pressedOpacity: 0.4,
+      scaleDown: 0.85,
+      child: Opacity(
+        opacity: 0.6,
         child: Icon(
           icon,
           size: 32,

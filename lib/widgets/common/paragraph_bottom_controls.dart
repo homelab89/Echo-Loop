@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import 'tappable_wrapper.dart';
 
 /// 段落播放底部控制栏：[上一段] [播放/暂停] [下一段]
 class ParagraphBottomControls extends StatelessWidget {
@@ -53,8 +54,10 @@ class ParagraphBottomControls extends StatelessWidget {
           ),
           const SizedBox(width: 48),
 
-          GestureDetector(
+          TappableWrapper(
             onTap: onCenter,
+            feedbackType: TapFeedback.scale,
+            scaleDown: 0.92,
             child: Container(
               width: 56,
               height: 56,
@@ -111,11 +114,24 @@ class ParagraphNavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedOpacity(
-        opacity: enabled ? 0.6 : 0.15,
+    if (!enabled) {
+      return AnimatedOpacity(
+        opacity: 0.15,
         duration: const Duration(milliseconds: 150),
+        child: Icon(
+          icon,
+          size: 32,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+      );
+    }
+    return TappableWrapper(
+      onTap: onTap,
+      feedbackType: TapFeedback.opacityAndScale,
+      pressedOpacity: 0.4,
+      scaleDown: 0.85,
+      child: Opacity(
+        opacity: 0.6,
         child: Icon(
           icon,
           size: 32,

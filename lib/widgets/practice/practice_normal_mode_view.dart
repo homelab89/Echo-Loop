@@ -16,6 +16,7 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/learning_session/review_difficult_practice_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/countdown_chip.dart';
+import '../../widgets/common/tappable_wrapper.dart';
 
 /// 普通模式视图（文字遮盖 / 偷看）
 class PracticeNormalModeView extends StatelessWidget {
@@ -70,8 +71,10 @@ class PracticeNormalModeView extends StatelessWidget {
           const SizedBox(height: AppSpacing.s),
 
           // 难句/收藏标记行
-          GestureDetector(
+          TappableWrapper(
             onTap: onRemoveMark,
+            feedbackType: TapFeedback.opacity,
+            pressedOpacity: 0.4,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -249,7 +252,7 @@ String _cleanWord(String word) => word.replaceAll(
   '',
 );
 
-/// 逐词可点击的文本（Wrap 布局，点击单词触发查词）
+/// 逐词可点击的文本（Wrap 布局，点击单词触发查词，带按压高亮反馈）
 class _TappableText extends StatelessWidget {
   final String text;
   final TextStyle style;
@@ -263,7 +266,6 @@ class _TappableText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 按空白字符拆分，保留标点附着在单词上
     final tokens = text.split(RegExp(r'\s+'));
     return Wrap(
       alignment: WrapAlignment.center,
@@ -271,11 +273,55 @@ class _TappableText extends StatelessWidget {
       runSpacing: 2,
       children: tokens.map((token) {
         final clean = _cleanWord(token);
-        return GestureDetector(
-          onTap: clean.isNotEmpty ? () => onWordTap(clean) : null,
-          child: Text(token, style: style),
+        if (clean.isEmpty) return Text(token, style: style);
+        return _TappableWord(
+          token: token,
+          style: style,
+          onTap: () => onWordTap(clean),
         );
       }).toList(),
+    );
+  }
+}
+
+/// 单个可点击单词（按压时显示浅色背景高亮）
+class _TappableWord extends StatefulWidget {
+  final String token;
+  final TextStyle style;
+  final VoidCallback onTap;
+
+  const _TappableWord({
+    required this.token,
+    required this.style,
+    required this.onTap,
+  });
+
+  @override
+  State<_TappableWord> createState() => _TappableWordState();
+}
+
+class _TappableWordState extends State<_TappableWord> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final highlightColor = Theme.of(
+      context,
+    ).colorScheme.primary.withValues(alpha: 0.1);
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+        decoration: BoxDecoration(
+          color: _isPressed ? highlightColor : null,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(widget.token, style: widget.style),
+      ),
     );
   }
 }

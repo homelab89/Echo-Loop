@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/rating_thresholds.dart';
+import 'tappable_wrapper.dart';
 import '../../models/speech_practice_models.dart';
 
 // 重导出 RatingThresholds，保持现有 import 兼容
@@ -52,8 +53,10 @@ class SpeechRatingBadge extends StatelessWidget {
 
     final style = _ratingStyle(theme);
 
-    return GestureDetector(
+    return TappableWrapper(
       onTap: onTap,
+      feedbackType: TapFeedback.opacity,
+      pressedOpacity: 0.6,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
