@@ -428,6 +428,7 @@ class LearningSession extends _$LearningSession {
 
     // 暂停 LP 的 stream 监听
     practice.suspendListeners();
+    await _ensureAudioLoaded(audioItemId);
 
     _logEnterMode(
       'enterIntensiveListenMode',
@@ -494,6 +495,7 @@ class LearningSession extends _$LearningSession {
 
     // 暂停 LP 的 stream 监听
     practice.suspendListeners();
+    await _ensureAudioLoaded(audioItemId);
 
     _logEnterMode(
       'enterListenAndRepeatMode',
@@ -550,6 +552,7 @@ class LearningSession extends _$LearningSession {
 
     // 暂停 LP 的 stream 监听
     practice.suspendListeners();
+    await _ensureAudioLoaded(audioItemId);
 
     final retellSentences = paragraphs.expand((p) => p).toList();
     _logEnterMode(
@@ -618,6 +621,7 @@ class LearningSession extends _$LearningSession {
 
     // 暂停 LP 的 stream 监听
     practice.suspendListeners();
+    await _ensureAudioLoaded(audioItemId);
 
     _logEnterMode(
       'enterReviewDifficultPracticeMode',
@@ -731,17 +735,21 @@ class LearningSession extends _$LearningSession {
     return DateTime.now().difference(savedAt).inDays <= 3;
   }
 
-  /// 等待音频引擎加载目标音频
+  /// 确保音频引擎已加载目标音频
   ///
-  /// LearningPlanScreen.initState 中的 loadAudio 是 fire-and-forget 的异步调用，
-  /// 用户快速点击"开始"时引擎可能还在加载中。此方法轮询等待引擎完成加载，
-  /// 最多等待 10 秒（200 × 50ms），避免播放错误的音频。
+  /// 收藏页、单词卡等页面可能将不同音频加载到全局引擎，
+  /// 导致引擎持有的音频与当前学习目标不一致。
+  /// 进入任何学习模式前调用此方法，检测不匹配时主动重新加载。
   Future<void> _ensureAudioLoaded(String audioItemId) async {
-    if (ref.read(audioEngineProvider).currentAudioId == audioItemId) return;
-    for (var i = 0; i < 200; i++) {
-      await Future.delayed(const Duration(milliseconds: 50));
-      final current = ref.read(audioEngineProvider);
-      if (current.currentAudioId == audioItemId && !current.isLoading) return;
+    final engine = ref.read(audioEngineProvider);
+    if (engine.currentAudioId == audioItemId && !engine.isLoading) return;
+
+    // 引擎音频不匹配 → 通过 LP 获取 audioItem，直接重新加载到引擎
+    final lp = ref.read(listeningPracticeProvider);
+    final audioItem = lp.currentAudioItem;
+    if (audioItem != null && audioItem.id == audioItemId) {
+      final engineNotifier = ref.read(audioEngineProvider.notifier);
+      await engineNotifier.loadAudio(audioItem, lp.settings.playbackSpeed);
     }
   }
 }
