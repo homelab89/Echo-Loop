@@ -44,6 +44,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   int _devTapCount = 0;
   DateTime? _lastDevTap;
 
+  /// 用户下载目录路径（用于文件选择器默认打开目录）
+  static String? get _downloadsDirectory {
+    final home = Platform.environment['HOME'];
+    if (home == null) return null;
+    return '$home/Downloads';
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -568,6 +575,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         final savePath = await FilePicker.platform.saveFile(
           dialogTitle: l10n.exportData,
           fileName: fileName,
+          initialDirectory: _downloadsDirectory,
           type: FileType.custom,
           allowedExtensions: ['zip'],
         );
@@ -606,6 +614,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['zip'],
+      initialDirectory: _downloadsDirectory,
     );
     if (result == null || result.files.isEmpty) return;
 
