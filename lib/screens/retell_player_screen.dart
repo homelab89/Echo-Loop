@@ -700,12 +700,27 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         final latestRecState = ref.read(retellRecordingControllerProvider);
-        if (latestRecState.phase != RetellRecordingPhase.idle) return;
-        if (latestRecState.awaitingSpeechTimedOut) return;
+        if (latestRecState.phase != RetellRecordingPhase.idle) {
+          AppLogger.log('RetellScreen', '⏭ 自动录音跳过: phase=${latestRecState.phase.name}');
+          return;
+        }
+        if (latestRecState.awaitingSpeechTimedOut) {
+          AppLogger.log('RetellScreen', '⏭ 自动录音跳过: 等待开口超时');
+          return;
+        }
         final latestState = ref.read(retellPlayerProvider);
-        if (latestState.phase != RetellPhase.retelling) return;
-        if (latestState.isRetellCountdown) return;
-        if (_manualStoppedThisParagraph) return;
+        if (latestState.phase != RetellPhase.retelling) {
+          AppLogger.log('RetellScreen', '⏭ 自动录音跳过: retellPhase=${latestState.phase.name}');
+          return;
+        }
+        if (latestState.isRetellCountdown) {
+          AppLogger.log('RetellScreen', '⏭ 自动录音跳过: 倒计时中');
+          return;
+        }
+        if (_manualStoppedThisParagraph) {
+          AppLogger.log('RetellScreen', '⏭ 自动录音跳过: 本段已手动停止');
+          return;
+        }
 
         AppLogger.log(
           'RetellScreen',

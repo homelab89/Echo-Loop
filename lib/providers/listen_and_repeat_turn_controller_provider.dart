@@ -284,6 +284,7 @@ class ShadowingRecordingController extends Notifier<ListenAndRepeatTurnState> {
     required String referenceText,
   }) async {
     if (state.promptId == promptId && state.isActive) {
+      AppLogger.log('ShadowRec', '⏭ startRecording 跳过: 已在录音中 ($promptId)');
       return;
     }
 
@@ -384,12 +385,13 @@ class ShadowingRecordingController extends Notifier<ListenAndRepeatTurnState> {
     _lastKnownTranscript = null;
     _eventSub?.cancel();
     _eventSub = null;
-    // 删除已完成录音的临时文件
+    // 先读取文件路径，再立即重置状态（避免 await 延迟状态重置导致自动录音触发失败）
     final filePath = state.currentAttempt?.filePath;
-    if (filePath != null && filePath.isNotEmpty) {
-      await _recordingService.deleteRecording(filePath);
-    }
     state = ListenAndRepeatTurnState(permissions: state.permissions);
+    // 异步删除录音临时文件（fire-and-forget）
+    if (filePath != null && filePath.isNotEmpty) {
+      unawaited(_recordingService.deleteRecording(filePath));
+    }
   }
 
   /// 完全重置（页面 dispose 时调用）

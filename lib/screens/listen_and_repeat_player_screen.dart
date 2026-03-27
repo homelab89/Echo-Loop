@@ -632,10 +632,19 @@ class _ListenAndRepeatPlayerScreenState
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           final latestRecState = ref.read(shadowingRecordingControllerProvider);
-          if (latestRecState.phase != ListenAndRepeatTurnPhase.idle) return;
+          if (latestRecState.phase != ListenAndRepeatTurnPhase.idle) {
+            AppLogger.log('ShadowScreen', '⏭ 自动录音跳过: phase=${latestRecState.phase.name}');
+            return;
+          }
           final latestState = ref.read(listenAndRepeatPlayerProvider);
-          if (!latestState.isPauseBetweenPlays) return;
-          if (_manualStoppedThisSentence) return;
+          if (!latestState.isPauseBetweenPlays) {
+            AppLogger.log('ShadowScreen', '⏭ 自动录音跳过: 不在停顿中');
+            return;
+          }
+          if (_manualStoppedThisSentence) {
+            AppLogger.log('ShadowScreen', '⏭ 自动录音跳过: 本句已手动停止');
+            return;
+          }
 
           // 暂停 player 层倒计时（录音由 ShadowingRecordingController 接管）
           if (!latestState.isCountdownPaused) {
