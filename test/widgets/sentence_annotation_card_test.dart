@@ -195,7 +195,8 @@ void main() {
       expect(find.text('这是翻译结果'), findsOneWidget);
     });
 
-    testWidgets('cachedTranslation 自动展开且不触发请求', (tester) async {
+    testWidgets('cachedTranslation 初始折叠，点击后立即显示且不触发请求',
+        (tester) async {
       var requested = false;
 
       await tester.pumpWidget(
@@ -213,6 +214,12 @@ void main() {
         ),
       );
 
+      await tester.pumpAndSettle();
+      // 初始应折叠，不自动展开
+      expect(find.text('已缓存的翻译'), findsNothing);
+
+      // 点击翻译按钮后立即显示缓存内容
+      await tester.tap(find.text('Translate'));
       await tester.pumpAndSettle();
       expect(find.text('已缓存的翻译'), findsOneWidget);
       expect(requested, isFalse);
@@ -307,7 +314,7 @@ void main() {
       expect(find.text('用法结果'), findsOneWidget);
     });
 
-    testWidgets('cachedAnalysis 自动展开', (tester) async {
+    testWidgets('cachedAnalysis 初始折叠，点击后立即显示', (tester) async {
       await tester.pumpWidget(
         createTestApp(
           SentenceAnnotationCard(
@@ -315,10 +322,17 @@ void main() {
             isDifficult: false,
             onToggle: () {},
             cachedAnalysis: '语法分析${sep}词汇分析${sep}用法分析',
+            onRequestAnalysis: () async => '语法分析${sep}词汇分析${sep}用法分析',
           ),
         ),
       );
 
+      await tester.pumpAndSettle();
+      // 初始应折叠
+      expect(find.text('语法分析'), findsNothing);
+
+      // 点击解析按钮后立即显示缓存内容
+      await tester.tap(find.text('Analysis'));
       await tester.pumpAndSettle();
       expect(find.text('语法分析'), findsOneWidget);
       expect(find.text('词汇分析'), findsOneWidget);
@@ -355,7 +369,7 @@ void main() {
       expect(find.text('用法OK'), findsOneWidget);
     });
 
-    testWidgets('翻译和解析缓存同时自动展开', (tester) async {
+    testWidgets('翻译和解析缓存初始折叠，分别点击后展开', (tester) async {
       await tester.pumpWidget(
         createTestApp(
           SentenceAnnotationCard(
@@ -363,13 +377,27 @@ void main() {
             isDifficult: false,
             onToggle: () {},
             cachedTranslation: '缓存翻译',
+            onRequestTranslation: () async => '缓存翻译',
             cachedAnalysis: '缓存语法${sep}缓存词汇${sep}缓存用法',
+            onRequestAnalysis: () async =>
+                '缓存语法${sep}缓存词汇${sep}缓存用法',
           ),
         ),
       );
 
       await tester.pumpAndSettle();
+      // 初始均折叠
+      expect(find.text('缓存翻译'), findsNothing);
+      expect(find.text('缓存语法'), findsNothing);
+
+      // 点击翻译按钮
+      await tester.tap(find.text('Translate'));
+      await tester.pumpAndSettle();
       expect(find.text('缓存翻译'), findsOneWidget);
+
+      // 点击解析按钮
+      await tester.tap(find.text('Analysis'));
+      await tester.pumpAndSettle();
       expect(find.text('缓存语法'), findsOneWidget);
       expect(find.text('缓存词汇'), findsOneWidget);
       expect(find.text('缓存用法'), findsOneWidget);

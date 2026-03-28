@@ -170,17 +170,12 @@ class SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
     if (widget.senseGroups != null && widget.senseGroups!.isNotEmpty) {
       _senseGroupVisible = true;
     }
-    // 有缓存翻译时自动展开
+    // 预存缓存内容（用户点击按钮时可立即显示，但不自动展开）
     if (widget.cachedTranslation != null) {
       _translationContent = widget.cachedTranslation;
-      _translationState = ContentLoadState.loaded;
-      _translationExpanded = true;
     }
-    // 有缓存解析时自动展开
     if (widget.cachedAnalysis != null) {
       _analysisContent = widget.cachedAnalysis;
-      _analysisState = ContentLoadState.loaded;
-      _analysisExpanded = true;
     }
     // 首帧构建后通知外部工具栏刷新（解决 GlobalKey 时序问题）
     if (widget.onToolbarStateChanged != null) {
@@ -240,7 +235,10 @@ class SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
   /// 翻译按钮点击（返回 Future 供 AsyncToggleButton 管理 loading）
   Future<void> _onTapTranslation() async {
     if (_translationContent != null) {
-      setState(() => _translationExpanded = !_translationExpanded);
+      setState(() {
+        _translationExpanded = !_translationExpanded;
+        _translationState = ContentLoadState.loaded;
+      });
       _notifyToolbar();
       return;
     }
@@ -266,7 +264,10 @@ class SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
   /// 解析按钮点击（返回 Future 供 AsyncToggleButton 管理 loading）
   Future<void> _onTapAnalysis() async {
     if (_analysisContent != null) {
-      setState(() => _analysisExpanded = !_analysisExpanded);
+      setState(() {
+        _analysisExpanded = !_analysisExpanded;
+        _analysisState = ContentLoadState.loaded;
+      });
       _notifyToolbar();
       return;
     }
