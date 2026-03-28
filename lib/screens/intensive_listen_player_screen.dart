@@ -562,7 +562,7 @@ class _IntensiveListenPlayerScreenState
                                 playerState.isCurrentSentenceAutoMarked,
                             aiNotifier: ref.read(sentenceAiNotifierProvider),
                             audioItemId: widget.audioItemId,
-                            sentenceIndex: playerState.currentSentenceIndex,
+                            sentenceIndex: currentSentence?.index ?? playerState.currentSentenceIndex,
                             sentenceStartMs:
                                 currentSentence?.startTime.inMilliseconds,
                             sentenceEndMs:

@@ -684,7 +684,7 @@ class _ReviewDifficultPracticeScreenState
                           isDifficult: currentSentence?.isBookmarked ?? true,
                           aiNotifier: ref.read(sentenceAiNotifierProvider),
                           audioItemId: widget.audioItemId,
-                          sentenceIndex: player.currentIndex,
+                          sentenceIndex: currentSentence?.index ?? player.currentIndex,
                           recording: RecordingConfig(
                             turnState: turnState,
                             currentPromptId: currentPromptId,

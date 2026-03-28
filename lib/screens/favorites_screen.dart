@@ -859,22 +859,49 @@ class _SavedWordTileState extends ConsumerState<_SavedWordTile> {
       Duration startTime;
       Duration endTime;
 
-      if (hasStoredTiming) {
+      /// 存储时间是否可信（最少 200ms）
+      const minDurationMs = 200;
+      final storedDurationOk = hasStoredTiming &&
+          (word.sentenceEndMs! - word.sentenceStartMs!) >= minDurationMs;
+
+      if (hasStoredTiming && storedDurationOk) {
         // 使用冗余存储的时间（不依赖字幕文件）
         startTime = Duration(milliseconds: word.sentenceStartMs!);
         endTime = Duration(milliseconds: word.sentenceEndMs!);
       } else {
         // 回退：加载字幕获取句子时间信息
-        if (row.transcriptPath == null) {
+        if (word.sentenceIndex == null || row.transcriptPath == null) {
           setState(() => _isPlaying = false);
           return;
         }
         final sentences = await engine.loadTranscript(audioItem);
-        if (!mounted || word.sentenceIndex! >= sentences.length) {
+        if (!mounted || sentences.isEmpty) {
           setState(() => _isPlaying = false);
           return;
         }
-        final sentence = sentences[word.sentenceIndex!];
+
+        // 优先用 sentenceIndex，但若字幕重新生成导致索引错位，
+        // 则通过 sentenceText 匹配找到正确句子
+        final idx = word.sentenceIndex!;
+        var sentence = idx < sentences.length ? sentences[idx] : null;
+        final storedText = word.sentenceText;
+
+        if (sentence != null &&
+            storedText != null &&
+            sentence.text.trim() != storedText.trim()) {
+          sentence = null;
+          for (final s in sentences) {
+            if (s.text.trim() == storedText.trim()) {
+              sentence = s;
+              break;
+            }
+          }
+        }
+
+        if (sentence == null) {
+          if (mounted) setState(() => _isPlaying = false);
+          return;
+        }
         startTime = sentence.startTime;
         endTime = sentence.endTime;
       }

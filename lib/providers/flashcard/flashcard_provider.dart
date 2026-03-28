@@ -604,6 +604,10 @@ class FlashcardNotifier extends _$FlashcardNotifier {
 
   /// 停止所有播放（TTS + 音频引擎）
   void _stopAllPlayback() {
+    AppLogger.log(
+      'Flashcard',
+      '_stopAllPlayback: sessionId=${ref.read(audioEngineProvider).sessionId}',
+    );
     TtsService.instance.stop();
     ref.read(audioEngineProvider.notifier).stop();
   }

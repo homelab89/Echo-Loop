@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../models/audio_engine_state.dart';
@@ -38,9 +39,11 @@ class AudioEngine extends _$AudioEngine {
       state = state.copyWith(isLoading: true, errorMessage: null);
 
       final fullAudioPath = await item.getFullAudioPath();
+      final fileExists = File(fullAudioPath).existsSync();
       AppLogger.log(
         'AudioEngine',
-        '🔊 loadAudio: id=${item.id}, path=$fullAudioPath',
+        '🔊 loadAudio: id=${item.id}, path=$fullAudioPath, '
+            'exists=$fileExists, sessionId=${state.sessionId}',
       );
       await _audioPlayer.setFilePath(fullAudioPath);
       await _audioPlayer.setSpeed(speed);
@@ -92,7 +95,12 @@ class AudioEngine extends _$AudioEngine {
   }
 
   Future<void> stop() async {
+    final oldId = state.sessionId;
     state = state.copyWith(sessionId: state.sessionId + 1);
+    AppLogger.log(
+      'AudioEngine',
+      '⏹ stop(): sessionId $oldId → ${state.sessionId}',
+    );
     await _audioPlayer.stop();
   }
 
@@ -177,10 +185,35 @@ class AudioEngine extends _$AudioEngine {
     Duration end,
     int sessionId,
   ) async {
-    if (!isActiveSession(sessionId)) return;
+    AppLogger.log(
+      'AudioEngine',
+      '▶ playRangeOnce: range=${start.inMilliseconds}-${end.inMilliseconds}ms, '
+          'sessionId=$sessionId, currentSessionId=${state.sessionId}, '
+          'isActive=${isActiveSession(sessionId)}, '
+          'audioId=${state.currentAudioId}',
+    );
+    if (!isActiveSession(sessionId)) {
+      AppLogger.log(
+        'AudioEngine',
+        '⚠ playRangeOnce SKIPPED: session $sessionId 已过期 '
+            '(current=${state.sessionId})',
+      );
+      return;
+    }
 
     state = state.copyWith(clipStart: start);
     await _audioPlayer.setClip(start: start, end: end);
+
+    // setClip 是 await 点，microtask 可能在此期间改变 session
+    if (!isActiveSession(sessionId)) {
+      AppLogger.log(
+        'AudioEngine',
+        '⚠ playRangeOnce SKIPPED after setClip: session $sessionId 已过期 '
+            '(current=${state.sessionId})',
+      );
+      return;
+    }
+
     await _audioPlayer.play();
 
     await _audioPlayer.playerStateStream.firstWhere(
@@ -188,11 +221,20 @@ class AudioEngine extends _$AudioEngine {
           !isActiveSession(sessionId) ||
           s.processingState == ja.ProcessingState.completed,
     );
+    AppLogger.log(
+      'AudioEngine',
+      '✓ playRangeOnce done: sessionStillActive=${isActiveSession(sessionId)}',
+    );
   }
 
   // --- Session 管理 ---
   int newSession() {
+    final oldId = state.sessionId;
     state = state.copyWith(sessionId: state.sessionId + 1);
+    AppLogger.log(
+      'AudioEngine',
+      '🔄 newSession(): sessionId $oldId → ${state.sessionId}',
+    );
     return state.sessionId;
   }
 

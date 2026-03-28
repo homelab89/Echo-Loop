@@ -5,6 +5,7 @@
 library;
 
 import 'dart:math' as math;
+import 'dart:math' show min;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -329,6 +330,13 @@ class _BackContentState extends ConsumerState<_BackContent> {
   ///
   /// TTS + 例句全部播完后通知 Provider 启动倒计时。
   Future<void> _autoPlayOnFlipToBack() async {
+    AppLogger.log(
+      'FC-Audio',
+      'autoPlay START: word="${widget.item.savedWord.word}", '
+          'autoPlayWord=${widget.autoPlayWord}, '
+          'autoPlaySentence=${widget.autoPlaySentence}',
+    );
+
     // TTS 朗读单词
     if (widget.autoPlayWord) {
       await TtsService.instance.speak(widget.item.savedWord.word);
@@ -339,7 +347,13 @@ class _BackContentState extends ConsumerState<_BackContent> {
 
     // 自动播放来源例句
     if (widget.autoPlaySentence && widget.item.savedWord.sentenceText != null) {
+      AppLogger.log('FC-Audio', 'autoPlay: TTS done, waiting 600ms');
       await Future<void>.delayed(const Duration(milliseconds: 600));
+      AppLogger.log(
+        'FC-Audio',
+        'autoPlay: 600ms elapsed, cancelled=$_autoPlayCancelled, '
+            'mounted=$mounted',
+      );
       if (!mounted || _autoPlayCancelled) return;
       await _playSentence();
       if (!mounted) return;
@@ -566,15 +580,41 @@ class _BackContentState extends ConsumerState<_BackContent> {
     if (isUserTap) _autoPlayCancelled = true;
 
     final word = widget.item.savedWord;
-    if (word.audioItemId == null) return;
+    final textPreview = word.sentenceText != null
+        ? word.sentenceText!.substring(0, min(40, word.sentenceText!.length))
+        : 'null';
+
+    AppLogger.log(
+      'FC-Audio',
+      '_playSentence START: isUserTap=$isUserTap, '
+          'word="${word.word}", audioItemId=${word.audioItemId}, '
+          'sentenceIndex=${word.sentenceIndex}, '
+          'storedStart=${word.sentenceStartMs}, storedEnd=${word.sentenceEndMs}, '
+          'text="$textPreview"',
+    );
+
+    if (word.audioItemId == null) {
+      AppLogger.log('FC-Audio', '_playSentence RETURN: audioItemId is null');
+      return;
+    }
 
     final hasStoredTiming =
         word.sentenceStartMs != null && word.sentenceEndMs != null;
-    if (!hasStoredTiming && word.sentenceIndex == null) return;
+    if (!hasStoredTiming && word.sentenceIndex == null) {
+      AppLogger.log(
+        'FC-Audio',
+        '_playSentence RETURN: no stored timing and sentenceIndex is null',
+      );
+      return;
+    }
 
     final notifier = ref.read(flashcardNotifierProvider.notifier);
 
     if (_isPlaying) {
+      AppLogger.log(
+        'FC-Audio',
+        '_playSentence STOP: already playing, calling engine.stop()',
+      );
       ref.read(audioEngineProvider.notifier).stop();
       setState(() => _isPlaying = false);
       notifier.onSentencePlaybackEnded();
@@ -590,7 +630,13 @@ class _BackContentState extends ConsumerState<_BackContent> {
 
       final dao = ref.read(audioItemDaoProvider);
       final row = await dao.getById(word.audioItemId!);
+      AppLogger.log(
+        'FC-Audio',
+        'DB fetch: ${row != null ? "found" : "NULL"}, '
+            'audioPath=${row?.audioPath}',
+      );
       if (row == null || !mounted) {
+        AppLogger.log('FC-Audio', '_playSentence RETURN: row=$row, mounted=$mounted');
         if (mounted) setState(() => _isPlaying = false);
         notifier.onSentencePlaybackEnded();
         return;
@@ -613,36 +659,142 @@ class _BackContentState extends ConsumerState<_BackContent> {
         transcriptLanguage: row.transcriptLanguage,
       );
 
-      if (engineState.currentAudioId != word.audioItemId) {
+      final needReload = engineState.currentAudioId != word.audioItemId;
+      AppLogger.log(
+        'FC-Audio',
+        'Audio load: currentAudioId=${engineState.currentAudioId}, '
+            'needed=${word.audioItemId}, reload=$needReload, '
+            'sessionId=${engineState.sessionId}',
+      );
+      if (needReload) {
         await engine.loadAudio(audioItem, 1.0);
+        AppLogger.log(
+          'FC-Audio',
+          'loadAudio done. newAudioId=${ref.read(audioEngineProvider).currentAudioId}, '
+              'sessionId=${ref.read(audioEngineProvider).sessionId}',
+        );
       }
       if (!mounted) return;
 
       Duration startTime;
       Duration endTime;
 
-      if (hasStoredTiming) {
+      /// 存储时间是否可信（最少 200ms）
+      const minDurationMs = 200;
+      final storedDurationOk = hasStoredTiming &&
+          (word.sentenceEndMs! - word.sentenceStartMs!) >= minDurationMs;
+
+      // 优先用存储时间，但如果太短（数据异常）则回退 transcript
+      if (hasStoredTiming && storedDurationOk) {
         startTime = Duration(milliseconds: word.sentenceStartMs!);
         endTime = Duration(milliseconds: word.sentenceEndMs!);
+        AppLogger.log(
+          'FC-Audio',
+          'Timing(stored): ${startTime.inMilliseconds}-${endTime.inMilliseconds}ms, '
+              'duration=${(endTime - startTime).inMilliseconds}ms',
+        );
       } else {
+        // 存储时间异常时记录警告
+        if (hasStoredTiming && !storedDurationOk) {
+          AppLogger.log(
+            'FC-Audio',
+            '⚠ Stored timing too short: '
+                '${word.sentenceStartMs}-${word.sentenceEndMs}ms '
+                '(${word.sentenceEndMs! - word.sentenceStartMs!}ms), '
+                'falling back to transcript',
+          );
+        }
+        if (word.sentenceIndex == null) {
+          AppLogger.log(
+            'FC-Audio',
+            '_playSentence RETURN: no valid timing and sentenceIndex is null',
+          );
+          if (mounted) setState(() => _isPlaying = false);
+          notifier.onSentencePlaybackEnded();
+          return;
+        }
         if (row.transcriptPath == null) {
+          AppLogger.log('FC-Audio', '_playSentence RETURN: transcriptPath is null');
           if (mounted) setState(() => _isPlaying = false);
           notifier.onSentencePlaybackEnded();
           return;
         }
         final sentences = await engine.loadTranscript(audioItem);
-        if (!mounted || word.sentenceIndex! >= sentences.length) {
+        AppLogger.log(
+          'FC-Audio',
+          'Transcript loaded: ${sentences.length} sentences, '
+              'need index=${word.sentenceIndex}',
+        );
+        if (!mounted || sentences.isEmpty) {
           if (mounted) setState(() => _isPlaying = false);
           notifier.onSentencePlaybackEnded();
           return;
         }
-        final sentence = sentences[word.sentenceIndex!];
+
+        // 优先用 sentenceIndex，但若字幕重新生成导致索引错位，
+        // 则通过 sentenceText 匹配找到正确句子
+        final idx = word.sentenceIndex!;
+        var sentence = idx < sentences.length ? sentences[idx] : null;
+        final storedText = word.sentenceText;
+
+        // 检测索引错位：索引对应句子文本与存储文本不匹配
+        if (sentence != null &&
+            storedText != null &&
+            sentence.text.trim() != storedText.trim()) {
+          AppLogger.log(
+            'FC-Audio',
+            '⚠ Index mismatch! index=$idx text="${sentence.text.substring(0, min(30, sentence.text.length))}" '
+                'vs stored="${storedText.substring(0, min(30, storedText.length))}", '
+                'trying text match',
+          );
+          // 文本匹配回退
+          sentence = null;
+          for (final s in sentences) {
+            if (s.text.trim() == storedText.trim()) {
+              sentence = s;
+              AppLogger.log(
+                'FC-Audio',
+                '✓ Text match found at index=${s.index}, '
+                    '${s.startTime.inMilliseconds}-${s.endTime.inMilliseconds}ms',
+              );
+              break;
+            }
+          }
+        }
+
+        if (sentence == null) {
+          AppLogger.log(
+            'FC-Audio',
+            '_playSentence RETURN: no matching sentence found '
+                '(index=$idx, totalSentences=${sentences.length})',
+          );
+          if (mounted) setState(() => _isPlaying = false);
+          notifier.onSentencePlaybackEnded();
+          return;
+        }
+
         startTime = sentence.startTime;
         endTime = sentence.endTime;
+        AppLogger.log(
+          'FC-Audio',
+          'Timing(transcript): ${startTime.inMilliseconds}-${endTime.inMilliseconds}ms, '
+              'duration=${(endTime - startTime).inMilliseconds}ms, '
+              'transcriptText="${sentence.text.substring(0, min(40, sentence.text.length))}"',
+        );
       }
 
       final sessionId = engine.newSession();
+      AppLogger.log(
+        'FC-Audio',
+        'Calling playRangeOnce: '
+            '${startTime.inMilliseconds}-${endTime.inMilliseconds}ms, '
+            'sessionId=$sessionId',
+      );
       await engine.playRangeOnce(startTime, endTime, sessionId);
+      AppLogger.log(
+        'FC-Audio',
+        'playRangeOnce returned. mounted=$mounted, _isPlaying=$_isPlaying',
+      );
 
       // 例句播放完成，计入输入词数
       if (mounted && word.sentenceText != null) {
@@ -650,9 +802,16 @@ class _BackContentState extends ConsumerState<_BackContent> {
             .read(flashcardNotifierProvider.notifier)
             .onSentencePlayed(word.sentenceText!);
       }
-    } catch (e) {
-      AppLogger.log('Flashcard', '⚠ _playSentence error: $e');
+    } catch (e, stackTrace) {
+      AppLogger.log(
+        'FC-Audio',
+        '⚠ _playSentence error: $e\n$stackTrace',
+      );
     } finally {
+      AppLogger.log(
+        'FC-Audio',
+        '_playSentence FINALLY: mounted=$mounted, _isPlaying=$_isPlaying',
+      );
       if (mounted && _isPlaying) {
         setState(() => _isPlaying = false);
         notifier.onSentencePlaybackEnded();
