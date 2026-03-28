@@ -538,11 +538,6 @@ class SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
             playingGroupIndex: widget.playingSenseGroupIndex,
             playedGroupIndices: widget.playedSenseGroupIndices,
             onTapGroup: widget.onTapSenseGroup ?? (_) {},
-            audioItemId: widget.audioItemId,
-            sentenceIndex: widget.sentenceIndex,
-            sentenceText: widget.text,
-            sentenceStartMs: widget.sentenceStartMs,
-            sentenceEndMs: widget.sentenceEndMs,
           ),
           // 单意群提示
           if (widget.senseGroups!.length == 1) ...[
