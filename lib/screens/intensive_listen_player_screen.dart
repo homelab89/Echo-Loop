@@ -29,7 +29,7 @@ import '../widgets/intensive_listen/word_dictionary_sheet.dart';
 import '../widgets/common/countdown_chip.dart';
 import '../widgets/common/tappable_wrapper.dart';
 import '../widgets/player_hotkey_scope.dart';
-import '../widgets/common/text_context_menu.dart';
+import '../widgets/practice/practice_normal_mode_view.dart';
 
 /// 精听播放器页面
 class IntensiveListenPlayerScreen extends ConsumerStatefulWidget {
@@ -569,18 +569,43 @@ class _IntensiveListenPlayerScreenState
                                 currentSentence?.endTime.inMilliseconds,
                           ),
                         )
-                      : _NormalModeView(
-                          playerState: playerState,
+                      : PracticeNormalModeView(
                           l10n: l10n,
                           theme: theme,
+                          isTextRevealed: playerState.isTextRevealed,
+                          countdown: Consumer(
+                            builder: (context, ref, _) {
+                              final s = ref.watch(
+                                intensiveListenPlayerProvider.select(
+                                  (s) => (
+                                    show: s.isPauseBetweenPlays &&
+                                        !s.settings.isManualMode,
+                                    remaining: s.pauseRemaining,
+                                    total: s.pauseDuration,
+                                    paused: s.isCountdownPaused,
+                                  ),
+                                ),
+                              );
+                              if (!s.show) return const SizedBox.shrink();
+                              return CountdownChip(
+                                remaining: s.remaining,
+                                total: s.total,
+                                isPaused: s.paused,
+                                onTap: () => s.paused
+                                    ? player.resumeCountdown()
+                                    : player.pauseCountdown(),
+                              );
+                            },
+                          ),
+                          alwaysShowToggleButton: false,
+                          isDifficult: playerState.difficultSentences.contains(
+                            playerState.currentSentenceIndex,
+                          ),
                           onPeekToggle: () => player.setTextRevealed(
                             !playerState.isTextRevealed,
                           ),
-                          onToggleDifficult: _toggleAndSaveDifficult,
+                          onToggleMark: _toggleAndSaveDifficult,
                           onCantUnderstand: () => player.enterAnnotationMode(),
-                          onPauseCountdown: () => playerState.isCountdownPaused
-                              ? player.resumeCountdown()
-                              : player.pauseCountdown(),
                           sentenceText: currentSentence?.text,
                           onWordTap: currentSentence != null
                               ? (word) => showWordDictionarySheet(
@@ -834,240 +859,6 @@ class _AnnotationWithBookmark extends StatelessWidget {
   }
 }
 
-class _NormalModeView extends StatelessWidget {
-  final IntensiveListenState playerState;
-  final AppLocalizations l10n;
-  final ThemeData theme;
-  final VoidCallback onPeekToggle;
-
-  /// 切换难句标记回调（用于难句标记行）
-  final VoidCallback onToggleDifficult;
-
-  /// 听不懂（进入标注模式）
-  final VoidCallback onCantUnderstand;
-
-  /// 暂停/恢复倒计时
-  final VoidCallback onPauseCountdown;
-
-  final String? sentenceText;
-
-  /// 点击单词查词回调
-  final void Function(String word)? onWordTap;
-
-  const _NormalModeView({
-    required this.playerState,
-    required this.l10n,
-    required this.theme,
-    required this.onPeekToggle,
-    required this.onToggleDifficult,
-    required this.onCantUnderstand,
-    required this.onPauseCountdown,
-    this.sentenceText,
-    this.onWordTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDifficult = playerState.difficultSentences.contains(
-      playerState.currentSentenceIndex,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
-      child: Column(
-        children: [
-          const SizedBox(height: AppSpacing.s),
-
-          // 难句标记行
-          TappableWrapper(
-            onTap: onToggleDifficult,
-            feedbackType: TapFeedback.opacity,
-            pressedOpacity: 0.4,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Flexible(
-                  child: Text(
-                    isDifficult
-                        ? l10n.intensiveListenMarkedDifficult
-                        : l10n.intensiveListenNotDifficult,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.6),
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Icon(
-                  isDifficult ? Icons.bookmark : Icons.bookmark_border,
-                  color: isDifficult ? Colors.amber.shade700 : Colors.grey,
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-
-          // 字幕区（整个区域可点击切换字幕）
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onPeekToggle,
-              child: Stack(
-                children: [
-                  // 字幕内容偏上（-0.4 ≈ 上方 30% 位置），左对齐与标注模式一致
-                  Align(
-                    alignment: const Alignment(0, -0.4),
-                    child: playerState.isTextRevealed && sentenceText != null
-                        ? GestureDetector(
-                            onTap: () {}, // 拦截点击，不冒泡到外层
-                            onLongPressStart: (details) => TextContextMenu.show(
-                              context,
-                              details.globalPosition,
-                              sentenceText!,
-                            ),
-                            onSecondaryTapDown: (details) =>
-                                TextContextMenu.show(
-                                  context,
-                                  details.globalPosition,
-                                  sentenceText!,
-                                ),
-                            child: onWordTap != null
-                                ? _TappableText(
-                                    text: sentenceText!,
-                                    style:
-                                        theme.textTheme.titleMedium?.copyWith(
-                                          height: 1.6,
-                                        ) ??
-                                        const TextStyle(),
-                                    onWordTap: onWordTap!,
-                                  )
-                                : Text(
-                                    sentenceText!,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(height: 1.6),
-                                  ),
-                          )
-                        : _HiddenTextPlaceholder(),
-                  ),
-                  // 偷看字幕标签（固定在字幕区中间偏下）
-                  Align(
-                    alignment: const Alignment(0, 0.55),
-                    child: _PeekLabel(
-                      isRevealed: playerState.isTextRevealed,
-                      l10n: l10n,
-                      theme: theme,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // 底部固定区：倒计时 + 按钮行
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 倒计时用 Consumer 隔离，避免 tick 触发外层重建
-              SizedBox(
-                height: 56,
-                child: playerState.isPauseBetweenPlays
-                    ? Consumer(
-                        builder: (context, ref, _) {
-                          final s = ref.watch(intensiveListenPlayerProvider);
-                          return CountdownChip(
-                            remaining: s.pauseRemaining,
-                            total: s.pauseDuration,
-                            isPaused: s.isCountdownPaused,
-                            onTap: onPauseCountdown,
-                          );
-                        },
-                      )
-                    : null,
-              ),
-              const SizedBox(height: AppSpacing.m),
-              // 取消标记 + 听不懂按钮
-              SizedBox(
-                height: 48,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (isDifficult) ...[
-                      TextButton(
-                        onPressed: onToggleDifficult,
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.onSurfaceVariant,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                        ),
-                        child: Text(
-                          l10n.practiceRemoveMark,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.m),
-                    ],
-                    FilledButton.tonal(
-                      onPressed: onCantUnderstand,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 28,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: Text(
-                        l10n.intensiveListenCantUnderstand,
-                        style: theme.textTheme.titleSmall,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.l),
-        ],
-      ),
-    );
-  }
-}
-
-/// 隐藏文本占位（灰色线条）
-class _HiddenTextPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.hearing,
-          size: 48,
-          color: theme.colorScheme.primary.withValues(alpha: 0.3),
-        ),
-        const SizedBox(height: AppSpacing.l),
-        // 占位灰色线条
-        for (int i = 0; i < 3; i++) ...[
-          Container(
-            width: 200 - i * 40,
-            height: 8,
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
 /// 标注模式视图（仅卡片，底部控件已移至 build 底部统一 Padding）
 class _AnnotationModeView extends StatelessWidget {
   final String text;
@@ -1134,42 +925,6 @@ class _AnnotationModeView extends StatelessWidget {
         sentenceStartMs: sentenceStartMs,
         sentenceEndMs: sentenceEndMs,
       ),
-    );
-  }
-}
-
-/// 偷看字幕标签（字幕区下方，提示用户可点击）
-class _PeekLabel extends StatelessWidget {
-  final bool isRevealed;
-  final AppLocalizations l10n;
-  final ThemeData theme;
-
-  const _PeekLabel({
-    required this.isRevealed,
-    required this.l10n,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          isRevealed
-              ? Icons.visibility_off_outlined
-              : Icons.visibility_outlined,
-          size: 14,
-          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          l10n.intensiveListenPeek,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -1309,85 +1064,3 @@ String _getSubStageName(SubStageType type, AppLocalizations l10n) =>
       SubStageType.reviewRetellSummary => 'Summary retelling',
     };
 
-/// 去除单词两端的标点符号
-String _cleanWord(String word) => word.replaceAll(
-  RegExp(
-    r'[.,!?;:\-—…、，。！？；："""'
-    '()]',
-  ),
-  '',
-);
-
-/// 逐词可点击的文本（Wrap 布局，点击单词触发查词，带按压高亮反馈）
-class _TappableText extends StatelessWidget {
-  final String text;
-  final TextStyle style;
-  final void Function(String word) onWordTap;
-
-  const _TappableText({
-    required this.text,
-    required this.style,
-    required this.onWordTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = text.split(RegExp(r'\s+'));
-    return Wrap(
-      alignment: WrapAlignment.start,
-      spacing: 4,
-      runSpacing: 2,
-      children: tokens.map((token) {
-        final clean = _cleanWord(token);
-        if (clean.isEmpty) return Text(token, style: style);
-        return _TappableWord(
-          token: token,
-          style: style,
-          onTap: () => onWordTap(clean),
-        );
-      }).toList(),
-    );
-  }
-}
-
-/// 单个可点击单词（按压时显示浅色背景高亮）
-class _TappableWord extends StatefulWidget {
-  final String token;
-  final TextStyle style;
-  final VoidCallback onTap;
-
-  const _TappableWord({
-    required this.token,
-    required this.style,
-    required this.onTap,
-  });
-
-  @override
-  State<_TappableWord> createState() => _TappableWordState();
-}
-
-class _TappableWordState extends State<_TappableWord> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final highlightColor = Theme.of(
-      context,
-    ).colorScheme.primary.withValues(alpha: 0.1);
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
-        decoration: BoxDecoration(
-          color: _isPressed ? highlightColor : null,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(widget.token, style: widget.style),
-      ),
-    );
-  }
-}

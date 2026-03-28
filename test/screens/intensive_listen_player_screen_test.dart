@@ -621,8 +621,8 @@ void main() {
       await tester.tap(find.text('Peek'));
       await tester.pumpAndSettle();
 
-      // 逐词可点击布局：每个单词是单独的 Text
-      expect(find.text('sentence'), findsOneWidget);
+      // 逐词可点击布局：每个单词是单独的 Text（末尾带空格）
+      expect(find.textContaining('sentence'), findsOneWidget);
       // 偷看按钮图标变为 visibility_off
       expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
     });
@@ -641,12 +641,12 @@ void main() {
       // 第一次点击显示
       await tester.tap(find.text('Peek'));
       await tester.pumpAndSettle();
-      expect(find.text('sentence'), findsOneWidget);
+      expect(find.textContaining('sentence'), findsOneWidget);
 
-      // 第二次点击隐藏
-      await tester.tap(find.text('Peek'));
+      // 第二次点击隐藏（文案已变为 Hide）
+      await tester.tap(find.text('Hide'));
       await tester.pumpAndSettle();
-      expect(find.text('sentence'), findsNothing);
+      expect(find.textContaining('sentence'), findsNothing);
       expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
     });
 

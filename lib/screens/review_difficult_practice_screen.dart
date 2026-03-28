@@ -38,6 +38,7 @@ import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/difficult_practice/difficult_practice_settings_sheet.dart';
 import '../widgets/intensive_listen/word_dictionary_sheet.dart';
 import '../widgets/player_hotkey_scope.dart';
+import '../widgets/common/countdown_chip.dart';
 import '../widgets/practice/practice_normal_mode_view.dart';
 import '../widgets/practice/practice_play_count_label.dart';
 import '../widgets/practice/practice_playback_controls.dart';
@@ -712,18 +713,39 @@ class _ReviewDifficultPracticeScreenState
                           ),
                         )
                       : PracticeNormalModeView(
-                          playerState: playerState,
                           l10n: l10n,
                           theme: theme,
+                          isTextRevealed: playerState.isTextRevealed,
+                          countdown: Consumer(
+                            builder: (context, ref, _) {
+                              final s = ref.watch(
+                                reviewDifficultPracticeProvider.select(
+                                  (s) => (
+                                    show: s.isPauseBetweenPlays &&
+                                        !s.settings.isManualMode,
+                                    remaining: s.pauseRemaining,
+                                    total: s.pauseDuration,
+                                    paused: s.isCountdownPaused,
+                                  ),
+                                ),
+                              );
+                              if (!s.show) return const SizedBox.shrink();
+                              return CountdownChip(
+                                remaining: s.remaining,
+                                total: s.total,
+                                isPaused: s.paused,
+                                onTap: () => s.paused
+                                    ? player.resumeCountdown()
+                                    : player.pauseCountdown(),
+                              );
+                            },
+                          ),
                           onPeekToggle: () => player.setTextRevealed(
                             !playerState.isTextRevealed,
                           ),
                           onCantUnderstand: () => player.enterAnnotationMode(),
                           onToggleMark: _handleToggleDifficult,
                           isDifficult: currentSentence?.isBookmarked ?? true,
-                          onPauseCountdown: () => playerState.isCountdownPaused
-                              ? player.resumeCountdown()
-                              : player.pauseCountdown(),
                           sentenceText: currentSentence?.text,
                           onWordTap: currentSentence != null
                               ? (word) => showWordDictionarySheet(

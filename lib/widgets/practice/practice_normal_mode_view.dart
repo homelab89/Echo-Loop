@@ -6,33 +6,39 @@
 /// - 中间下方：偷看字幕标签（提示用户可点击）
 /// - 底部固定区：听不懂按钮（居中，与跟读录音按钮同位置） + 倒计时
 ///
-/// 手动模式下隐藏倒计时。
-/// 用于难句补练和收藏复习。
+/// 用于精听、难句补练和收藏复习。
 library;
 
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../providers/learning_session/review_difficult_practice_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/common/countdown_chip.dart';
 import '../../widgets/common/tappable_wrapper.dart';
+import '../../widgets/common/text_context_menu.dart';
 
 /// 普通模式视图（文字遮盖 / 偷看）
 class PracticeNormalModeView extends StatelessWidget {
-  /// 播放状态
-  final ReviewDifficultPracticeState playerState;
-
   /// 本地化
   final AppLocalizations l10n;
 
   /// 主题
   final ThemeData theme;
 
+  /// 当前句子文本是否已显示
+  final bool isTextRevealed;
+
+  /// 独立倒计时组件（由调用方通过 Consumer 隔离 tick rebuild）
+  ///
+  /// 放在固定 56 高度的 SizedBox 内，null 时不显示。
+  final Widget? countdown;
+
+  /// 底部标记按钮是否始终显示（false 时仅 isDifficult 为 true 才显示）
+  final bool alwaysShowToggleButton;
+
   /// 切换偷看字幕
   final VoidCallback onPeekToggle;
 
-  /// 听不懂（进入跟读模式）
+  /// 听不懂（进入跟读/标注模式）
   final VoidCallback onCantUnderstand;
 
   /// 切换标记（难句/收藏）
@@ -40,9 +46,6 @@ class PracticeNormalModeView extends StatelessWidget {
 
   /// 当前句子是否已标记为难句/收藏
   final bool isDifficult;
-
-  /// 暂停/恢复倒计时
-  final VoidCallback onPauseCountdown;
 
   /// 当前句子文本
   final String? sentenceText;
@@ -52,22 +55,21 @@ class PracticeNormalModeView extends StatelessWidget {
 
   const PracticeNormalModeView({
     super.key,
-    required this.playerState,
     required this.l10n,
     required this.theme,
+    required this.isTextRevealed,
+    this.countdown,
+    this.alwaysShowToggleButton = true,
     required this.onPeekToggle,
     required this.onCantUnderstand,
     required this.onToggleMark,
     this.isDifficult = true,
-    required this.onPauseCountdown,
     this.sentenceText,
     this.onWordTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isRevealed = playerState.isTextRevealed;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
       child: Column(
@@ -110,11 +112,24 @@ class PracticeNormalModeView extends StatelessWidget {
               onTap: onPeekToggle,
               child: Stack(
                 children: [
+                  // 字幕内容偏上（-0.4 ≈ 上方 30% 位置）
                   Align(
                     alignment: const Alignment(0, -0.4),
-                    child: isRevealed && sentenceText != null
+                    child: isTextRevealed && sentenceText != null
                         ? GestureDetector(
                             onTap: () {}, // 拦截文字区域点击，不冒泡到偷看切换
+                            onLongPressStart: (details) =>
+                                TextContextMenu.show(
+                                  context,
+                                  details.globalPosition,
+                                  sentenceText!,
+                                ),
+                            onSecondaryTapDown: (details) =>
+                                TextContextMenu.show(
+                                  context,
+                                  details.globalPosition,
+                                  sentenceText!,
+                                ),
                             child: onWordTap != null
                                 ? _TappableText(
                                     text: sentenceText!,
@@ -127,15 +142,15 @@ class PracticeNormalModeView extends StatelessWidget {
                                     sentenceText!,
                                     style: theme.textTheme.bodyLarge
                                         ?.copyWith(height: 1.6),
-                                    textAlign: TextAlign.left,
                                   ),
                           )
                         : const _HiddenTextPlaceholder(),
                   ),
+                  // 偷看字幕标签（固定在字幕区中间偏下）
                   Align(
                     alignment: const Alignment(0, 0.55),
                     child: _PeekLabel(
-                      isRevealed: isRevealed,
+                      isRevealed: isTextRevealed,
                       l10n: l10n,
                       theme: theme,
                     ),
@@ -150,45 +165,35 @@ class PracticeNormalModeView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // 倒计时（固定 56 高度占位，避免字幕区跳动）
-              SizedBox(
-                height: 56,
-                child:
-                    (playerState.isPauseBetweenPlays &&
-                        !playerState.settings.isManualMode)
-                    ? CountdownChip(
-                        remaining: playerState.pauseRemaining,
-                        total: playerState.pauseDuration,
-                        isPaused: playerState.isCountdownPaused,
-                        onTap: onPauseCountdown,
-                      )
-                    : null,
-              ),
+              SizedBox(height: 56, child: countdown),
               const SizedBox(height: AppSpacing.m),
-              // 取消标记 + 听不懂按钮（并排，统一 tonal 风格）
+              // 取消标记 + 听不懂按钮（并排）
               SizedBox(
                 height: 48,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    TextButton(
-                      onPressed: onToggleMark,
-                      style: TextButton.styleFrom(
-                        foregroundColor: theme.colorScheme.onSurfaceVariant,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
+                    if (alwaysShowToggleButton || isDifficult) ...[
+                      TextButton(
+                        onPressed: onToggleMark,
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.colorScheme.onSurfaceVariant,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                        child: Text(
+                          isDifficult
+                              ? l10n.practiceRemoveMark
+                              : l10n.practiceAddMark,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
-                      child: Text(
-                        isDifficult
-                            ? l10n.practiceRemoveMark
-                            : l10n.practiceAddMark,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.m),
+                      const SizedBox(width: AppSpacing.m),
+                    ],
                     FilledButton.tonal(
                       onPressed: onCantUnderstand,
                       style: FilledButton.styleFrom(
@@ -241,7 +246,9 @@ class _PeekLabel extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Text(
-          isRevealed ? l10n.intensiveListenPeek : l10n.intensiveListenPeek,
+          isRevealed
+              ? l10n.intensiveListenHideSubtitle
+              : l10n.intensiveListenPeek,
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           ),
@@ -260,7 +267,7 @@ String _cleanWord(String word) => word.replaceAll(
   '',
 );
 
-/// 逐词可点击的文本（Wrap 布局，点击单词触发查词）
+/// 逐词可点击的文本（Wrap 布局，点击单词触发查词，带按压高亮反馈）
 class _TappableText extends StatelessWidget {
   final String text;
   final TextStyle style;
@@ -280,11 +287,54 @@ class _TappableText extends StatelessWidget {
       children: tokens.map((token) {
         final clean = _cleanWord(token);
         if (clean.isEmpty) return Text('$token ', style: style);
-        return GestureDetector(
+        return _TappableWord(
+          token: '$token ',
+          style: style,
           onTap: () => onWordTap(clean),
-          child: Text('$token ', style: style),
         );
       }).toList(),
+    );
+  }
+}
+
+/// 单个可点击单词（按压时显示浅色背景高亮）
+class _TappableWord extends StatefulWidget {
+  final String token;
+  final TextStyle style;
+  final VoidCallback onTap;
+
+  const _TappableWord({
+    required this.token,
+    required this.style,
+    required this.onTap,
+  });
+
+  @override
+  State<_TappableWord> createState() => _TappableWordState();
+}
+
+class _TappableWordState extends State<_TappableWord> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final highlightColor = Theme.of(
+      context,
+    ).colorScheme.primary.withValues(alpha: 0.1);
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        padding: const EdgeInsets.symmetric(vertical: 1),
+        decoration: BoxDecoration(
+          color: _isPressed ? highlightColor : null,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(widget.token, style: widget.style),
+      ),
     );
   }
 }
