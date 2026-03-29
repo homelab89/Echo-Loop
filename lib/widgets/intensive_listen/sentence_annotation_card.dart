@@ -514,6 +514,7 @@ class SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
             key: const ValueKey('senseGroup'),
             label: senseGroupLabel,
             icon: Icons.auto_fix_high,
+            iconColor: Colors.orange.shade700,
             isActive: showSenseGroupBlocks,
             isDisabled: !_isSenseGroupEnabled,
             onPressed: _onTapSenseGroup,
@@ -525,6 +526,7 @@ class SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
             key: const ValueKey('translation'),
             label: l10n.annotationBtnTranslation,
             icon: Icons.translate,
+            iconColor: Colors.blue.shade600,
             isActive:
                 _translationExpanded &&
                 _translationState != ContentLoadState.idle,
@@ -538,6 +540,7 @@ class SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
             key: const ValueKey('analysis'),
             label: l10n.annotationBtnAnalysis,
             icon: Icons.auto_awesome,
+            iconColor: Colors.purple.shade400,
             isActive:
                 _analysisExpanded && _analysisState != ContentLoadState.idle,
             isDisabled: !_hasAnalysis,

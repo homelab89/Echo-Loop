@@ -24,6 +24,10 @@ class AsyncToggleButton extends StatefulWidget {
   /// 是否禁用
   final bool isDisabled;
 
+  /// 默认状态下的图标颜色（未激活、未禁用时使用）
+  /// 为 null 时使用 foregroundColor（与文字同色）
+  final Color? iconColor;
+
   /// 点击回调，返回 Future；按钮自动管理 loading 状态
   final Future<void> Function() onPressed;
 
@@ -33,6 +37,7 @@ class AsyncToggleButton extends StatefulWidget {
     required this.icon,
     this.isActive = false,
     this.isDisabled = false,
+    this.iconColor,
     required this.onPressed,
   });
 
@@ -105,7 +110,13 @@ class _AsyncToggleButtonState extends State<AsyncToggleButton> {
                 ),
               )
             else
-              Icon(widget.icon, size: 16, color: foregroundColor),
+              Icon(
+                widget.icon,
+                size: 16,
+                color: widget.isDisabled
+                    ? foregroundColor
+                    : (widget.iconColor ?? foregroundColor),
+              ),
             const SizedBox(width: 4),
             Text(
               widget.label,
