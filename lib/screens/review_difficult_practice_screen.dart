@@ -668,8 +668,12 @@ class _ReviewDifficultPracticeScreenState
               children: [
                 // 进度区域
                 PracticeProgressSection(
-                  playerState: playerState,
-                  l10n: l10n,
+                  current: playerState.currentSentenceIndex + 1,
+                  total: playerState.totalSentences,
+                  progressText: l10n.reviewDifficultPracticeProgress(
+                    playerState.currentSentenceIndex + 1,
+                    playerState.totalSentences,
+                  ),
                   durationText: durationText,
                 ),
 

@@ -255,8 +255,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // "Intensive 3/10" (1-based)
-      expect(find.text('Intensive 3/10'), findsOneWidget);
+      // "Sentence 3/10" (1-based)
+      expect(find.text('Sentence 3/10'), findsOneWidget);
     });
 
     testWidgets('普通模式显示偷看和听不懂按钮', (tester) async {

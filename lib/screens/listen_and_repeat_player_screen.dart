@@ -39,6 +39,7 @@ import '../widgets/dialogs/free_play_complete_dialog.dart';
 import '../widgets/dialogs/step_complete_dialog.dart';
 import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/player_hotkey_scope.dart';
+import '../widgets/practice/practice_progress_section.dart';
 
 /// 录音/倒计时区域固定高度（录音面板最高：24 状态 + 4 间距 + 56 按钮 + 16 底部 = 100）
 const double _kTurnAreaHeight = 100;
@@ -751,9 +752,13 @@ class _ListenAndRepeatPlayerScreenState
             body: Column(
               children: [
                 // 进度条
-                _ProgressSection(
-                  playerState: playerState,
-                  l10n: l10n,
+                PracticeProgressSection(
+                  current: playerState.currentSentenceIndex + 1,
+                  total: playerState.totalSentences,
+                  progressText: l10n.listenAndRepeatProgress(
+                    playerState.currentSentenceIndex + 1,
+                    playerState.totalSentences,
+                  ),
                   durationText: durationText,
                 ),
 
@@ -975,57 +980,6 @@ class _PostEvalCountdown extends StatelessWidget {
   }
 }
 
-/// 顶部进度条区域
-class _ProgressSection extends StatelessWidget {
-  final ListenAndRepeatPlayerState playerState;
-  final AppLocalizations l10n;
-
-  /// 句子时长文本（如 "2.8秒"），为 null 时不显示
-  final String? durationText;
-
-  const _ProgressSection({
-    required this.playerState,
-    required this.l10n,
-    this.durationText,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final total = playerState.totalSentences;
-    final current = playerState.currentSentenceIndex + 1;
-    final progress = total > 0 ? current / total : 0.0;
-    final subtitleStyle = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.m,
-        vertical: AppSpacing.s,
-      ),
-      child: Column(
-        children: [
-          LinearProgressIndicator(
-            value: progress,
-            borderRadius: BorderRadius.circular(2),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            children: [
-              Text(
-                l10n.listenAndRepeatProgress(current, total),
-                style: subtitleStyle,
-              ),
-              const Spacer(),
-              if (durationText case final dur?) Text(dur, style: subtitleStyle),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// 底部播放控制
 ///

@@ -195,7 +195,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('3/10 sentences'), findsOneWidget);
+      expect(find.text('Sentence 3/10'), findsOneWidget);
     });
 
     testWidgets('显示偷看和听不懂按钮', (tester) async {

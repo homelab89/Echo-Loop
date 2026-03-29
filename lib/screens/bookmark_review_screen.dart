@@ -469,10 +469,15 @@ class _BookmarkReviewScreenState extends ConsumerState<BookmarkReviewScreen>
               children: [
                 // 进度区域（含音频来源名称）
                 PracticeProgressSection(
-                  playerState: playerState,
-                  l10n: l10n,
+                  current: playerState.currentSentenceIndex + 1,
+                  total: playerState.totalSentences,
+                  progressText: l10n.bookmarkReviewProgress(
+                    playerState.currentSentenceIndex + 1,
+                    playerState.totalSentences,
+                  ),
                   durationText: durationText,
                   audioName: currentBookmark?.audioName,
+                  l10n: l10n,
                 ),
 
                 // 主体内容：盲听/跟读 双态切换

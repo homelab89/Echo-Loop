@@ -283,8 +283,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // l10n: "Repeat 3/10" (1-based)
-      expect(find.text('Repeat 3/10'), findsOneWidget);
+      // l10n: "Sentence 3/10" (1-based)
+      expect(find.text('Sentence 3/10'), findsOneWidget);
     });
 
     testWidgets('底部控制栏包含上一句、播放/暂停、下一句按钮', (tester) async {

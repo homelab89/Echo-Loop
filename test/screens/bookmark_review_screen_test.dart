@@ -313,7 +313,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('3/10 sentences'), findsOneWidget);
+      expect(find.text('Sentence 3/10'), findsOneWidget);
     });
 
     testWidgets('显示音频来源名称', (tester) async {
