@@ -4,6 +4,8 @@
 /// 用于意群播放时间映射。
 library;
 
+import 'dart:convert';
+
 /// 单词时间戳
 class WordTimestamp {
   /// 单词文本
@@ -48,4 +50,23 @@ class WordTimestamp {
     'endTime': endTime.inMilliseconds / 1000.0,
     'confidence': confidence,
   };
+}
+
+/// 将 WordTimestamp 列表编码为 JSON 字符串（用于数据库存储）
+String encodeWordTimestamps(List<WordTimestamp> words) {
+  return jsonEncode(words.map((w) => w.toJson()).toList());
+}
+
+/// 从 JSON 字符串解码为 WordTimestamp 列表
+///
+/// 解析失败返回 null（容错，避免脏数据阻塞流程）。
+List<WordTimestamp>? decodeWordTimestamps(String json) {
+  try {
+    final list = jsonDecode(json) as List;
+    return list
+        .map((e) => WordTimestamp.fromJson(e as Map<String, dynamic>))
+        .toList();
+  } catch (_) {
+    return null;
+  }
 }

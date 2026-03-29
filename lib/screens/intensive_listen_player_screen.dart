@@ -87,22 +87,46 @@ class _IntensiveListenPlayerScreenState
     });
   }
 
-  /// 从后端获取词级时间戳（仅 AI 转录的音频）
+  /// 加载词级时间戳（DB 优先，未命中则从 API 拉取并缓存）
   Future<void> _fetchWordTimestamps() async {
     final audioDao = ref.read(audioItemDaoProvider);
     final audioItem = await audioDao.getById(widget.audioItemId);
     if (audioItem == null) return;
     // 仅 AI 转录有词级时间戳
     if (audioItem.transcriptSource != TranscriptSource.ai.index) return;
+
+    final cacheDao = ref.read(wordTimestampCacheDaoProvider);
+
+    // 1. 优先从本地 DB 读取
+    final cached = await cacheDao.getByAudioItemId(widget.audioItemId);
+    if (cached != null) {
+      final words = decodeWordTimestamps(cached);
+      if (words != null && words.isNotEmpty) {
+        if (mounted) setState(() => _wordTimestamps = words);
+        return;
+      }
+      // JSON 解析失败，删除脏数据，走 API fallback
+      await cacheDao.deleteByAudioItemId(widget.audioItemId);
+    }
+
+    // 2. DB 未命中，从 API 拉取并保存
     final sha256 = audioItem.audioSha256;
     final language = audioItem.transcriptLanguage;
-    if (sha256 == null || language == null) return;
+    if (sha256 == null || language == null) {
+      debugPrint('词级时间戳 API fallback 跳过: sha256=$sha256, language=$language');
+      return;
+    }
 
     try {
       final api = ref.read(transcriptionApiClientProvider);
       final result = await api.getTranscript(sha256, language);
-      if (mounted && result.words != null && result.words!.isNotEmpty) {
-        setState(() => _wordTimestamps = result.words);
+      if (result.words != null && result.words!.isNotEmpty) {
+        // 保存到 DB
+        await cacheDao.upsert(
+          widget.audioItemId,
+          encodeWordTimestamps(result.words!),
+        );
+        if (mounted) setState(() => _wordTimestamps = result.words);
       }
     } catch (e) {
       debugPrint('获取词级时间戳失败: $e');
@@ -693,18 +717,25 @@ class _IntensiveListenPlayerScreenState
                                 playerState.playingSenseGroupIndex,
                             playedSenseGroupIndices:
                                 playerState.playedSenseGroupIndices,
-                            onTapSenseGroup: _senseGroupTimings != null
-                                ? (index) {
-                                    if (index < _senseGroupTimings!.length) {
-                                      final timing = _senseGroupTimings![index];
-                                      player.playSenseGroup(
-                                        timing.start,
-                                        timing.end,
-                                        index,
-                                      );
-                                    }
-                                  }
-                                : null,
+                            onTapSenseGroup: (index) {
+                              if (_senseGroupTimings != null &&
+                                  index < _senseGroupTimings!.length) {
+                                final timing = _senseGroupTimings![index];
+                                player.playSenseGroup(
+                                  timing.start,
+                                  timing.end,
+                                  index,
+                                );
+                              } else if (_senseGroupTimings == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      l10n.wordTimestampsNotFound,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
                             onRequestSenseGroups: _requestSenseGroups,
                             hasWordTimestamps: _wordTimestamps != null,
                           ),

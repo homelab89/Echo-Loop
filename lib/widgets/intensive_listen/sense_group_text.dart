@@ -1,7 +1,7 @@
 /// 意群标注文本组件
 ///
 /// 将句子按意群渲染为内联 badge 样式，保持自然文本排版。
-/// 不同意群使用不同的柔和背景色区分，可点击播放对应音频片段。
+/// 所有意群使用统一背景色，可点击播放对应音频片段。
 /// 支持三种状态：空闲 / 播放中 / 已播放。
 /// 意群内单词仍可点击查词典。
 library;
@@ -10,25 +10,11 @@ import 'package:flutter/material.dart';
 import '../../models/sense_group_result.dart';
 import '../../utils/sense_group_timing.dart';
 
-/// 意群 badge 背景色板（亮色主题）
-const _groupColorsLight = [
-  Color(0xFFE3F2FD), // 浅蓝
-  Color(0xFFFCE4EC), // 浅粉
-  Color(0xFFE8F5E9), // 浅绿
-  Color(0xFFFFF8E1), // 浅黄
-  Color(0xFFF3E5F5), // 浅紫
-  Color(0xFFE0F7FA), // 浅青
-];
+/// 意群 badge 背景色（亮色主题，统一颜色避免误导用户）
+const _groupColorLight = Color(0xFFE3F2FD); // 浅蓝
 
-/// 意群 badge 背景色板（暗色主题）
-const _groupColorsDark = [
-  Color(0xFF1A3A5C), // 深蓝
-  Color(0xFF4A2030), // 深粉
-  Color(0xFF1A3A2A), // 深绿
-  Color(0xFF3A3520), // 深黄
-  Color(0xFF2E1A3A), // 深紫
-  Color(0xFF1A3A3A), // 深青
-];
+/// 意群 badge 背景色（暗色主题）
+const _groupColorDark = Color(0xFF1A3A5C); // 深蓝
 
 /// 意群标注文本
 ///
@@ -92,12 +78,11 @@ class _SenseGroupTextState extends State<SenseGroupText> {
     final isPlaying = widget.playingGroupIndex == index;
     final isPlayed = widget.playedGroupIndices.contains(index);
 
-    // 背景色：播放中用主题色，否则按索引循环使用色板
+    // 背景色：播放中用主题色，否则统一颜色
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final palette = isDark ? _groupColorsDark : _groupColorsLight;
     final bgColor = isPlaying
         ? colorScheme.primaryContainer
-        : palette[index % palette.length];
+        : isDark ? _groupColorDark : _groupColorLight;
 
     // 边框：始终保留相同宽度，避免点击时布局偏移
     final borderColor = isPlaying

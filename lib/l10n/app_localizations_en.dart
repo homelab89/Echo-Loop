@@ -2191,4 +2191,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get senseGroupNotAvailable =>
       'Only available for AI-transcribed audio';
+
+  @override
+  String get wordTimestampsNotFound =>
+      'Word-level timestamps not found. Please restart the app to retry.';
 }

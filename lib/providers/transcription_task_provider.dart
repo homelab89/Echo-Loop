@@ -8,9 +8,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:universal_io/io.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../database/providers.dart';
 import '../models/audio_item.dart';
+import '../models/word_timestamp.dart';
 import '../providers/audio_library_provider.dart';
 import '../services/transcription_api_client.dart';
 import '../utils/audio_fingerprint.dart';
@@ -347,6 +349,19 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
             wordCount: stats.$2,
           ),
         );
+
+    // 保存词级时间戳到本地缓存（非阻塞，失败不影响主流程）
+    if (transcript.words != null && transcript.words!.isNotEmpty) {
+      try {
+        final blobDao = ref.read(wordTimestampCacheDaoProvider);
+        await blobDao.upsert(
+          audioItem.id,
+          encodeWordTimestamps(transcript.words!),
+        );
+      } catch (e) {
+        debugPrint('保存词级时间戳失败: $e');
+      }
+    }
 
     _updateState(audioItem.id, const TranscriptionCompleted());
     _cancelTokens.remove(audioItem.id);

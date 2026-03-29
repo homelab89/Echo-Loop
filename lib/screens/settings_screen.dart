@@ -204,17 +204,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     // 清空 SQLite 缓存
     final dao = ref.read(sentenceAiCacheDaoProvider);
-    final deleted = await dao.deleteAll();
+    final aiDeleted = await dao.deleteAll();
+
+    // 清空词级时间戳缓存
+    final tsDeleted =
+        await ref.read(wordTimestampCacheDaoProvider).deleteAll();
 
     // 清空内存缓存
     ref.read(sentenceAiNotifierProvider).clearMemoryCache();
     ref.read(wordAiNotifierProvider).clearMemoryCache();
 
     if (!context.mounted) return;
+    final totalDeleted = aiDeleted + tsDeleted;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          deleted > 0 ? l10n.clearCacheSuccess : l10n.clearCacheEmpty,
+          totalDeleted > 0 ? l10n.clearCacheSuccess : l10n.clearCacheEmpty,
         ),
       ),
     );

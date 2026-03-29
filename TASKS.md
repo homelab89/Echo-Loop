@@ -316,6 +316,22 @@
 
 ---
 
+## 已完成：词级时间戳本地持久化
+
+- [x] 新建 `word_timestamp_cache` 表（audioItemId 主键 + JSON data 列）+ `WordTimestampCacheDao`
+- [x] 数据库迁移 v23 → v24
+- [x] `WordTimestamp` 模型新增 `encodeWordTimestamps` / `decodeWordTimestamps` 工具函数
+- [x] 转录完成时（`_saveTranscriptAndFinish`）自动保存词级时间戳到 DB
+- [x] 精听页面 `_fetchWordTimestamps` 改为 DB 优先 + API fallback（支持离线 + 旧数据自动补拉）
+- [x] 意群播放无时间戳时 SnackBar 提示
+- [x] 删除音频 / 删除字幕时清理词级时间戳缓存
+- [x] 国际化新增 `wordTimestampsNotFound` key（en + zh）
+- [x] 测试覆盖（DAO 6 个 + 编解码 5 个 = 11 个新测试全通过）
+
+  **完成时间**: 2026-03-29
+
+---
+
 ## 加入特效
 
 - [ ] 一个句子/单词播放完成，一遍播放完成，播放音效

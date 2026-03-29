@@ -3931,6 +3931,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only available for AI-transcribed audio'**
   String get senseGroupNotAvailable;
+
+  /// No description provided for @wordTimestampsNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Word-level timestamps not found. Please restart the app to retry.'**
+  String get wordTimestampsNotFound;
 }
 
 class _AppLocalizationsDelegate

@@ -747,7 +747,12 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
       }
     }
 
-    // 3. 更新本地数据库：清除字幕相关字段
+    // 3. 清除词级时间戳缓存
+    await ref
+        .read(wordTimestampCacheDaoProvider)
+        .deleteByAudioItemId(audioItem.id);
+
+    // 4. 更新本地数据库：清除字幕相关字段
     ref
         .read(audioLibraryProvider.notifier)
         .updateAudioItem(
@@ -760,10 +765,10 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
           ),
         );
 
-    // 4. 删除该音频的所有收藏句子
+    // 5. 删除该音频的所有收藏句子
     await ref.read(bookmarkDaoProvider).removeAllForAudio(audioItem.id);
 
-    // 5. 清除 listeningPracticeProvider 中缓存的句子数据
+    // 6. 清除 listeningPracticeProvider 中缓存的句子数据
     final practiceState = ref.read(listeningPracticeProvider);
     if (practiceState.currentAudioItem?.id == audioItem.id) {
       ref

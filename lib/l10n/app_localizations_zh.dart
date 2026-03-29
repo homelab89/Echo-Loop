@@ -2130,4 +2130,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get senseGroupNotAvailable => '仅 AI 转录的音频支持意群拆分';
+
+  @override
+  String get wordTimestampsNotFound => '词级字幕未找到，请重启应用重试';
 }

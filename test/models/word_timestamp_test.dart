@@ -106,4 +106,54 @@ void main() {
       expect(wt.word, 'const');
     });
   });
+
+  group('encodeWordTimestamps / decodeWordTimestamps', () {
+    test('编码后解码还原一致', () {
+      const words = [
+        WordTimestamp(
+          word: 'hello',
+          startTime: Duration(milliseconds: 1500),
+          endTime: Duration(milliseconds: 2000),
+          confidence: 0.95,
+        ),
+        WordTimestamp(
+          word: 'world',
+          startTime: Duration(milliseconds: 2100),
+          endTime: Duration(milliseconds: 2800),
+          confidence: 0.88,
+        ),
+      ];
+
+      final json = encodeWordTimestamps(words);
+      final decoded = decodeWordTimestamps(json);
+
+      expect(decoded, isNotNull);
+      expect(decoded!.length, 2);
+      expect(decoded[0].word, 'hello');
+      expect(decoded[0].startTime, const Duration(milliseconds: 1500));
+      expect(decoded[0].endTime, const Duration(milliseconds: 2000));
+      expect(decoded[0].confidence, 0.95);
+      expect(decoded[1].word, 'world');
+    });
+
+    test('空列表编码解码', () {
+      final json = encodeWordTimestamps([]);
+      final decoded = decodeWordTimestamps(json);
+
+      expect(decoded, isNotNull);
+      expect(decoded, isEmpty);
+    });
+
+    test('非法 JSON 返回 null', () {
+      expect(decodeWordTimestamps('not valid json'), isNull);
+    });
+
+    test('格式错误的 JSON 数组返回 null', () {
+      expect(decodeWordTimestamps('[{"bad": true}]'), isNull);
+    });
+
+    test('非数组 JSON 返回 null', () {
+      expect(decodeWordTimestamps('{"key": "value"}'), isNull);
+    });
+  });
 }

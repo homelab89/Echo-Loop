@@ -1187,5 +1187,6 @@
   "annotationBtnSenseGroup": "Groups",
   "annotationBtnTranslation": "Translate",
   "annotationBtnAnalysis": "Analysis",
-  "senseGroupNotAvailable": "Only available for AI-transcribed audio"
+  "senseGroupNotAvailable": "Only available for AI-transcribed audio",
+  "wordTimestampsNotFound": "Word-level timestamps not found. Please restart the app to retry."
 }
