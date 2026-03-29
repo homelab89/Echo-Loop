@@ -696,7 +696,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String intensiveListenProgress(int current, int total) {
-    return '精听 $current/$total';
+    return '第 $current/$total 句';
   }
 
   @override
@@ -1224,7 +1224,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String reviewDifficultPracticeProgress(int current, int total) {
-    return '$current/$total 句';
+    return '第 $current/$total 句';
   }
 
   @override
@@ -1622,7 +1622,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String bookmarkReviewProgress(int current, int total) {
-    return '$current/$total 句';
+    return '第 $current/$total 句';
   }
 
   @override

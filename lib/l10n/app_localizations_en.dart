@@ -705,7 +705,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String intensiveListenProgress(int current, int total) {
-    return 'Intensive $current/$total';
+    return 'Sentence $current/$total';
   }
 
   @override
@@ -1259,7 +1259,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reviewDifficultPracticeProgress(int current, int total) {
-    return '$current/$total sentences';
+    return 'Sentence $current/$total';
   }
 
   @override
@@ -1670,7 +1670,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String bookmarkReviewProgress(int current, int total) {
-    return '$current/$total sentences';
+    return 'Sentence $current/$total';
   }
 
   @override

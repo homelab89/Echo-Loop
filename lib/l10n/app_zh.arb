@@ -214,7 +214,7 @@
   "wordCountLabel": "{count} 词",
   "noTranscriptWarning": "尚未上传字幕，需要字幕才能开始学习流程。",
   "intensiveListenAppBarTitle": "逐句精听",
-  "intensiveListenProgress": "精听 {current}/{total}",
+  "intensiveListenProgress": "第 {current}/{total} 句",
   "intensiveListenPlayCount": "第 {current}/{total} 遍",
   "intensiveListenPeek": "偷看字幕",
   "intensiveListenHideSubtitle": "隐藏字幕",
@@ -532,7 +532,7 @@
   "settingsSessionOnly": "设置仅对本次会话生效",
 
   "reviewDifficultPracticeTitle": "难句补练",
-  "reviewDifficultPracticeProgress": "{current}/{total} 句",
+  "reviewDifficultPracticeProgress": "第 {current}/{total} 句",
   "@reviewDifficultPracticeProgress": {
     "placeholders": {
       "current": { "type": "int" },
@@ -692,7 +692,7 @@
   "learnedWordsSortTimeAsc": "最早学习",
   "learnedWordsSortTimeDesc": "最近学习",
 
-  "bookmarkReviewProgress": "{current}/{total} 句",
+  "bookmarkReviewProgress": "第 {current}/{total} 句",
 
   "flashcardTitle": "单词卡片",
   "flashcardViewAnswer": "想好了，查看答案",

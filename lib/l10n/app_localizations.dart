@@ -1385,7 +1385,7 @@ abstract class AppLocalizations {
   /// No description provided for @intensiveListenProgress.
   ///
   /// In en, this message translates to:
-  /// **'Intensive {current}/{total}'**
+  /// **'Sentence {current}/{total}'**
   String intensiveListenProgress(int current, int total);
 
   /// No description provided for @intensiveListenPlayCount.
@@ -2297,7 +2297,7 @@ abstract class AppLocalizations {
   /// No description provided for @reviewDifficultPracticeProgress.
   ///
   /// In en, this message translates to:
-  /// **'{current}/{total} sentences'**
+  /// **'Sentence {current}/{total}'**
   String reviewDifficultPracticeProgress(int current, int total);
 
   /// No description provided for @reviewDifficultPracticeBlindListen.

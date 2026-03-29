@@ -341,7 +341,7 @@
   },
   "noTranscriptWarning": "No transcript uploaded. A transcript is required to start the learning flow.",
   "intensiveListenAppBarTitle": "Intensive Listening",
-  "intensiveListenProgress": "Intensive {current}/{total}",
+  "intensiveListenProgress": "Sentence {current}/{total}",
   "@intensiveListenProgress": {
     "placeholders": {
       "current": { "type": "int" },
@@ -689,7 +689,7 @@
   "settingsSessionOnly": "Settings apply to current session only",
 
   "reviewDifficultPracticeTitle": "Difficult Sentence Practice",
-  "reviewDifficultPracticeProgress": "{current}/{total} sentences",
+  "reviewDifficultPracticeProgress": "Sentence {current}/{total}",
   "@reviewDifficultPracticeProgress": {
     "placeholders": {
       "current": { "type": "int" },
@@ -925,7 +925,7 @@
   "learnedWordsSortTimeAsc": "Oldest Learned",
   "learnedWordsSortTimeDesc": "Recently Learned",
 
-  "bookmarkReviewProgress": "{current}/{total} sentences",
+  "bookmarkReviewProgress": "Sentence {current}/{total}",
   "@bookmarkReviewProgress": {
     "placeholders": {
       "current": { "type": "int" },
