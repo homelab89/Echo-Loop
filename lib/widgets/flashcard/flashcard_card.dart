@@ -227,13 +227,7 @@ class _FrontContent extends StatelessWidget {
               ),
               child: Text(
                 word.displayText,
-                style: (word.displayText.length > 20
-                        ? theme.textTheme.headlineMedium
-                        : theme.textTheme.displaySmall)
-                    ?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                ),
+                style: _displayTextStyle(theme, word.displayText.length),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -977,6 +971,28 @@ class _AudioSourceLink extends StatelessWidget {
 }
 
 /// 柯林斯星级
+/// 根据文本长度计算闪卡正面的字体样式
+///
+/// 短单词用大号字体，长意群/短语逐级缩小，保证可读性。
+TextStyle? _displayTextStyle(ThemeData theme, int length) {
+  final TextStyle? base;
+  if (length <= 10) {
+    base = theme.textTheme.displaySmall; // ~36sp
+  } else if (length <= 20) {
+    base = theme.textTheme.headlineLarge; // ~32sp
+  } else if (length <= 35) {
+    base = theme.textTheme.headlineMedium; // ~28sp
+  } else if (length <= 50) {
+    base = theme.textTheme.headlineSmall; // ~24sp
+  } else {
+    base = theme.textTheme.titleLarge; // ~22sp
+  }
+  return base?.copyWith(
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.5,
+  );
+}
+
 class _CollinsStars extends StatelessWidget {
   final int rating;
 
