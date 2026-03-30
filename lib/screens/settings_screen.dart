@@ -27,6 +27,8 @@ import '../analytics/analytics_providers.dart';
 import '../services/backup/backup_manifest.dart';
 import '../services/backup/backup_service.dart';
 import '../services/demo_data_seeder.dart';
+import '../models/dict_entry.dart';
+import '../services/dictionary_service.dart';
 import '../theme/app_theme.dart';
 import 'log_viewer_screen.dart';
 import 'reminder_settings_screen.dart';
@@ -459,7 +461,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _handleImport(context, ref),
         ),
+        ListTile(
+          leading: _emojiIcon('📖'),
+          title: const Text('词典查询'),
+          subtitle: const Text('查询单词是否在词典中'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showDictionaryLookupDialog(context),
+        ),
       ],
+    );
+  }
+
+  /// 显示词典查询对话框
+  void _showDictionaryLookupDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => const _DictionaryLookupDialog(),
     );
   }
 
@@ -1168,6 +1185,147 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         controller.setLocale(locale);
         Navigator.pop(context);
       },
+    );
+  }
+}
+
+/// 词典查询对话框
+///
+/// 输入单词后调用 [DictionaryService.lookup] 查询，
+/// 显示音标、释义、柯林斯星级和考试标签，未收录时提示。
+class _DictionaryLookupDialog extends StatefulWidget {
+  const _DictionaryLookupDialog();
+
+  @override
+  State<_DictionaryLookupDialog> createState() =>
+      _DictionaryLookupDialogState();
+}
+
+class _DictionaryLookupDialogState extends State<_DictionaryLookupDialog> {
+  final _controller = TextEditingController();
+  DictEntry? _result;
+  bool _searched = false;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _lookup() async {
+    final word = _controller.text.trim();
+    if (word.isEmpty) return;
+
+    setState(() => _loading = true);
+    final entry = await DictionaryService.instance.lookup(word);
+    if (!mounted) return;
+    setState(() {
+      _result = entry;
+      _searched = true;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('词典查询'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: '输入单词...',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: _lookup,
+                ),
+              ),
+              onSubmitted: (_) => _lookup(),
+            ),
+            const SizedBox(height: 16),
+            if (_loading)
+              const CircularProgressIndicator()
+            else if (_searched)
+              _buildResult(),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('关闭'),
+        ),
+      ],
+    );
+  }
+
+  /// 构建查询结果展示
+  Widget _buildResult() {
+    if (_result == null) {
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: Text(
+          '未收录',
+          style: TextStyle(color: Colors.red, fontSize: 16),
+        ),
+      );
+    }
+
+    final entry = _result!;
+    return Flexible(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 单词 + 音标
+            SelectableText(
+              '${entry.word}  ${entry.phonetic}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+
+            // 柯林斯星级
+            if (entry.collins > 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  '柯林斯: ${'★' * entry.collins}${'☆' * (5 - entry.collins)}',
+                  style: TextStyle(color: Colors.orange[700]),
+                ),
+              ),
+
+            // 考试标签
+            if (entry.examTags.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Wrap(
+                  spacing: 6,
+                  children: entry.examTags
+                      .map(
+                        (tag) => Chip(
+                          label: Text(tag, style: const TextStyle(fontSize: 12)),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+
+            // 释义
+            if (entry.translation != null)
+              SelectableText(
+                entry.translation!,
+                style: const TextStyle(fontSize: 15),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

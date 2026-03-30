@@ -168,6 +168,30 @@ void main() {
     });
   });
 
+  group('批量查询 lookupAll', () {
+    test('大小写不敏感', () async {
+      final results = await service.lookupAll(['Professor', 'RUN']);
+      expect(results['Professor'], isNotNull);
+      expect(results['Professor']!.word, 'professor');
+      expect(results['RUN'], isNotNull);
+      expect(results['RUN']!.word, 'run');
+    });
+
+    test('未收录的词不出现在结果中', () async {
+      final results = await service.lookupAll(['professor', 'xyznotaword']);
+      expect(results.containsKey('professor'), isTrue);
+      expect(results.containsKey('xyznotaword'), isFalse);
+    });
+
+    test('词形还原 fallback', () async {
+      final results = await service.lookupAll(['professors', 'running']);
+      expect(results['professors'], isNotNull);
+      expect(results['professors']!.word, 'professor');
+      expect(results['running'], isNotNull);
+      expect(results['running']!.word, 'run');
+    });
+  });
+
   group('词典 asset 自动升级', () {
     late Directory appDir;
     late SharedPreferences prefs;

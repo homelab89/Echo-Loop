@@ -258,7 +258,7 @@ class DictionaryService {
       final placeholders = List.filled(batch.length, '?').join(',');
       final rows = _db!.select(
         'SELECT word, phonetic, translation, collins, tag '
-        'FROM words WHERE word IN ($placeholders) COLLATE NOCASE',
+        'FROM words WHERE word COLLATE NOCASE IN ($placeholders)',
         batch,
       );
       for (final row in rows) {
