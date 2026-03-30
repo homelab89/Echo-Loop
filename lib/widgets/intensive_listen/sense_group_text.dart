@@ -7,6 +7,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../utils/sense_group_timing.dart';
+import '../common/text_context_menu.dart';
 
 /// 意群 badge 背景色（亮色主题，统一颜色避免误导用户）
 const _groupColorLight = Color(0xFFE3F2FD); // 浅蓝
@@ -92,6 +93,16 @@ class _SenseGroupTextState extends State<SenseGroupText> {
 
     return GestureDetector(
       onTap: () => widget.onTapGroup(index),
+      onLongPressStart: (details) => TextContextMenu.show(
+        context,
+        details.globalPosition,
+        chunk.trim(),
+      ),
+      onSecondaryTapDown: (details) => TextContextMenu.show(
+        context,
+        details.globalPosition,
+        chunk.trim(),
+      ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
