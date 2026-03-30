@@ -101,6 +101,26 @@ class SavedSenseGroupDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// 更新 Flashcard 练习统计
+  ///
+  /// 每次翻转到背面时调用：practiceCount +1，更新 updatedAt。
+  Future<void> updatePracticeStats({
+    required String phraseText,
+  }) async {
+    await customStatement(
+      '''
+      UPDATE saved_sense_groups
+      SET practice_count = practice_count + 1,
+          updated_at = ?
+      WHERE phrase_text = ? AND deleted_at IS NULL
+    ''',
+      [
+        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        phraseText,
+      ],
+    );
+  }
+
   /// 清除指定音频关联的上下文信息
   ///
   /// 音频删除时调用，将非 FK 字段全部置 NULL。

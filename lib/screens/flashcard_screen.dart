@@ -146,7 +146,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
                     ),
                     child: currentWord != null
                         ? FlashcardCard(
-                            key: ValueKey(currentWord.savedWord.word),
+                            key: ValueKey(currentWord.dbKey),
                             item: currentWord,
                             isShowingBack: state.isShowingBack,
                             onFlip: () => ref

@@ -12,9 +12,8 @@ import 'package:just_audio/just_audio.dart' as ja;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../database/app_database.dart';
 import '../../database/providers.dart';
-import '../../models/dict_entry.dart';
+import '../../models/flashcard_item.dart';
 import '../../models/flashcard_settings.dart';
 import '../../providers/audio_engine/audio_engine_provider.dart';
 import '../../services/app_logger.dart';
@@ -27,40 +26,12 @@ import '../learning_session/countdown_controller.dart';
 
 part 'flashcard_provider.g.dart';
 
-/// 单张卡片数据（含词典释义）
-class FlashcardWordItem {
-  /// 收藏单词数据
-  final SavedWord savedWord;
-
-  /// 词典条目（懒加载）
-  final DictEntry? dictEntry;
-
-  /// 词典是否已加载
-  final bool dictLoaded;
-
-  const FlashcardWordItem({
-    required this.savedWord,
-    this.dictEntry,
-    this.dictLoaded = false,
-  });
-
-  FlashcardWordItem copyWith({
-    SavedWord? savedWord,
-    DictEntry? dictEntry,
-    bool? dictLoaded,
-  }) {
-    return FlashcardWordItem(
-      savedWord: savedWord ?? this.savedWord,
-      dictEntry: dictEntry ?? this.dictEntry,
-      dictLoaded: dictLoaded ?? this.dictLoaded,
-    );
-  }
-}
+// FlashcardItem 定义在 models/flashcard_item.dart
 
 /// Flashcard 完整状态
 class FlashcardState {
   /// 卡片列表
-  final List<FlashcardWordItem> words;
+  final List<FlashcardItem> words;
 
   /// 当前卡片索引
   final int currentIndex;
@@ -103,7 +74,7 @@ class FlashcardState {
   });
 
   /// 当前卡片
-  FlashcardWordItem? get currentWord =>
+  FlashcardItem? get currentWord =>
       words.isNotEmpty && currentIndex < words.length
       ? words[currentIndex]
       : null;
@@ -112,7 +83,7 @@ class FlashcardState {
   int get totalWordsReviewed => currentIndex + 1;
 
   FlashcardState copyWith({
-    List<FlashcardWordItem>? words,
+    List<FlashcardItem>? words,
     int? currentIndex,
     bool? isShowingBack,
     FlashcardSettings? settings,
@@ -154,8 +125,8 @@ class FlashcardNotifier extends _$FlashcardNotifier {
 
   /// 当前单词是否已取消收藏
   bool get isCurrentWordUnsaved {
-    final word = state.currentWord?.savedWord.word;
-    return word != null && _unsavedWords.contains(word);
+    final key = state.currentWord?.dbKey;
+    return key != null && _unsavedWords.contains(key);
   }
 
   /// 学习时长存储服务
@@ -186,31 +157,25 @@ class FlashcardNotifier extends _$FlashcardNotifier {
 
   /// 初始化 Flashcard 会话
   ///
-  /// [words] 收藏单词列表快照
-  Future<void> initialize(List<SavedWord> words) async {
+  /// [items] 闪卡项列表（单词 + 意群）
+  Future<void> initialize(List<FlashcardItem> items) async {
     _countdown.cancel();
 
     // 加载持久化设置
     final settings = await _loadSettings();
 
     // 排序
-    final sorted = _sortWords(words, settings.sortMode);
+    final sorted = _sortItems(items, settings.sortMode);
 
-    // 构建卡片列表并一次性加载全部词典
-    final allWords = sorted.map((w) => w.word).toList();
-    final allEntries = await DictionaryService.instance.lookupAll(allWords);
-    final items = sorted
-        .map(
-          (w) => FlashcardWordItem(
-            savedWord: w,
-            dictEntry: allEntries[w.word],
-            dictLoaded: true,
-          ),
-        )
+    // 批量加载词典（仅对有 displayText 的项查询）
+    final allTexts = sorted.map((w) => w.displayText).toList();
+    final allEntries = await DictionaryService.instance.lookupAll(allTexts);
+    final withDict = sorted
+        .map((item) => item.withDictEntry(allEntries[item.displayText]))
         .toList();
 
     state = FlashcardState(
-      words: items,
+      words: withDict,
       currentIndex: 0,
       settings: settings,
       cardStartTime: DateTime.now(),
@@ -251,7 +216,7 @@ class FlashcardNotifier extends _$FlashcardNotifier {
       final hasAutoPlay =
           state.settings.autoPlayWord ||
           (state.settings.autoPlaySentence &&
-              state.currentWord?.savedWord.sentenceText != null);
+              state.currentWord?.sentenceText != null);
       if (hasAutoPlay) {
         _countdown.cancel();
         state = state.copyWith(
@@ -352,33 +317,53 @@ class FlashcardNotifier extends _$FlashcardNotifier {
     });
   }
 
-  /// 切换当前单词的收藏状态
+  /// 切换当前卡片的收藏状态
   ///
   /// 仅写 DB（软删除/恢复），不从列表移除卡片，保持正常复习流程。
-  /// 退出复习后单词自然从收藏列表消失。
+  /// 退出复习后自然从收藏列表消失。
   Future<void> toggleCurrentWordSave() async {
     if (state.words.isEmpty) return;
 
-    final word = state.words[state.currentIndex].savedWord;
-    final dao = ref.read(savedWordDaoProvider);
-    final wasUnsaved = _unsavedWords.contains(word.word);
+    final item = state.words[state.currentIndex];
+    final key = item.dbKey;
+    final wasUnsaved = _unsavedWords.contains(key);
 
     if (wasUnsaved) {
       // 恢复收藏
-      await dao.saveWord(
-        word: word.word,
-        audioItemId: word.audioItemId,
-        sentenceIndex: word.sentenceIndex,
-        sentenceText: word.sentenceText,
-        sentenceStartMs: word.sentenceStartMs,
-        sentenceEndMs: word.sentenceEndMs,
-      );
-      _unsavedWords.remove(word.word);
+      switch (item) {
+        case FlashcardWordItem(:final savedWord):
+          await ref.read(savedWordDaoProvider).saveWord(
+                word: savedWord.word,
+                audioItemId: savedWord.audioItemId,
+                sentenceIndex: savedWord.sentenceIndex,
+                sentenceText: savedWord.sentenceText,
+                sentenceStartMs: savedWord.sentenceStartMs,
+                sentenceEndMs: savedWord.sentenceEndMs,
+              );
+        case FlashcardPhraseItem(:final savedPhrase):
+          await ref.read(savedSenseGroupDaoProvider).saveSenseGroup(
+                phraseText: savedPhrase.phraseText,
+                displayText: savedPhrase.displayText,
+                audioItemId: savedPhrase.audioItemId,
+                sentenceIndex: savedPhrase.sentenceIndex,
+                sentenceText: savedPhrase.sentenceText,
+                sentenceStartMs: savedPhrase.sentenceStartMs,
+                sentenceEndMs: savedPhrase.sentenceEndMs,
+                groupStartMs: savedPhrase.groupStartMs,
+                groupEndMs: savedPhrase.groupEndMs,
+              );
+      }
+      _unsavedWords.remove(key);
       state = state.copyWith(removedCount: state.removedCount - 1);
     } else {
       // 取消收藏
-      await dao.removeWord(word.word);
-      _unsavedWords.add(word.word);
+      switch (item) {
+        case FlashcardWordItem():
+          await ref.read(savedWordDaoProvider).removeWord(key);
+        case FlashcardPhraseItem():
+          await ref.read(savedSenseGroupDaoProvider).removeSenseGroup(key);
+      }
+      _unsavedWords.add(key);
       state = state.copyWith(removedCount: state.removedCount + 1);
     }
   }
@@ -389,26 +374,11 @@ class FlashcardNotifier extends _$FlashcardNotifier {
 
     // 如果排序方式变了，重新排序（保留已加载的词典数据）
     if (newSettings.sortMode != state.settings.sortMode) {
-      // 建立 word → dictEntry 映射，排序后复用
-      final dictMap = <String, DictEntry?>{
-        for (final item in state.words)
-          if (item.dictLoaded) item.savedWord.word: item.dictEntry,
-      };
-      final savedWords = state.words.map((w) => w.savedWord).toList();
-      final sorted = _sortWords(savedWords, newSettings.sortMode);
-      final items = sorted
-          .map(
-            (w) => FlashcardWordItem(
-              savedWord: w,
-              dictEntry: dictMap[w.word],
-              dictLoaded: dictMap.containsKey(w.word),
-            ),
-          )
-          .toList();
+      final sorted = _sortItems(state.words, newSettings.sortMode);
 
       state = state.copyWith(
         settings: newSettings,
-        words: items,
+        words: sorted,
         currentIndex: 0,
         isShowingBack: false,
         cardStartTime: DateTime.now(),
@@ -489,12 +459,12 @@ class FlashcardNotifier extends _$FlashcardNotifier {
         countdownTotal: Duration.zero,
       );
     }
-    final word = state.currentWord?.savedWord.word;
+    final word = state.currentWord?.displayText;
     if (word != null) {
       await TtsService.instance.speak(word);
     }
     // 暂停状态下不重启倒计时；非暂停状态下播完后重启
-    if (!wasPaused && state.currentWord?.savedWord.word == word) {
+    if (!wasPaused && state.currentWord?.displayText == word) {
       _startCountdown();
     }
   }
@@ -528,8 +498,7 @@ class FlashcardNotifier extends _$FlashcardNotifier {
     _countdown.cancel();
     // 先保存已累计时间
     await _saveAndRefreshStudyTime();
-    final savedWords = state.words.map((w) => w.savedWord).toList();
-    await initialize(savedWords);
+    await initialize(state.words);
   }
 
   /// 释放资源
@@ -582,11 +551,11 @@ class FlashcardNotifier extends _$FlashcardNotifier {
             ? state.settings.fixedTimerBackSeconds
             : state.settings.fixedTimerSeconds;
       case FlashcardTimerMode.smart:
-        final word = state.currentWord?.savedWord;
-        if (word == null) return 8;
+        final item = state.currentWord;
+        if (item == null) return 8;
         return FlashcardSettings.calculateSmartSeconds(
-          wordLength: word.word.length,
-          practiceCount: word.practiceCount,
+          wordLength: item.displayText.length,
+          practiceCount: item.practiceCount,
         );
     }
   }
@@ -630,7 +599,7 @@ class FlashcardNotifier extends _$FlashcardNotifier {
   /// 使用 _speakGeneration 防止快速切卡时旧的 TTS 回调继续执行。
   Future<void> _speakCurrentWord() async {
     if (!state.settings.autoPlayWord) return;
-    final word = state.currentWord?.savedWord.word;
+    final word = state.currentWord?.displayText;
     if (word != null) {
       final gen = _speakGeneration;
       if (!_inputStopwatch.isRunning) _inputStopwatch.start();
@@ -648,15 +617,24 @@ class FlashcardNotifier extends _$FlashcardNotifier {
 
   /// 记录练习统计（翻到背面时）
   Future<void> _recordPracticeStats() async {
-    final word = state.currentWord?.savedWord;
-    if (word == null) return;
+    final item = state.currentWord;
+    if (item == null) return;
 
     final now = DateTime.now();
     final cardStart = state.cardStartTime ?? now;
     final studyMs = now.difference(cardStart).inMilliseconds;
 
-    final dao = ref.read(savedWordDaoProvider);
-    await dao.updatePracticeStats(word: word.word, studyMs: studyMs);
+    switch (item) {
+      case FlashcardWordItem():
+        await ref.read(savedWordDaoProvider).updatePracticeStats(
+              word: item.dbKey,
+              studyMs: studyMs,
+            );
+      case FlashcardPhraseItem():
+        await ref.read(savedSenseGroupDaoProvider).updatePracticeStats(
+              phraseText: item.dbKey,
+            );
+    }
   }
 
   /// 保存当前卡片的学习时间（切换卡片时调用）
@@ -665,17 +643,24 @@ class FlashcardNotifier extends _$FlashcardNotifier {
     // 这里只需重置 cardStartTime
   }
 
-  /// 排序单词列表
-  List<SavedWord> _sortWords(List<SavedWord> words, FlashcardSortMode mode) {
-    final sorted = List<SavedWord>.from(words);
+  /// 排序闪卡列表
+  List<FlashcardItem> _sortItems(
+    List<FlashcardItem> items,
+    FlashcardSortMode mode,
+  ) {
+    final sorted = List<FlashcardItem>.from(items);
     switch (mode) {
       case FlashcardSortMode.alphabeticalAsc:
         sorted.sort(
-          (a, b) => a.word.toLowerCase().compareTo(b.word.toLowerCase()),
+          (a, b) => a.displayText
+              .toLowerCase()
+              .compareTo(b.displayText.toLowerCase()),
         );
       case FlashcardSortMode.alphabeticalDesc:
         sorted.sort(
-          (a, b) => b.word.toLowerCase().compareTo(a.word.toLowerCase()),
+          (a, b) => b.displayText
+              .toLowerCase()
+              .compareTo(a.displayText.toLowerCase()),
         );
       case FlashcardSortMode.timeAsc:
         sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -687,15 +672,15 @@ class FlashcardNotifier extends _$FlashcardNotifier {
         sorted.sort((a, b) {
           final scoreA = FlashcardSettings.calculateSmartScore(
             practiceCount: a.practiceCount,
-            viewedBack: a.viewedBack,
-            lastPracticedAt: a.lastPracticedAt,
+            viewedBack: false,
+            lastPracticedAt: null,
           );
           final scoreB = FlashcardSettings.calculateSmartScore(
             practiceCount: b.practiceCount,
-            viewedBack: b.viewedBack,
-            lastPracticedAt: b.lastPracticedAt,
+            viewedBack: false,
+            lastPracticedAt: null,
           );
-          return scoreB.compareTo(scoreA); // 分数高的在前
+          return scoreB.compareTo(scoreA);
         });
     }
     return sorted;

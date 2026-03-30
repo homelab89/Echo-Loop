@@ -17,6 +17,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/audio_item.dart' as model;
 import '../../models/dict_entry.dart';
 import '../../providers/audio_engine/audio_engine_provider.dart';
+import '../../models/flashcard_item.dart';
 import '../../providers/flashcard/flashcard_provider.dart';
 import '../../router/app_router.dart';
 import '../../services/app_logger.dart';
@@ -27,7 +28,7 @@ import '../common/text_context_menu.dart';
 /// Flashcard 翻转卡片
 class FlashcardCard extends StatefulWidget {
   /// 卡片数据
-  final FlashcardWordItem item;
+  final FlashcardItem item;
 
   /// 是否显示背面
   final bool isShowingBack;
@@ -105,7 +106,7 @@ class _FlashcardCardState extends State<FlashcardCard>
     super.didUpdateWidget(oldWidget);
 
     // 检测卡片切换（不同单词）→ 立即重置无动画
-    if (oldWidget.item.savedWord.word != widget.item.savedWord.word) {
+    if (oldWidget.item.displayText != widget.item.displayText) {
       _controller.value = widget.isShowingBack ? 1.0 : 0.0;
       _showFrontContent = !widget.isShowingBack;
       return;
@@ -170,7 +171,7 @@ class _FlashcardCardState extends State<FlashcardCard>
 
 /// 正面内容：单词 + 音标 + 发音 + 柯林斯星级
 class _FrontContent extends StatelessWidget {
-  final FlashcardWordItem item;
+  final FlashcardItem item;
   final VoidCallback onUnsave;
   final bool isUnsaved;
   final VoidCallback? onPlayWord;
@@ -186,7 +187,7 @@ class _FrontContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final word = item.savedWord;
+    final word = item;
     final dict = item.dictEntry;
 
     return Card(
@@ -217,15 +218,15 @@ class _FrontContent extends StatelessWidget {
               onLongPressStart: (details) => TextContextMenu.show(
                 context,
                 details.globalPosition,
-                word.word,
+                word.displayText,
               ),
               onSecondaryTapDown: (details) => TextContextMenu.show(
                 context,
                 details.globalPosition,
-                word.word,
+                word.displayText,
               ),
               child: Text(
-                word.word,
+                word.displayText,
                 style: theme.textTheme.displaySmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
@@ -249,7 +250,7 @@ class _FrontContent extends StatelessWidget {
             const SizedBox(height: AppSpacing.m),
             IconButton.filled(
               onPressed:
-                  onPlayWord ?? () => TtsService.instance.speak(word.word),
+                  onPlayWord ?? () => TtsService.instance.speak(word.displayText),
               icon: const Icon(Icons.volume_up),
               style: IconButton.styleFrom(
                 backgroundColor: theme.colorScheme.primaryContainer.withValues(
@@ -279,7 +280,7 @@ class _FrontContent extends StatelessWidget {
 
 /// 背面内容：单词+音标(小) + 柯林斯+标签 + 词性+释义 + 来源例句（可播放）
 class _BackContent extends ConsumerStatefulWidget {
-  final FlashcardWordItem item;
+  final FlashcardItem item;
   final VoidCallback onUnsave;
   final bool isUnsaved;
   final bool autoPlaySentence;
@@ -317,7 +318,7 @@ class _BackContentState extends ConsumerState<_BackContent> {
 
   /// 加载源音频名称
   Future<void> _loadAudioName() async {
-    final audioId = widget.item.savedWord.audioItemId;
+    final audioId = widget.item.audioItemId;
     if (audioId == null) return;
     final dao = ref.read(audioItemDaoProvider);
     final row = await dao.getById(audioId);
@@ -339,15 +340,14 @@ class _BackContentState extends ConsumerState<_BackContent> {
 
     // TTS 朗读单词
     if (widget.autoPlayWord) {
-      await TtsService.instance.speak(widget.item.savedWord.word);
+      await TtsService.instance.speak(widget.item.displayText);
       if (!mounted) return;
       // TTS 播完，计入 1 个输入词
       ref.read(flashcardNotifierProvider.notifier).onWordPlayed();
     }
 
     // 自动播放来源例句
-    if (widget.autoPlaySentence && widget.item.savedWord.sentenceText != null) {
-      AppLogger.log('FC-Audio', 'autoPlay: TTS done, waiting 600ms');
+    if (widget.autoPlaySentence && widget.item.sentenceText != null) {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       AppLogger.log(
         'FC-Audio',
@@ -367,7 +367,7 @@ class _BackContentState extends ConsumerState<_BackContent> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final word = widget.item.savedWord;
+    final word = widget.item;
     final dict = widget.item.dictEntry;
 
     return Card(
@@ -394,29 +394,30 @@ class _BackContentState extends ConsumerState<_BackContent> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 单词 + 音标
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onLongPressStart: (details) => TextContextMenu.show(
+                      // 单词/意群文本
+                      GestureDetector(
+                        onLongPressStart: (details) => TextContextMenu.show(
+                          context,
+                          details.globalPosition,
+                          word.displayText,
+                        ),
+                        onSecondaryTapDown: (details) =>
+                            TextContextMenu.show(
                               context,
                               details.globalPosition,
-                              word.word,
+                              word.displayText,
                             ),
-                            onSecondaryTapDown: (details) =>
-                                TextContextMenu.show(
-                                  context,
-                                  details.globalPosition,
-                                  word.word,
-                                ),
-                            child: Text(
-                              word.word,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+                        child: Text(
+                          word.displayText,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
-                          const SizedBox(width: AppSpacing.s),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      // 音标 + TTS
+                      Row(
+                        children: [
                           if (dict != null && dict.phonetic.isNotEmpty)
                             Text(
                               '/${dict.phonetic}/',
@@ -424,13 +425,14 @@ class _BackContentState extends ConsumerState<_BackContent> {
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
-                          const SizedBox(width: AppSpacing.xs),
+                          if (dict != null && dict.phonetic.isNotEmpty)
+                            const SizedBox(width: AppSpacing.xs),
                           SizedBox(
                             width: 32,
                             height: 32,
                             child: IconButton(
                               onPressed: () async {
-                                await TtsService.instance.speak(word.word);
+                                await TtsService.instance.speak(word.displayText);
                                 if (!mounted) return;
                                 ref
                                     .read(flashcardNotifierProvider.notifier)
@@ -579,24 +581,8 @@ class _BackContentState extends ConsumerState<_BackContent> {
   Future<void> _playSentence({bool isUserTap = false}) async {
     if (isUserTap) _autoPlayCancelled = true;
 
-    final word = widget.item.savedWord;
-    final textPreview = word.sentenceText != null
-        ? word.sentenceText!.substring(0, min(40, word.sentenceText!.length))
-        : 'null';
-
-    AppLogger.log(
-      'FC-Audio',
-      '_playSentence START: isUserTap=$isUserTap, '
-          'word="${word.word}", audioItemId=${word.audioItemId}, '
-          'sentenceIndex=${word.sentenceIndex}, '
-          'storedStart=${word.sentenceStartMs}, storedEnd=${word.sentenceEndMs}, '
-          'text="$textPreview"',
-    );
-
-    if (word.audioItemId == null) {
-      AppLogger.log('FC-Audio', '_playSentence RETURN: audioItemId is null');
-      return;
-    }
+    final word = widget.item;
+    if (word.audioItemId == null) return;
 
     final hasStoredTiming =
         word.sentenceStartMs != null && word.sentenceEndMs != null;
