@@ -282,7 +282,6 @@ class _ListenAndRepeatPlayerScreenState
         );
   }
 
-
   /// 切换当前句子的难句标记
   Future<void> _handleToggleDifficult() async {
     final player = ref.read(listenAndRepeatPlayerProvider.notifier);
@@ -747,19 +746,36 @@ class _ListenAndRepeatPlayerScreenState
                                   ),
                                   audioItemId: widget.audioItemId,
                                   sentenceIndex: player.currentIndex,
-                                  sentenceStartMs: currentSentence
-                                      .startTime.inMilliseconds,
-                                  sentenceEndMs: currentSentence
-                                      .endTime.inMilliseconds,
+                                  sentenceStartMs:
+                                      currentSentence.startTime.inMilliseconds,
+                                  sentenceEndMs:
+                                      currentSentence.endTime.inMilliseconds,
                                   highlightedSegments:
                                       currentAttempt?.referenceSegments,
                                   onStopMainPlayer: () {
                                     _manualStoppedThisSentence = true;
                                     ref
                                         .read(
-                                          listenAndRepeatPlayerProvider.notifier,
+                                          listenAndRepeatPlayerProvider
+                                              .notifier,
                                         )
                                         .notifyExternalStop();
+                                    ref
+                                        .read(
+                                          shadowingRecordingControllerProvider
+                                              .notifier,
+                                        )
+                                        .cancelActiveRecording();
+                                  },
+                                  onToolbarButtonTapped: () {
+                                    if (_manualStoppedThisSentence) return;
+                                    _manualStoppedThisSentence = true;
+                                    ref
+                                        .read(
+                                          listenAndRepeatPlayerProvider
+                                              .notifier,
+                                        )
+                                        .pauseCountdown();
                                     ref
                                         .read(
                                           shadowingRecordingControllerProvider
@@ -973,7 +989,6 @@ class _PostEvalCountdown extends StatelessWidget {
     );
   }
 }
-
 
 /// 底部播放控制
 ///
