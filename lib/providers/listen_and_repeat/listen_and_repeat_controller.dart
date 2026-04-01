@@ -84,6 +84,23 @@ class ListenAndRepeatController extends _$ListenAndRepeatController {
     // 监听录音控制器状态变化（评估完成时推进流程）
     ref.listen(shadowingRecordingControllerProvider, _onRecordingStateChanged);
 
+    // 打印状态变化日志
+    ref.listenSelf((prev, next) {
+      if (prev?.phase.runtimeType != next.phase.runtimeType ||
+          prev?.sentenceIndex != next.sentenceIndex ||
+          prev?.repeatIndex != next.repeatIndex) {
+        final recPhase = ref.read(shadowingRecordingControllerProvider).phase;
+        AppLogger.log(
+          'L&R State',
+          '${next.phase.runtimeType} | '
+              '句${next.sentenceIndex + 1}/${next.totalSentences} '
+              '遍${next.repeatIndex + 1}/${next.totalRepeats} | '
+              '录音=$recPhase | '
+              'token=${next.flowToken}',
+        );
+      }
+    });
+
     ref.onDispose(() {
       _countdown.cancel();
       _playbackSub?.cancel();
@@ -398,6 +415,14 @@ class ListenAndRepeatController extends _$ListenAndRepeatController {
     ListenAndRepeatTurnState next,
   ) {
     if (prev == null) return;
+    if (prev.phase != next.phase) {
+      AppLogger.log(
+        'L&R Rec',
+        '${prev.phase.name} → ${next.phase.name} | '
+            'attempt=${next.currentAttempt != null} | '
+            'score=${next.currentAttempt?.score}',
+      );
+    }
 
     // 评估完成（processing → idle，有结果）→ 推进流程
     if (prev.phase == ListenAndRepeatTurnPhase.processing &&

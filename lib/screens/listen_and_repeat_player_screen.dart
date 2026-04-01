@@ -80,7 +80,7 @@ class _ListenAndRepeatPlayerScreenState
   bool _isShowingDialog = false;
 
   /// 跟读配置（initState 中初始化，onStudyAgain 复用）
-  late ListenAndRepeatConfig _config;
+  ListenAndRepeatConfig? _config;
 
   @override
   void initState() {
@@ -123,7 +123,7 @@ class _ListenAndRepeatPlayerScreenState
       );
       ctrl.startSession(
         sentences: sentences,
-        config: _config,
+        config: _config!,
         startIndex: session.shadowingStartIndex,
       );
     });
@@ -307,7 +307,7 @@ class _ListenAndRepeatPlayerScreenState
           // 重新开始（从第一句）
           await ctrl.startSession(
             sentences: ctrl.sentences,
-            config: _config,
+            config: _config!,
             startIndex: 0,
           );
         },
@@ -388,7 +388,7 @@ class _ListenAndRepeatPlayerScreenState
   /// 仅在自动模式、倒计时中、录音已完成时显示。
   bool _shouldShowCountdown(ListenAndRepeatSessionState ctrlState) {
     if (ctrlState.phase is! WaitingInterval) return false;
-    if (_config.isManualMode()) return false;
+    if (_config?.isManualMode() ?? false) return false;
     // 有录音评分 = 录音已完成，正在 review 倒计时
     return ctrlState.recordingScore != null;
   }
@@ -769,7 +769,7 @@ class _ListenAndRepeatPlayerScreenState
                       ),
                       // 遍数 + 模式指示器
                       PracticePlayCountLabel(
-                        isManualMode: _config.isManualMode(),
+                        isManualMode: _config?.isManualMode() ?? false,
                         playCountText: l10n.listenAndRepeatPlayCount(
                           ctrlState.repeatIndex + 1,
                           ctrlState.totalRepeats,
