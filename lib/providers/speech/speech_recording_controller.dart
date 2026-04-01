@@ -51,7 +51,6 @@ enum SpeechRecordingPhase {
   awaitingSpeech,
   speaking,
   processing,
-  reviewCountdown,
 }
 
 /// 跟读回合状态
