@@ -184,7 +184,8 @@ class ListenAndRepeatController extends _$ListenAndRepeatController
       isManualMode: () => ref.read(listenAndRepeatSettingsProvider).isManualMode,
     );
 
-    await startSession(
+    // 只准备数据，不自动播放。Screen 进入后调 startPlaying()。
+    await prepareSession(
       sentences: difficultSentences,
       config: config,
       startIndex: startIndex,
@@ -194,8 +195,8 @@ class ListenAndRepeatController extends _$ListenAndRepeatController
 
   // ========== 公开方法（Screen 调用） ==========
 
-  /// 初始化并开始会话
-  Future<void> startSession({
+  /// 准备会话数据（不自动播放，Screen 进入后调 startPlaying）
+  Future<void> prepareSession({
     required List<Sentence> sentences,
     required ListenAndRepeatConfig config,
     int startIndex = 0,
@@ -231,7 +232,11 @@ class ListenAndRepeatController extends _$ListenAndRepeatController
     ref
         .read(shadowingRecordingControllerProvider.notifier)
         .setManualMode(config.isManualMode());
+  }
 
+  /// 开始播放（Screen 进入后调用）
+  Future<void> startPlaying() async {
+    if (_sentences.isEmpty) return;
     await _playCurrentSentence();
   }
 

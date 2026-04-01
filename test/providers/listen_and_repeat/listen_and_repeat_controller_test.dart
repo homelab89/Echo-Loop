@@ -84,10 +84,11 @@ void main() {
 
   group('startSession', () {
     test('初始化后进入 PlayingPrompt', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
       );
+    await controller.startPlaying();
 
       // playClipOnce 即时完成 → 自动进入 Recording（自动模式）
       // 但录音还没接入，_onPromptFinished 会设置 Recording
@@ -100,21 +101,23 @@ void main() {
     });
 
     test('指定 startIndex', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 5),
         config: _testConfig(),
         startIndex: 2,
       );
+    await controller.startPlaying();
 
       expect(readState().sentenceIndex, 2);
     });
 
     test('startIndex 超出范围时 clamp', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
         startIndex: 99,
       );
+    await controller.startPlaying();
 
       expect(readState().sentenceIndex, 2); // clamped to last
     });
@@ -122,10 +125,11 @@ void main() {
 
   group('等待用户操作 (WaitingForUser)', () {
     test('enterWaitingForUser → WaitingForUser', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
       );
+    await controller.startPlaying();
 
       expect(readState().phase, isA<Recording>());
 
@@ -141,10 +145,11 @@ void main() {
     });
 
     test('重复 enterWaitingForUser 无效', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
       );
+    await controller.startPlaying();
       controller.enterWaitingForUser();
       expect(readState().phase, isA<WaitingForUser>());
 
@@ -153,10 +158,11 @@ void main() {
     });
 
     test('onUserInteraction → WaitingForUser', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
       );
+    await controller.startPlaying();
 
       controller.onUserInteraction();
 
@@ -166,10 +172,11 @@ void main() {
 
   group('切句', () {
     test('nextSentence 原子重置 + flowToken 递增', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
       );
+    await controller.startPlaying();
       final tokenBefore = readState().flowToken;
 
       await controller.nextSentence();
@@ -181,11 +188,12 @@ void main() {
     });
 
     test('previousSentence', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
         startIndex: 2,
       );
+    await controller.startPlaying();
 
       await controller.previousSentence();
 
@@ -193,22 +201,24 @@ void main() {
     });
 
     test('第一句 previousSentence 无效', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
         startIndex: 0,
       );
+    await controller.startPlaying();
 
       await controller.previousSentence();
       expect(readState().sentenceIndex, 0); // 不变
     });
 
     test('最后一句 nextSentence 无效', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
         startIndex: 2,
       );
+    await controller.startPlaying();
 
       await controller.nextSentence();
       expect(readState().sentenceIndex, 2); // 不变
@@ -217,10 +227,11 @@ void main() {
 
   group('flowToken 防竞态', () {
     test('切句后旧回调被丢弃', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
       );
+    await controller.startPlaying();
 
       // 记录当前 token
       final oldToken = readState().flowToken;
@@ -236,10 +247,11 @@ void main() {
 
   group('手动模式', () {
     test('手动模式下播放完成后进入 WaitingForUser（不自动录音）', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(isManualMode: true),
       );
+    await controller.startPlaying();
 
       // 手动模式：播放完成后进入 WaitingForUser，等用户手动操作
       expect(readState().phase, isA<WaitingForUser>());
@@ -248,10 +260,11 @@ void main() {
 
   group('快进倒计时', () {
     test('非 WaitingInterval 状态 fastForward 无效', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
       );
+    await controller.startPlaying();
 
       // 当前在 Recording，不是 WaitingInterval
       controller.fastForwardInterval();
@@ -261,10 +274,11 @@ void main() {
 
   group('stopSession', () {
     test('stopSession 回到 Idle', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
       );
+    await controller.startPlaying();
 
       controller.stopSession();
       expect(readState().phase, isA<Idle>());
@@ -273,11 +287,12 @@ void main() {
 
   group('便捷 getter', () {
     test('isFirstSentence / isLastSentence', () async {
-      await controller.startSession(
+      await controller.prepareSession(
         sentences: createTestSentences(count: 3),
         config: _testConfig(),
         startIndex: 0,
       );
+    await controller.startPlaying();
 
       expect(readState().isFirstSentence, isTrue);
       expect(readState().isLastSentence, isFalse);

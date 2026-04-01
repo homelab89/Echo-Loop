@@ -80,8 +80,11 @@ class _ListenAndRepeatPlayerScreenState
   @override
   void initState() {
     super.initState();
-    // Controller.initialize() 已在路由跳转前由 learning_plan_screen 调用，
-    // 此处无需额外初始化。
+    // Controller.initialize() 已在路由跳转前准备好数据，
+    // 进入页面后开始播放。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(listenAndRepeatControllerProvider.notifier).startPlaying();
+    });
   }
 
   // No resources to dispose — ListenAndRepeatController manages playback/recording.
@@ -260,12 +263,13 @@ class _ListenAndRepeatPlayerScreenState
         message: l10n.listenAndRepeatCompleteMessage(ctrlState.totalSentences),
         onStudyAgain: () async {
           // 重新开始（从第一句，复用当前 config）
-          await ctrl.startSession(
+          await ctrl.prepareSession(
             sentences: ctrl.sentences,
             config: ctrl.config,
             startIndex: 0,
             isFreePlay: true,
           );
+          await ctrl.startPlaying();
         },
         onExit: () async {
           await ctrl.clearBreakpoint(isFreePlay: true);
