@@ -47,10 +47,7 @@ class Interrupted extends ShadowingPhase {
   /// 打断前所在的阶段（恢复时回到这个阶段）
   final ShadowingPhase phaseBeforeInterrupt;
 
-  const Interrupted({
-    required this.reason,
-    required this.phaseBeforeInterrupt,
-  });
+  const Interrupted({required this.reason, required this.phaseBeforeInterrupt});
 }
 
 /// 当前句子所有遍数完成（短暂过渡，自动推进到下一句或完成）
