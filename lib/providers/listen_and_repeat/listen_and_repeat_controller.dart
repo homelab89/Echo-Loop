@@ -13,19 +13,24 @@
 library;
 
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../database/providers.dart';
+import '../../models/intensive_listen_settings.dart';
 import '../../models/sentence.dart';
+import '../../models/study_stage.dart';
 import '../../services/app_logger.dart';
 import '../../services/audio_playback_service.dart';
 import '../audio_engine/audio_engine_provider.dart';
 import '../learning_progress_provider.dart';
 import '../learning_session/countdown_controller.dart';
-import '../learning_session/learning_session_provider.dart';
+import '../learning_session/sentence_playback_engine.dart';
 import '../listen_and_repeat_turn_controller_provider.dart';
 import '../listening_practice/bookmark_manager.dart';
+import '../study_task_controller_mixin.dart';
 import 'listen_and_repeat_phase.dart';
 import 'listen_and_repeat_session_state.dart';
+import 'listen_and_repeat_settings_provider.dart';
 
 part 'listen_and_repeat_controller.g.dart';
 
@@ -63,7 +68,9 @@ class ListenAndRepeatConfig {
 
 /// 跟读会话控制器
 @Riverpod(keepAlive: true)
-class ListenAndRepeatController extends _$ListenAndRepeatController {
+class ListenAndRepeatController extends _$ListenAndRepeatController
+    with StudyTaskControllerMixin {
+
   /// 句子列表
   List<Sentence> _sentences = [];
 
@@ -109,6 +116,82 @@ class ListenAndRepeatController extends _$ListenAndRepeatController {
     return const ListenAndRepeatSessionState();
   }
 
+  // ========== 初始化 ==========
+
+  /// 初始化跟读任务（从 DB 读数据 + 启动学习计时 + 开始播放）
+  ///
+  /// 替代 LearningSessionProvider.enterListenAndRepeatMode()，
+  /// 把所有初始化逻辑收到 Controller 内部。
+  Future<void> initialize({
+    required String audioItemId,
+    required List<Sentence> allSentences,
+    required bool isFreePlay,
+  }) async {
+    // 从 DB 读难句索引
+    final bookmarkDao = ref.read(bookmarkDaoProvider);
+    final bookmarkedIndices = await bookmarkDao.getBookmarkedIndices(audioItemId);
+    final difficultSentences = allSentences
+        .where((s) => bookmarkedIndices.contains(s.index))
+        .toList();
+
+    // 从 DB 读断点
+    final progress = await ref
+        .read(learningProgressNotifierProvider.notifier)
+        .getLatestOrEnsureProgress(audioItemId);
+    int startIndex = 0;
+    if (isFreePlay) {
+      startIndex = progress.freePlayShadowingSentenceIndex ?? 0;
+    } else {
+      startIndex = progress.shadowingSentenceIndex ?? 0;
+    }
+
+    // 根据难度计算目标遍数
+    final targetPlayCount =
+        targetPlayCountForDifficulty(progress.difficulty.value);
+
+    // 初始化设置
+    ref
+        .read(listenAndRepeatSettingsProvider.notifier)
+        .initialize(repeatCount: targetPlayCount);
+
+    // 学习任务通用初始化（计时、LP、音频、analytics）
+    await initStudyTask(
+      ref,
+      audioItemId: audioItemId,
+      stage: StudyStage.listenAndRepeat,
+      isFreePlay: isFreePlay,
+    );
+
+    // 构造 config 并启动会话
+    final config = ListenAndRepeatConfig(
+      audioItemId: audioItemId,
+      getRepeatCount: (_) => ref.read(listenAndRepeatSettingsProvider).repeatCount,
+      getIntervalDuration: (s) {
+        final st = ref.read(listenAndRepeatSettingsProvider);
+        return switch (st.pauseMode) {
+          PauseMode.smart => Duration(
+              milliseconds: math.max(s.duration.inMilliseconds * 2, 2000),
+            ),
+          PauseMode.fixed => Duration(seconds: st.fixedPauseSeconds),
+          PauseMode.multiplier => Duration(
+              milliseconds: math.max(
+                (s.duration.inMilliseconds * st.pauseMultiplier).round(),
+                1000,
+              ),
+            ),
+        };
+      },
+      isManualMode: () => ref.read(listenAndRepeatSettingsProvider).isManualMode,
+    );
+
+    await startSession(
+      sentences: difficultSentences,
+      config: config,
+      startIndex: startIndex,
+      isFreePlay: isFreePlay,
+    );
+  }
+
   // ========== 公开方法（Screen 调用） ==========
 
   /// 初始化并开始会话
@@ -116,6 +199,7 @@ class ListenAndRepeatController extends _$ListenAndRepeatController {
     required List<Sentence> sentences,
     required ListenAndRepeatConfig config,
     int startIndex = 0,
+    bool isFreePlay = false,
   }) async {
     _sentences = sentences.map((s) => s.copyWith()).toList();
     _config = config;
@@ -140,6 +224,7 @@ class ListenAndRepeatController extends _$ListenAndRepeatController {
       totalRepeats: config.getRepeatCount(sentence),
       intervalTotal: config.getIntervalDuration(sentence),
       flowToken: 1,
+      isFreePlay: isFreePlay,
     );
 
     // 同步录音控制器模式
@@ -392,14 +477,17 @@ class ListenAndRepeatController extends _$ListenAndRepeatController {
         .completeCurrentSubStage(_config.audioItemId);
   }
 
-  /// 退出学习模式（释放资源 + 通知 learningSession）
+  /// 退出学习模式（释放资源 + 保存时长 + 恢复 LP）
   Future<void> exitLearningMode() async {
     disposeSession();
-    await ref.read(learningSessionProvider.notifier).exitLearningMode();
+    await disposeStudyTask(ref);
   }
 
   /// 获取当前句子（供 Screen 读取）
   Sentence? get currentSentence => _currentSentence;
+
+  /// 当前配置（供 onStudyAgain 复用）
+  ListenAndRepeatConfig get config => _config;
 
   /// 获取当前句子索引
   int get currentIndex => state.sentenceIndex;

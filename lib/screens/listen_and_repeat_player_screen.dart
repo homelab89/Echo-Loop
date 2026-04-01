@@ -11,8 +11,6 @@
 library;
 
 import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,12 +19,10 @@ import '../database/enums.dart';
 import '../utils/wakelock_mixin.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/learning_progress_provider.dart';
-import '../providers/learning_session/learning_session_provider.dart';
 import '../providers/listen_and_repeat_turn_controller_provider.dart';
 import '../providers/listen_and_repeat/listen_and_repeat_controller.dart';
 import '../providers/listen_and_repeat/listen_and_repeat_phase.dart';
 import '../providers/listen_and_repeat/listen_and_repeat_settings_provider.dart';
-import '../models/intensive_listen_settings.dart';
 import '../providers/listen_and_repeat/listen_and_repeat_session_state.dart';
 import '../services/app_logger.dart';
 import '../theme/app_theme.dart';
@@ -80,53 +76,12 @@ class _ListenAndRepeatPlayerScreenState
   bool _isShowingDialog = false;
 
   /// 跟读配置（initState 中初始化，onStudyAgain 复用）
-  ListenAndRepeatConfig? _config;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final session = ref.read(learningSessionProvider);
-      final sentences = session.shadowingSentences ?? [];
-      final ctrl = ref.read(listenAndRepeatControllerProvider.notifier);
-
-      // 用 learningSession 的目标遍数初始化设置
-      ref
-          .read(listenAndRepeatSettingsProvider.notifier)
-          .initialize(repeatCount: session.shadowingTargetPlayCount);
-
-      _config = ListenAndRepeatConfig(
-        audioItemId: widget.audioItemId,
-        getRepeatCount: (_) =>
-            ref.read(listenAndRepeatSettingsProvider).repeatCount,
-        getIntervalDuration: (s) {
-          final settings = ref.read(listenAndRepeatSettingsProvider);
-          return switch (settings.pauseMode) {
-            PauseMode.smart => Duration(
-                milliseconds:
-                    math.max(s.duration.inMilliseconds * 2, 2000),
-              ),
-            PauseMode.fixed => Duration(
-                seconds: settings.fixedPauseSeconds,
-              ),
-            PauseMode.multiplier => Duration(
-                milliseconds: math.max(
-                  (s.duration.inMilliseconds * settings.pauseMultiplier)
-                      .round(),
-                  1000,
-                ),
-              ),
-          };
-        },
-        isManualMode: () =>
-            ref.read(listenAndRepeatSettingsProvider).isManualMode,
-      );
-      ctrl.startSession(
-        sentences: sentences,
-        config: _config!,
-        startIndex: session.shadowingStartIndex,
-      );
-    });
+    // Controller.initialize() 已在路由跳转前由 learning_plan_screen 调用，
+    // 此处无需额外初始化。
   }
 
   // No resources to dispose — ListenAndRepeatController manages playback/recording.
@@ -187,7 +142,7 @@ class _ListenAndRepeatPlayerScreenState
     ctrl.enterWaitingForUser();
     if (!mounted) return;
 
-    final session = ref.read(learningSessionProvider);
+    final session = ref.read(listenAndRepeatControllerProvider);
     if (session.isFreePlay) {
       await ctrl.saveBreakpoint(isFreePlay: true);
       await ctrl.exitLearningMode();
@@ -287,7 +242,7 @@ class _ListenAndRepeatPlayerScreenState
 
     final ctrl = ref.read(listenAndRepeatControllerProvider.notifier);
     final ctrlState = ref.read(listenAndRepeatControllerProvider);
-    final session = ref.read(learningSessionProvider);
+    final session = ref.read(listenAndRepeatControllerProvider);
 
     if (!mounted) return;
 
@@ -304,11 +259,12 @@ class _ListenAndRepeatPlayerScreenState
         title: l10n.listenAndRepeatCompleteTitle,
         message: l10n.listenAndRepeatCompleteMessage(ctrlState.totalSentences),
         onStudyAgain: () async {
-          // 重新开始（从第一句）
+          // 重新开始（从第一句，复用当前 config）
           await ctrl.startSession(
             sentences: ctrl.sentences,
-            config: _config!,
+            config: ctrl.config,
             startIndex: 0,
+            isFreePlay: true,
           );
         },
         onExit: () async {
@@ -388,7 +344,7 @@ class _ListenAndRepeatPlayerScreenState
   /// 仅在自动模式、倒计时中、录音已完成时显示。
   bool _shouldShowCountdown(ListenAndRepeatSessionState ctrlState) {
     if (ctrlState.phase is! WaitingInterval) return false;
-    if (_config?.isManualMode() ?? false) return false;
+    if (ref.read(listenAndRepeatSettingsProvider).isManualMode) return false;
     // 有录音评分 = 录音已完成，正在 review 倒计时
     return ctrlState.recordingScore != null;
   }
@@ -430,7 +386,7 @@ class _ListenAndRepeatPlayerScreenState
     ) {
       if (prev != null && !_isExiting) {
         if (next.phase is SessionCompleted && prev.phase is! SessionCompleted) {
-          ref.read(learningSessionProvider.notifier).pauseStudyTimer();
+          ref.read(listenAndRepeatControllerProvider.notifier).pauseStudyTimer();
           shortenIdleTimeout(5);
           _handleCompleted();
         }
@@ -769,7 +725,7 @@ class _ListenAndRepeatPlayerScreenState
                       ),
                       // 遍数 + 模式指示器
                       PracticePlayCountLabel(
-                        isManualMode: _config?.isManualMode() ?? false,
+                        isManualMode: ref.read(listenAndRepeatSettingsProvider).isManualMode,
                         playCountText: l10n.listenAndRepeatPlayCount(
                           ctrlState.repeatIndex + 1,
                           ctrlState.totalRepeats,

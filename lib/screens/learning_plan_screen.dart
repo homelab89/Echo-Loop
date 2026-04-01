@@ -16,6 +16,7 @@ import '../providers/audio_library_provider.dart';
 import '../providers/learning_progress_provider.dart';
 import '../providers/time_provider.dart';
 import '../providers/learning_session/learning_session_provider.dart';
+import '../providers/listen_and_repeat/listen_and_repeat_controller.dart';
 import '../providers/listening_practice/listening_practice_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../router/app_router.dart';
@@ -613,8 +614,12 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
       estimatedDuration: repeatEstimate,
       onStartPractice: () async {
         await ref
-            .read(learningSessionProvider.notifier)
-            .enterListenAndRepeatMode(widget.audioItemId, lpState.sentences);
+            .read(listenAndRepeatControllerProvider.notifier)
+            .initialize(
+              audioItemId: widget.audioItemId,
+              allSentences: lpState.sentences,
+              isFreePlay: false,
+            );
         if (!context.mounted) return;
         context.push(
           AppRoutes.listenAndRepeatPlayer(
@@ -1323,10 +1328,10 @@ class _FirstStudySection extends ConsumerWidget {
     if (lpState.sentences.isEmpty) return;
 
     await ref
-        .read(learningSessionProvider.notifier)
-        .enterListenAndRepeatMode(
-          audioItemId,
-          lpState.sentences,
+        .read(listenAndRepeatControllerProvider.notifier)
+        .initialize(
+          audioItemId: audioItemId,
+          allSentences: lpState.sentences,
           isFreePlay: true,
         );
     if (context.mounted) {

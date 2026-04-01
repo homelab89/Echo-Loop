@@ -41,6 +41,9 @@ class ListenAndRepeatSessionState {
   /// 流程令牌（每次切句/重置递增，异步回调校验用）
   final int flowToken;
 
+  /// 是否为自由练习模式
+  final bool isFreePlay;
+
   const ListenAndRepeatSessionState({
     this.phase = const Idle(),
     this.sentenceIndex = 0,
@@ -53,6 +56,7 @@ class ListenAndRepeatSessionState {
     this.recordingPath,
     this.recordingScore,
     this.flowToken = 0,
+    this.isFreePlay = false,
   });
 
   ListenAndRepeatSessionState copyWith({
@@ -67,6 +71,7 @@ class ListenAndRepeatSessionState {
     Object? recordingPath = _noChange,
     Object? recordingScore = _noChange,
     int? flowToken,
+    bool? isFreePlay,
   }) {
     return ListenAndRepeatSessionState(
       phase: phase ?? this.phase,
@@ -84,6 +89,7 @@ class ListenAndRepeatSessionState {
           ? this.recordingScore
           : recordingScore as double?,
       flowToken: flowToken ?? this.flowToken,
+      isFreePlay: isFreePlay ?? this.isFreePlay,
     );
   }
 
