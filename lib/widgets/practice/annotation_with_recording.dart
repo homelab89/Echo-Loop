@@ -9,8 +9,8 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/speech_practice_models.dart';
 import '../../providers/learning_session/review_difficult_practice_provider.dart';
-import '../../providers/shadowing/shadowing_recording_controller.dart'
-    show ShadowingRecordingPhase, ShadowingRecordingState;
+import '../../providers/listen_and_repeat_turn_controller_provider.dart'
+    show ListenAndRepeatTurnPhase, ListenAndRepeatTurnState;
 import '../../providers/sentence_ai_provider.dart';
 import '../../theme/app_theme.dart';
 import '../common/bookmark_toggle_row.dart';
@@ -59,7 +59,7 @@ class AnnotationWithRecording extends StatelessWidget {
   final VoidCallback? onStopMainPlayer;
 
   /// 录音控制器状态
-  final ShadowingRecordingState turnState;
+  final ListenAndRepeatTurnState turnState;
 
   /// 当前句子的 promptId
   final String currentPromptId;
@@ -208,12 +208,12 @@ class AnnotationWithRecording extends StatelessWidget {
               builder: (context) {
                 final mode = isRecordingCurrent
                     ? switch (turnState.phase) {
-                        ShadowingRecordingPhase.idle =>
+                        ListenAndRepeatTurnPhase.idle =>
                           RecordingButtonMode.idle,
-                        ShadowingRecordingPhase.awaitingSpeech ||
-                        ShadowingRecordingPhase.speaking =>
+                        ListenAndRepeatTurnPhase.awaitingSpeech ||
+                        ListenAndRepeatTurnPhase.speaking =>
                           RecordingButtonMode.recording,
-                        ShadowingRecordingPhase.processing =>
+                        ListenAndRepeatTurnPhase.processing =>
                           RecordingButtonMode.disabled,
                         _ => RecordingButtonMode.idle,
                       }

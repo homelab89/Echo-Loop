@@ -19,8 +19,8 @@ import '../models/speech_practice_models.dart';
 import '../providers/learning_progress_provider.dart';
 import '../providers/learning_session/learning_session_provider.dart';
 import '../providers/learning_session/retell_player_provider.dart';
-import '../providers/shadowing/shadowing_recording_controller.dart'
-    show ShadowingRecordingPhase, ShadowingRecordingState;
+import '../providers/listen_and_repeat_turn_controller_provider.dart'
+    show ListenAndRepeatTurnPhase, ListenAndRepeatTurnState;
 import '../providers/retell_recording_controller_provider.dart';
 import '../services/app_logger.dart';
 import '../services/audio_playback_service.dart';
@@ -406,7 +406,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
   /// 提示文字行：统一在按钮上方，用颜色区分状态。
   Widget _buildStatusText(
     RetellPlayerState state,
-    ShadowingRecordingState turnState,
+    ListenAndRepeatTurnState turnState,
     SpeechPracticeAttempt? attempt,
     AppLocalizations l10n,
     ThemeData theme,
@@ -440,7 +440,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
         );
       }
       // 正常结果（有分数）且录音空闲：显示"点击录音"引导用户操作
-      if (turnState.phase == ShadowingRecordingPhase.idle) {
+      if (turnState.phase == ListenAndRepeatTurnPhase.idle) {
         return Text(
           l10n.listenAndRepeatTapToRecord,
           style: theme.textTheme.bodySmall?.copyWith(
@@ -454,10 +454,10 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
     // 录音状态文字
     return Text(
       switch (turnState.phase) {
-        ShadowingRecordingPhase.idle => l10n.listenAndRepeatTapToRecord,
-        ShadowingRecordingPhase.speaking =>
+        ListenAndRepeatTurnPhase.idle => l10n.listenAndRepeatTapToRecord,
+        ListenAndRepeatTurnPhase.speaking =>
           l10n.listenAndRepeatRecordingInProgress,
-        ShadowingRecordingPhase.processing => l10n.listenAndRepeatAnalyzing,
+        ListenAndRepeatTurnPhase.processing => l10n.listenAndRepeatAnalyzing,
         _ => l10n.listenAndRepeatTapToRecord,
       },
       style: theme.textTheme.bodySmall?.copyWith(
@@ -469,7 +469,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
   /// 中间按钮：录音按钮 或 段间停顿倒计时环。
   Widget _buildCenterButton(
     RetellPlayerState state,
-    ShadowingRecordingState turnState,
+    ListenAndRepeatTurnState turnState,
     bool isRecordingCurrent,
     AppLocalizations l10n,
     WidgetRef ref,
@@ -517,9 +517,9 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
 
     // retelling 阶段：录音按钮
     final buttonMode = switch (turnState.phase) {
-      ShadowingRecordingPhase.awaitingSpeech ||
-      ShadowingRecordingPhase.speaking => RecordingButtonMode.recording,
-      ShadowingRecordingPhase.processing => RecordingButtonMode.disabled,
+      ListenAndRepeatTurnPhase.awaitingSpeech ||
+      ListenAndRepeatTurnPhase.speaking => RecordingButtonMode.recording,
+      ListenAndRepeatTurnPhase.processing => RecordingButtonMode.disabled,
       _ => RecordingButtonMode.idle,
     };
     return RecordingButton(mode: buttonMode, onTap: _handleRecordTap);
@@ -619,7 +619,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
     );
     final retellRecState = ref.read(retellRecordingControllerProvider);
 
-    // 映射为 ShadowingRecordingState 供 RecordingButton 复用
+    // 映射为 ListenAndRepeatTurnState 供 RecordingButton 复用
     final turnState = _mapToTurnState(retellRecState);
 
     // 评估完成 → 启动段间停顿倒计时
@@ -982,14 +982,14 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
   }
 }
 
-/// 将 [RetellRecordingState] 映射为 [ShadowingRecordingState]，
+/// 将 [RetellRecordingState] 映射为 [ListenAndRepeatTurnState]，
 /// 供 [RecordingButton] 复用。
-ShadowingRecordingState _mapToTurnState(RetellRecordingState rs) {
-  return ShadowingRecordingState(
+ListenAndRepeatTurnState _mapToTurnState(RetellRecordingState rs) {
+  return ListenAndRepeatTurnState(
     phase: switch (rs.phase) {
-      RetellRecordingPhase.idle => ShadowingRecordingPhase.idle,
-      RetellRecordingPhase.recording => ShadowingRecordingPhase.speaking,
-      RetellRecordingPhase.processing => ShadowingRecordingPhase.processing,
+      RetellRecordingPhase.idle => ListenAndRepeatTurnPhase.idle,
+      RetellRecordingPhase.recording => ListenAndRepeatTurnPhase.speaking,
+      RetellRecordingPhase.processing => ListenAndRepeatTurnPhase.processing,
     },
   );
 }

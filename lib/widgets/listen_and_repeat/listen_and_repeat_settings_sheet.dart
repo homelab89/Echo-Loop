@@ -12,20 +12,20 @@ import '../../providers/shadowing/shadowing_settings_provider.dart';
 import '../../theme/app_theme.dart';
 
 /// 显示跟读设置底部弹窗
-void showShadowingSettingsSheet({required BuildContext context}) {
+void showListenAndRepeatSettingsSheet({required BuildContext context}) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
-    builder: (context) => const _ShadowingSettingsSheet(),
+    builder: (context) => const _ListenAndRepeatSettingsSheet(),
   );
 }
 
 /// 跟读设置面板（即时生效，无需确认按钮）
-class _ShadowingSettingsSheet extends ConsumerWidget {
-  const _ShadowingSettingsSheet();
+class _ListenAndRepeatSettingsSheet extends ConsumerWidget {
+  const _ListenAndRepeatSettingsSheet();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

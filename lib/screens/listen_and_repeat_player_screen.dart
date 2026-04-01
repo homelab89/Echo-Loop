@@ -22,7 +22,7 @@ import '../utils/wakelock_mixin.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/learning_progress_provider.dart';
 import '../providers/learning_session/learning_session_provider.dart';
-import '../providers/shadowing/shadowing_recording_controller.dart';
+import '../providers/listen_and_repeat_turn_controller_provider.dart';
 import '../providers/shadowing/shadowing_controller.dart';
 import '../providers/shadowing/shadowing_phase.dart';
 import '../providers/shadowing/shadowing_settings_provider.dart';
@@ -33,7 +33,7 @@ import '../theme/app_theme.dart';
 import '../providers/sentence_ai_provider.dart';
 import '../widgets/common/bookmark_toggle_row.dart';
 import '../widgets/common/countdown_chip.dart';
-import '../widgets/shadowing/shadowing_settings_sheet.dart';
+import '../widgets/listen_and_repeat/listen_and_repeat_settings_sheet.dart';
 import '../widgets/common/recording_button.dart'
     show RecordingButton, RecordingButtonMode;
 import '../widgets/common/processing_indicator.dart';
@@ -52,26 +52,26 @@ import '../widgets/practice/practice_progress_section.dart';
 const double _kTurnAreaHeight = 100;
 
 /// 跟读播放器页面
-class ShadowingPlayerScreen extends ConsumerStatefulWidget {
+class ListenAndRepeatPlayerScreen extends ConsumerStatefulWidget {
   /// 合集 ID（用于返回导航，从独立音频路由进入时为 null）
   final String? collectionId;
 
   /// 音频项 ID
   final String audioItemId;
 
-  const ShadowingPlayerScreen({
+  const ListenAndRepeatPlayerScreen({
     super.key,
     this.collectionId,
     required this.audioItemId,
   });
 
   @override
-  ConsumerState<ShadowingPlayerScreen> createState() =>
-      _ShadowingPlayerScreenState();
+  ConsumerState<ListenAndRepeatPlayerScreen> createState() =>
+      _ListenAndRepeatPlayerScreenState();
 }
 
-class _ShadowingPlayerScreenState
-    extends ConsumerState<ShadowingPlayerScreen>
+class _ListenAndRepeatPlayerScreenState
+    extends ConsumerState<ListenAndRepeatPlayerScreen>
     with WakelockMixin {
   /// 是否正在退出页面，防止退出过程中 listener 触发弹窗
   bool _isExiting = false;
@@ -506,7 +506,7 @@ class _ShadowingPlayerScreenState
                 IconButton(
                   icon: const Icon(Icons.tune),
                   onPressed: () =>
-                      showShadowingSettingsSheet(context: context),
+                      showListenAndRepeatSettingsSheet(context: context),
                 ),
               ],
             ),
@@ -666,7 +666,7 @@ class _ShadowingPlayerScreenState
                                     final isProcessing =
                                         turnState.promptId == currentPromptId &&
                                         turnState.phase ==
-                                            ShadowingRecordingPhase.processing;
+                                            ListenAndRepeatTurnPhase.processing;
 
                                     // 评估中 → 显示 ProcessingIndicator
                                     if (isProcessing) {
@@ -677,9 +677,9 @@ class _ShadowingPlayerScreenState
 
                                     final mode = isRecordingCurrent
                                         ? switch (turnState.phase) {
-                                            ShadowingRecordingPhase
+                                            ListenAndRepeatTurnPhase
                                                 .awaitingSpeech ||
-                                            ShadowingRecordingPhase.speaking =>
+                                            ListenAndRepeatTurnPhase.speaking =>
                                               RecordingButtonMode.recording,
                                             _ => RecordingButtonMode.idle,
                                           }
