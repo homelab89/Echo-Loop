@@ -6,6 +6,7 @@ import '../../models/audio_engine_state.dart';
 import '../../models/audio_item.dart';
 import '../../models/sentence.dart';
 import '../../services/app_logger.dart';
+import '../../services/study_event_recorder.dart';
 import '../../services/subtitle_parser.dart';
 
 part 'audio_engine_provider.g.dart';
@@ -13,6 +14,14 @@ part 'audio_engine_provider.g.dart';
 @Riverpod(keepAlive: true)
 class AudioEngine extends _$AudioEngine {
   late final ja.AudioPlayer _audioPlayer;
+
+  /// 学习事件记录器（由 StudyTaskControllerMixin 注入）
+  StudyEventRecorder? _recorder;
+
+  /// 设置学习事件记录器（进入学习模式时注入，退出时传 null）
+  void setRecorder(StudyEventRecorder? recorder) {
+    _recorder = recorder;
+  }
 
   @override
   AudioEngineState build() {
@@ -152,6 +161,11 @@ class AudioEngine extends _$AudioEngine {
           !isActiveSession(sessionId) ||
           s.processingState == ja.ProcessingState.completed,
     );
+
+    // 播放成功后记录听力时长 + 词数 + 词形
+    if (isActiveSession(sessionId)) {
+      _recorder?.onSentencePlayed(sentence);
+    }
   }
 
   Future<void> playClipWithLoops(

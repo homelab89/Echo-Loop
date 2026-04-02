@@ -399,11 +399,11 @@ class BlindListenPlayer extends _$BlindListenPlayer {
 
     // 通过 recorder 记录听力时长、输入词数、已学词形
     final paragraphWordCount = countWordsInSentences(sentences);
-    final durationSeconds =
-        (sentences.last.endTime - sentences.first.startTime).inSeconds;
+    final durationMs =
+        (sentences.last.endTime - sentences.first.startTime).inMilliseconds;
     final paragraphText = sentences.map((s) => s.text).join(' ');
     _recorder.onInputCompleted(
-      durationSeconds: durationSeconds,
+      durationMs: durationMs,
       wordCount: paragraphWordCount,
       text: paragraphText,
     );

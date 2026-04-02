@@ -18,10 +18,13 @@ import '../analytics/models/event_names.dart';
 import '../models/study_stage.dart';
 import '../database/providers.dart';
 import '../services/app_logger.dart';
+import '../services/learned_vocabulary_tracker.dart';
+import '../services/study_event_recorder.dart';
 import 'audio_engine/audio_engine_provider.dart';
 import 'daily_study_time_provider.dart';
 import 'learned_vocabulary_tracker_provider.dart';
 import 'listening_practice/listening_practice_provider.dart';
+import 'speech/speech_recording_controller.dart';
 
 /// 学习任务 Controller Mixin
 ///
@@ -35,12 +38,12 @@ import 'listening_practice/listening_practice_provider.dart';
 /// }
 /// ```
 mixin StudyTaskControllerMixin {
-
   // ========== 内部状态 ==========
 
   final Stopwatch _studyStopwatch = Stopwatch();
   Timer? _periodicSaveTimer;
   AppLifecycleListener? _lifecycleListener;
+  StudyEventRecorder? _recorder;
   bool _isSaving = false;
   String? _studyAudioItemId;
   StudyStage? _studyStage;
@@ -77,6 +80,21 @@ mixin StudyTaskControllerMixin {
     // 确保音频加载
     await _ensureAudioLoaded(ref, audioItemId);
 
+    // 创建学习事件记录器并注入底层
+    LearnedVocabularyTracker? vocabTracker;
+    try {
+      vocabTracker = ref.read(learnedVocabularyTrackerProvider);
+    } catch (e) {
+      AppLogger.log('StudyTask', '⚠ vocabTracker 不可用: $e');
+    }
+    _recorder = StudyEventRecorder(
+      studyTimeService: ref.read(studyTimeServiceProvider),
+      vocabTracker: vocabTracker,
+      stage: stage,
+    );
+    ref.read(audioEngineProvider.notifier).setRecorder(_recorder);
+    ref.read(speechRecordingControllerProvider.notifier).setRecorder(_recorder);
+
     // 上报 analytics
     ref.read(analyticsServiceProvider).track(Events.learningStart, {
       EventParams.audioId: audioItemId,
@@ -91,8 +109,7 @@ mixin StudyTaskControllerMixin {
   Future<void> disposeStudyTask(Ref ref) async {
     // 上报 session_end
     ref.read(analyticsServiceProvider).track(Events.learningEnd, {
-      if (_studyAudioItemId != null)
-        EventParams.audioId: _studyAudioItemId!,
+      if (_studyAudioItemId != null) EventParams.audioId: _studyAudioItemId!,
       if (_studyStage != null) EventParams.stage: _studyStage!.name,
       EventParams.durationMs: _studyStopwatch.elapsedMilliseconds,
       EventParams.isFreePractice: _studyIsFreePlay ? 1 : 0,
@@ -118,6 +135,11 @@ mixin StudyTaskControllerMixin {
 
     // 刷新统计 UI
     ref.invalidate(dailyStudyTimeProvider);
+
+    // 清理 recorder 注入
+    ref.read(audioEngineProvider.notifier).setRecorder(null);
+    ref.read(speechRecordingControllerProvider.notifier).setRecorder(null);
+    _recorder = null;
 
     // 清理
     _lifecycleListener?.dispose();
@@ -199,8 +221,7 @@ mixin StudyTaskControllerMixin {
   /// 确保音频引擎已加载目标音频
   Future<void> _ensureAudioLoaded(Ref ref, String audioItemId) async {
     final engineState = ref.read(audioEngineProvider);
-    if (engineState.currentAudioId == audioItemId &&
-        !engineState.isLoading) {
+    if (engineState.currentAudioId == audioItemId && !engineState.isLoading) {
       return;
     }
     final lp = ref.read(listeningPracticeProvider);

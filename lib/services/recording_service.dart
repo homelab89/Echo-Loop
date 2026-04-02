@@ -161,8 +161,8 @@ class RecordingService {
     final startTime = _recordingStartTime;
     _recordingStartTime = null;
     if (startTime != null) {
-      final secs = DateTime.now().difference(startTime).inSeconds;
-      rec?.onRecordingCompleted(secs);
+      final ms = DateTime.now().difference(startTime).inMilliseconds;
+      rec?.onRecordingCompleted(ms);
     }
 
     try {

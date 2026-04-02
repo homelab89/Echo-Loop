@@ -3,6 +3,7 @@ import 'dart:async';
 import '../models/sentence.dart';
 import '../models/study_stage.dart';
 import '../utils/word_counter.dart';
+import 'app_logger.dart';
 import 'learned_vocabulary_tracker.dart';
 import 'study_time_service.dart';
 
@@ -24,9 +25,9 @@ class StudyEventRecorder {
     required StudyTimeService studyTimeService,
     LearnedVocabularyTracker? vocabTracker,
     required StudyStage stage,
-  })  : _studyTimeService = studyTimeService,
-        _vocabTracker = vocabTracker,
-        _stage = stage;
+  }) : _studyTimeService = studyTimeService,
+       _vocabTracker = vocabTracker,
+       _stage = stage;
 
   /// 播完一遍后调用（单句粒度）
   ///
@@ -34,7 +35,7 @@ class StudyEventRecorder {
   /// 记录听力时长（sentence.duration）、输入词数、已学词形。
   void onSentencePlayed(Sentence sentence) {
     onInputCompleted(
-      durationSeconds: sentence.duration.inSeconds,
+      durationMs: sentence.duration.inMilliseconds,
       wordCount: countWords(sentence.text),
       text: sentence.text,
     );
@@ -44,14 +45,17 @@ class StudyEventRecorder {
   ///
   /// 段落模式（盲听、复述）手动调用，传整段的时长和词数。
   void onInputCompleted({
-    required int durationSeconds,
+    required int durationMs,
     required int wordCount,
     required String text,
   }) {
+    final durationSeconds = durationMs ~/ 1000;
+    AppLogger.log(
+      'StudyEvent',
+      '📥 听: ${(durationMs / 1000).toStringAsFixed(1)}s, $wordCount词, stage=$_stage',
+    );
     if (durationSeconds > 0) {
-      unawaited(
-        _studyTimeService.addInputTime(durationSeconds, stage: _stage),
-      );
+      unawaited(_studyTimeService.addInputTime(durationSeconds, stage: _stage));
     }
     if (wordCount > 0) {
       unawaited(_studyTimeService.addInputWords(wordCount));
@@ -66,7 +70,12 @@ class StudyEventRecorder {
   ///
   /// 只有实际录音才计入说的时间；不录音 = 不计入。
   /// 由 [RecordingService.stopRecording] 自动调用。
-  void onRecordingCompleted(int durationSeconds) {
+  void onRecordingCompleted(int durationMs) {
+    final durationSeconds = durationMs ~/ 1000;
+    AppLogger.log(
+      'StudyEvent',
+      '📤 说: ${(durationMs / 1000).toStringAsFixed(1)}s, stage=$_stage',
+    );
     if (durationSeconds > 0) {
       unawaited(
         _studyTimeService.addOutputTime(durationSeconds, stage: _stage),
