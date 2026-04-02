@@ -11,7 +11,6 @@
 library;
 
 import 'dart:async';
-import 'dart:math' as math;
 import '../../models/sentence.dart';
 import '../../services/study_event_recorder.dart';
 import '../audio_engine/audio_engine_provider.dart';
@@ -184,12 +183,12 @@ class SentencePlaybackEngine {
   }
 }
 
-/// 跟读模式停顿计算：max(句长x2, 2000ms)
+/// 跟读模式停顿计算：clamp(1s + 0.6×句长, 2s, 20s)
 ///
-/// 给用户足够的跟读时间。
+/// 与精听 smart 模式统一公式。
 Duration listenAndRepeatPauseCalculator(Duration sentenceDuration) {
-  final ms = sentenceDuration.inMilliseconds;
-  return Duration(milliseconds: math.max(ms * 2, 2000));
+  final ms = 1000 + (sentenceDuration.inMilliseconds * 0.6).round();
+  return Duration(milliseconds: ms.clamp(2000, 20000));
 }
 
 /// 根据难度等级返回目标播放遍数

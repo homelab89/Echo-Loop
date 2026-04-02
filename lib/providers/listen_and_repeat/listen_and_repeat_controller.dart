@@ -34,11 +34,11 @@ import 'listen_and_repeat_settings_provider.dart';
 
 part 'listen_and_repeat_controller.g.dart';
 
-/// 智能停顿模式下句子时长的倍数
-const _kSmartPauseMultiplier = 2;
-
 /// 智能停顿最小时长（毫秒）
 const _kSmartPauseMinMs = 2000;
+
+/// 智能停顿最大时长（毫秒）
+const _kSmartPauseMaxMs = 20000;
 
 /// 倍率停顿最小时长（毫秒）
 const _kMultiplierPauseMinMs = 1000;
@@ -190,10 +190,8 @@ class ListenAndRepeatController extends _$ListenAndRepeatController
         final st = ref.read(listenAndRepeatSettingsProvider);
         return switch (st.pauseMode) {
           PauseMode.smart => Duration(
-            milliseconds: math.max(
-              s.duration.inMilliseconds * _kSmartPauseMultiplier,
-              _kSmartPauseMinMs,
-            ),
+            milliseconds: (1000 + (s.duration.inMilliseconds * 0.6).round())
+                .clamp(_kSmartPauseMinMs, _kSmartPauseMaxMs),
           ),
           PauseMode.fixed => Duration(seconds: st.fixedPauseSeconds),
           PauseMode.multiplier => Duration(

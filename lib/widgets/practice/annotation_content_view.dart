@@ -9,7 +9,6 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../database/providers.dart';
@@ -301,10 +300,6 @@ class _AnnotationContentViewState extends ConsumerState<AnnotationContentView> {
                   isSaved: isSaved,
                   onToggleSave: () =>
                       _toggleSaveSenseGroup(index, chunk, normalized, isSaved),
-                  onCopy: () {
-                    Clipboard.setData(ClipboardData(text: chunk.trim()));
-                    _dismissActionBar();
-                  },
                 ),
               ),
             );
