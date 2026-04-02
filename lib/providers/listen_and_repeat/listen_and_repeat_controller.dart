@@ -558,7 +558,7 @@ class ListenAndRepeatController extends _$ListenAndRepeatController
     if (_config.isManualMode()) {
       // 手动模式：不自动录音，等用户手动操作
       state = state.copyWith(
-        phase: const WaitingForUser(WaitingReason.manualMode),
+        phase: const WaitingForUser(WaitingReason.userInteraction),
       );
       return;
     }
@@ -596,7 +596,7 @@ class ListenAndRepeatController extends _$ListenAndRepeatController
     if (_config.isManualMode()) {
       AppLogger.log('L&R', '→ 手动模式，等待用户操作');
       state = state.copyWith(
-        phase: const WaitingForUser(WaitingReason.manualMode),
+        phase: const WaitingForUser(WaitingReason.userInteraction),
       );
       return;
     }
@@ -613,7 +613,7 @@ class ListenAndRepeatController extends _$ListenAndRepeatController
 
     if (_config.isManualMode()) {
       state = state.copyWith(
-        phase: const WaitingForUser(WaitingReason.manualMode),
+        phase: const WaitingForUser(WaitingReason.userInteraction),
       );
       return;
     }
