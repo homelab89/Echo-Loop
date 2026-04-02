@@ -229,6 +229,15 @@ class RepeatPracticePanel extends StatelessWidget {
       );
     }
 
+    // 录音即将开始但 SpeechRecordingController 尚未就绪（异步启动中）：
+    // 无评分、无错误、turnState 还是 idle → 显示 recording 状态避免 flash
+    final hasError = currentAttempt?.errorMessage != null;
+    final hasScore = currentAttempt?.score != null;
+    final isStartingRecording = !isRecordingCurrent &&
+        !hasError &&
+        !hasScore &&
+        turnState.phase == SpeechRecordingPhase.idle;
+
     final mode = isRecordingCurrent
         ? switch (turnState.phase) {
             SpeechRecordingPhase.awaitingSpeech ||
@@ -236,9 +245,9 @@ class RepeatPracticePanel extends StatelessWidget {
               RecordingButtonMode.recording,
             _ => RecordingButtonMode.idle,
           }
-        : RecordingButtonMode.idle;
-
-    final hasError = currentAttempt?.errorMessage != null;
+        : isStartingRecording
+            ? RecordingButtonMode.recording
+            : RecordingButtonMode.idle;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.m),
