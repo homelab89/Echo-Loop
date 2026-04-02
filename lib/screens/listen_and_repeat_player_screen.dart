@@ -326,14 +326,6 @@ class _ListenAndRepeatPlayerScreenState
     GoRouter.of(context).push(route);
   }
 
-  /// 判断是否应显示倒计时芯片
-  ///
-  /// 仅在自动模式、倒计时中、录音已完成时显示。
-  bool _shouldShowCountdown(ListenAndRepeatSessionState ctrlState) {
-    if (ctrlState.phase is! WaitingInterval) return false;
-    if (ref.read(listenAndRepeatSettingsProvider).isManualMode) return false;
-    return ctrlState.recordingScore != null;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -386,7 +378,7 @@ class _ListenAndRepeatPlayerScreenState
 
     final isPlaying = ctrlState.phase is PlayingPrompt;
     final isInPause = ctrlState.isInPause;
-    final showCountdown = _shouldShowCountdown(ctrlState);
+    final showCountdown = ctrlState.isCountingDown;
 
     // 句子时长（如 "2.8秒"）
     final hasDuration =
