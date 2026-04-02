@@ -89,46 +89,6 @@ class _ListenAndRepeatPlayerScreenState
 
   // No resources to dispose — ListenAndRepeatController manages playback/recording.
 
-  /// 处理录音按钮点击
-  Future<void> _handleRecordTap() async {
-    final ctrlState = ref.read(listenAndRepeatControllerProvider);
-    if (ctrlState.phase is! WaitingInterval &&
-        ctrlState.phase is! WaitingForUser &&
-        ctrlState.phase is! Recording) {
-      return;
-    }
-
-    final ctrl = ref.read(listenAndRepeatControllerProvider.notifier);
-    final recState = ref.read(speechRecordingControllerProvider);
-    final currentSentence = ctrl.currentSentence;
-    if (currentSentence == null) return;
-
-    final promptId = ctrl.currentPromptId;
-    if (recState.isRecordingPrompt(promptId)) {
-      AppLogger.log('L&R Screen', '手动停止录音 → 评估');
-      await ctrl.stopRecording();
-      return;
-    }
-
-    // 停止录音回放（如果正在播放）
-    await ctrl.stopPlayback();
-
-    AppLogger.log('L&R Screen', '手动开始录音: 句子${ctrlState.sentenceIndex + 1}');
-    ctrl.startManualRecording();
-  }
-
-  /// 处理录音回放按钮点击
-  Future<void> _handleAttemptPlaybackTap() async {
-    final ctrlState = ref.read(listenAndRepeatControllerProvider);
-    final ctrl = ref.read(listenAndRepeatControllerProvider.notifier);
-
-    if (ctrlState.phase is ReviewingRecording) {
-      await ctrl.stopPlayback();
-      return;
-    }
-
-    await ctrl.playRecording();
-  }
 
   /// 处理退出（close 按钮 / 系统返回）
   Future<void> _handleExit() async {
@@ -530,7 +490,7 @@ class _ListenAndRepeatPlayerScreenState
                               attempt: currentAttempt,
                               isPlaying: ctrlState.phase is ReviewingRecording,
                               onTap: currentAttempt.hasRecording
-                                  ? () => _handleAttemptPlaybackTap()
+                                  ? () => ref.read(listenAndRepeatControllerProvider.notifier).togglePlayback()
                                   : null,
                             ),
                           ),
@@ -645,7 +605,7 @@ class _ListenAndRepeatPlayerScreenState
                                         const SizedBox(height: AppSpacing.xs),
                                         RecordingButton(
                                           mode: mode,
-                                          onTap: _handleRecordTap,
+                                          onTap: () => ref.read(listenAndRepeatControllerProvider.notifier).onRecordButtonTapped(),
                                         ),
                                       ],
                                     );

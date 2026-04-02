@@ -269,6 +269,33 @@ class ListenAndRepeatController extends _$ListenAndRepeatController
     await _jumpToSentence(state.sentenceIndex - 1);
   }
 
+  /// 录音按钮点击（Screen 直接调，不做判断）
+  ///
+  /// 根据当前状态决定：开始录音 / 停止录音。
+  Future<void> onRecordButtonTapped() async {
+    final phase = state.phase;
+    if (phase is Recording) {
+      await stopRecording();
+      return;
+    }
+    // 先停回放
+    if (phase is ReviewingRecording) {
+      await stopPlayback();
+    }
+    startManualRecording();
+  }
+
+  /// 录音回放按钮点击（Screen 直接调，不做判断）
+  ///
+  /// 根据当前状态决定：开始回放 / 停止回放。
+  Future<void> togglePlayback() async {
+    if (state.phase is ReviewingRecording) {
+      await stopPlayback();
+    } else {
+      await playRecording();
+    }
+  }
+
   /// 手动开始录音
   ///
   /// 在 WaitingInterval 或 WaitingForUser 阶段允许开始录音。
