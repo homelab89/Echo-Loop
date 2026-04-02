@@ -661,20 +661,15 @@ class ListenAndRepeatController extends _$ListenAndRepeatController
   }
 
   /// 录音回放完成回调
+  ///
+  /// 回放是用户主动触发的操作，完成后回到 WaitingForUser 等待用户决定下一步。
   void _onReviewPlaybackFinished() {
     if (state.phase is! ReviewingRecording) return;
 
-    AppLogger.log('L&R', '回放结束 → WaitingInterval');
-
-    if (_config.isManualMode()) {
-      state = state.copyWith(
-        phase: const WaitingForUser(WaitingReason.userInteraction),
-      );
-      return;
-    }
-
-    // 自动模式：回放结束后重置完整 T 秒
-    _startInterval(resetFull: true);
+    AppLogger.log('L&R', '回放结束 → WaitingForUser');
+    state = state.copyWith(
+      phase: const WaitingForUser(WaitingReason.userInteraction),
+    );
   }
 
   /// 倒计时 tick 回调
