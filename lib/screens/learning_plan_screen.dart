@@ -1458,18 +1458,29 @@ class _StepCard extends StatelessWidget {
                   height: 28,
                   decoration: BoxDecoration(
                     color: isCompleted
-                        ? Colors.green.shade100
+                        ? (theme.brightness == Brightness.dark
+                            ? Colors.transparent
+                            : Colors.green.shade50)
                         : isCurrent
                         ? null
                         : theme.colorScheme.surfaceContainerHighest,
-                    border: isCurrent
+                    border: isCompleted
+                        ? Border.all(
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.green.shade400
+                                : Colors.green,
+                            width: 1.5)
+                        : isCurrent
                         ? Border.all(color: theme.colorScheme.primary, width: 2)
                         : null,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: isCompleted
-                        ? Icon(Icons.check, size: 16, color: Colors.green)
+                        ? Icon(Icons.check, size: 16,
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.green.shade300
+                                : Colors.green.shade700)
                         : Text(
                             '$stepNumber',
                             style: theme.textTheme.bodySmall?.copyWith(
