@@ -10,6 +10,31 @@
 
 ---
 
+## 已完成：逐句精听页面按难句补练模式重构
+
+- [x] 逐句精听盲听流程接入 `BlindPracticeFlowEngine`，不再由 Screen/Provider 手工拼装播放与倒计时布尔状态
+- [x] 新增 `IntensiveAnnotationPhase` / `IntensiveAnnotationState`，将“看不懂后”的详情模式收敛为显式状态切换
+- [x] `IntensiveListenPlayerScreen` 改为“顶部进度 + 中间内容切换 + 单一 footer”结构，复用 `PracticeProgressSection` 与 `PracticePlaybackFooter`
+- [x] 设置、偷看字幕、查词等用户接管动作统一进入等待态；播放中触发时允许当前句自然播完后再进入 `WaitingForUser`
+- [x] 补充逐句精听 provider / widget 测试，覆盖盲听、详情重播、继续推进、完成弹窗与设置交互
+- [x] 修复逐句精听快速切句时旧盲听回调污染新句状态，避免新句一开始误显示倒计时
+- [x] 修复“看不懂 → 继续”后的详情倒计时不刷新的问题，改为局部订阅剩余时间并使用独立 key 重建组件
+
+  **完成时间**: 2026-04-03
+
+---
+
+## 已完成：复述页面输出时长统一记录修复
+
+- [x] `RecordingService.stopRecording()` 恢复为录音结束后的统一输出时长写入入口，避免各录音 controller 分散记账
+- [x] `SpeechRecordingController` 改为只计算有效说话时长并传给底层，不再直接调用 recorder
+- [x] `RetellRecordingController` 补齐首个语音时间记录与有效说话时长计算，修复复述场景漏记 `outputTime`
+- [x] 新增复述录音控制器回归测试，验证停止录音后会通过底层统一记录一条说的时长
+
+  **完成时间**: 2026-04-03
+
+---
+
 ## 已完成：难句补练/收藏复习盲听等待态状态机化
 
 - [x] 复用现有 `BlindPracticeFlowEngine`，将难句补练盲听流程从布尔状态拼装迁移为显式 phase 状态机

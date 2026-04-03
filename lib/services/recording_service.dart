@@ -65,6 +65,7 @@ class RecordingService {
   String? _currentFilePath;
 
   /// 录音开始时间（用于计算录音时长）
+  DateTime? _recordingStartedAt;
 
   /// 学习事件记录器（外部设置，用于记录说的时长）
   ///
@@ -136,6 +137,7 @@ class RecordingService {
     final filePath = await _backend.startSession(promptId: promptId);
     _recordingPromptId = promptId;
     _currentFilePath = filePath;
+    _recordingStartedAt = DateTime.now();
 
     return filePath;
   }
@@ -143,8 +145,12 @@ class RecordingService {
   /// 停止录音并等待 final transcript。
   ///
   /// 内部在拿到 final transcript 后自动 shutdown 释放麦克风。
-  /// 录音时长在方法入口处计算（不含等待 transcript 的时间）。
-  Future<RecordingResult> stopRecording({required String promptId}) async {
+  /// 录音时长在方法入口处计算（不含等待 transcript 的时间），
+  /// 并在这里统一写入 recorder，避免各个 controller 分散记账。
+  Future<RecordingResult> stopRecording({
+    required String promptId,
+    int? effectiveDurationMs,
+  }) async {
     if (_recordingPromptId != promptId) {
       return const RecordingResult(
         errorCode: 'invalidState',
@@ -152,7 +158,15 @@ class RecordingService {
       );
     }
 
-    // 说的时长由 SpeechRecordingController 统一记录（精确到有声音的部分）
+    final startedAt = _recordingStartedAt;
+    final durationMs =
+        effectiveDurationMs ??
+        (startedAt == null
+            ? 0
+            : DateTime.now().difference(startedAt).inMilliseconds);
+    if (durationMs > 0) {
+      recorder?.onRecordingCompleted(durationMs);
+    }
 
     try {
       _finalEventPromptId = promptId;
@@ -161,6 +175,7 @@ class RecordingService {
       final stopResult = await _backend.stopSession();
       final filePath = stopResult.filePath ?? _currentFilePath;
       _recordingPromptId = null;
+      _recordingStartedAt = null;
 
       if (filePath == null || filePath.isEmpty) {
         await _shutdown();
@@ -193,6 +208,7 @@ class RecordingService {
     } on TimeoutException {
       _clearFinalCompleter();
       _recordingPromptId = null;
+      _recordingStartedAt = null;
       await _shutdown();
       return RecordingResult(
         filePath: _currentFilePath,
@@ -202,6 +218,7 @@ class RecordingService {
     } on SpeechPracticePlatformException catch (e) {
       _clearFinalCompleter();
       _recordingPromptId = null;
+      _recordingStartedAt = null;
       await _shutdown();
       return RecordingResult(
         filePath: _currentFilePath,
@@ -219,6 +236,7 @@ class RecordingService {
     if (promptId == null) return;
 
     _recordingPromptId = null;
+    _recordingStartedAt = null;
 
     _clearFinalCompleter();
 
@@ -233,6 +251,7 @@ class RecordingService {
     }
 
     _currentFilePath = null;
+    _recordingStartedAt = null;
     await _shutdown();
   }
 

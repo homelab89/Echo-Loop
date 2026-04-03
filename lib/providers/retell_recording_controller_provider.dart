@@ -19,6 +19,7 @@
 library;
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -157,6 +158,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
   bool _isStopping = false;
   bool _hasDetectedSpeech = false;
   String? _lastKnownTranscript;
+  DateTime? _speechStartTime;
   String? _cachedReferenceText;
   String? _lastSilenceLogDesc;
 
@@ -231,6 +233,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     _hasDetectedSpeech = false;
     _lastKnownTranscript = null;
     _lastSilenceLogDesc = null;
+    _speechStartTime = null;
     _cachedReferenceText = referenceText;
 
     AppLogger.log('RetellRec', '┌ startRecording (manual=$_isManualMode)');
@@ -301,6 +304,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     if (!_recordingService.isRecording) return;
 
     _cancelAllTimers();
+    _speechStartTime = null;
     await _eventSub?.cancel();
     _eventSub = null;
     await _recordingService.cancelRecording();
@@ -322,6 +326,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     _isStopping = false;
     _hasDetectedSpeech = false;
     _lastKnownTranscript = null;
+    _speechStartTime = null;
     _eventSub?.cancel();
     _eventSub = null;
     // 先读取文件路径，再立即重置状态（避免 await 延迟状态重置导致自动录音触发失败）
@@ -358,7 +363,20 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     await _eventSub?.cancel();
     _eventSub = null;
 
-    final result = await _recordingService.stopRecording(promptId: promptId);
+    final speechStart = _speechStartTime;
+    _speechStartTime = null;
+    final effectiveDurationMs = speechStart == null
+        ? null
+        : math.max(
+            0,
+            DateTime.now().difference(speechStart).inMilliseconds -
+                state.silenceDuration.inMilliseconds,
+          );
+
+    final result = await _recordingService.stopRecording(
+      promptId: promptId,
+      effectiveDurationMs: effectiveDurationMs,
+    );
 
     // 确定用于评估的 transcript：优先 final，超时时回退到 live
     String? transcript = result.finalTranscript;
@@ -626,6 +644,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
   /// 首次检测到语音的处理
   void _handleSpeechDetected(String promptId) {
     _hasDetectedSpeech = true;
+    _speechStartTime ??= DateTime.now();
     _awaitingSpeechTimer?.cancel();
     _awaitingSpeechTimer = null;
 
@@ -753,6 +772,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
       _hasDetectedSpeech = false;
       _lastKnownTranscript = null;
       _lastSilenceLogDesc = null;
+      _speechStartTime = null;
       _eventSub?.cancel();
       _eventSub = null;
       // 取消录音但不 await（后台不可靠）

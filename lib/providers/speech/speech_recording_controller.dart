@@ -288,6 +288,7 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
     _hasDetectedSpeech = false;
     _lastKnownTranscript = null;
     _lastSilenceLogDesc = null;
+    _speechStartTime = null;
     _cachedReferenceText = referenceText;
 
     AppLogger.log('SpeechRec', '┌ startRecording (manual=$_isManualMode)');
@@ -418,14 +419,18 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
     // 记录有效说话时长（开口 → 停止 - 尾部静音）
     final speechStart = _speechStartTime;
     _speechStartTime = null;
-    if (speechStart != null) {
-      final totalMs = DateTime.now().difference(speechStart).inMilliseconds;
-      final silenceMs = state.silenceDuration.inMilliseconds;
-      final effectiveMs = math.max(0, totalMs - silenceMs);
-      _recordingService.recorder?.onRecordingCompleted(effectiveMs);
-    }
+    final effectiveDurationMs = speechStart == null
+        ? null
+        : math.max(
+            0,
+            DateTime.now().difference(speechStart).inMilliseconds -
+                state.silenceDuration.inMilliseconds,
+          );
 
-    final result = await _recordingService.stopRecording(promptId: promptId);
+    final result = await _recordingService.stopRecording(
+      promptId: promptId,
+      effectiveDurationMs: effectiveDurationMs,
+    );
     AppLogger.log(
       'SpeechRec',
       '📋 final: "${result.finalTranscript ?? '(null)'}"',
