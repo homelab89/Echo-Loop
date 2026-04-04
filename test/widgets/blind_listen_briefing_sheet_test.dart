@@ -119,7 +119,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 无音频时长时不显示耳机图标
-      expect(find.byIcon(Icons.graphic_eq), findsNothing);
+      expect(find.byIcon(Icons.schedule), findsNothing);
     });
   });
 }
