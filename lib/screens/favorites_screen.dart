@@ -422,8 +422,20 @@ class _AudioBookmarkGroup extends ConsumerWidget {
           ],
         ),
         children: [
-          for (final item in bookmarks)
-            _BookmarkSentenceTile(bookmark: item.bookmark, audioId: audioId),
+          for (int i = 0; i < bookmarks.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                thickness: 0.5,
+                indent: AppSpacing.m,
+                endIndent: AppSpacing.m,
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+            _BookmarkSentenceTile(
+              bookmark: bookmarks[i].bookmark,
+              audioId: audioId,
+            ),
+          ],
         ],
       ),
     );
@@ -589,9 +601,11 @@ class _BookmarkSentenceTileState extends ConsumerState<_BookmarkSentenceTile> {
           // 主行：播放按钮 + 句子文本 + 展开箭头
           ListTile(
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.m,
+              horizontal: AppSpacing.s,
             ),
             leading: IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
               icon: Icon(
                 _isPlaying
                     ? Icons.stop_circle_outlined
