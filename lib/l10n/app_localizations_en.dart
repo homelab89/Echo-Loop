@@ -446,26 +446,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stepBlindListening => 'Blind Listening';
 
   @override
-  String get stepBlindListeningDesc => 'Listen 1-2 times without subtitles';
+  String get stepBlindListeningDesc =>
+      'Blind listen to get the overall difficulty and gist';
 
   @override
   String get stepIntensiveListening => 'Intensive Listening';
 
   @override
   String get stepIntensiveListeningDesc =>
-      'Listen sentence by sentence, mark difficult ones';
+      'Listen sentence by sentence, understand and mark difficult ones';
 
   @override
   String get stepShadowing => 'Listen & Repeat';
 
   @override
-  String get stepShadowingDesc => 'Repeat difficult sentences with subtitles';
+  String get stepShadowingDesc => 'Repeat weak sentences over and over';
 
   @override
   String get stepRetelling => 'Retelling';
 
   @override
-  String get stepRetellingDesc => 'Retell paragraphs in your own words';
+  String get stepRetellingDesc =>
+      'Retell the gist of each paragraph in English';
 
   @override
   String get reviewRound0 => 'Review 1';

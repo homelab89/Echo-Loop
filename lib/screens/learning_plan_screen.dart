@@ -1713,8 +1713,8 @@ class _ReviewRoundSection extends ConsumerWidget {
         iconColor: Colors.blue,
         name: l10n.stepBlindListening,
         description: isZh
-            ? '全文盲听，不看字幕先听一遍。'
-            : 'Listen to the full audio once without subtitles.',
+            ? '再次盲听，感受理解力的变化'
+            : 'Listen again to feel how your comprehension has improved',
       ),
       SubStageType.intensiveListen => _StepData(
         icon: Icons.hearing,
@@ -1739,24 +1739,24 @@ class _ReviewRoundSection extends ConsumerWidget {
         iconColor: Colors.orange,
         name: isZh ? '难句补练' : 'Difficult sentence practice',
         description: isZh
-            ? '先盲听，听不懂点击”听不懂”，再跟读补练。'
-            : 'Blind listen first; if unclear, tap can\'t understand and practice.',
+            ? '重听难句，听不懂就跟读补练'
+            : 'Re-listen to difficult sentences; shadow the ones you still miss',
       ),
       SubStageType.reviewRetellParagraph => _StepData(
         icon: Icons.chat,
         iconColor: Colors.teal,
         name: isZh ? '段落复述' : 'Paragraph retelling',
         description: isZh
-            ? '听完一段，用自己的话（英文）复述。'
-            : 'Listen to a paragraph, then retell it in your own words.',
+            ? '再次复述，提升理解和表达能力'
+            : 'Retell again to improve comprehension and expression',
       ),
       SubStageType.reviewRetellSummary => _StepData(
         icon: Icons.summarize,
         iconColor: Colors.cyan,
         name: isZh ? '全文总结复述' : 'Summary retelling',
         description: isZh
-            ? '用 3-5 句话概述全文大意。'
-            : 'Summarize the full audio in 3-5 sentences.',
+            ? '用几句话总结全文，看看要点抓住了没'
+            : 'Summarize the full text in a few sentences to check your grasp of the key points',
       ),
     };
   }

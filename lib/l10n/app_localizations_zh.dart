@@ -444,25 +444,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stepBlindListening => '全文盲听';
 
   @override
-  String get stepBlindListeningDesc => '不看字幕完整听 1-2 遍';
+  String get stepBlindListeningDesc => '先盲听，感受整体难度和大意';
 
   @override
   String get stepIntensiveListening => '逐句精听';
 
   @override
-  String get stepIntensiveListeningDesc => '逐句盲听，标记难句';
+  String get stepIntensiveListeningDesc => '逐句听，理解并标记难句';
 
   @override
   String get stepShadowing => '难句跟读';
 
   @override
-  String get stepShadowingDesc => '针对难句反复跟读，直到更顺口';
+  String get stepShadowingDesc => '针对弱项句子反复跟读';
 
   @override
   String get stepRetelling => '段落复述';
 
   @override
-  String get stepRetellingDesc => '听完一段，用自己的话（英文）复述';
+  String get stepRetellingDesc => '用英文复述每段大意';
 
   @override
   String get reviewRound0 => '首轮复习';

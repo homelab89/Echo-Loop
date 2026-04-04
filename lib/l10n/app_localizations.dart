@@ -935,7 +935,7 @@ abstract class AppLocalizations {
   /// No description provided for @stepBlindListeningDesc.
   ///
   /// In en, this message translates to:
-  /// **'Listen 1-2 times without subtitles'**
+  /// **'Blind listen to get the overall difficulty and gist'**
   String get stepBlindListeningDesc;
 
   /// No description provided for @stepIntensiveListening.
@@ -947,7 +947,7 @@ abstract class AppLocalizations {
   /// No description provided for @stepIntensiveListeningDesc.
   ///
   /// In en, this message translates to:
-  /// **'Listen sentence by sentence, mark difficult ones'**
+  /// **'Listen sentence by sentence, understand and mark difficult ones'**
   String get stepIntensiveListeningDesc;
 
   /// No description provided for @stepShadowing.
@@ -959,7 +959,7 @@ abstract class AppLocalizations {
   /// No description provided for @stepShadowingDesc.
   ///
   /// In en, this message translates to:
-  /// **'Repeat difficult sentences with subtitles'**
+  /// **'Repeat weak sentences over and over'**
   String get stepShadowingDesc;
 
   /// No description provided for @stepRetelling.
@@ -971,7 +971,7 @@ abstract class AppLocalizations {
   /// No description provided for @stepRetellingDesc.
   ///
   /// In en, this message translates to:
-  /// **'Retell paragraphs in your own words'**
+  /// **'Retell the gist of each paragraph in English'**
   String get stepRetellingDesc;
 
   /// No description provided for @reviewRound0.
