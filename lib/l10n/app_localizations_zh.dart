@@ -1116,12 +1116,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String retellParagraphProgress(int current, int total) {
-    return '段落 $current/$total';
+    return '第 $current/$total 段';
   }
 
   @override
   String retellParagraphDuration(String duration) {
-    return '段落时长 $duration';
+    return '$duration秒';
   }
 
   @override
@@ -1848,12 +1848,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String blindListenSegmentProgress(int current, int total) {
-    return '段落 $current/$total';
+    return '第 $current/$total 段';
   }
 
   @override
   String blindListenSegmentDuration(int duration) {
-    return '段落时长 ${duration}s';
+    return '$duration秒';
   }
 
   @override

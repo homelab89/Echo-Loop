@@ -743,7 +743,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
                 state.totalParagraphs,
               ),
               durationText: l10n.retellParagraphDuration(
-                '${paragraphDuration.inSeconds}s',
+                '${paragraphDuration.inSeconds}',
               ),
               paragraphContent: ParagraphSentenceListCard(
                 sentences: sentences,

@@ -466,7 +466,7 @@ class _BlindListenPlayerScreenState
             playerState.totalParagraphs,
           ),
           durationText: l10n.retellParagraphDuration(
-            '${paragraphDuration.inSeconds}s',
+            '${paragraphDuration.inSeconds}',
           ),
           paragraphContent: ParagraphSentenceListCard(
             sentences: sentences,

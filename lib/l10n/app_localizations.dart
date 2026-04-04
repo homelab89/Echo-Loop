@@ -2111,7 +2111,7 @@ abstract class AppLocalizations {
   /// No description provided for @retellParagraphDuration.
   ///
   /// In en, this message translates to:
-  /// **'Duration {duration}'**
+  /// **'{duration}s'**
   String retellParagraphDuration(String duration);
 
   /// No description provided for @retellPreListenHint.
@@ -3419,7 +3419,7 @@ abstract class AppLocalizations {
   /// No description provided for @blindListenSegmentDuration.
   ///
   /// In en, this message translates to:
-  /// **'Duration {duration}s'**
+  /// **'{duration}s'**
   String blindListenSegmentDuration(int duration);
 
   /// No description provided for @blindListenListeningHint.

@@ -465,14 +465,14 @@
   },
 
   "retellTitle": "段落复述",
-  "retellParagraphProgress": "段落 {current}/{total}",
+  "retellParagraphProgress": "第 {current}/{total} 段",
   "@retellParagraphProgress": {
     "placeholders": {
       "current": { "type": "int" },
       "total": { "type": "int" }
     }
   },
-  "retellParagraphDuration": "段落时长 {duration}",
+  "retellParagraphDuration": "{duration}秒",
   "@retellParagraphDuration": {
     "placeholders": {
       "duration": { "type": "String" }
@@ -772,8 +772,8 @@
   "practiceRemoveMark": "取消标记",
   "practiceAddMark": "重新标记",
 
-  "blindListenSegmentProgress": "段落 {current}/{total}",
-  "blindListenSegmentDuration": "段落时长 {duration}s",
+  "blindListenSegmentProgress": "第 {current}/{total} 段",
+  "blindListenSegmentDuration": "{duration}秒",
   "blindListenListeningHint": "认真听...",
   "blindListenPreListenHint": "先听再回忆",
   "blindListenRepeatInfo": "第 {current}/{total} 遍",

@@ -1156,7 +1156,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String retellParagraphDuration(String duration) {
-    return 'Duration $duration';
+    return '${duration}s';
   }
 
   @override
@@ -1907,7 +1907,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String blindListenSegmentDuration(int duration) {
-    return 'Duration ${duration}s';
+    return '${duration}s';
   }
 
   @override
