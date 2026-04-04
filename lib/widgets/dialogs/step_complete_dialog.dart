@@ -250,6 +250,13 @@ class _StepCompleteDialogState extends State<StepCompleteDialog> {
           label: Text(difficultyLabels[level]!),
           selected: isSelected,
           showCheckmark: false,
+          side: isSelected
+              ? BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                )
+              : BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
           onSelected: (selected) {
             setState(() {
               _selectedDifficulty = selected ? level : null;

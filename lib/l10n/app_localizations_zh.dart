@@ -593,19 +593,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get nextStage => '下一步';
 
   @override
-  String get difficultyVeryEasy => '很轻松';
+  String get difficultyVeryEasy => '很简单';
 
   @override
-  String get difficultyEasy => '偏轻松';
+  String get difficultyEasy => '简单';
 
   @override
-  String get difficultyMedium => '还可以';
+  String get difficultyMedium => '中等';
 
   @override
-  String get difficultyHard => '偏难';
+  String get difficultyHard => '困难';
 
   @override
-  String get difficultyVeryHard => '很难';
+  String get difficultyVeryHard => '很困难';
 
   @override
   String get countdownNextPlay => '即将开始下一遍';

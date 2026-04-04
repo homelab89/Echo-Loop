@@ -607,7 +607,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get difficultyEasy => 'Easy';
 
   @override
-  String get difficultyMedium => 'Okay';
+  String get difficultyMedium => 'Medium';
 
   @override
   String get difficultyHard => 'Hard';

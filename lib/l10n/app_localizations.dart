@@ -1217,7 +1217,7 @@ abstract class AppLocalizations {
   /// No description provided for @difficultyMedium.
   ///
   /// In en, this message translates to:
-  /// **'Okay'**
+  /// **'Medium'**
   String get difficultyMedium;
 
   /// No description provided for @difficultyHard.
