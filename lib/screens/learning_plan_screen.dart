@@ -776,14 +776,14 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
                         !(_isFirstLearnExpanded ?? true),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.l),
+                const SizedBox(height: AppSpacing.m),
                 ...List.generate(reviewStages.length, (index) {
                   final review = reviewStages[index];
                   return Padding(
                     padding: EdgeInsets.only(
                       bottom: index == reviewStages.length - 1
                           ? 0
-                          : AppSpacing.l,
+                          : AppSpacing.m,
                     ),
                     child: _ReviewRoundSection(
                       l10n: l10n,
@@ -1275,7 +1275,8 @@ class _FirstStudySection extends ConsumerWidget {
           ),
         ),
         // 展开的步骤列表（无动画，直接切换）
-        if (isExpanded)
+        if (isExpanded) ...[
+          const SizedBox(height: AppSpacing.s),
           Column(
             children: List.generate(subStages.length, (index) {
               final subStage = subStages[index];
@@ -1365,12 +1366,14 @@ class _FirstStudySection extends ConsumerWidget {
                 description: stepData.description,
                 isCompleted: isCompleted,
                 isCurrent: isCurrent,
+                isFirst: index == 0,
                 isLast: index == subStages.length - 1,
                 subtitle: subtitle,
                 onTap: onTap,
               );
             }),
           ),
+        ],
       ],
     );
   }
@@ -1575,6 +1578,7 @@ class _StepCard extends StatelessWidget {
   final String description;
   final bool isCompleted;
   final bool isCurrent;
+  final bool isFirst;
   final bool isLast;
 
   /// 可选的附加信息（如"已听 X 遍"）
@@ -1591,6 +1595,7 @@ class _StepCard extends StatelessWidget {
     required this.description,
     required this.isCompleted,
     required this.isCurrent,
+    required this.isFirst,
     required this.isLast,
     this.subtitle,
     this.onTap,
@@ -1604,11 +1609,20 @@ class _StepCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 左侧时间线
+          // 左侧时间线（圆形指示器垂直居中）
           SizedBox(
             width: 40,
             child: Column(
               children: [
+                // 上方竖线（第一个卡片用透明占位）
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    color: isFirst
+                        ? Colors.transparent
+                        : theme.colorScheme.surfaceContainerHighest,
+                  ),
+                ),
                 Container(
                   width: 28,
                   height: 28,
@@ -1648,13 +1662,15 @@ class _StepCard extends StatelessWidget {
                           ),
                   ),
                 ),
-                if (!isLast)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      color: theme.colorScheme.surfaceContainerHighest,
-                    ),
+                // 下方竖线（最后一个卡片用透明占位）
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    color: isLast
+                        ? Colors.transparent
+                        : theme.colorScheme.surfaceContainerHighest,
                   ),
+                ),
               ],
             ),
           ),
@@ -2131,7 +2147,8 @@ class _ReviewRoundSection extends ConsumerWidget {
             ),
           ),
         ),
-        if (isExpanded)
+        if (isExpanded) ...[
+          const SizedBox(height: AppSpacing.s),
           Column(
             children: List.generate(subStages.length, (index) {
               final subStage = subStages[index];
@@ -2199,12 +2216,14 @@ class _ReviewRoundSection extends ConsumerWidget {
                 description: subStageData.description,
                 isCompleted: isCompleted,
                 isCurrent: isCurrent,
+                isFirst: index == 0,
                 isLast: index == subStages.length - 1,
                 subtitle: subtitle,
                 onTap: onTap,
               );
             }),
           ),
+        ],
       ],
     );
   }
