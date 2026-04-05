@@ -144,35 +144,39 @@ class _BookmarkSentenceDetailScreenState
           },
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
-        child: Column(
-          children: [
-            // 句子时间信息
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.s),
-              child: Row(
-                children: [
-                  Text(
-                    timeRangeText,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    durationText,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+      body: Column(
+        children: [
+          // 句子时间信息
+          Padding(
+            padding: const EdgeInsets.only(
+              left: AppSpacing.l,
+              right: AppSpacing.l,
+              top: AppSpacing.s,
             ),
-            const SizedBox(height: AppSpacing.m),
+            child: Row(
+              children: [
+                Text(
+                  timeRangeText,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  durationText,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.m),
 
-            // 主体内容：解析/翻译/意群 + 句子文本
-            Expanded(
+          // 主体内容：解析/翻译/意群 + 句子文本
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
               child: AnnotationContentView(
                 text: bm.sentenceText,
                 aiNotifier: ref.read(sentenceAiNotifierProvider),
@@ -188,20 +192,20 @@ class _BookmarkSentenceDetailScreenState
                 },
               ),
             ),
+          ),
 
-            // 底部播放按钮
-            Padding(
-              padding: const EdgeInsets.only(
-                bottom: AppSpacing.l,
-                top: AppSpacing.m,
-              ),
-              child: _PlayButton(
-                isPlaying: _isPlaying,
-                onTap: _playSentence,
-              ),
+          // 底部播放按钮（与精听页面 footer 位置一致）
+          Padding(
+            padding: const EdgeInsets.only(
+              top: AppSpacing.m,
+              bottom: 64,
             ),
-          ],
-        ),
+            child: _PlayButton(
+              isPlaying: _isPlaying,
+              onTap: _playSentence,
+            ),
+          ),
+        ],
       ),
     );
   }
