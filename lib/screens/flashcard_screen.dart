@@ -102,7 +102,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
         child: Scaffold(
           appBar: AppBar(
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(Icons.close),
               onPressed: _handleExit,
             ),
             title: Text(

@@ -186,7 +186,6 @@ class _FrontContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
     final word = item;
     final dict = item.dictEntry;
 
@@ -199,12 +198,6 @@ class _FrontContent extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 右上角取消收藏
-            Align(
-              alignment: Alignment.topRight,
-              child: _UnsaveButton(onUnsave: onUnsave, isUnsaved: isUnsaved),
-            ),
-
             const Spacer(),
 
             // 柯林斯星级（角落淡显）
@@ -259,12 +252,10 @@ class _FrontContent extends StatelessWidget {
 
             const Spacer(),
 
-            // 提示文字
-            Text(
-              l10n.flashcardViewAnswer,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
+            // 收藏切换按钮
+            _SaveToggleButton(
+              onTap: onUnsave,
+              isUnsaved: isUnsaved,
             ),
 
             const SizedBox(height: AppSpacing.m),
@@ -362,7 +353,6 @@ class _BackContentState extends ConsumerState<_BackContent> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
     final word = widget.item;
     final dict = widget.item.dictEntry;
 
@@ -374,15 +364,6 @@ class _BackContentState extends ConsumerState<_BackContent> {
         padding: const EdgeInsets.all(AppSpacing.l),
         child: Column(
           children: [
-            // 右上角取消收藏
-            Align(
-              alignment: Alignment.topRight,
-              child: _UnsaveButton(
-                onUnsave: widget.onUnsave,
-                isUnsaved: widget.isUnsaved,
-              ),
-            ),
-
             // 主体内容整体居中（单词+释义+例句作为一个块）
             Expanded(
               child: Center(
@@ -476,15 +457,13 @@ class _BackContentState extends ConsumerState<_BackContent> {
               ),
             ),
 
-            // 提示文字
-            Center(
-              child: Text(
-                l10n.flashcardTapToFlip,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.outline,
-                ),
-              ),
+            // 收藏切换按钮
+            const SizedBox(height: AppSpacing.m),
+            _SaveToggleButton(
+              onTap: widget.onUnsave,
+              isUnsaved: widget.isUnsaved,
             ),
+
           ],
         ),
       ),
@@ -885,12 +864,12 @@ class _BackContentState extends ConsumerState<_BackContent> {
   }
 }
 
-/// 收藏状态切换按钮 + 提示
-class _UnsaveButton extends StatelessWidget {
-  final VoidCallback onUnsave;
+/// 收藏状态切换按钮（正面/背面共享）
+class _SaveToggleButton extends StatelessWidget {
+  final VoidCallback onTap;
   final bool isUnsaved;
 
-  const _UnsaveButton({required this.onUnsave, this.isUnsaved = false});
+  const _SaveToggleButton({required this.onTap, this.isUnsaved = false});
 
   @override
   Widget build(BuildContext context) {
@@ -898,26 +877,32 @@ class _UnsaveButton extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return GestureDetector(
-      onTap: onUnsave,
+      onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            isUnsaved
-                ? l10n.favoritesVocabularyRemoved
-                : l10n.flashcardUnsaveHint,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.outline.withValues(alpha: 0.6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.m,
+          vertical: AppSpacing.s,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isUnsaved ? Icons.bookmark_border : Icons.bookmark,
+              size: 20,
+              color: isUnsaved ? theme.colorScheme.outline : Colors.amber,
             ),
-          ),
-          const SizedBox(width: 4),
-          Icon(
-            isUnsaved ? Icons.bookmark_border : Icons.bookmark,
-            size: 20,
-            color: isUnsaved ? Colors.grey : Colors.amber,
-          ),
-        ],
+            const SizedBox(width: 6),
+            Text(
+              isUnsaved
+                  ? l10n.favoritesVocabularyRemoved
+                  : l10n.flashcardUnsaveHint,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
