@@ -375,7 +375,9 @@ class _AudioBookmarkGroup extends ConsumerWidget {
       child: ExpansionTile(
         initiallyExpanded: false,
         iconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-        collapsedIconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+        collapsedIconColor: theme.colorScheme.onSurfaceVariant.withValues(
+          alpha: 0.4,
+        ),
         tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
         title: Row(
           children: [
@@ -555,16 +557,12 @@ class _BookmarkSentenceTileState extends ConsumerState<_BookmarkSentenceTile> {
         bookmarkDao.removeBookmark(widget.audioId, bm.sentenceIndex);
       },
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.s,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.s),
         leading: IconButton(
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
           icon: Icon(
-            _isPlaying
-                ? Icons.stop_circle_outlined
-                : Icons.play_circle_outline,
+            _isPlaying ? Icons.stop_circle_outlined : Icons.play_circle_outline,
             size: 28,
           ),
           color: _isPlaying
@@ -572,12 +570,7 @@ class _BookmarkSentenceTileState extends ConsumerState<_BookmarkSentenceTile> {
               : theme.colorScheme.primary,
           onPressed: _playSentence,
         ),
-        title: Text(
-          bm.sentenceText,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodyMedium,
-        ),
+        title: Text(bm.sentenceText, style: theme.textTheme.bodyMedium),
         trailing: SizedBox(
           width: 40,
           height: 40,
@@ -832,7 +825,9 @@ class _SavedPhraseTileState extends ConsumerState<_SavedPhraseTile> {
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: ExpansionTile(
           iconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          collapsedIconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+          collapsedIconColor: theme.colorScheme.onSurfaceVariant.withValues(
+            alpha: 0.4,
+          ),
           tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
           onExpansionChanged: (expanded) {
             setState(() => _isExpanded = expanded);
@@ -1118,7 +1113,9 @@ class _SavedWordTileState extends ConsumerState<_SavedWordTile> {
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: ExpansionTile(
           iconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          collapsedIconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+          collapsedIconColor: theme.colorScheme.onSurfaceVariant.withValues(
+            alpha: 0.4,
+          ),
           tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
           onExpansionChanged: (expanded) {
             setState(() => _isExpanded = expanded);
