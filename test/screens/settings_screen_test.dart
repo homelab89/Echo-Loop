@@ -80,7 +80,7 @@ void main() {
         expect(find.text('Terms of Service'), findsOneWidget);
         expect(find.text('Privacy Policy'), findsOneWidget);
         expect(find.text('Write Feedback'), findsOneWidget);
-        expect(find.text('v1.0.0'), findsOneWidget);
+        expect(find.text('v1.0.0 (Debug)'), findsOneWidget);
       });
 
       testWidgets('显示外观标题', (tester) async {

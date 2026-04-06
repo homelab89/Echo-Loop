@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../database/app_database.dart';
 import '../database/providers.dart';
@@ -286,7 +286,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Center(
               child: Text(
-                'v$version',
+                kReleaseMode ? 'v$version' : 'v$version (Debug)',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -375,9 +375,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context,
       title: l10n.developer,
       children: [
-        // Release 构建下显示关闭开发者选项的开关
-        if (kReleaseMode)
-          SwitchListTile(
+        // 关闭开发者选项的开关（所有构建模式下均可见）
+        SwitchListTile(
             secondary: _emojiIcon('🛠️'),
             title: Text(l10n.developerOptionsDisable),
             value: true,

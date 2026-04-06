@@ -27,9 +27,8 @@ class DeveloperOptions extends Notifier<bool> {
 
   /// 从 SharedPreferences 加载持久化的解锁状态。
   ///
-  /// 编译期强制开启时跳过读取。
+  /// 从持久化存储加载开发者选项的开关状态。
   Future<void> _loadFromPrefs() async {
-    if (showDeveloperOptions) return;
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getBool(_devOptionsKey) ?? false;
     if (saved != state) state = saved;
@@ -37,10 +36,9 @@ class DeveloperOptions extends Notifier<bool> {
 
   /// 设置开发者选项开关并持久化。
   ///
-  /// 编译期强制开启时只更新内存状态，不写入 SharedPreferences。
+  /// 设置开发者选项开关并持久化到 SharedPreferences。
   Future<void> setEnabled(bool value) async {
     state = value;
-    if (showDeveloperOptions) return;
     final prefs = await SharedPreferences.getInstance();
     if (value) {
       await prefs.setBool(_devOptionsKey, true);
