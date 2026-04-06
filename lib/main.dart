@@ -134,8 +134,12 @@ void main() async {
     unawaited(_triggerNetworkPermission());
   }
 
-  // 初始化 Firebase（所有平台都初始化，采集开关由通道选择逻辑控制）
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // 初始化 Firebase（Android 暂未配置，跳过）
+  if (!Platform.isAndroid) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
 
   // 初始化分析服务（根据 geo 选择 Firebase/友盟/Log 通道）
   final analyticsService = await initAnalyticsService(prefs);
