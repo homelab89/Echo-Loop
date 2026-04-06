@@ -55,8 +55,8 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Theme Mode'), findsOneWidget);
-        // 默认 system 模式
-        expect(find.text('Follow System'), findsOneWidget);
+        // 默认 system 模式（主题和语言都显示"Follow System"）
+        expect(find.text('Follow System'), findsAtLeast(1));
       });
 
       testWidgets('显示语言设置项', (tester) async {
@@ -66,8 +66,8 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Language'), findsOneWidget);
-        // 默认英文
-        expect(find.text('English'), findsOneWidget);
+        // 默认跟随系统
+        expect(find.text('Follow System'), findsAtLeast(1));
       });
 
       testWidgets('显示关于信息区域', (tester) async {
@@ -186,7 +186,8 @@ void main() {
         await tester.tap(find.text('Language'));
         await tester.pumpAndSettle();
 
-        // 应弹出对话框，显示两个选项
+        // 应弹出对话框，显示三个选项
+        expect(find.text('Follow System'), findsAtLeast(1));
         expect(find.text('English'), findsAtLeast(1));
         expect(find.text('简体中文'), findsOneWidget);
       });
@@ -197,10 +198,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.scrollUntilVisible(
-          find.text('Time Machine'),
-          200,
-        );
+        await tester.scrollUntilVisible(find.text('Time Machine'), 200);
         await tester.pumpAndSettle();
         await tester.tap(find.text('Time Machine'));
         await tester.pumpAndSettle();
@@ -223,10 +221,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.scrollUntilVisible(
-          find.text('Time Machine'),
-          200,
-        );
+        await tester.scrollUntilVisible(find.text('Time Machine'), 200);
         await tester.pumpAndSettle();
         await tester.tap(find.text('Time Machine'));
         await tester.pumpAndSettle();
