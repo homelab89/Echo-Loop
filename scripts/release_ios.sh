@@ -272,6 +272,13 @@ fi
 log "IPA ready: $IPA_PATH"
 log "Artifacts kept in: $WORK_DIR"
 
+# 复制到统一输出目录
+RELEASE_DIR="$ROOT_DIR/build/release"
+IPA_NAME="Echo-Loop-${BUILD_NAME}-ios.ipa"
+mkdir -p "$RELEASE_DIR"
+cp "$IPA_PATH" "$RELEASE_DIR/$IPA_NAME"
+log "Copied to: build/release/$IPA_NAME"
+
 if [[ $SKIP_UPLOAD -eq 1 ]]; then
   log "Skipping upload as requested"
   exit 0
