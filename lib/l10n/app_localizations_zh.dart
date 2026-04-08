@@ -1011,6 +1011,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get listenAndRepeatRecognitionError => '识别错误';
 
   @override
+  String get listenAndRepeatRecordingOnly => '录音';
+
+  @override
   String get listenAndRepeatCompleteTitle => '跟读完成';
 
   @override

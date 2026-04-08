@@ -1036,6 +1036,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listenAndRepeatRecognitionError => 'Recognition error';
 
   @override
+  String get listenAndRepeatRecordingOnly => 'Recording';
+
+  @override
   String get listenAndRepeatCompleteTitle => 'Listen & Repeat Complete';
 
   @override

@@ -89,7 +89,12 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
     final theme = Theme.of(context);
     final hasTranscript = (widget.attempt.finalTranscript ?? '').isNotEmpty;
 
-    // 无识别结果时降级为纯文字反馈
+    // 无识别结果但有录音 → 显示可播放的「录音」胶囊
+    if (!hasTranscript && widget.attempt.hasRecording) {
+      return _buildRecordingOnlyBadge(theme);
+    }
+
+    // 无识别结果且无录音 → 纯文字反馈
     if (!hasTranscript) {
       return Text(
         _feedbackText(),
@@ -169,6 +174,52 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
     await _playbackService.stop();
     if (!mounted) return;
     setState(() => _isPlaying = false);
+  }
+
+  /// 无 ASR 结果但有录音时的降级胶囊：显示「录音」+ 播放图标。
+  Widget _buildRecordingOnlyBadge(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
+        : theme.colorScheme.onSurface.withValues(alpha: 0.7);
+    final bgColor = isDark
+        ? theme.colorScheme.surfaceContainerHighest
+        : theme.colorScheme.surfaceContainerHigh;
+    final borderColor = isDark
+        ? theme.colorScheme.outline.withValues(alpha: 0.3)
+        : theme.colorScheme.outline.withValues(alpha: 0.2);
+
+    return TappableWrapper(
+      onTap: _handleTap,
+      feedbackType: TapFeedback.opacity,
+      pressedOpacity: 0.6,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.l10n.listenAndRepeatRecordingOnly,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              _isPlaying ? Icons.stop_rounded : Icons.volume_up_outlined,
+              size: 16,
+              color: textColor.withValues(alpha: 0.7),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String _ratingLabel() {

@@ -1934,6 +1934,12 @@ abstract class AppLocalizations {
   /// **'Recognition error'**
   String get listenAndRepeatRecognitionError;
 
+  /// No description provided for @listenAndRepeatRecordingOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording'**
+  String get listenAndRepeatRecordingOnly;
+
   /// No description provided for @listenAndRepeatCompleteTitle.
   ///
   /// In en, this message translates to:

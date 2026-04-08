@@ -542,6 +542,7 @@
   "listenAndRepeatRecognitionPermissionDenied": "Microphone or speech recognition permission is required.",
   "listenAndRepeatRecognitionUnavailable": "Speech recognition is unavailable on this device.",
   "listenAndRepeatRecognitionError": "Recognition error",
+  "listenAndRepeatRecordingOnly": "Recording",
   "listenAndRepeatCompleteTitle": "Listen & Repeat Complete",
   "listenAndRepeatCompleteMessage": "You've completed listen & repeat for all {total} difficult sentences.",
   "@listenAndRepeatCompleteMessage": {

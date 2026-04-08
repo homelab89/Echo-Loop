@@ -10,6 +10,7 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 
 import '../../models/sentence.dart';
 import '../../services/app_logger.dart';
@@ -317,7 +318,9 @@ class RepeatFlowEngine {
     final sentence = currentSentence;
     if (sentence == null) return;
 
-    if (!callbacks.hasDetectedSpeech()) {
+    // iOS 上无语音时走快速取消（避免等 finalTranscriptReady 超时）。
+    // Android 上始终走评估（VAD 可能不工作，但录音文件有效，显示"录音"badge）。
+    if (!callbacks.hasDetectedSpeech() && !Platform.isAndroid) {
       AppLogger.log(logTag, '手动停止录音: 无语音 → 取消');
       await callbacks.cancelRecording();
       _updateState(
@@ -328,7 +331,7 @@ class RepeatFlowEngine {
       return;
     }
 
-    AppLogger.log(logTag, '手动停止录音: 有语音 → 评估');
+    AppLogger.log(logTag, '手动停止录音 → 评估');
     await callbacks.stopAndEvaluate(referenceText: sentence.text);
   }
 

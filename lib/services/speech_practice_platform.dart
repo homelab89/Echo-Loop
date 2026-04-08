@@ -87,7 +87,8 @@ class SpeechPracticePlatform implements SpeechPracticeBackend {
   }
 
   @override
-  bool get isSupported => !kIsWeb && (Platform.isIOS || Platform.isMacOS);
+  bool get isSupported =>
+      !kIsWeb && (Platform.isIOS || Platform.isMacOS || Platform.isAndroid);
 
   @override
   Future<SpeechPracticePermissionState> getPermissionStatus() async {
@@ -180,7 +181,7 @@ class SpeechPracticePlatform implements SpeechPracticeBackend {
     if (!isSupported) {
       throw const SpeechPracticePlatformException(
         'notAvailable',
-        'Speech practice is only supported on iOS and macOS',
+        'Speech practice is not supported on this platform',
       );
     }
   }
