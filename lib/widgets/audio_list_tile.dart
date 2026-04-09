@@ -347,7 +347,7 @@ class AudioListTile extends ConsumerWidget {
         angle: 0.52, // ≈30° 倾斜
         child: Icon(
           audioItem.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-          size: 20,
+          size: 16,
           color: audioItem.isPinned
               ? AppTheme.pinColor
               : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
@@ -391,6 +391,7 @@ class AudioListTile extends ConsumerWidget {
     );
 
     return PopupMenuButton<String>(
+      iconSize: 18,
       iconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
       itemBuilder: (context) => [
         PopupMenuItem(

@@ -215,7 +215,7 @@ class _CollectionGridTile extends ConsumerWidget {
                     height: 32,
                     child: IconButton(
                       padding: EdgeInsets.zero,
-                      iconSize: 18,
+                      iconSize: 16,
                       icon: Transform.rotate(
                         angle: 0.52,
                         child: Icon(
@@ -361,7 +361,7 @@ class _CollectionListTile extends ConsumerWidget {
                         : Theme.of(
                             context,
                           ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                    size: 20,
+                    size: 16,
                   ),
                 ),
                 padding: EdgeInsets.zero,
@@ -376,7 +376,7 @@ class _CollectionListTile extends ConsumerWidget {
               width: 36,
               child: PopupMenuButton(
                 padding: EdgeInsets.zero,
-                iconSize: 22,
+                iconSize: 18,
                 iconColor: Theme.of(
                   context,
                 ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
