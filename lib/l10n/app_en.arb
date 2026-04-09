@@ -726,6 +726,65 @@
     }
   },
 
+  "aiSectionTitle": "AI",
+  "speechRecognition": "Speech Recognition",
+  "speechRecognitionNotConfigured": "Not configured",
+  "speechRecognitionEnabled": "Enabled",
+  "speechRecognitionDisabled": "Disabled",
+  "speechRecognitionDescription": "Your device does not support Google speech services. Enable local AI model for offline speech recognition.",
+  "localSpeechRecognition": "Local Speech Recognition",
+  "speechModelSize": "Model size: ~{size}",
+  "@speechModelSize": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "speechModelReady": "Ready · {size}",
+  "@speechModelReady": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "speechModelDownloading": "Downloading... {progress}",
+  "@speechModelDownloading": {
+    "placeholders": {
+      "progress": { "type": "String" }
+    }
+  },
+  "speechModelDownloadFailed": "Download failed. Tap to retry.",
+  "deleteModel": "Delete Model ({size})",
+  "@deleteModel": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "deleteModelConfirmTitle": "Delete Model?",
+  "deleteModelConfirmMessage": "This will free up {size} of storage space.",
+  "@deleteModelConfirmMessage": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "disableSpeechRecognitionTitle": "Disable Speech Recognition?",
+  "disableSpeechRecognitionMessage": "Speech practice scoring will be unavailable. Delete the downloaded model?",
+  "keepModel": "Keep Model",
+  "speechRecognitionRequiredTitle": "Speech Recognition Required",
+  "speechRecognitionRequiredMessage": "Your device does not support Google speech services. Download a local speech recognition model ({size}) to enable voice practice.",
+  "@speechRecognitionRequiredMessage": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "downloadAndEnable": "Download & Enable",
+  "notNow": "Not Now",
+  "speechModelRepairTitle": "Model Download Incomplete",
+  "speechModelRepairMessage": "The speech recognition model needs to be re-downloaded to use voice practice.",
+  "downloadNow": "Download Now",
+  "later": "Later",
+  "speechRecognitionNotEnabled": "Voice recognition not enabled. Enable in Settings.",
+  "retryDownload": "Retry",
+  "downloadingSpeechModel": "Downloading Speech Recognition Model",
+
   "developer": "Developer",
   "developerOptionsEnabled": "Developer options enabled",
   "developerOptionsDisable": "Disable developer options",

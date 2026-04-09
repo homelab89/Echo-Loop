@@ -2414,6 +2414,174 @@ abstract class AppLocalizations {
   /// **'Next sentence in {seconds}s'**
   String reviewDifficultPracticeAdvancing(int seconds);
 
+  /// No description provided for @aiSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI'**
+  String get aiSectionTitle;
+
+  /// No description provided for @speechRecognition.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech Recognition'**
+  String get speechRecognition;
+
+  /// No description provided for @speechRecognitionNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Not configured'**
+  String get speechRecognitionNotConfigured;
+
+  /// No description provided for @speechRecognitionEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get speechRecognitionEnabled;
+
+  /// No description provided for @speechRecognitionDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get speechRecognitionDisabled;
+
+  /// No description provided for @speechRecognitionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your device does not support Google speech services. Enable local AI model for offline speech recognition.'**
+  String get speechRecognitionDescription;
+
+  /// No description provided for @localSpeechRecognition.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Speech Recognition'**
+  String get localSpeechRecognition;
+
+  /// No description provided for @speechModelSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Model size: ~{size}'**
+  String speechModelSize(String size);
+
+  /// No description provided for @speechModelReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready · {size}'**
+  String speechModelReady(String size);
+
+  /// No description provided for @speechModelDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading... {progress}'**
+  String speechModelDownloading(String progress);
+
+  /// No description provided for @speechModelDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed. Tap to retry.'**
+  String get speechModelDownloadFailed;
+
+  /// No description provided for @deleteModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Model ({size})'**
+  String deleteModel(String size);
+
+  /// No description provided for @deleteModelConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Model?'**
+  String get deleteModelConfirmTitle;
+
+  /// No description provided for @deleteModelConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will free up {size} of storage space.'**
+  String deleteModelConfirmMessage(String size);
+
+  /// No description provided for @disableSpeechRecognitionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable Speech Recognition?'**
+  String get disableSpeechRecognitionTitle;
+
+  /// No description provided for @disableSpeechRecognitionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech practice scoring will be unavailable. Delete the downloaded model?'**
+  String get disableSpeechRecognitionMessage;
+
+  /// No description provided for @keepModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Model'**
+  String get keepModel;
+
+  /// No description provided for @speechRecognitionRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech Recognition Required'**
+  String get speechRecognitionRequiredTitle;
+
+  /// No description provided for @speechRecognitionRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your device does not support Google speech services. Download a local speech recognition model ({size}) to enable voice practice.'**
+  String speechRecognitionRequiredMessage(String size);
+
+  /// No description provided for @downloadAndEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Download & Enable'**
+  String get downloadAndEnable;
+
+  /// No description provided for @notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Now'**
+  String get notNow;
+
+  /// No description provided for @speechModelRepairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Download Incomplete'**
+  String get speechModelRepairTitle;
+
+  /// No description provided for @speechModelRepairMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The speech recognition model needs to be re-downloaded to use voice practice.'**
+  String get speechModelRepairMessage;
+
+  /// No description provided for @downloadNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Now'**
+  String get downloadNow;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @speechRecognitionNotEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice recognition not enabled. Enable in Settings.'**
+  String get speechRecognitionNotEnabled;
+
+  /// No description provided for @retryDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retryDownload;
+
+  /// No description provided for @downloadingSpeechModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading Speech Recognition Model'**
+  String get downloadingSpeechModel;
+
   /// No description provided for @developer.
   ///
   /// In en, this message translates to:

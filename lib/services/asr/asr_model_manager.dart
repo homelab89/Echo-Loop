@@ -83,13 +83,15 @@ final List<AsrModelInfo> availableModels = [
     id: 'moonshine-tiny-en-int8',
     displayName: 'Moonshine Tiny',
     type: AsrModelType.moonshine,
-    fileSizeBytes: 124 * 1024 * 1024, // ~124 MB
+    // preprocess 6.8 + encode 18.2 + uncached_decode 53.2 + cached_decode 45.3 + tokens 0.4
+    fileSizeBytes: 129757184, // 123.7 MB
   ),
   const AsrModelInfo(
     id: 'moonshine-base-en-int8',
     displayName: 'Moonshine Base',
     type: AsrModelType.moonshine,
-    fileSizeBytes: 250 * 1024 * 1024, // ~250 MB
+    // preprocess 14.1 + encode 50.3 + uncached_decode 122 + cached_decode 100 + tokens 0.4
+    fileSizeBytes: 300720128, // 286.8 MB
   ),
   const AsrModelInfo(
     id: 'whisper-tiny-en-int8',
@@ -340,21 +342,36 @@ class AsrModelManager {
     }
   }
 
-  /// 根据设备性能推荐模型。
+  /// 根据设备性能推荐 Moonshine 模型。
   ///
-  /// 基于 CPU 核心数和可用内存做简单启发式判断。
+  /// 只从 Moonshine 系列中选择（Whisper 仅供开发者测试页对比）。
+  /// 核心数 ≥ 6 且 RAM ≥ 4GB → Base（更准确，模型更大）。
+  /// 其他 → Tiny（更快，模型更小）。
   AsrModelInfo recommendModel() {
     final cores = Platform.numberOfProcessors;
-    // 简单启发式：核心数反映设备档次。
-    if (cores >= 8) {
-      return availableModels.firstWhere((m) => m.id == 'whisper-base-en-int8');
-    }
-    if (cores >= 6) {
+    final ramGb = _getTotalRamGb();
+    if (cores >= 6 && ramGb >= 4) {
       return availableModels.firstWhere(
         (m) => m.id == 'moonshine-base-en-int8',
       );
     }
     return availableModels.firstWhere((m) => m.id == 'moonshine-tiny-en-int8');
+  }
+
+  /// 获取设备总 RAM（GB）。
+  ///
+  /// Android 上读取 /proc/meminfo，其他平台返回 0（降级到 Tiny）。
+  static int _getTotalRamGb() {
+    try {
+      if (!Platform.isAndroid && !Platform.isLinux) return 0;
+      final meminfo = File('/proc/meminfo').readAsStringSync();
+      final match = RegExp(r'MemTotal:\s+(\d+)\s+kB').firstMatch(meminfo);
+      if (match == null) return 0;
+      final totalKb = int.tryParse(match.group(1) ?? '') ?? 0;
+      return totalKb ~/ (1024 * 1024); // kB → GB
+    } catch (_) {
+      return 0;
+    }
   }
 
   /// 释放资源。

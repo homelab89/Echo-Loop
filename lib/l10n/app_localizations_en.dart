@@ -1331,6 +1331,106 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get aiSectionTitle => 'AI';
+
+  @override
+  String get speechRecognition => 'Speech Recognition';
+
+  @override
+  String get speechRecognitionNotConfigured => 'Not configured';
+
+  @override
+  String get speechRecognitionEnabled => 'Enabled';
+
+  @override
+  String get speechRecognitionDisabled => 'Disabled';
+
+  @override
+  String get speechRecognitionDescription =>
+      'Your device does not support Google speech services. Enable local AI model for offline speech recognition.';
+
+  @override
+  String get localSpeechRecognition => 'Local Speech Recognition';
+
+  @override
+  String speechModelSize(String size) {
+    return 'Model size: ~$size';
+  }
+
+  @override
+  String speechModelReady(String size) {
+    return 'Ready · $size';
+  }
+
+  @override
+  String speechModelDownloading(String progress) {
+    return 'Downloading... $progress';
+  }
+
+  @override
+  String get speechModelDownloadFailed => 'Download failed. Tap to retry.';
+
+  @override
+  String deleteModel(String size) {
+    return 'Delete Model ($size)';
+  }
+
+  @override
+  String get deleteModelConfirmTitle => 'Delete Model?';
+
+  @override
+  String deleteModelConfirmMessage(String size) {
+    return 'This will free up $size of storage space.';
+  }
+
+  @override
+  String get disableSpeechRecognitionTitle => 'Disable Speech Recognition?';
+
+  @override
+  String get disableSpeechRecognitionMessage =>
+      'Speech practice scoring will be unavailable. Delete the downloaded model?';
+
+  @override
+  String get keepModel => 'Keep Model';
+
+  @override
+  String get speechRecognitionRequiredTitle => 'Speech Recognition Required';
+
+  @override
+  String speechRecognitionRequiredMessage(String size) {
+    return 'Your device does not support Google speech services. Download a local speech recognition model ($size) to enable voice practice.';
+  }
+
+  @override
+  String get downloadAndEnable => 'Download & Enable';
+
+  @override
+  String get notNow => 'Not Now';
+
+  @override
+  String get speechModelRepairTitle => 'Model Download Incomplete';
+
+  @override
+  String get speechModelRepairMessage =>
+      'The speech recognition model needs to be re-downloaded to use voice practice.';
+
+  @override
+  String get downloadNow => 'Download Now';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get speechRecognitionNotEnabled =>
+      'Voice recognition not enabled. Enable in Settings.';
+
+  @override
+  String get retryDownload => 'Retry';
+
+  @override
+  String get downloadingSpeechModel => 'Downloading Speech Recognition Model';
+
+  @override
   String get developer => 'Developer';
 
   @override

@@ -29,6 +29,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'analytics/analytics_providers.dart';
 import 'analytics/models/event_names.dart';
 import 'firebase_options.dart';
+import 'providers/offline_asr_settings_provider.dart';
+import 'services/asr/asr_model_manager.dart';
+import 'services/asr/offline_asr_engine.dart';
+import 'services/speech_practice_platform.dart';
 
 /// 通过原生网络栈连接后端服务器。
 ///
@@ -156,9 +160,28 @@ void main() async {
     ),
   );
 
+  // Android: 检测 GMS 可用性 + 推荐 ASR 模型（一次性，全局注入）。
+  var needsLocalAsr = false;
+  AsrModelInfo? recommendedAsrModel;
+  if (!kIsWeb && Platform.isAndroid) {
+    final platform = SpeechPracticePlatform.instance;
+    if (platform.isSupported) {
+      await platform.warmup();
+      needsLocalAsr = platform.hasGms == false;
+    }
+    if (needsLocalAsr) {
+      recommendedAsrModel = AsrModelManager().recommendModel();
+    }
+  }
+
   runApp(
     ProviderScope(
-      overrides: [packageInfoProvider.overrideWithValue(packageInfo)],
+      overrides: [
+        packageInfoProvider.overrideWithValue(packageInfo),
+        needsLocalAsrProvider.overrideWithValue(needsLocalAsr),
+        if (recommendedAsrModel != null)
+          recommendedAsrModelProvider.overrideWithValue(recommendedAsrModel),
+      ],
       child: const FluencyApp(),
     ),
   );

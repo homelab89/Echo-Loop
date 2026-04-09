@@ -1289,6 +1289,103 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get aiSectionTitle => 'AI';
+
+  @override
+  String get speechRecognition => '语音识别';
+
+  @override
+  String get speechRecognitionNotConfigured => '未设置';
+
+  @override
+  String get speechRecognitionEnabled => '已开启';
+
+  @override
+  String get speechRecognitionDisabled => '已关闭';
+
+  @override
+  String get speechRecognitionDescription =>
+      '您的设备不支持 Google 语音服务。开启后将使用本地 AI 模型进行语音识别，支持离线使用。';
+
+  @override
+  String get localSpeechRecognition => '本地语音识别';
+
+  @override
+  String speechModelSize(String size) {
+    return '模型大小：约 $size';
+  }
+
+  @override
+  String speechModelReady(String size) {
+    return '已就绪 · $size';
+  }
+
+  @override
+  String speechModelDownloading(String progress) {
+    return '正在下载... $progress';
+  }
+
+  @override
+  String get speechModelDownloadFailed => '下载失败，点击重试。';
+
+  @override
+  String deleteModel(String size) {
+    return '删除模型（$size）';
+  }
+
+  @override
+  String get deleteModelConfirmTitle => '确认删除模型？';
+
+  @override
+  String deleteModelConfirmMessage(String size) {
+    return '删除后将释放 $size 存储空间。';
+  }
+
+  @override
+  String get disableSpeechRecognitionTitle => '关闭语音识别？';
+
+  @override
+  String get disableSpeechRecognitionMessage => '关闭后语音练习将无法评分。是否删除已下载的模型？';
+
+  @override
+  String get keepModel => '保留模型';
+
+  @override
+  String get speechRecognitionRequiredTitle => '语音练习需要语音识别';
+
+  @override
+  String speechRecognitionRequiredMessage(String size) {
+    return '您的设备不支持 Google 语音服务。下载本地语音识别模型（$size）后即可使用语音练习功能。';
+  }
+
+  @override
+  String get downloadAndEnable => '下载并启用';
+
+  @override
+  String get notNow => '暂不启用';
+
+  @override
+  String get speechModelRepairTitle => '模型下载不完整';
+
+  @override
+  String get speechModelRepairMessage => '语音识别模型未下载完成，需要重新下载才能使用语音练习。';
+
+  @override
+  String get downloadNow => '立即下载';
+
+  @override
+  String get later => '稍后';
+
+  @override
+  String get speechRecognitionNotEnabled => '语音识别未启用，可在设置中开启';
+
+  @override
+  String get retryDownload => '重试';
+
+  @override
+  String get downloadingSpeechModel => '正在下载语音识别模型';
+
+  @override
   String get developer => '开发者';
 
   @override
