@@ -17,6 +17,28 @@ import 'dialogs/confirm_dialog.dart';
 import 'edit_collection_membership_sheet.dart';
 import 'edit_tag_membership_sheet.dart';
 
+/// 按排序类型排序音频列表（置顶项固定在前，不参与排序）
+List<AudioItem> sortAudioItems(List<AudioItem> items, AudioSortType sortType) {
+  final pinned = items.where((i) => i.isPinned).toList();
+  final unpinned = items.where((i) => !i.isPinned).toList();
+
+  int Function(AudioItem, AudioItem) comparator;
+  switch (sortType) {
+    case AudioSortType.nameAsc:
+      comparator = (a, b) => a.name.compareTo(b.name);
+    case AudioSortType.nameDesc:
+      comparator = (a, b) => b.name.compareTo(a.name);
+    case AudioSortType.dateAsc:
+      comparator = (a, b) => a.addedDate.compareTo(b.addedDate);
+    case AudioSortType.dateDesc:
+      comparator = (a, b) => b.addedDate.compareTo(a.addedDate);
+  }
+
+  pinned.sort((a, b) => b.addedDate.compareTo(a.addedDate));
+  unpinned.sort(comparator);
+  return [...pinned, ...unpinned];
+}
+
 /// 音频列表视图 — 资源库全局列表和合集详情页共用
 ///
 /// [items] 为 null 时从 audioLibraryProvider 读取全局音频列表；
@@ -74,20 +96,8 @@ class AudioListView extends ConsumerWidget {
     );
   }
 
-  /// 按排序类型排序音频列表
   List<AudioItem> _sortItems(List<AudioItem> items, AudioSortType sortType) {
-    final sorted = List<AudioItem>.from(items);
-    switch (sortType) {
-      case AudioSortType.nameAsc:
-        sorted.sort((a, b) => a.name.compareTo(b.name));
-      case AudioSortType.nameDesc:
-        sorted.sort((a, b) => b.name.compareTo(a.name));
-      case AudioSortType.dateAsc:
-        sorted.sort((a, b) => a.addedDate.compareTo(b.addedDate));
-      case AudioSortType.dateDesc:
-        sorted.sort((a, b) => b.addedDate.compareTo(a.addedDate));
-    }
-    return sorted;
+    return sortAudioItems(items, sortType);
   }
 
   /// 显示合集归属编辑 BottomSheet

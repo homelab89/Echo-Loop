@@ -107,11 +107,9 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
       final dao = ref.read(bookmarkDaoProvider);
       final args = widget.args;
       if (_isBookmarked) {
-        await BookmarkManager.removeBookmarksFromDb(
-          args.audioItemId,
-          {args.sentenceIndex},
-          dao: dao,
-        );
+        await BookmarkManager.removeBookmarksFromDb(args.audioItemId, {
+          args.sentenceIndex,
+        }, dao: dao);
       } else {
         final sentence = Sentence(
           index: args.sentenceIndex,
@@ -174,7 +172,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
           totalDuration: row.totalDuration,
           sentenceCount: row.sentenceCount,
           wordCount: row.wordCount,
-          isStarred: row.isStarred,
+          isPinned: row.isPinned,
           transcriptSource: model.TranscriptSource.fromIndex(
             row.transcriptSource,
           ),
@@ -213,10 +211,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
         '${_formatTime(args.startTimeMs)} - ${_formatTime(args.endTimeMs)}';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(args.audioName),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text(args.audioName), centerTitle: true),
       body: Column(
         children: [
           // 句子时间信息
@@ -282,14 +277,8 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
 
           // 底部播放按钮
           Padding(
-            padding: const EdgeInsets.only(
-              top: AppSpacing.m,
-              bottom: 64,
-            ),
-            child: _PlayButton(
-              isPlaying: _isPlaying,
-              onTap: _playSentence,
-            ),
+            padding: const EdgeInsets.only(top: AppSpacing.m, bottom: 64),
+            child: _PlayButton(isPlaying: _isPlaying, onTap: _playSentence),
           ),
         ],
       ),

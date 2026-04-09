@@ -10,6 +10,22 @@
 
 ---
 
+## 已完成：Star → Pin 置顶功能替换 + 列表项布局优化
+
+- [x] 数据模型 `isStarred` → `isPinned`（AudioItem / Collection），`fromJson` 兼容旧 key
+- [x] 数据库 schema 27→28 迁移（`ALTER TABLE RENAME COLUMN`）
+- [x] DAO 排序加 `isPinned DESC`，pinned 项始终排在最前
+- [x] Provider `toggleStar` → `togglePin`，togglePin 后重排列表
+- [x] `AudioListView.sortAudioItems` 置顶项固定在前不参与排序，合集排序同理
+- [x] UI 布局：ListTile → IntrinsicHeight 自定义布局，pin 按钮上 + 菜单下纵向排列
+- [x] 图标 star → push_pin（30° 倾斜、size 20、pinned 红色 `AppTheme.pinColor`）
+- [x] 国际化：星标 → 置顶
+- [x] 测试：provider 排序 6 项 + collection 排序 4 项 + sortAudioItems 单测 8 项
+
+  **完成时间**: 2026-04-10
+
+---
+
 ## 已完成：录音按钮 idle 态隐藏提示文案
 
 - [x] 跟读共享中间区 `RepeatPracticePanel` 在 `idle` 态不再显示 `Tap to record`，同时移除对应占位间距

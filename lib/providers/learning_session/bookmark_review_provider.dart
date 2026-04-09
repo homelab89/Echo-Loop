@@ -744,7 +744,7 @@ class BookmarkReview extends _$BookmarkReview {
         totalDuration: row.totalDuration,
         sentenceCount: row.sentenceCount,
         wordCount: row.wordCount,
-        isStarred: row.isStarred,
+        isPinned: row.isPinned,
         transcriptSource: model.TranscriptSource.fromIndex(
           row.transcriptSource,
         ),

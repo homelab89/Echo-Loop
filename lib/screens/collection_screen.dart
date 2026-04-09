@@ -216,16 +216,22 @@ class _CollectionGridTile extends ConsumerWidget {
                     child: IconButton(
                       padding: EdgeInsets.zero,
                       iconSize: 18,
-                      icon: Icon(
-                        collection.isStarred ? Icons.star : Icons.star_border,
-                        color: collection.isStarred
-                            ? AppTheme.bookmarkColor.withValues(alpha: 0.7)
-                            : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                      icon: Transform.rotate(
+                        angle: 0.52,
+                        child: Icon(
+                          collection.isPinned
+                              ? Icons.push_pin
+                              : Icons.push_pin_outlined,
+                          color: collection.isPinned
+                              ? AppTheme.pinColor
+                              : Theme.of(context).colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.5),
+                        ),
                       ),
                       onPressed: () {
                         ref
                             .read(collectionListProvider.notifier)
-                            .toggleStar(collection.id);
+                            .togglePin(collection.id);
                       },
                     ),
                   ),
@@ -235,7 +241,9 @@ class _CollectionGridTile extends ConsumerWidget {
                     child: PopupMenuButton(
                       padding: EdgeInsets.zero,
                       iconSize: 18,
-                      iconColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                      iconColor: Theme.of(
+                        context,
+                      ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                       itemBuilder: (context) => [
                         PopupMenuItem(
                           value: 'rename',
@@ -280,9 +288,7 @@ class _CollectionGridTile extends ConsumerWidget {
                 child: Icon(
                   Icons.folder,
                   size: 32,
-                  color: collection.isStarred
-                      ? AppTheme.bookmarkColor
-                      : Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 4),
@@ -326,10 +332,8 @@ class _CollectionListTile extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: ListTile(
         leading: Icon(
-          collection.isStarred ? Icons.folder_special : Icons.folder,
-          color: collection.isStarred
-              ? AppTheme.bookmarkColor
-              : Theme.of(context).colorScheme.onPrimaryContainer,
+          Icons.folder,
+          color: Theme.of(context).colorScheme.onPrimaryContainer,
         ),
         title: Text(
           collection.name,
@@ -346,18 +350,25 @@ class _CollectionListTile extends ConsumerWidget {
             SizedBox(
               width: 36,
               child: IconButton(
-                icon: Icon(
-                  collection.isStarred ? Icons.star : Icons.star_border,
-                  color: collection.isStarred
-                      ? AppTheme.bookmarkColor.withValues(alpha: 0.7)
-                      : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                  size: 22,
+                icon: Transform.rotate(
+                  angle: 0.52,
+                  child: Icon(
+                    collection.isPinned
+                        ? Icons.push_pin
+                        : Icons.push_pin_outlined,
+                    color: collection.isPinned
+                        ? AppTheme.pinColor
+                        : Theme.of(
+                            context,
+                          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    size: 20,
+                  ),
                 ),
                 padding: EdgeInsets.zero,
                 onPressed: () {
                   ref
                       .read(collectionListProvider.notifier)
-                      .toggleStar(collection.id);
+                      .togglePin(collection.id);
                 },
               ),
             ),
@@ -366,7 +377,9 @@ class _CollectionListTile extends ConsumerWidget {
               child: PopupMenuButton(
                 padding: EdgeInsets.zero,
                 iconSize: 22,
-                iconColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                iconColor: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 itemBuilder: (context) => [
                   PopupMenuItem(
                     value: 'rename',
@@ -382,10 +395,7 @@ class _CollectionListTile extends ConsumerWidget {
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.delete,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
+                        Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                         const SizedBox(width: 8),
                         Text(l10n.delete),
                       ],

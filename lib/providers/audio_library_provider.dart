@@ -55,7 +55,7 @@ class AudioLibrary extends _$AudioLibrary {
             totalDuration: row.totalDuration,
             sentenceCount: row.sentenceCount,
             wordCount: row.wordCount,
-            isStarred: row.isStarred,
+            isPinned: row.isPinned,
             transcriptSource: TranscriptSource.fromIndex(row.transcriptSource),
             audioSha256: row.audioSha256,
             transcriptLanguage: row.transcriptLanguage,
@@ -74,9 +74,15 @@ class AudioLibrary extends _$AudioLibrary {
         if (migratedItem != null) {
           processedItem = migratedItem;
           hasMigratedItems = true;
-          AppLogger.log('AudioLib','Migrated ${item.name} from absolute to relative path');
+          AppLogger.log(
+            'AudioLib',
+            'Migrated ${item.name} from absolute to relative path',
+          );
         } else {
-          AppLogger.log('AudioLib','Failed to migrate ${item.name}, marking as invalid');
+          AppLogger.log(
+            'AudioLib',
+            'Failed to migrate ${item.name}, marking as invalid',
+          );
           continue;
         }
       }
@@ -106,7 +112,8 @@ class AudioLibrary extends _$AudioLibrary {
       } else {
         // 软删除无效音频
         await dao.softDelete(item.id);
-        AppLogger.log('AudioLib',
+        AppLogger.log(
+          'AudioLib',
           'Removed invalid audio item: ${processedItem.name} (audio file not found at: $fullAudioPath)',
         );
       }
@@ -119,7 +126,10 @@ class AudioLibrary extends _$AudioLibrary {
       for (final item in validItems) {
         await _upsertItem(item);
       }
-      AppLogger.log('AudioLib','Migrated paths from absolute to relative format');
+      AppLogger.log(
+        'AudioLib',
+        'Migrated paths from absolute to relative format',
+      );
     }
   }
 
@@ -150,7 +160,7 @@ class AudioLibrary extends _$AudioLibrary {
         transcriptPath: relativeTranscriptPath,
       );
     } catch (e) {
-      AppLogger.log('AudioLib','Error migrating path for ${item.name}: $e');
+      AppLogger.log('AudioLib', 'Error migrating path for ${item.name}: $e');
       return null;
     }
   }
@@ -165,7 +175,7 @@ class AudioLibrary extends _$AudioLibrary {
     try {
       item = state.audioItems.firstWhere((item) => item.id == id);
     } catch (e) {
-      AppLogger.log('AudioLib','Audio item not found: $id');
+      AppLogger.log('AudioLib', 'Audio item not found: $id');
       return;
     }
 
@@ -174,10 +184,10 @@ class AudioLibrary extends _$AudioLibrary {
       final audioFile = File(audioPath);
       if (await audioFile.exists()) {
         await audioFile.delete();
-        AppLogger.log('AudioLib','Deleted audio file: $audioPath');
+        AppLogger.log('AudioLib', 'Deleted audio file: $audioPath');
       }
     } catch (e) {
-      AppLogger.log('AudioLib','Error deleting audio file: $e');
+      AppLogger.log('AudioLib', 'Error deleting audio file: $e');
     }
 
     if (item.hasTranscript) {
@@ -187,11 +197,14 @@ class AudioLibrary extends _$AudioLibrary {
           final transcriptFile = File(transcriptPath);
           if (await transcriptFile.exists()) {
             await transcriptFile.delete();
-            AppLogger.log('AudioLib','Deleted transcript file: $transcriptPath');
+            AppLogger.log(
+              'AudioLib',
+              'Deleted transcript file: $transcriptPath',
+            );
           }
         }
       } catch (e) {
-        AppLogger.log('AudioLib','Error deleting transcript file: $e');
+        AppLogger.log('AudioLib', 'Error deleting transcript file: $e');
       }
     }
 
@@ -230,14 +243,19 @@ class AudioLibrary extends _$AudioLibrary {
     }
   }
 
-  /// 切换音频星标状态（乐观更新 + 持久化）
-  Future<void> toggleStar(String id) async {
+  /// 切换音频置顶状态（乐观更新 + 重排 + 持久化）
+  Future<void> togglePin(String id) async {
     final items = [...state.audioItems];
     final index = items.indexWhere((item) => item.id == id);
     if (index != -1) {
-      items[index] = items[index].copyWith(isStarred: !items[index].isStarred);
+      items[index] = items[index].copyWith(isPinned: !items[index].isPinned);
+      // 置顶项固定在前，非置顶项按添加日期倒序
+      items.sort((a, b) {
+        if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
+        return b.addedDate.compareTo(a.addedDate);
+      });
       state = state.copyWith(audioItems: items);
-      await _upsertItem(items[index]);
+      await _upsertItem(items.firstWhere((item) => item.id == id));
     }
   }
 
@@ -290,7 +308,7 @@ class AudioLibrary extends _$AudioLibrary {
         totalDuration: Value(item.totalDuration),
         sentenceCount: Value(item.sentenceCount),
         wordCount: Value(item.wordCount),
-        isStarred: Value(item.isStarred),
+        isPinned: Value(item.isPinned),
         transcriptSource: Value(item.transcriptSource?.index),
         audioSha256: Value(item.audioSha256),
         transcriptLanguage: Value(item.transcriptLanguage),

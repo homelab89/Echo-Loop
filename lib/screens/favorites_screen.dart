@@ -494,7 +494,7 @@ class _BookmarkSentenceTileState extends ConsumerState<_BookmarkSentenceTile> {
           totalDuration: row.totalDuration,
           sentenceCount: row.sentenceCount,
           wordCount: row.wordCount,
-          isStarred: row.isStarred,
+          isPinned: row.isPinned,
           transcriptSource: model.TranscriptSource.fromIndex(
             row.transcriptSource,
           ),
@@ -779,7 +779,7 @@ class _SavedPhraseTileState extends ConsumerState<_SavedPhraseTile> {
         totalDuration: row.totalDuration,
         sentenceCount: row.sentenceCount,
         wordCount: row.wordCount,
-        isStarred: row.isStarred,
+        isPinned: row.isPinned,
         transcriptSource: model.TranscriptSource.fromIndex(
           row.transcriptSource,
         ),
@@ -1019,7 +1019,7 @@ class _SavedWordTileState extends ConsumerState<_SavedWordTile> {
         totalDuration: row.totalDuration,
         sentenceCount: row.sentenceCount,
         wordCount: row.wordCount,
-        isStarred: row.isStarred,
+        isPinned: row.isPinned,
         transcriptSource: model.TranscriptSource.fromIndex(
           row.transcriptSource,
         ),

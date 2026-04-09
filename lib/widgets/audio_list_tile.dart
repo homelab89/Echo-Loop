@@ -109,32 +109,62 @@ class AudioListTile extends ConsumerWidget {
           color: isCurrentlyPlaying
               ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
               : null,
-          child: ListTile(
-            contentPadding: isDesktop
-                ? const EdgeInsets.symmetric(horizontal: 20, vertical: 4)
-                : null,
-            leading: LearningProgressIcon(progress: progress),
-            title: Text(
-              audioItem.name,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-            subtitle: _buildSubtitle(
-              context,
-              l10n,
-              theme,
-              progress,
-              collectionNames,
-              tagData,
-              transcriptionTask,
-            ),
-            trailing: _buildTrailing(
-              context,
-              ref,
-              l10n,
-              theme,
-              isCurrentlyPlaying,
-            ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
             onTap: () => _handleTap(context, l10n),
+            child: Padding(
+              padding: isDesktop
+                  ? const EdgeInsets.symmetric(horizontal: 20, vertical: 8)
+                  : const EdgeInsets.only(
+                      left: 16,
+                      top: 8,
+                      bottom: 8,
+                      right: 4,
+                    ),
+              child: IntrinsicHeight(
+                child: Row(
+                  children: [
+                    // 左侧进度图标，垂直居中
+                    LearningProgressIcon(progress: progress),
+                    const SizedBox(width: 16),
+                    // 中间标题 + 副标题
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            audioItem.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          _buildSubtitle(
+                            context,
+                            l10n,
+                            theme,
+                            progress,
+                            collectionNames,
+                            tagData,
+                            transcriptionTask,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 右侧按钮纵向排列，平分高度
+                    _buildTrailing(
+                      context,
+                      ref,
+                      l10n,
+                      theme,
+                      isCurrentlyPlaying,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         );
       },
@@ -306,26 +336,30 @@ class AudioListTile extends ConsumerWidget {
     );
   }
 
-  /// 构建星标按钮
-  Widget _buildStarButton(
+  /// 构建置顶按钮
+  Widget _buildPinButton(
     WidgetRef ref,
     AppLocalizations l10n,
     ThemeData theme,
   ) {
     return IconButton(
-      icon: Icon(
-        audioItem.isStarred ? Icons.star : Icons.star_border,
-        color: audioItem.isStarred
-            ? AppTheme.bookmarkColor.withValues(alpha: 0.7)
-            : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+      icon: Transform.rotate(
+        angle: 0.52, // ≈30° 倾斜
+        child: Icon(
+          audioItem.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+          size: 20,
+          color: audioItem.isPinned
+              ? AppTheme.pinColor
+              : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+        ),
       ),
       onPressed: () {
-        ref.read(audioLibraryProvider.notifier).toggleStar(audioItem.id);
+        ref.read(audioLibraryProvider.notifier).togglePin(audioItem.id);
       },
     );
   }
 
-  /// 构建 trailing 区域（星标 + 正在播放标记 + 弹出菜单）
+  /// 构建 trailing 区域（置顶上 + 菜单下，纵向平分高度）
   Widget _buildTrailing(
     BuildContext context,
     WidgetRef ref,
@@ -333,21 +367,12 @@ class AudioListTile extends ConsumerWidget {
     ThemeData theme,
     bool isCurrentlyPlaying,
   ) {
-    if (!isCurrentlyPlaying) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildStarButton(ref, l10n, theme),
-          _buildPopupMenu(context, ref, l10n, theme),
-        ],
-      );
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Column(
       children: [
-        _buildStarButton(ref, l10n, theme),
-        _buildPopupMenu(context, ref, l10n, theme),
+        Expanded(child: Center(child: _buildPinButton(ref, l10n, theme))),
+        Expanded(
+          child: Center(child: _buildPopupMenu(context, ref, l10n, theme)),
+        ),
       ],
     );
   }

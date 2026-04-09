@@ -51,6 +51,7 @@ class CollectionState {
     return result;
   }
 
+  /// 排序后的合集列表（置顶项始终在前）
   List<Collection> get collections {
     final sorted = List<Collection>.from(rawCollections);
     switch (sortType) {
@@ -63,6 +64,11 @@ class CollectionState {
       case CollectionSortType.dateDesc:
         sorted.sort((a, b) => b.createdDate.compareTo(a.createdDate));
     }
+    // 置顶项始终排在最前面（稳定排序保持原有顺序）
+    sorted.sort((a, b) {
+      if (a.isPinned == b.isPinned) return 0;
+      return a.isPinned ? -1 : 1;
+    });
     return sorted;
   }
 
@@ -102,7 +108,7 @@ class CollectionList extends _$CollectionList {
             id: row.id,
             name: row.name,
             createdDate: row.createdDate,
-            isStarred: row.isStarred,
+            isPinned: row.isPinned,
           ),
         )
         .toList();
@@ -154,7 +160,8 @@ class CollectionList extends _$CollectionList {
   }
 
   Future<void> deleteCollection(String id) async {
-    final newMap = Map<String, List<String>>.from(state.audioIdsMap)..remove(id);
+    final newMap = Map<String, List<String>>.from(state.audioIdsMap)
+      ..remove(id);
     state = state.copyWith(
       rawCollections: state.rawCollections.where((c) => c.id != id).toList(),
       audioIdsMap: newMap,
@@ -173,12 +180,13 @@ class CollectionList extends _$CollectionList {
     }
   }
 
-  Future<void> toggleStar(String id) async {
+  /// 切换合集置顶状态（乐观更新 + 持久化）
+  Future<void> togglePin(String id) async {
     final collections = [...state.rawCollections];
     final index = collections.indexWhere((c) => c.id == id);
     if (index != -1) {
       collections[index] = collections[index].copyWith(
-        isStarred: !collections[index].isStarred,
+        isPinned: !collections[index].isPinned,
       );
       state = state.copyWith(rawCollections: collections);
       await _upsertCollection(collections[index]);
@@ -284,7 +292,7 @@ class CollectionList extends _$CollectionList {
         id: Value(collection.id),
         name: Value(collection.name),
         createdDate: Value(collection.createdDate),
-        isStarred: Value(collection.isStarred),
+        isPinned: Value(collection.isPinned),
         updatedAt: Value(DateTime.now()),
       ),
     );

@@ -23,6 +23,9 @@ class AppTheme {
   /// 语义色：书签/收藏/星标
   static const Color bookmarkColor = Colors.amber;
 
+  /// 语义色：置顶图钉
+  static const Color pinColor = Color(0xFFE53935);
+
   /// 亮色主题
   static ThemeData light() {
     final colorScheme = ColorScheme.fromSeed(
