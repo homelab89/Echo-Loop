@@ -24,14 +24,10 @@ class AsrModelInfo {
   /// 模型类型。
   final AsrModelType type;
 
-  /// 模型文件总大小（字节），用于 UI 展示。
-  final int fileSizeBytes;
-
   const AsrModelInfo({
     required this.id,
     required this.displayName,
     required this.type,
-    required this.fileSizeBytes,
   });
 }
 

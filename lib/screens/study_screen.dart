@@ -11,6 +11,7 @@ import '../providers/study_task_provider.dart';
 import '../providers/time_provider.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
+import '../widgets/asr_download_prompt_dialog.dart';
 import '../widgets/learning_progress_icon.dart';
 import '../widgets/study/study_stats_header.dart';
 
@@ -57,10 +58,7 @@ class StudyScreen extends ConsumerWidget {
       child: GestureDetector(
         onTap: () => context.push(AppRoutes.activityCalendar),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 4,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: isStreakActive
                 ? Colors.orange.withValues(alpha: 0.1)
@@ -94,10 +92,7 @@ class StudyScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.studyTasks),
-        actions: [streakChip],
-      ),
+      appBar: AppBar(title: Text(l10n.studyTasks), actions: [streakChip]),
       body: !hasAnyTask
           ? const _EmptyState(type: _EmptyStateType.noTasks)
           : tasks.isEmpty && completedAudios.isNotEmpty
@@ -293,7 +288,7 @@ class _CollapsibleSection extends StatelessWidget {
 /// 增强版任务卡片
 ///
 /// 左侧色条指示任务类型，显示子阶段、进度条、细化按钮文案、逾期视觉强调。
-class _TaskCard extends StatelessWidget {
+class _TaskCard extends ConsumerWidget {
   final StudyTask task;
   final AppLocalizations l10n;
   final DateTime now;
@@ -301,7 +296,7 @@ class _TaskCard extends StatelessWidget {
   const _TaskCard({required this.task, required this.l10n, required this.now});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDisabled = task.type == StudyTaskType.reviewUpcoming;
     final stageLabel = _stageSubStageLabel(l10n, task.stage, task.subStage);
@@ -364,8 +359,7 @@ class _TaskCard extends StatelessWidget {
                                 Wrap(
                                   spacing: AppSpacing.s,
                                   runSpacing: 4,
-                                  crossAxisAlignment:
-                                      WrapCrossAlignment.center,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     Text(
                                       stageLabel,
@@ -393,12 +387,22 @@ class _TaskCard extends StatelessWidget {
                           FilledButton.tonal(
                             onPressed: isDisabled
                                 ? null
-                                : () => context.push(
-                                    AppRoutes.audioLearningPlan(
-                                      task.audioId,
-                                      autoStart: true,
-                                    ),
-                                  ),
+                                : () async {
+                                    final allowed =
+                                        await ensureAsrReadyForSubStage(
+                                          context,
+                                          ref,
+                                          task.subStage,
+                                        );
+                                    if (!allowed || !context.mounted) return;
+
+                                    context.push(
+                                      AppRoutes.audioLearningPlan(
+                                        task.audioId,
+                                        autoStart: true,
+                                      ),
+                                    );
+                                  },
                             child: Text(_actionLabel(l10n, task)),
                           ),
                         ],
@@ -521,11 +525,9 @@ class _RecentCompletionsSection extends StatelessWidget {
           bottom: AppSpacing.s,
         ),
         children: completions
-            .map((c) => _RecentCompletionTile(
-                  completion: c,
-                  l10n: l10n,
-                  now: now,
-                ))
+            .map(
+              (c) => _RecentCompletionTile(completion: c, l10n: l10n, now: now),
+            )
             .toList(),
       ),
     );
@@ -562,10 +564,7 @@ class _RecentCompletionTile extends StatelessWidget {
           child: Row(
             children: [
               // 左侧色条（使用 outline 色表示已完成）
-              Container(
-                width: 4,
-                color: theme.colorScheme.outlineVariant,
-              ),
+              Container(width: 4, color: theme.colorScheme.outlineVariant),
               // 内容区
               Expanded(
                 child: Padding(

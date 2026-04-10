@@ -1304,8 +1304,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get speechRecognitionDisabled => '已关闭';
 
   @override
-  String get speechRecognitionDescription =>
-      '您的设备不支持 Google 语音服务。开启后将使用本地 AI 模型进行语音识别，支持离线使用。';
+  String get speechRecognitionDescription => '开启语音识别后，跟读和复述练习时会自动识别你的发音并评估准确度。';
+
+  @override
+  String get asrBackendPlatform => 'Apple Speech';
+
+  @override
+  String get asrBackendPlatformDescription => '使用系统自带的语音识别，无需下载';
+
+  @override
+  String get asrBackendOffline => 'Echo Loop AI';
+
+  @override
+  String asrBackendOfflineDescription(String size) {
+    return '使用应用自带的 AI 模型，支持离线（需下载约 $size）';
+  }
 
   @override
   String get localSpeechRecognition => '本地语音识别';
@@ -1334,6 +1347,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get deleteModelAction => '删除模型';
+
+  @override
   String get deleteModelConfirmTitle => '确认删除模型？';
 
   @override
@@ -1354,9 +1370,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get speechRecognitionRequiredTitle => '语音练习需要语音识别';
 
   @override
-  String speechRecognitionRequiredMessage(String size) {
-    return '您的设备不支持 Google 语音服务。下载本地语音识别模型（$size）后即可使用语音练习功能。';
-  }
+  String get speechRecognitionRequiredMessage => '需要下载语音识别模型才能使用语音练习功能。';
 
   @override
   String get downloadAndEnable => '下载并启用';

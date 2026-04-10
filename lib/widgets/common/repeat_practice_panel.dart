@@ -133,7 +133,7 @@ class RepeatPracticePanel extends StatelessWidget {
 
     final statusText = _buildStatusText(context);
     final hasStatus = statusText != null;
-    final hasBadge = currentAttempt != null && currentAttempt!.score != null;
+    final hasBadge = currentAttempt?.hasFinalFeedback ?? false;
     final hasFF = onFastForward != null;
     final statusSlotHeight = _usesExpandedStatusSlot
         ? _kErrorStatusSlotHeight

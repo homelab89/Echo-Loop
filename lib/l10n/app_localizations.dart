@@ -2447,8 +2447,32 @@ abstract class AppLocalizations {
   /// No description provided for @speechRecognitionDescription.
   ///
   /// In en, this message translates to:
-  /// **'Your device does not support Google speech services. Enable local AI model for offline speech recognition.'**
+  /// **'When enabled, speech recognition automatically evaluates your pronunciation during repeat and retell practice.'**
   String get speechRecognitionDescription;
+
+  /// No description provided for @asrBackendPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Speech'**
+  String get asrBackendPlatform;
+
+  /// No description provided for @asrBackendPlatformDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the built-in system speech recognition, no download needed'**
+  String get asrBackendPlatformDescription;
+
+  /// No description provided for @asrBackendOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Echo Loop AI'**
+  String get asrBackendOffline;
+
+  /// No description provided for @asrBackendOfflineDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the app\'s AI model, works offline (~{size} download)'**
+  String asrBackendOfflineDescription(String size);
 
   /// No description provided for @localSpeechRecognition.
   ///
@@ -2485,6 +2509,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Model ({size})'**
   String deleteModel(String size);
+
+  /// No description provided for @deleteModelAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Model'**
+  String get deleteModelAction;
 
   /// No description provided for @deleteModelConfirmTitle.
   ///
@@ -2525,8 +2555,8 @@ abstract class AppLocalizations {
   /// No description provided for @speechRecognitionRequiredMessage.
   ///
   /// In en, this message translates to:
-  /// **'Your device does not support Google speech services. Download a local speech recognition model ({size}) to enable voice practice.'**
-  String speechRecognitionRequiredMessage(String size);
+  /// **'A speech recognition model is required for voice practice. Download now?'**
+  String get speechRecognitionRequiredMessage;
 
   /// No description provided for @downloadAndEnable.
   ///

@@ -32,7 +32,7 @@ import 'firebase_options.dart';
 import 'providers/offline_asr_settings_provider.dart';
 import 'services/asr/asr_model_manager.dart';
 import 'services/asr/offline_asr_engine.dart';
-import 'services/speech_practice_platform.dart';
+import 'services/app_logger.dart';
 
 /// 通过原生网络栈连接后端服务器。
 ///
@@ -160,27 +160,34 @@ void main() async {
     ),
   );
 
-  // Android: 检测 GMS 可用性 + 推荐 ASR 模型（一次性，全局注入）。
-  var needsLocalAsr = false;
+  // 离线 ASR 初始化（全平台）。
+  // Android 固定 offline 后端，iOS/macOS 默认 platform 后端（可切换）。
   AsrModelInfo? recommendedAsrModel;
-  if (!kIsWeb && Platform.isAndroid) {
-    final platform = SpeechPracticePlatform.instance;
-    if (platform.isSupported) {
-      await platform.warmup();
-      needsLocalAsr = platform.hasGms == false;
-    }
-    if (needsLocalAsr) {
-      recommendedAsrModel = AsrModelManager().recommendModel();
-    }
+  OfflineAsrSettingsState? initialOfflineAsrSettingsState;
+  if (!kIsWeb) {
+    final defaultBackend =
+        Platform.isAndroid ? AsrBackend.offline : AsrBackend.platform;
+    AppLogger.log('App', 'ASR: platform=${Platform.operatingSystem}, defaultBackend=${defaultBackend.name}');
+    final modelManager = AsrModelManager();
+    recommendedAsrModel = modelManager.recommendModel();
+    initialOfflineAsrSettingsState = await loadInitialOfflineAsrSettingsState(
+      prefs: prefs,
+      modelManager: modelManager,
+      recommendedModel: recommendedAsrModel,
+      defaultBackend: defaultBackend,
+    );
   }
 
   runApp(
     ProviderScope(
       overrides: [
         packageInfoProvider.overrideWithValue(packageInfo),
-        needsLocalAsrProvider.overrideWithValue(needsLocalAsr),
         if (recommendedAsrModel != null)
           recommendedAsrModelProvider.overrideWithValue(recommendedAsrModel),
+        if (initialOfflineAsrSettingsState != null)
+          initialOfflineAsrSettingsStateProvider.overrideWithValue(
+            initialOfflineAsrSettingsState,
+          ),
       ],
       child: const FluencyApp(),
     ),

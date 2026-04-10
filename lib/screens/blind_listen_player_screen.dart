@@ -22,6 +22,7 @@ import '../providers/learning_session/blind_listen_player_provider.dart';
 import '../providers/learning_session/learning_session_provider.dart';
 import '../services/app_logger.dart';
 import '../theme/app_theme.dart';
+import '../widgets/asr_download_prompt_dialog.dart';
 import '../widgets/dialogs/step_complete_dialog.dart';
 import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/blind_listen_settings_sheet.dart';
@@ -174,7 +175,7 @@ class _BlindListenPlayerScreenState
     if (!mounted) return;
 
     if (result.action == StepCompleteAction.continueNext) {
-      _navigateBackToPlanAndAutoStart();
+      await _navigateBackToPlanAndAutoStart();
     } else {
       context.pop();
     }
@@ -232,15 +233,27 @@ class _BlindListenPlayerScreenState
   ///
   /// 先 go 回学习 Tab 清空导航栈，再 push 新的学习计划页（autoStart=true），
   /// 效果等同于用户在学习列表点击"继续学习"。
-  void _navigateBackToPlanAndAutoStart() {
+  Future<void> _navigateBackToPlanAndAutoStart() async {
     if (!mounted) return;
+    final nextSubStage = ref
+        .read(learningProgressNotifierProvider)
+        .progressMap[widget.audioItemId]
+        ?.currentSubStage;
+    final canAutoStart = nextSubStage == null
+        ? true
+        : await ensureAsrReadyForSubStage(context, ref, nextSubStage);
+    if (!mounted) return;
+
     final route = widget.collectionId != null
         ? AppRoutes.learningPlan(
             widget.collectionId!,
             widget.audioItemId,
-            autoStart: true,
+            autoStart: canAutoStart,
           )
-        : AppRoutes.audioLearningPlan(widget.audioItemId, autoStart: true);
+        : AppRoutes.audioLearningPlan(
+            widget.audioItemId,
+            autoStart: canAutoStart,
+          );
     GoRouter.of(context).go(AppRoutes.study);
     GoRouter.of(context).push(route);
   }
@@ -368,8 +381,7 @@ class _BlindListenPlayerScreenState
       return null;
     }
 
-    final (IconData icon, String text) =
-        state.isPlaying
+    final (IconData icon, String text) = state.isPlaying
         ? (Icons.headphones, l10n.blindListenListeningHint)
         : state.isWaitingForUser || !state.hasCompletedCurrentParagraphPlayback
         ? (Icons.play_circle_outline, l10n.blindListenPreListenHint)
@@ -448,7 +460,8 @@ class _BlindListenPlayerScreenState
           ),
           paragraphContent: ParagraphSentenceListCard(
             sentences: sentences,
-            displayMode: playerState.displayMode == BlindListenDisplayMode.showAll
+            displayMode:
+                playerState.displayMode == BlindListenDisplayMode.showAll
                 ? RetellDisplayMode.showAll
                 : RetellDisplayMode.hideAll,
             keywordMap: const {},

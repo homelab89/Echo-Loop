@@ -345,7 +345,7 @@ void main() {
       expect(find.text('Listening...'), findsNothing);
     });
 
-    testWidgets('录音中仍显示复述提示', (tester) async {
+    testWidgets('录音中显示录音状态而不显示复述提示', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           playerState: RetellPlayerState(
@@ -367,8 +367,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Retell it in your own words'), findsOneWidget);
-      expect(find.text('Recording...'), findsNothing);
+      expect(find.text('Retell it in your own words'), findsNothing);
+      expect(find.text('Recording...'), findsOneWidget);
     });
 
     testWidgets('点击句子进入详情前会进入 waiting for user', (tester) async {

@@ -705,7 +705,8 @@ class BookmarkReview extends _$BookmarkReview {
       return;
     }
 
-    if (prev.phase == SpeechRecordingPhase.processing &&
+    // 评估完成（有 ASR: processing→idle，无 ASR: speaking→idle）
+    if (prev.phase != SpeechRecordingPhase.idle &&
         next.phase == SpeechRecordingPhase.idle &&
         next.currentAttempt != null) {
       final attempt = next.currentAttempt!;

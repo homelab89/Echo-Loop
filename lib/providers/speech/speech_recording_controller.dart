@@ -4,7 +4,8 @@
 /// 使用 [RecordingService] 管理录音生命周期，录音结束后自动释放麦克风。
 /// 评估仅用覆盖率（[SpeechTranscriptMatcher]），不使用 embedding 相似度。
 ///
-/// 状态机：idle → awaitingSpeech → speaking → processing → idle。
+/// 状态机：idle → awaitingSpeech → speaking → [processing →] idle。
+/// 有 ASR 时经过 processing（评估转录），无 ASR 时直接 speaking → idle（仅存录音）。
 ///
 /// 自动模式录音流程：
 /// 1. startRecording → awaitingSpeech，启动 60s 等待开口计时器
@@ -278,6 +279,7 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
     required String promptId,
     required String referenceText,
   }) async {
+    final backend = ref.read(speechPracticeBackendProvider);
     if (state.promptId == promptId && state.isActive) {
       AppLogger.log('SpeechRec', '⏭ startRecording 跳过: 已在录音中 ($promptId)');
       return;
@@ -299,6 +301,10 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
 
     AppLogger.log('SpeechRec', '┌ startRecording (manual=$_isManualMode)');
     AppLogger.log('SpeechRec', '│ promptId=$promptId');
+    AppLogger.log(
+      'SpeechRec',
+      '│ backend=${backend.runtimeType} permissions=${state.permissions.microphone.name}/${state.permissions.speech.name}',
+    );
 
     state = SpeechRecordingState(
       phase: SpeechRecordingPhase.awaitingSpeech,
@@ -355,7 +361,7 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
 
     AppLogger.log('SpeechRec', '● 手动停止录音');
     _isStopping = true;
-    _enterProcessing(promptId);
+    _cancelAllTimers();
     await _doStopAndEvaluate(promptId: promptId, referenceText: referenceText);
   }
 
@@ -413,11 +419,16 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
 
   // ========== 内部方法 ==========
 
-  /// 停止录音 + 评估（仅覆盖率，不使用 embedding）
+  /// 停止录音并评估。
+  ///
+  /// 异步部分：停止录音、等待 final transcript。
+  /// 同步部分：[_evaluateResult]，processing → evaluate → idle 在同一同步块内完成，
+  /// UI 来不及刷新"分析中..."就已经到 idle。
   Future<void> _doStopAndEvaluate({
     required String promptId,
     required String referenceText,
   }) async {
+    final backend = ref.read(speechPracticeBackendProvider);
     _cancelAllTimers();
     await _eventSub?.cancel();
     _eventSub = null;
@@ -437,11 +448,58 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
       promptId: promptId,
       effectiveDurationMs: effectiveDurationMs,
     );
+    AppLogger.log('SpeechRec', '│ backend=${backend.runtimeType}');
+    AppLogger.log(
+      'SpeechRec',
+      '│ stopRecording result filePath=${result.filePath ?? '(null)'} '
+          'finalLen=${result.finalTranscript?.trim().length ?? 0} '
+          'errorCode=${result.errorCode ?? '(null)'}',
+    );
     AppLogger.log(
       'SpeechRec',
       '📋 final: "${result.finalTranscript ?? '(null)'}"',
     );
 
+    // ASR 关闭时跳过评估（iOS 平台后端仍会返回 transcript，但用户意图是不评分）
+    final asrEnabled = ref.read(offlineAsrSettingsProvider).enabled;
+
+    // 判断是否有可用的转录结果（final 或 live）
+    final hasTranscript = asrEnabled &&
+        ((result.isSuccess &&
+                (result.finalTranscript?.trim().isNotEmpty ?? false)) ||
+            (_lastKnownTranscript != null &&
+                _lastKnownTranscript!.trim().isNotEmpty));
+
+    if (hasTranscript) {
+      // 有转录 → processing + 评估（同步块内完成，UI 不会闪"分析中..."）
+      _enterProcessing(promptId);
+      _evaluateResult(
+        promptId: promptId,
+        referenceText: referenceText,
+        result: result,
+      );
+    } else {
+      // 无转录（ASR 未启用或未检测到语音）→ 直接存录音，跳过评估
+      AppLogger.log('SpeechRec', '✗ 无转录结果，跳过评估');
+      state = state.copyWith(
+        phase: SpeechRecordingPhase.idle,
+        currentAttempt: SpeechPracticeAttempt(promptId: promptId).copyWith(
+          filePath: result.filePath,
+          status: SpeechPracticeAttemptStatus.unavailable,
+        ),
+        clearLiveTranscript: true,
+        hasDetectedSpeech: false,
+        silenceDuration: Duration.zero,
+      );
+    }
+  }
+
+  /// 同步评估录音结果并更新状态。
+  void _evaluateResult({
+    required String promptId,
+    required String referenceText,
+    required RecordingResult result,
+  }) {
     if (!result.isSuccess) {
       // Final transcript 失败但有 live transcript → 用 live transcript 做评估
       final fallbackTranscript = _lastKnownTranscript;
@@ -457,7 +515,7 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
           status: _statusFromError(result.errorCode),
           errorMessage: result.errorMessage,
         );
-        AppLogger.log('SpeechRec', '✗ 录音失败: ${result.errorCode}');
+        AppLogger.log('SpeechRec', '✗ 识别失败: ${result.errorCode ?? 'unknown'}');
         state = state.copyWith(
           phase: SpeechRecordingPhase.idle,
           currentAttempt: attempt,
@@ -471,6 +529,11 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
 
     // 评估：仅覆盖率（优先用 final transcript，fallback 用 live transcript）
     final transcript = result.finalTranscript ?? _lastKnownTranscript ?? '';
+    AppLogger.log(
+      'SpeechRec',
+      '│ evaluate transcriptLen=${transcript.trim().length} '
+          'liveLen=${(_lastKnownTranscript ?? '').trim().length}',
+    );
     final matcher = ref.read(speechTranscriptMatcherProvider);
     final matchResult = matcher.evaluate(
       referenceText: referenceText,
@@ -487,6 +550,13 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
       transcriptSegments: matchResult.transcriptSegments,
       referenceSegments: matchResult.referenceSegments,
     );
+
+    if (attempt.isRecognitionFailure) {
+      AppLogger.log(
+        'SpeechRec',
+        '✗ 识别失败: status=${attempt.status.name}, final="${attempt.finalTranscript ?? ''}"',
+      );
+    }
 
     AppLogger.log(
       'SpeechRec',
@@ -737,7 +807,7 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
   void _stopForEvaluation({required String promptId, String reason = ''}) {
     AppLogger.log('SpeechRec', '⏹ 自动停止录音 ($reason)');
     _isStopping = true;
-    _enterProcessing(promptId);
+    _cancelAllTimers();
 
     final referenceText = _cachedReferenceText;
     if (referenceText == null) {

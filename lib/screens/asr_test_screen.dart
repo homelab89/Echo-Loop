@@ -54,9 +54,8 @@ class AsrTestScreen extends ConsumerStatefulWidget {
 
 class _AsrTestScreenState extends ConsumerState<AsrTestScreen> {
   // 引擎选择
-  _AsrMode _mode = _AsrMode.offline;
+  _AsrMode _mode = Platform.isAndroid ? _AsrMode.offline : _AsrMode.platform;
   String _selectedModelId = 'moonshine-tiny-en-int8';
-  bool _hasGms = false;
 
   // 录音状态
   bool _isRecording = false;
@@ -97,15 +96,6 @@ class _AsrTestScreenState extends ConsumerState<AsrTestScreen> {
   OfflineAsrEngine _getEngine() => ref.read(offlineAsrEngineProvider);
 
   Future<void> _checkGmsAndModelStatus() async {
-    // 检测 GMS 状态（通过 warmup 获取）。
-    final platform = SpeechPracticePlatform.instance;
-    _hasGms = platform.hasGms ?? !Platform.isAndroid;
-
-    // 如果有 GMS，默认选 Platform。
-    if (_hasGms) {
-      _mode = _AsrMode.platform;
-    }
-
     // 检查当前模型是否已下载。
     await _refreshModelStatus();
     if (mounted) setState(() {});
@@ -415,7 +405,7 @@ class _AsrTestScreenState extends ConsumerState<AsrTestScreen> {
                 Expanded(
                   child: SegmentedButton<_AsrMode>(
                     segments: [
-                      if (_hasGms)
+                      if (!Platform.isAndroid)
                         const ButtonSegment(
                           value: _AsrMode.platform,
                           label: Text('Platform'),
@@ -448,10 +438,7 @@ class _AsrTestScreenState extends ConsumerState<AsrTestScreen> {
                           .map(
                             (m) => DropdownMenuItem(
                               value: m.id,
-                              child: Text(
-                                '${m.displayName} '
-                                '(${_formatBytes(m.fileSizeBytes)})',
-                              ),
+                              child: Text(m.displayName),
                             ),
                           )
                           .toList(),
@@ -505,9 +492,7 @@ class _AsrTestScreenState extends ConsumerState<AsrTestScreen> {
                 LinearProgressIndicator(value: _downloadProgress.progress),
                 const SizedBox(height: 4),
                 Text(
-                  '${_formatBytes(_downloadProgress.downloadedBytes)} / '
-                  '${_formatBytes(_downloadProgress.totalBytes)} '
-                  '(${(_downloadProgress.progress * 100).toStringAsFixed(1)}%)',
+                  '${(_downloadProgress.progress * 100).toStringAsFixed(1)}%',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -702,9 +687,4 @@ class _AsrTestScreenState extends ConsumerState<AsrTestScreen> {
     return '${(ms / 1000).toStringAsFixed(1)}s';
   }
 
-  static String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(0)} MB';
-  }
 }

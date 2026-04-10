@@ -33,8 +33,13 @@ class _FakeAudioPlaybackService extends AudioPlaybackService {
 }
 
 void main() {
-  Widget createTestWidget(_FakeAudioPlaybackService service) {
+  Widget createTestWidget({
+    required _FakeAudioPlaybackService service,
+    required SpeechPracticeAttempt attempt,
+    Locale locale = const Locale('en'),
+  }) {
     return MaterialApp(
+      locale: locale,
       supportedLocales: const [Locale('en'), Locale('zh')],
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -48,13 +53,7 @@ void main() {
           body: Center(
             child: SpeechRatingBadge(
               l10n: AppLocalizations.of(context)!,
-              attempt: const SpeechPracticeAttempt(
-                promptId: 'test:0',
-                filePath: '/tmp/test.m4a',
-                finalTranscript: 'test transcript',
-                score: 0.9,
-                status: SpeechPracticeAttemptStatus.passed,
-              ),
+              attempt: attempt,
               playbackServiceFactory: () => service,
             ),
           ),
@@ -66,7 +65,18 @@ void main() {
   testWidgets('badge 自己管理播放图标切换', (tester) async {
     final service = _FakeAudioPlaybackService();
 
-    await tester.pumpWidget(createTestWidget(service));
+    await tester.pumpWidget(
+      createTestWidget(
+        service: service,
+        attempt: const SpeechPracticeAttempt(
+          promptId: 'test:0',
+          filePath: '/tmp/test.m4a',
+          finalTranscript: 'test transcript',
+          score: 0.9,
+          status: SpeechPracticeAttemptStatus.passed,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
@@ -83,5 +93,62 @@ void main() {
 
     expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
     expect(find.byIcon(Icons.stop_rounded), findsNothing);
+  });
+
+  testWidgets('已完成评估但 transcript 为空时仍显示评级 badge', (tester) async {
+    final service = _FakeAudioPlaybackService();
+
+    await tester.pumpWidget(
+      createTestWidget(
+        service: service,
+        attempt: const SpeechPracticeAttempt(
+          promptId: 'test:1',
+          filePath: '/tmp/test.m4a',
+          finalTranscript: '',
+          score: 0.96,
+          status: SpeechPracticeAttemptStatus.passed,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(SpeechRatingBadge)),
+    )!;
+    final badgeText = tester.widget<Text>(
+      find.descendant(
+        of: find.byType(SpeechRatingBadge),
+        matching: find.byType(Text),
+      ),
+    );
+
+    expect(find.text(l10n.listenAndRepeatRecordingOnly), findsNothing);
+    expect(badgeText.data, l10n.listenAndRepeatRatingPerfect);
+    expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
+  });
+
+  testWidgets('识别失败时回退到录音 badge', (tester) async {
+    final service = _FakeAudioPlaybackService();
+
+    await tester.pumpWidget(
+      createTestWidget(
+        service: service,
+        attempt: const SpeechPracticeAttempt(
+          promptId: 'test:2',
+          filePath: '/tmp/test.m4a',
+          finalTranscript: '',
+          status: SpeechPracticeAttemptStatus.noEnglishDetected,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(SpeechRatingBadge)),
+    )!;
+
+    expect(find.text(l10n.listenAndRepeatRecordingOnly), findsOneWidget);
+    expect(find.text(l10n.listenAndRepeatRecognitionNoEnglish), findsNothing);
+    expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
   });
 }

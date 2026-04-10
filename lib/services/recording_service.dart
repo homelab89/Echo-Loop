@@ -164,7 +164,18 @@ class RecordingService {
     required String promptId,
     int? effectiveDurationMs,
   }) async {
+    AppLogger.log(
+      'Recording',
+      '┌ stopRecording promptId=$promptId '
+          'recordingPromptId=$_recordingPromptId '
+          'durationMs=${effectiveDurationMs ?? -1}',
+    );
     if (_recordingPromptId != promptId) {
+      AppLogger.log(
+        'Recording',
+        '└ stopRecording skipped: invalidState '
+            'recordingPromptId=$_recordingPromptId expected=$promptId',
+      );
       return const RecordingResult(
         errorCode: 'invalidState',
         errorMessage: 'Not recording this prompt.',
@@ -185,13 +196,19 @@ class RecordingService {
       _finalEventPromptId = promptId;
       _finalEventCompleter = Completer<SpeechPracticeEvent>();
 
+      AppLogger.log('Recording', '│ backend.stopSession() ...');
       final stopResult = await _backend.stopSession();
       final filePath = stopResult.filePath ?? _currentFilePath;
       _recordingPromptId = null;
       _recordingStartedAt = null;
+      AppLogger.log(
+        'Recording',
+        '│ stopSession done filePath=${filePath ?? '(null)'}',
+      );
 
       if (filePath == null || filePath.isEmpty) {
         await _shutdown();
+        AppLogger.log('Recording', '└ stopRecording failed: noFile');
         return const RecordingResult(
           errorCode: 'noFile',
           errorMessage: 'Recording file missing.',
@@ -199,14 +216,23 @@ class RecordingService {
       }
 
       // 等待 final transcript
+      AppLogger.log('Recording', '│ waiting final transcript ...');
       final event = await _finalEventCompleter!.future.timeout(
         _finalTranscriptTimeout,
       );
       _clearFinalCompleter();
 
       await _shutdown();
+      AppLogger.log(
+        'Recording',
+        '│ final event received type=${event.type.name} '
+            'promptId=${event.promptId} '
+            'transcriptLen=${event.transcript?.trim().length ?? 0} '
+            'errorCode=${event.errorCode ?? '(null)'}',
+      );
 
       if (event.type == SpeechPracticeEventType.error) {
+        AppLogger.log('Recording', '└ stopRecording failed: ASR error');
         return RecordingResult(
           filePath: filePath,
           errorCode: event.errorCode,
@@ -214,6 +240,7 @@ class RecordingService {
         );
       }
 
+      AppLogger.log('Recording', '└ stopRecording done: finalTranscript ready');
       return RecordingResult(
         filePath: filePath,
         finalTranscript: (event.transcript ?? '').trim(),
@@ -223,6 +250,10 @@ class RecordingService {
       _recordingPromptId = null;
       _recordingStartedAt = null;
       await _shutdown();
+      AppLogger.log(
+        'Recording',
+        '└ stopRecording failed: final transcript timeout',
+      );
       return RecordingResult(
         filePath: _currentFilePath,
         errorCode: 'timeout',
@@ -233,6 +264,10 @@ class RecordingService {
       _recordingPromptId = null;
       _recordingStartedAt = null;
       await _shutdown();
+      AppLogger.log(
+        'Recording',
+        '└ stopRecording failed: platform ${e.code} ${e.message}',
+      );
       return RecordingResult(
         filePath: _currentFilePath,
         errorCode: e.code,
@@ -304,6 +339,13 @@ class RecordingService {
   }
 
   void _handleEvent(SpeechPracticeEvent event) {
+    AppLogger.log(
+      'Recording',
+      '│ event type=${event.type.name} promptId=${event.promptId} '
+          'transcriptLen=${event.transcript?.trim().length ?? 0} '
+          'errorCode=${event.errorCode ?? '(null)'} '
+          'silenceMs=${event.silenceDuration?.inMilliseconds ?? -1}',
+    );
     switch (event.type) {
       case SpeechPracticeEventType.partialTranscriptUpdated ||
           SpeechPracticeEventType.speechStarted ||

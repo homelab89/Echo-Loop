@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:fluency/providers/app_update_provider.dart';
 import 'package:fluency/providers/developer_options_provider.dart';
+import 'package:fluency/providers/offline_asr_settings_provider.dart';
 import 'package:fluency/screens/settings_screen.dart';
 import 'package:fluency/providers/settings_provider.dart';
 import 'package:fluency/providers/audio_library_provider.dart';
@@ -15,6 +16,7 @@ import 'package:fluency/providers/collection_provider.dart';
 import 'package:fluency/providers/listening_practice/listening_practice_provider.dart';
 import 'package:fluency/providers/audio_engine/audio_engine_provider.dart';
 import 'package:fluency/providers/package_info_provider.dart';
+import 'package:fluency/services/asr/offline_asr_engine.dart';
 
 import '../helpers/mock_providers.dart';
 import '../helpers/test_app.dart';
@@ -30,11 +32,24 @@ void main() {
   List<Override> buildOverrides({
     AppSettingsState settings = const AppSettingsState(),
     bool showDeveloperOptions = true,
+    bool showOfflineAsrSection = false,
+    OfflineAsrSettingsState? offlineAsrState,
   }) {
+    const recommendedModel = AsrModelInfo(
+      id: 'whisper-base-en-int8',
+      displayName: 'Whisper Base.en',
+      type: AsrModelType.whisper,
+    );
     return [
       appSettingsProvider.overrideWith(() => TestAppSettings(settings)),
       showDeveloperOptionsProvider.overrideWith(
         () => _TestDeveloperOptions(showDeveloperOptions),
+      ),
+      showOfflineAsrSectionProvider.overrideWithValue(showOfflineAsrSection),
+      recommendedAsrModelProvider.overrideWithValue(recommendedModel),
+      initialOfflineAsrSettingsStateProvider.overrideWithValue(
+        offlineAsrState ??
+            const OfflineAsrSettingsState(recommendedModel: recommendedModel),
       ),
       audioLibraryProvider.overrideWith(() => TestAudioLibrary()),
       collectionListProvider.overrideWith(() => TestCollectionList()),
@@ -91,6 +106,20 @@ void main() {
 
         expect(find.text('Appearance'), findsOneWidget);
       });
+
+      testWidgets('AI section 仅由 Android 入口开关控制', (tester) async {
+        await tester.pumpWidget(
+          createTestScreen(
+            const SettingsScreen(),
+            overrides: buildOverrides(showOfflineAsrSection: true),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('AI'), findsOneWidget);
+        expect(find.text('Speech Recognition'), findsOneWidget);
+      });
+
       testWidgets('开发者选项关闭时不显示开发者分组', (tester) async {
         await tester.pumpWidget(
           createTestScreen(

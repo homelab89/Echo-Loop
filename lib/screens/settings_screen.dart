@@ -86,7 +86,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: AppSpacing.m),
           _buildReminderSection(context, ref, l10n),
-          if (ref.watch(needsLocalAsrProvider)) ...[
+          if (ref.watch(showOfflineAsrSectionProvider)) ...[
             const SizedBox(height: AppSpacing.m),
             _buildAiSection(context, ref, l10n),
           ],
@@ -175,7 +175,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  /// 构建 AI section（仅 Android 无 GMS 显示）。
+  /// 构建 AI section（Android 稳定显示，避免入口因环境判定波动而消失）。
   Widget _buildAiSection(
     BuildContext context,
     WidgetRef ref,
@@ -183,21 +183,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   ) {
     final asrState = ref.watch(offlineAsrSettingsProvider);
 
-    final String statusText;
-    if (asrState.enabled == null) {
-      statusText = l10n.speechRecognitionNotConfigured;
-    } else if (asrState.enabled == true) {
-      statusText = l10n.speechRecognitionEnabled;
-    } else {
-      statusText = l10n.speechRecognitionDisabled;
-    }
+    final statusText = asrState.enabled
+        ? l10n.speechRecognitionEnabled
+        : l10n.speechRecognitionDisabled;
 
     return _buildSection(
       context,
       title: l10n.aiSectionTitle,
       children: [
         ListTile(
-          leading: _emojiIcon('🤖'),
+          leading: _emojiIcon('🎙️'),
           title: Text(l10n.speechRecognition),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,

@@ -33,6 +33,7 @@ import '../widgets/listen_and_repeat/listen_and_repeat_briefing_sheet.dart';
 import '../providers/learning_session/retell_player_provider.dart';
 import '../widgets/retell/retell_briefing_sheet.dart';
 import '../widgets/review/review_briefing_sheet.dart';
+import '../widgets/asr_download_prompt_dialog.dart';
 import '../widgets/manage_subtitles_sheet.dart';
 import '../providers/listening_practice/bookmark_manager.dart';
 import '../database/providers.dart';
@@ -287,6 +288,9 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
   ///
   /// 先检查书签数量，无难句时自动完成并跳到下一复述子阶段。
   Future<void> _startReviewDifficultPractice(BuildContext context) async {
+    final allowed = await ensureAsrReadyBeforeSpeechPractice(context, ref);
+    if (!allowed || !context.mounted) return;
+
     final lpState = await _ensureAudioLoaded();
     if (!context.mounted || lpState == null) return;
     final l10n = AppLocalizations.of(context)!;
@@ -360,6 +364,9 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
     BuildContext context, {
     required bool isSummary,
   }) async {
+    final allowed = await ensureAsrReadyBeforeSpeechPractice(context, ref);
+    if (!allowed || !context.mounted) return;
+
     final lpState = await _ensureAudioLoaded();
     if (!context.mounted || lpState == null) return;
 
@@ -549,6 +556,9 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
 
   /// 进入难句跟读
   Future<void> _startListenAndRepeat(BuildContext context) async {
+    final allowed = await ensureAsrReadyBeforeSpeechPractice(context, ref);
+    if (!allowed || !context.mounted) return;
+
     final lpState = await _ensureAudioLoaded();
     if (!context.mounted || lpState == null) return;
     final l10n = AppLocalizations.of(context)!;
@@ -633,6 +643,9 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
 
   /// 进入段落复述
   Future<void> _startRetelling(BuildContext context) async {
+    final allowed = await ensureAsrReadyBeforeSpeechPractice(context, ref);
+    if (!allowed || !context.mounted) return;
+
     final lpState = await _ensureAudioLoaded();
     if (!context.mounted || lpState == null) return;
     final l10n = AppLocalizations.of(context)!;
@@ -916,8 +929,7 @@ class _ProgressCard extends StatelessWidget {
               child: CustomPaint(
                 painter: _ProgressRingPainter(
                   progress: percent,
-                  backgroundColor:
-                      theme.colorScheme.surfaceContainerHighest,
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
                   progressColor: theme.colorScheme.primary,
                 ),
                 child: Center(
@@ -957,10 +969,8 @@ class _ProgressCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: badgeIsError
-                                ? theme.colorScheme.error
-                                    .withValues(alpha: 0.1)
-                                : theme.colorScheme
-                                    .surfaceContainerHighest,
+                                ? theme.colorScheme.error.withValues(alpha: 0.1)
+                                : theme.colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -1068,8 +1078,7 @@ class _ProgressCard extends StatelessWidget {
       SubStageType.intensiveListen => l10n.stepIntensiveListening,
       SubStageType.listenAndRepeat => l10n.stepShadowing,
       SubStageType.retell => l10n.stepRetelling,
-      SubStageType.reviewDifficultPractice =>
-        l10n.reviewDifficultPracticeTitle,
+      SubStageType.reviewDifficultPractice => l10n.reviewDifficultPracticeTitle,
       SubStageType.reviewRetellParagraph => l10n.retellBriefingTitle,
       SubStageType.reviewRetellSummary => l10n.retellBriefingTitle,
     };
@@ -1267,7 +1276,9 @@ class _FirstStudySection extends ConsumerWidget {
                   duration: const Duration(milliseconds: 200),
                   child: Icon(
                     Icons.expand_more,
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.4,
+                    ),
                   ),
                 ),
               ],
@@ -1315,7 +1326,8 @@ class _FirstStudySection extends ConsumerWidget {
                 }
               } else if (subStage == SubStageType.listenAndRepeat) {
                 // 跟读：已完成且无难句时显示自动完成提示
-                final bookmarkCount = ref
+                final bookmarkCount =
+                    ref
                         .watch(_bookmarkCountProvider(audioItemId))
                         .valueOrNull ??
                     0;
@@ -1341,7 +1353,8 @@ class _FirstStudySection extends ConsumerWidget {
               } else if (isCompleted &&
                   subStage == SubStageType.listenAndRepeat) {
                 // 无难句自动完成的跟读步骤：点击只显示提示
-                final bookmarkCount = ref
+                final bookmarkCount =
+                    ref
                         .watch(_bookmarkCountProvider(audioItemId))
                         .valueOrNull ??
                     0;
@@ -1479,6 +1492,13 @@ class _FirstStudySection extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final allowed = await ensureAsrReadyForSubStage(
+      context,
+      ref,
+      SubStageType.listenAndRepeat,
+    );
+    if (!allowed || !context.mounted) return;
+
     final lpState = ref.read(listeningPracticeProvider);
     if (lpState.sentences.isEmpty) return;
 
@@ -1504,6 +1524,21 @@ class _FirstStudySection extends ConsumerWidget {
 
   /// 进入自由练习复述模式（弹 briefing sheet 选择段落时长）
   void _startFreePlayRetell(BuildContext context, WidgetRef ref) {
+    _startFreePlayRetellAsync(context, ref);
+  }
+
+  /// 进入自由练习复述前先检查本地 ASR，避免步骤卡片直达绕过拦截。
+  Future<void> _startFreePlayRetellAsync(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final allowed = await ensureAsrReadyForSubStage(
+      context,
+      ref,
+      SubStageType.retell,
+    );
+    if (!allowed || !context.mounted) return;
+
     final lpState = ref.read(listeningPracticeProvider);
     if (lpState.sentences.isEmpty) return;
 
@@ -1629,8 +1664,8 @@ class _StepCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isCompleted
                         ? (theme.brightness == Brightness.dark
-                            ? Colors.transparent
-                            : Colors.green.shade50)
+                              ? Colors.transparent
+                              : Colors.green.shade50)
                         : isCurrent
                         ? null
                         : theme.colorScheme.surfaceContainerHighest,
@@ -1639,7 +1674,8 @@ class _StepCard extends StatelessWidget {
                             color: theme.brightness == Brightness.dark
                                 ? Colors.green.shade400
                                 : Colors.green,
-                            width: 1.5)
+                            width: 1.5,
+                          )
                         : isCurrent
                         ? Border.all(color: theme.colorScheme.primary, width: 2)
                         : null,
@@ -1647,10 +1683,13 @@ class _StepCard extends StatelessWidget {
                   ),
                   child: Center(
                     child: isCompleted
-                        ? Icon(Icons.check, size: 16,
+                        ? Icon(
+                            Icons.check,
+                            size: 16,
                             color: theme.brightness == Brightness.dark
                                 ? Colors.green.shade300
-                                : Colors.green.shade700)
+                                : Colors.green.shade700,
+                          )
                         : Text(
                             '$stepNumber',
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -1690,7 +1729,7 @@ class _StepCard extends StatelessWidget {
                           icon,
                           color: isCompleted
                               ? (iconColor ?? theme.colorScheme.primary)
-                                  .withAlpha(100)
+                                    .withAlpha(100)
                               : iconColor ?? theme.colorScheme.primary,
                           size: 24,
                         ),
@@ -1960,6 +1999,13 @@ class _ReviewRoundSection extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final allowed = await ensureAsrReadyForSubStage(
+      context,
+      ref,
+      SubStageType.reviewDifficultPractice,
+    );
+    if (!allowed || !context.mounted) return;
+
     final lpState = ref.read(listeningPracticeProvider);
     if (lpState.sentences.isEmpty) return;
 
@@ -1983,6 +2029,15 @@ class _ReviewRoundSection extends ConsumerWidget {
     WidgetRef ref, {
     required bool isSummary,
   }) async {
+    final allowed = await ensureAsrReadyForSubStage(
+      context,
+      ref,
+      isSummary
+          ? SubStageType.reviewRetellSummary
+          : SubStageType.reviewRetellParagraph,
+    );
+    if (!allowed || !context.mounted) return;
+
     final lpState = ref.read(listeningPracticeProvider);
     if (lpState.sentences.isEmpty) return;
 
@@ -2139,7 +2194,9 @@ class _ReviewRoundSection extends ConsumerWidget {
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       Icons.expand_more,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.4,
+                      ),
                     ),
                   ),
                 ],
@@ -2162,7 +2219,8 @@ class _ReviewRoundSection extends ConsumerWidget {
               // 难句补练步骤：显示难句数量或自动完成提示
               String? subtitle;
               if (subStage == SubStageType.reviewDifficultPractice) {
-                final bookmarkCount = ref
+                final bookmarkCount =
+                    ref
                         .watch(_bookmarkCountProvider(audioItemId))
                         .valueOrNull ??
                     0;
@@ -2177,7 +2235,8 @@ class _ReviewRoundSection extends ConsumerWidget {
               VoidCallback? onTap;
               if (isCompleted) {
                 // 无难句自动完成的补练步骤：点击只显示提示
-                final bookmarkCount = ref
+                final bookmarkCount =
+                    ref
                         .watch(_bookmarkCountProvider(audioItemId))
                         .valueOrNull ??
                     0;

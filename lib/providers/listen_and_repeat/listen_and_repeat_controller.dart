@@ -440,8 +440,8 @@ class ListenAndRepeatController extends _$ListenAndRepeatController
       );
     }
 
-    // 评估完成 → 通知 engine
-    if (prev.phase == SpeechRecordingPhase.processing &&
+    // 评估完成 → 通知 engine（有 ASR: processing→idle，无 ASR: speaking→idle）
+    if (prev.phase != SpeechRecordingPhase.idle &&
         next.phase == SpeechRecordingPhase.idle &&
         next.currentAttempt != null) {
       final attempt = next.currentAttempt!;

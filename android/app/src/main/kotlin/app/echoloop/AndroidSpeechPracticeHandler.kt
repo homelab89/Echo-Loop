@@ -2,14 +2,9 @@ package app.echoloop
 
 import android.Manifest
 import android.app.Activity
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -23,8 +18,11 @@ import java.io.File
  * Android 语音练习平台桥接。
  *
  * 通过 MethodChannel/EventChannel 与 Dart 侧通信，
- * 使用 SpeechRecognizer（ASR）+ AudioRecord（WAV 录音 + VAD）实现
+ * 使用 AudioRecord（WAV 录音 + VAD）实现
  * 与 iOS 侧 IOSSpeechPracticeHandler 相同的协议。
+ *
+ * 语音识别由 Dart 侧的离线 ASR 引擎（sherpa-onnx）负责，
+ * 原生层仅负责录音和 VAD。
  */
 class AndroidSpeechPracticeHandler(
     private val activity: Activity,
@@ -40,17 +38,14 @@ class AndroidSpeechPracticeHandler(
     private var eventSink: EventChannel.EventSink? = null
 
     // 引擎级资源（warmup 创建，shutdown 释放）
-    private var speechRecognizer: SpeechRecognizer? = null
     private val wavRecorder = WavRecorder()
     private var isEngineReady = false
-    private var asrAvailable = false
 
     // 句子级状态
     private var isRecording = false
     private var currentPromptId: String? = null
     private var currentFilePath: String? = null
     private var sessionGeneration = 0
-    private var recognizerFinished = false
     private var finalTranscriptEmitted = false
 
     // VAD 状态
@@ -159,31 +154,18 @@ class AndroidSpeechPracticeHandler(
             return
         }
 
-        // Android 上只有 Google 语音服务可靠，国产 ROM 的语音服务大多不可绑定。
-        asrAvailable = hasGoogleMobileServices()
-        Log.i(TAG, "warmup: hasGMS=$asrAvailable")
-
-        if (asrAvailable) {
-            try {
-                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(activity)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to create SpeechRecognizer", e)
-                asrAvailable = false
-            }
-        }
-
         // AudioRecord 需要权限，若未授予则延迟到 startSession 再初始化。
         if (microphonePermissionStatus() == "granted") {
             initWavRecorder()
         }
 
         isEngineReady = true
-        result.success(mapOf("hasGms" to asrAvailable))
+        result.success(emptyMap<String, Any>())
     }
 
     private fun shutdown(result: MethodChannel.Result) {
         isRecording = false
-        cleanupSentenceState(cancelRecognition = true)
+        cleanupSentenceState()
         cleanupEngine()
         result.success(emptyMap<String, Any>())
     }
@@ -193,13 +175,12 @@ class AndroidSpeechPracticeHandler(
             val ok = wavRecorder.initialize()
             if (!ok) Log.w(TAG, "WavRecorder initialization failed")
         }
+        // release() 会清空 onRms，重新初始化后必须恢复。
+        wavRecorder.onRms = { rms -> handleVoiceActivity(rms) }
     }
 
     private fun cleanupEngine() {
-        speechRecognizer?.destroy()
-        speechRecognizer = null
         wavRecorder.release()
-        asrAvailable = false
         isEngineReady = false
         isRecording = false
     }
@@ -219,7 +200,7 @@ class AndroidSpeechPracticeHandler(
         if (!isEngineReady) {
             warmup(object : MethodChannel.Result {
                 override fun success(r: Any?) {
-                    doStartSession(promptId, locale, result)
+                    doStartSession(promptId, result)
                 }
                 override fun error(code: String, msg: String?, details: Any?) {
                     result.error(code, msg, details)
@@ -229,11 +210,11 @@ class AndroidSpeechPracticeHandler(
             return
         }
 
-        doStartSession(promptId, locale, result)
+        doStartSession(promptId, result)
     }
 
-    private fun doStartSession(promptId: String, locale: String, result: MethodChannel.Result) {
-        cleanupSentenceState(cancelRecognition = true)
+    private fun doStartSession(promptId: String, result: MethodChannel.Result) {
+        cleanupSentenceState()
         resetSentenceState(promptId)
 
         val fileName = sanitizeFileName(promptId)
@@ -246,104 +227,8 @@ class AndroidSpeechPracticeHandler(
             wavRecorder.startRecording(file.absolutePath)
         }
 
-        if (asrAvailable && speechRecognizer != null) {
-            startAsrListening(locale)
-        }
-
         isRecording = true
         result.success(mapOf("filePath" to file.absolutePath))
-    }
-
-    private fun startAsrListening(locale: String) {
-        val generation = sessionGeneration
-
-        speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {}
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(rmsdB: Float) {}
-            override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() {}
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-
-            override fun onPartialResults(partialResults: Bundle?) {
-                if (sessionGeneration != generation) return
-                val transcript = partialResults
-                    ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    ?.firstOrNull()?.trim()
-                if (!transcript.isNullOrEmpty()) {
-                    emitEvent(mapOf(
-                        "type" to "partialTranscriptUpdated",
-                        "promptId" to (currentPromptId ?: ""),
-                        "transcript" to transcript,
-                    ))
-                }
-            }
-
-            override fun onResults(results: Bundle?) {
-                if (sessionGeneration != generation) return
-                val transcript = results
-                    ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    ?.firstOrNull()?.trim() ?: ""
-                recognizerFinished = true
-                finalTranscriptEmitted = true
-                emitEvent(mapOf(
-                    "type" to "finalTranscriptReady",
-                    "promptId" to (currentPromptId ?: ""),
-                    "transcript" to transcript,
-                ))
-            }
-
-            override fun onError(error: Int) {
-                if (sessionGeneration != generation) return
-                handleAsrError(error)
-            }
-        })
-
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, locale)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-        }
-
-        try {
-            speechRecognizer?.startListening(intent)
-        } catch (e: SecurityException) {
-            Log.e(TAG, "startListening SecurityException, disabling ASR", e)
-            asrAvailable = false
-        } catch (e: Exception) {
-            Log.e(TAG, "startListening failed", e)
-        }
-    }
-
-    private fun handleAsrError(error: Int) {
-        val promptId = currentPromptId ?: return
-
-        // ERROR_CLIENT(5) 通常是快速 cancel/start 导致的，静默忽略。
-        if (error == SpeechRecognizer.ERROR_CLIENT) return
-
-        recognizerFinished = true
-
-        val (code, message) = when (error) {
-            SpeechRecognizer.ERROR_NO_MATCH,
-            SpeechRecognizer.ERROR_SPEECH_TIMEOUT ->
-                "noSpeech" to "No speech detected"
-            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS ->
-                "permissionDenied" to "Speech recognition permission denied"
-            SpeechRecognizer.ERROR_NETWORK,
-            SpeechRecognizer.ERROR_NETWORK_TIMEOUT,
-            SpeechRecognizer.ERROR_SERVER ->
-                "recordingFailed" to "Network error (error=$error)"
-            else ->
-                "recordingFailed" to "Speech recognition error (error=$error)"
-        }
-
-        emitEvent(mapOf(
-            "type" to "error",
-            "promptId" to promptId,
-            "errorCode" to code,
-            "errorMessage" to message,
-        ))
     }
 
     private fun stopSession(result: MethodChannel.Result) {
@@ -366,7 +251,6 @@ class AndroidSpeechPracticeHandler(
         }
 
         // 确保 Dart 侧总能收到 finalTranscriptReady，避免等超时。
-        // 场景：ASR 不可用、ASR 已自行超时（事件在 completer 创建前到达被丢弃）。
         if (!finalTranscriptEmitted) {
             finalTranscriptEmitted = true
             emitEvent(mapOf(
@@ -381,7 +265,7 @@ class AndroidSpeechPracticeHandler(
 
     private fun cancelSession(result: MethodChannel.Result) {
         isRecording = false
-        cleanupSentenceState(cancelRecognition = true)
+        cleanupSentenceState()
         result.success(emptyMap<String, Any>())
     }
 
@@ -458,7 +342,6 @@ class AndroidSpeechPracticeHandler(
         sessionGeneration++
         currentPromptId = promptId
         currentFilePath = null
-        recognizerFinished = false
         finalTranscriptEmitted = false
         hasDetectedSpeech = false
         silenceStartAt = 0L
@@ -468,10 +351,7 @@ class AndroidSpeechPracticeHandler(
         lastDetectedSpeechMs = null
     }
 
-    private fun cleanupSentenceState(cancelRecognition: Boolean) {
-        if (cancelRecognition && speechRecognizer != null) {
-            try { speechRecognizer?.cancel() } catch (_: Exception) {}
-        }
+    private fun cleanupSentenceState() {
         if (wavRecorder.isInitialized) {
             try { wavRecorder.stopRecording() } catch (_: Exception) {}
         }
@@ -479,7 +359,6 @@ class AndroidSpeechPracticeHandler(
         hasDetectedSpeech = false
         silenceStartAt = 0L
         lastReportedSilenceMs = -1
-        recognizerFinished = false
         finalTranscriptEmitted = false
         recordedDurationMs = 0.0
         firstDetectedSpeechMs = null
@@ -488,16 +367,6 @@ class AndroidSpeechPracticeHandler(
 
     private fun emitEvent(event: Map<String, Any>) {
         mainHandler.post { eventSink?.success(event) }
-    }
-
-    /** 检查设备是否有 Google 语音服务（ASR 的前提）。 */
-    private fun hasGoogleMobileServices(): Boolean {
-        return try {
-            activity.packageManager.getPackageInfo("com.google.android.googlequicksearchbox", 0)
-            true
-        } catch (_: PackageManager.NameNotFoundException) {
-            false
-        }
     }
 
     private fun sanitizeFileName(promptId: String): String {
@@ -509,7 +378,7 @@ class AndroidSpeechPracticeHandler(
     /** 页面退出时由 MainActivity 调用。 */
     fun dispose() {
         isRecording = false
-        cleanupSentenceState(cancelRecognition = true)
+        cleanupSentenceState()
         cleanupEngine()
         methodChannel.setMethodCallHandler(null)
         eventChannel.setStreamHandler(null)

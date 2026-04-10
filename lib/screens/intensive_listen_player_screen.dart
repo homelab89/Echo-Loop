@@ -21,6 +21,7 @@ import '../providers/learning_session/intensive_listen_player_provider.dart';
 import '../providers/learning_session/learning_session_provider.dart';
 import '../providers/listening_practice/bookmark_manager.dart';
 import '../theme/app_theme.dart';
+import '../widgets/asr_download_prompt_dialog.dart';
 import '../widgets/intensive_listen/intensive_listen_settings_sheet.dart';
 import '../providers/sentence_ai_provider.dart';
 import '../services/app_logger.dart';
@@ -202,7 +203,6 @@ class _IntensiveListenPlayerScreenState
         player.sentences[idx].index,
       );
     }
-
   }
 
   /// 保存难句书签到数据库（增量同步：新增 + 移除）
@@ -258,15 +258,27 @@ class _IntensiveListenPlayerScreenState
   ///
   /// 先 go 回学习 Tab 清空导航栈，再 push 新的学习计划页（autoStart=true），
   /// 效果等同于用户在学习列表点击"继续学习"。
-  void _navigateBackToPlanAndAutoStart() {
+  Future<void> _navigateBackToPlanAndAutoStart() async {
     if (!mounted) return;
+    final nextSubStage = ref
+        .read(learningProgressNotifierProvider)
+        .progressMap[widget.audioItemId]
+        ?.currentSubStage;
+    final canAutoStart = nextSubStage == null
+        ? true
+        : await ensureAsrReadyForSubStage(context, ref, nextSubStage);
+    if (!mounted) return;
+
     final route = widget.collectionId != null
         ? AppRoutes.learningPlan(
             widget.collectionId!,
             widget.audioItemId,
-            autoStart: true,
+            autoStart: canAutoStart,
           )
-        : AppRoutes.audioLearningPlan(widget.audioItemId, autoStart: true);
+        : AppRoutes.audioLearningPlan(
+            widget.audioItemId,
+            autoStart: canAutoStart,
+          );
     GoRouter.of(context).go(AppRoutes.study);
     GoRouter.of(context).push(route);
   }
@@ -436,7 +448,7 @@ class _IntensiveListenPlayerScreenState
     if (!mounted) return;
 
     if (result.action == StepCompleteAction.continueNext) {
-      _navigateBackToPlanAndAutoStart();
+      await _navigateBackToPlanAndAutoStart();
     } else {
       context.pop();
     }
@@ -617,14 +629,11 @@ class _IntensiveListenPlayerScreenState
                                     audioItemId: widget.audioItemId,
                                     sentenceIndex: currentSentence.index,
                                     sentenceText: currentSentence.text,
-                                    sentenceStartMs:
-                                        currentSentence
-                                            .startTime
-                                            .inMilliseconds,
+                                    sentenceStartMs: currentSentence
+                                        .startTime
+                                        .inMilliseconds,
                                     sentenceEndMs:
-                                        currentSentence
-                                            .endTime
-                                            .inMilliseconds,
+                                        currentSentence.endTime.inMilliseconds,
                                   );
                                 }
                               : null,

@@ -87,15 +87,16 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasTranscript = (widget.attempt.finalTranscript ?? '').isNotEmpty;
+    final attempt = widget.attempt;
 
-    // 无识别结果但有录音 → 显示可播放的「录音」胶囊
-    if (!hasTranscript && widget.attempt.hasRecording) {
+    // 只有识别失败时，才退回显示「录音」胶囊。
+    // 评估已完成但 transcript 为空时，仍然应该显示评级 badge。
+    if (attempt.isRecognitionFailure && attempt.hasRecording) {
       return _buildRecordingOnlyBadge(theme);
     }
 
-    // 无识别结果且无录音 → 纯文字反馈
-    if (!hasTranscript) {
+    // 识别失败但没有录音文件时，退回纯文字反馈。
+    if (attempt.isRecognitionFailure) {
       return Text(
         _feedbackText(),
         style: theme.textTheme.bodySmall?.copyWith(
@@ -105,10 +106,14 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
       );
     }
 
+    if (!attempt.hasFinalFeedback) {
+      return const SizedBox.shrink();
+    }
+
     final style = _ratingStyle(theme);
 
     return TappableWrapper(
-      onTap: widget.attempt.hasRecording ? _handleTap : null,
+      onTap: attempt.hasRecording ? _handleTap : null,
       feedbackType: TapFeedback.opacity,
       pressedOpacity: 0.6,
       child: Container(
@@ -131,7 +136,7 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
                 letterSpacing: 0.2,
               ),
             ),
-            if (widget.attempt.hasRecording) ...[
+            if (attempt.hasRecording) ...[
               const SizedBox(width: 6),
               Icon(
                 _isPlaying ? Icons.stop_rounded : Icons.volume_up_outlined,

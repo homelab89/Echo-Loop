@@ -25,6 +25,7 @@ import '../providers/saved_word_provider.dart';
 import '../services/dictionary_service.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
+import '../widgets/asr_download_prompt_dialog.dart';
 import '../widgets/favorites/sentence_recycle_bin_sheet.dart';
 import '../widgets/favorites/vocabulary_recycle_bin_sheet.dart';
 
@@ -217,7 +218,10 @@ class _FloatingSentenceReviewButton extends ConsumerWidget {
       label: AppLocalizations.of(
         context,
       )!.bookmarkReviewStartCount(validBookmarks.length),
-      onPressed: () {
+      onPressed: () async {
+        final allowed = await ensureAsrReadyBeforeSpeechPractice(context, ref);
+        if (!allowed || !context.mounted) return;
+
         final sw = Stopwatch()..start();
         final provider = ref.read(bookmarkReviewProvider.notifier);
         final audioItemDao = ref.read(audioItemDaoProvider);
@@ -407,7 +411,13 @@ class _AudioBookmarkGroup extends ConsumerWidget {
                 color: theme.colorScheme.primary,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                onPressed: () {
+                onPressed: () async {
+                  final allowed = await ensureAsrReadyBeforeSpeechPractice(
+                    context,
+                    ref,
+                  );
+                  if (!allowed || !context.mounted) return;
+
                   final provider = ref.read(bookmarkReviewProvider.notifier);
                   final audioItemDao = ref.read(audioItemDaoProvider);
                   provider.initialize(
@@ -918,7 +928,7 @@ class _SavedPhraseTileState extends ConsumerState<_SavedPhraseTile> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${l10n.bookmarkReviewFromAudio(_audioName!)}',
+                                l10n.bookmarkReviewFromAudio(_audioName!),
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant
                                       .withValues(alpha: 0.5),

@@ -6,10 +6,12 @@ library;
 
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../app_logger.dart';
 import 'offline_asr_engine.dart';
 
 // ---------------------------------------------------------------------------
@@ -22,57 +24,154 @@ const _hfMirrorBase = 'https://hf-mirror.com';
 /// HuggingFace 官方基础 URL。
 const _hfOfficialBase = 'https://huggingface.co';
 
-/// 模型文件清单：每个模型需要下载的文件列表。
-class _ModelFiles {
+/// 单个模型文件的固定元数据。
+class AsrModelFileSpec {
+  final String path;
+  final String sha256;
+
+  const AsrModelFileSpec({
+    required this.path,
+    required this.sha256,
+  });
+}
+
+/// 模型文件清单：每个模型需要下载的文件及其固定校验信息。
+class AsrModelManifest {
   final String hfRepo;
-  final List<String> files;
-  const _ModelFiles({required this.hfRepo, required this.files});
+  final String commit;
+  final List<AsrModelFileSpec> files;
+  const AsrModelManifest({
+    required this.hfRepo,
+    required this.commit,
+    required this.files,
+  });
 }
 
 /// 各模型对应的 HuggingFace 仓库和文件清单。
-const _modelFileRegistry = <String, _ModelFiles>{
-  'moonshine-tiny-en-int8': _ModelFiles(
+const _defaultModelFileRegistry = <String, AsrModelManifest>{
+  'moonshine-tiny-en-int8': AsrModelManifest(
     hfRepo: 'csukuangfj/sherpa-onnx-moonshine-tiny-en-int8',
+    commit: 'bf2b762c076d8ea61e2af0b3851c9564fb77552e',
     files: [
-      'preprocess.onnx',
-      'encode.int8.onnx',
-      'uncached_decode.int8.onnx',
-      'cached_decode.int8.onnx',
-      'tokens.txt',
+      AsrModelFileSpec(
+        path: 'preprocess.onnx',
+        sha256:
+            'f33addce61a143460fe753b5ee5b7db255e5140b5b779c065b94f6c83ff0bf4e',
+      ),
+      AsrModelFileSpec(
+        path: 'encode.int8.onnx',
+        sha256:
+            '8774dfba578de027ec6595c2c654a0836434489bc963a0db124a7f181f571acb',
+      ),
+      AsrModelFileSpec(
+        path: 'uncached_decode.int8.onnx',
+        sha256:
+            '216737000dd5881a17aa043f6bbd286add33e4c3b0ae257153e2ec15438bdc41',
+      ),
+      AsrModelFileSpec(
+        path: 'cached_decode.int8.onnx',
+        sha256:
+            '2aff28bba6a03d8dcf5c9feac45462629bae37317442299f28115ad09da773f6',
+      ),
+      AsrModelFileSpec(
+        path: 'tokens.txt',
+        sha256:
+            '1165c2aeb9f72f457a83be2d459a09054f27490acd9b41bd43794dfd25e296ea',
+      ),
     ],
   ),
-  'moonshine-base-en-int8': _ModelFiles(
+  'moonshine-base-en-int8': AsrModelManifest(
     hfRepo: 'csukuangfj/sherpa-onnx-moonshine-base-en-int8',
+    commit: '052b0798ad1bf046a140fdd4efcd9426530fa3f5',
     files: [
-      'preprocess.onnx',
-      'encode.int8.onnx',
-      'uncached_decode.int8.onnx',
-      'cached_decode.int8.onnx',
-      'tokens.txt',
+      AsrModelFileSpec(
+        path: 'preprocess.onnx',
+        sha256:
+            'ffa630d395c5ccf76f5d4954be5b882df76aaf6491519ec01fd82ea7a3819fb2',
+      ),
+      AsrModelFileSpec(
+        path: 'encode.int8.onnx',
+        sha256:
+            '7e38770f776f2e5583a53b052936005df2ba5c833d7e09c2a5fd796b94bf73e2',
+      ),
+      AsrModelFileSpec(
+        path: 'uncached_decode.int8.onnx',
+        sha256:
+            'c01f4b35093bcac20d352d23a75a539e772964579f9d024a90e5e6f09cae9987',
+      ),
+      AsrModelFileSpec(
+        path: 'cached_decode.int8.onnx',
+        sha256:
+            '2db74e51cedf64a8b1be3c8192e0bb5e4923af0e90bd9e87f8e8771873f8ea03',
+      ),
+      AsrModelFileSpec(
+        path: 'tokens.txt',
+        sha256:
+            '1165c2aeb9f72f457a83be2d459a09054f27490acd9b41bd43794dfd25e296ea',
+      ),
     ],
   ),
-  'whisper-tiny-en-int8': _ModelFiles(
+  'whisper-tiny-en-int8': AsrModelManifest(
     hfRepo: 'csukuangfj/sherpa-onnx-whisper-tiny.en',
+    commit: 'd026532c022fa99fd789d6b32446a1df7b6bfc43',
     files: [
-      'tiny.en-encoder.int8.onnx',
-      'tiny.en-decoder.int8.onnx',
-      'tiny.en-tokens.txt',
+      AsrModelFileSpec(
+        path: 'tiny.en-encoder.int8.onnx',
+        sha256:
+            '0ce578b827c94a961aacb8fa14b02f096504b337e5c94be37c36238cbe3e8bc6',
+      ),
+      AsrModelFileSpec(
+        path: 'tiny.en-decoder.int8.onnx',
+        sha256:
+            '06c0e6ff6348d427e51839219d1c886c18cfdf411e629e33f5e1679bff9c1527',
+      ),
+      AsrModelFileSpec(
+        path: 'tiny.en-tokens.txt',
+        sha256:
+            '306cd27f03c1a714eca7108e03d66b7dc042abe8c258b44c199a7ed9838dd930',
+      ),
     ],
   ),
-  'whisper-base-en-int8': _ModelFiles(
+  'whisper-base-en-int8': AsrModelManifest(
     hfRepo: 'csukuangfj/sherpa-onnx-whisper-base.en',
+    commit: '59eea950fc76df2453efb57e6c0fd334548e8ffe',
     files: [
-      'base.en-encoder.int8.onnx',
-      'base.en-decoder.int8.onnx',
-      'base.en-tokens.txt',
+      AsrModelFileSpec(
+        path: 'base.en-encoder.int8.onnx',
+        sha256:
+            'ef6b936f4c9b1d90a3b68634b60c4ed8576b26172b33c2535ec0e933c9edb823',
+      ),
+      AsrModelFileSpec(
+        path: 'base.en-decoder.int8.onnx',
+        sha256:
+            'f7162ad6db2dbef16cfaeaa7f945b9d7dd9c1b8d472f6aca82f2273d185e4d41',
+      ),
+      AsrModelFileSpec(
+        path: 'base.en-tokens.txt',
+        sha256:
+            '306cd27f03c1a714eca7108e03d66b7dc042abe8c258b44c199a7ed9838dd930',
+      ),
     ],
   ),
-  'whisper-small-en-int8': _ModelFiles(
+  'whisper-small-en-int8': AsrModelManifest(
     hfRepo: 'csukuangfj/sherpa-onnx-whisper-small.en',
+    commit: 'd9533f69affd85061aee349af7fea5cb2996dbbe',
     files: [
-      'small.en-encoder.int8.onnx',
-      'small.en-decoder.int8.onnx',
-      'small.en-tokens.txt',
+      AsrModelFileSpec(
+        path: 'small.en-encoder.int8.onnx',
+        sha256:
+            '8bdac288f369aa94ee2194059238c465ed82ea9d47ee8fa4a8c0a891873e462f',
+      ),
+      AsrModelFileSpec(
+        path: 'small.en-decoder.int8.onnx',
+        sha256:
+            '710ccf890e10f3faa15f51ec346081a2723c9f3adb6e4da81c6573a5a6f877fb',
+      ),
+      AsrModelFileSpec(
+        path: 'small.en-tokens.txt',
+        sha256:
+            '306cd27f03c1a714eca7108e03d66b7dc042abe8c258b44c199a7ed9838dd930',
+      ),
     ],
   ),
 };
@@ -83,33 +182,26 @@ final List<AsrModelInfo> availableModels = [
     id: 'moonshine-tiny-en-int8',
     displayName: 'Moonshine Tiny',
     type: AsrModelType.moonshine,
-    // preprocess 6.8 + encode 18.2 + uncached_decode 53.2 + cached_decode 45.3 + tokens 0.4
-    fileSizeBytes: 129757184, // 123.7 MB
   ),
   const AsrModelInfo(
     id: 'moonshine-base-en-int8',
     displayName: 'Moonshine Base',
     type: AsrModelType.moonshine,
-    // preprocess 14.1 + encode 50.3 + uncached_decode 122 + cached_decode 100 + tokens 0.4
-    fileSizeBytes: 300720128, // 286.8 MB
   ),
   const AsrModelInfo(
     id: 'whisper-tiny-en-int8',
     displayName: 'Whisper Tiny.en',
     type: AsrModelType.whisper,
-    fileSizeBytes: 104 * 1024 * 1024, // ~104 MB
   ),
   const AsrModelInfo(
     id: 'whisper-base-en-int8',
     displayName: 'Whisper Base.en',
     type: AsrModelType.whisper,
-    fileSizeBytes: 209 * 1024 * 1024, // ~209 MB
   ),
   const AsrModelInfo(
     id: 'whisper-small-en-int8',
     displayName: 'Whisper Small.en',
     type: AsrModelType.whisper,
-    fileSizeBytes: 636 * 1024 * 1024, // ~636 MB
   ),
 ];
 
@@ -140,20 +232,12 @@ class AsrModelDownloadProgress {
   /// 下载进度 0.0 ~ 1.0。
   final double progress;
 
-  /// 已下载字节数。
-  final int downloadedBytes;
-
-  /// 总字节数。
-  final int totalBytes;
-
   /// 错误信息（仅 [AsrModelDownloadStatus.failed] 时有值）。
   final String? error;
 
   const AsrModelDownloadProgress({
     required this.status,
     this.progress = 0,
-    this.downloadedBytes = 0,
-    this.totalBytes = 0,
     this.error,
   });
 
@@ -176,7 +260,20 @@ class AsrModelManager {
   /// 是否使用 HuggingFace 镜像（大陆优先）。
   final bool useMirror;
 
-  AsrModelManager({Dio? dio, this.useMirror = true}) : _dio = dio ?? Dio();
+  /// 可选的下载基地址覆盖，仅用于测试。
+  final String? baseUrlOverride;
+
+  /// 可选的模型清单覆盖，仅用于测试。
+  final Map<String, AsrModelManifest> modelRegistryOverride;
+
+  AsrModelManager({
+    Dio? dio,
+    this.useMirror = true,
+    this.baseUrlOverride,
+    Map<String, AsrModelManifest>? modelRegistryOverride,
+  }) : _dio = dio ?? Dio(),
+       modelRegistryOverride =
+           modelRegistryOverride ?? _defaultModelFileRegistry;
 
   /// 模型存储根目录。
   Future<String> get _modelsRoot async {
@@ -192,14 +289,8 @@ class AsrModelManager {
 
   /// 检查模型是否已下载且完整。
   Future<bool> isModelDownloaded(String modelId) async {
-    final files = _modelFileRegistry[modelId];
-    if (files == null) return false;
-
-    final dir = await modelDir(modelId);
-    for (final file in files.files) {
-      if (!File(p.join(dir, file)).existsSync()) return false;
-    }
-    return true;
+    final result = await validateModel(modelId);
+    return result.isValid;
   }
 
   /// 获取模型本地占用空间（字节）。
@@ -225,62 +316,45 @@ class AsrModelManager {
     void Function(AsrModelDownloadProgress)? onProgress,
     CancelToken? cancelToken,
   }) async {
-    final modelFiles = _modelFileRegistry[modelId];
-    if (modelFiles == null) {
+    final manifest = modelRegistryOverride[modelId];
+    if (manifest == null) {
       throw ArgumentError('Unknown model: $modelId');
     }
 
     final dir = await modelDir(modelId);
     await Directory(dir).create(recursive: true);
 
-    final baseUrl = useMirror ? _hfMirrorBase : _hfOfficialBase;
-    final repoUrl = '$baseUrl/${modelFiles.hfRepo}/resolve/main';
+    final baseUrl =
+        baseUrlOverride ?? (useMirror ? _hfMirrorBase : _hfOfficialBase);
+    AppLogger.log('ASRModel', '┌ downloadModel modelId=$modelId dir=$dir');
+    AppLogger.log('ASRModel', '│ repo=${manifest.hfRepo} baseUrl=$baseUrl');
 
-    // 先获取所有文件的大小。
-    var totalBytes = 0;
-    final fileSizes = <String, int>{};
-    for (final file in modelFiles.files) {
-      final localFile = File(p.join(dir, file));
-      if (localFile.existsSync()) {
-        // 已存在的文件跳过下载，但计入总进度。
-        final size = localFile.lengthSync();
-        fileSizes[file] = size;
-        totalBytes += size;
-      } else {
-        // 用 HEAD 请求获取文件大小。
-        try {
-          final response = await _dio.head<void>(
-            '$repoUrl/$file',
-            cancelToken: cancelToken,
-          );
-          final size =
-              int.tryParse('${response.headers.value('content-length')}') ?? 0;
-          fileSizes[file] = size;
-          totalBytes += size;
-        } on DioException {
-          // HEAD 失败时用预估大小。
-          fileSizes[file] = 0;
-        }
+    final totalFileCount = manifest.files.length;
+    var completedFileCount = 0;
+
+    // 预处理已存在文件：哈希符合清单则视为完成，否则删除重下。
+    for (final file in manifest.files) {
+      final localFile = File(p.join(dir, file.path));
+      if (!localFile.existsSync()) continue;
+      if (await _matchesExpectedHash(localFile, file.sha256)) {
+        completedFileCount++;
+        continue;
       }
+      AppLogger.log(
+        'ASRModel',
+        '│ remove stale file=${file.path} (hash mismatch)',
+      );
+      await localFile.delete();
     }
 
-    var downloadedBytes = 0;
-
-    // 已存在的文件直接计入进度。
-    for (final file in modelFiles.files) {
-      final localFile = File(p.join(dir, file));
-      if (localFile.existsSync()) {
-        downloadedBytes += localFile.lengthSync();
-      }
-    }
-
-    void reportProgress() {
+    void reportProgress([double currentFileProgress = 0]) {
+      final progress = totalFileCount > 0
+          ? (completedFileCount + currentFileProgress) / totalFileCount
+          : 0.0;
       onProgress?.call(
         AsrModelDownloadProgress(
           status: AsrModelDownloadStatus.downloading,
-          progress: totalBytes > 0 ? downloadedBytes / totalBytes : 0,
-          downloadedBytes: downloadedBytes,
-          totalBytes: totalBytes,
+          progress: progress.clamp(0.0, 1.0),
         ),
       );
     }
@@ -288,50 +362,96 @@ class AsrModelManager {
     reportProgress();
 
     // 逐个下载缺失的文件。
-    for (final file in modelFiles.files) {
-      final localFile = File(p.join(dir, file));
+    for (final file in manifest.files) {
+      final localFile = File(p.join(dir, file.path));
       if (localFile.existsSync()) continue;
 
       final tempFile = File('${localFile.path}.tmp');
       try {
+        final downloadUrl =
+            '$baseUrl/${manifest.hfRepo}/resolve/${manifest.commit}/${file.path}';
+        AppLogger.log('ASRModel', '│ downloading file=${file.path}');
         await _dio.download(
-          '$repoUrl/$file',
+          downloadUrl,
           tempFile.path,
           cancelToken: cancelToken,
           onReceiveProgress: (received, total) {
-            onProgress?.call(
-              AsrModelDownloadProgress(
-                status: AsrModelDownloadStatus.downloading,
-                progress: totalBytes > 0
-                    ? (downloadedBytes + received) / totalBytes
-                    : 0,
-                downloadedBytes: downloadedBytes + received,
-                totalBytes: totalBytes,
-              ),
-            );
+            final fileFraction = total > 0 ? received / total : 0.0;
+            reportProgress(fileFraction);
           },
         );
         await tempFile.rename(localFile.path);
-        downloadedBytes += fileSizes[file] ?? 0;
+        completedFileCount++;
+        AppLogger.log(
+          'ASRModel',
+          '│ file done=${file.path} size=${localFile.lengthSync()}',
+        );
       } catch (e) {
         // 清理临时文件。
         if (tempFile.existsSync()) {
           await tempFile.delete();
         }
+        AppLogger.log(
+          'ASRModel',
+          '└ downloadModel failed file=${file.path} error=$e',
+        );
         rethrow;
       }
     }
 
     onProgress?.call(
-      AsrModelDownloadProgress(
+      const AsrModelDownloadProgress(
         status: AsrModelDownloadStatus.downloaded,
         progress: 1.0,
-        downloadedBytes: totalBytes,
-        totalBytes: totalBytes,
       ),
     );
+    AppLogger.log('ASRModel', '└ downloadModel done modelId=$modelId dir=$dir');
+
+    final validation = await validateModel(modelId);
+    if (!validation.isValid) {
+      throw StateError(validation.describe());
+    }
 
     return dir;
+  }
+
+  /// 校验本地模型文件是否和固定清单完全一致。
+  Future<AsrModelValidationResult> validateModel(String modelId) async {
+    final manifest = modelRegistryOverride[modelId];
+    if (manifest == null) {
+      return AsrModelValidationResult(
+        modelId: modelId,
+        isValid: false,
+        reason: 'Unknown model',
+      );
+    }
+
+    final dir = await modelDir(modelId);
+    for (final file in manifest.files) {
+      final localFile = File(p.join(dir, file.path));
+      if (!localFile.existsSync()) {
+        return AsrModelValidationResult(
+          modelId: modelId,
+          isValid: false,
+          reason: 'Missing file',
+          filePath: file.path,
+        );
+      }
+
+      final actualSha256 = await _computeSha256(localFile);
+      if (actualSha256 != file.sha256) {
+        return AsrModelValidationResult(
+          modelId: modelId,
+          isValid: false,
+          reason: 'SHA-256 mismatch',
+          filePath: file.path,
+          expectedSha256: file.sha256,
+          actualSha256: actualSha256,
+        );
+      }
+    }
+
+    return AsrModelValidationResult(modelId: modelId, isValid: true);
   }
 
   /// 删除本地模型缓存。
@@ -342,20 +462,18 @@ class AsrModelManager {
     }
   }
 
-  /// 根据设备性能推荐 Moonshine 模型。
+  /// 根据设备性能推荐 Whisper 模型。
   ///
-  /// 只从 Moonshine 系列中选择（Whisper 仅供开发者测试页对比）。
+  /// 当前默认切到 Whisper 系列，便于对比 Moonshine 在真机上的识别表现。
   /// 核心数 ≥ 6 且 RAM ≥ 4GB → Base（更准确，模型更大）。
   /// 其他 → Tiny（更快，模型更小）。
   AsrModelInfo recommendModel() {
     final cores = Platform.numberOfProcessors;
     final ramGb = _getTotalRamGb();
     if (cores >= 6 && ramGb >= 4) {
-      return availableModels.firstWhere(
-        (m) => m.id == 'moonshine-base-en-int8',
-      );
+      return availableModels.firstWhere((m) => m.id == 'whisper-base-en-int8');
     }
-    return availableModels.firstWhere((m) => m.id == 'moonshine-tiny-en-int8');
+    return availableModels.firstWhere((m) => m.id == 'whisper-tiny-en-int8');
   }
 
   /// 获取设备总 RAM（GB）。
@@ -377,5 +495,46 @@ class AsrModelManager {
   /// 释放资源。
   void dispose() {
     _dio.close();
+  }
+
+  Future<bool> _matchesExpectedHash(File file, String expectedSha256) async {
+    final actualSha256 = await _computeSha256(file);
+    return actualSha256 == expectedSha256;
+  }
+
+  Future<String> _computeSha256(File file) async {
+    final digest = await sha256.bind(file.openRead()).first;
+    return digest.toString();
+  }
+}
+
+/// 本地模型校验结果。
+class AsrModelValidationResult {
+  final String modelId;
+  final bool isValid;
+  final String? reason;
+  final String? filePath;
+  final String? expectedSha256;
+  final String? actualSha256;
+
+  const AsrModelValidationResult({
+    required this.modelId,
+    required this.isValid,
+    this.reason,
+    this.filePath,
+    this.expectedSha256,
+    this.actualSha256,
+  });
+
+  String describe() {
+    if (isValid) return 'Model validation passed: $modelId';
+    final details = <String>[
+      'Downloaded model failed integrity check: $modelId',
+      if (filePath != null) 'file=$filePath',
+      if (reason != null) 'reason=$reason',
+      if (expectedSha256 != null) 'expectedSha256=$expectedSha256',
+      if (actualSha256 != null) 'actualSha256=$actualSha256',
+    ];
+    return details.join(' | ');
   }
 }

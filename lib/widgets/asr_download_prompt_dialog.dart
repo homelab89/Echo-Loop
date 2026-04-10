@@ -1,134 +1,170 @@
-/// 录音页面入口弹窗：引导用户下载本地语音识别模型。
+/// 录音入口前置弹窗：在进入录音页面前阻塞式检查本地 ASR 是否就绪。
 ///
-/// 两种场景：
-/// 1. 首次引导（未设置 + 未 dismiss）
-/// 2. 模型修复（已启用但模型不完整）
+/// 本文件只负责“是否允许继续进入录音流程”的前置判断；
+/// 真正进入录音页面后，不再额外弹本地 ASR 守卫 UI。
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../database/enums.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/offline_asr_settings_provider.dart';
 import '../services/asr/asr_model_manager.dart';
 
-/// 检查是否需要弹窗，需要则弹出并等待用户操作。
-/// 弹窗结束后，如果 ASR 已就绪，后台加载引擎（不阻塞 UI）。
-///
-/// 在所有需要录音的页面 initState 中调用。
-Future<void> checkAndShowAsrPrompt(BuildContext context, WidgetRef ref) async {
-  final needsLocal = ref.read(needsLocalAsrProvider);
-  if (!needsLocal) return;
+/// 判断某个学习子阶段是否会进入依赖本地 ASR 的录音流程。
+bool requiresAsrBeforeEnteringSubStage(SubStageType subStage) {
+  return switch (subStage) {
+    SubStageType.listenAndRepeat => true,
+    SubStageType.retell => true,
+    SubStageType.reviewDifficultPractice => true,
+    SubStageType.reviewRetellParagraph => true,
+    SubStageType.reviewRetellSummary => true,
+    _ => false,
+  };
+}
 
+/// 在进入语音练习前检查本地 ASR 是否已就绪。
+///
+/// 返回：
+/// - `true`：允许继续原本的进入动作
+/// - `false`：用户取消，本次停留在当前页
+Future<bool> ensureAsrReadyBeforeSpeechPractice(
+  BuildContext context,
+  WidgetRef ref,
+) async {
   final state = ref.read(offlineAsrSettingsProvider);
 
-  if (state.isDownloading) {
-    // 其他页面已触发下载（如设置页），显示进度等待完成。
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const _DownloadProgressDialog(),
-    );
-  } else if (state.needsRepairPrompt) {
-    // 已启用但模型不完整，自动恢复下载并显示进度。
-    ref.read(offlineAsrSettingsProvider.notifier).retryDownload();
-    if (context.mounted) {
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const _DownloadProgressDialog(),
-      );
-    }
-  } else if (state.needsPrompt) {
-    await _showFirstTimeDialog(context, ref);
+  // 非 offline 后端或未启用 → 不需要检查模型
+  if (!state.enabled || state.backend != AsrBackend.offline) {
+    return true;
   }
 
-  // 弹窗流程结束后，后台加载引擎（不阻塞 UI）。
-  _ensureEngineLoaded(ref);
+  if (state.downloadStatus == AsrModelDownloadStatus.downloaded) {
+    await _ensureEngineLoaded(ref);
+    final readyState = ref.read(offlineAsrSettingsProvider);
+    if (readyState.engineReady) {
+      return true;
+    }
+    if (readyState.downloadStatus == AsrModelDownloadStatus.failed) {
+      if (!context.mounted) return false;
+      return _showRepairPrompt(context, ref);
+    }
+    return false;
+  }
+
+  if (state.isDownloading) {
+    return _showDownloadProgressDialog(context, ref, startDownload: false);
+  }
+
+  if (state.downloadStatus == AsrModelDownloadStatus.failed) {
+    return _showRepairPrompt(context, ref);
+  }
+
+  return _showEnableDownloadPrompt(context, ref);
+}
+
+/// 仅在目标子阶段依赖本地 ASR 时执行前置检查。
+Future<bool> ensureAsrReadyForSubStage(
+  BuildContext context,
+  WidgetRef ref,
+  SubStageType subStage,
+) async {
+  if (!requiresAsrBeforeEnteringSubStage(subStage)) {
+    return true;
+  }
+  return ensureAsrReadyBeforeSpeechPractice(context, ref);
 }
 
 /// 退出录音页面时卸载引擎，释放内存。
-///
-/// 在所有需要录音的页面 dispose 中调用。
 void unloadAsrEngine(WidgetRef ref) {
-  final needsLocal = ref.read(needsLocalAsrProvider);
-  if (!needsLocal) return;
+  final state = ref.read(offlineAsrSettingsProvider);
+  if (state.backend != AsrBackend.offline) return;
 
   final notifier = ref.read(offlineAsrSettingsProvider.notifier);
   notifier.unloadEngine();
 }
 
 /// 后台加载引擎（fire-and-forget，不阻塞 UI）。
-void _ensureEngineLoaded(WidgetRef ref) {
+Future<void> _ensureEngineLoaded(WidgetRef ref) async {
   final state = ref.read(offlineAsrSettingsProvider);
-  if (state.enabled == true &&
+  if (state.enabled &&
       state.downloadStatus == AsrModelDownloadStatus.downloaded &&
       !state.engineReady) {
-    // fire-and-forget：不 await，让 UI 继续。
-    ref.read(offlineAsrSettingsProvider.notifier).loadEngine();
+    await ref.read(offlineAsrSettingsProvider.notifier).loadEngine();
   }
 }
 
-/// 场景 1：首次引导弹窗。
-Future<void> _showFirstTimeDialog(BuildContext context, WidgetRef ref) async {
-  final state = ref.read(offlineAsrSettingsProvider);
-  final sizeText = _formatBytes(state.recommendedModel.fileSizeBytes);
-
-  final result = await showDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) => _FirstTimePromptDialog(sizeText: sizeText),
-  );
-
-  final notifier = ref.read(offlineAsrSettingsProvider.notifier);
-  notifier.dismissPrompt();
-
-  if (result == true) {
-    // 用户选择下载。
-    if (context.mounted) {
-      await _showDownloadProgressDialog(context, ref);
-    }
-  }
-}
-
-/// 下载进度弹窗（阻塞式）。
-Future<void> _showDownloadProgressDialog(
+Future<bool> _showEnableDownloadPrompt(
   BuildContext context,
   WidgetRef ref,
 ) async {
-  final notifier = ref.read(offlineAsrSettingsProvider.notifier);
-
-  // 触发下载。
-  notifier.enable();
-
-  await showDialog<void>(
+  final shouldDownload = await showDialog<bool>(
     context: context,
-    barrierDismissible: false,
+    barrierDismissible: true,
+    builder: (ctx) => const _EnableDownloadPromptDialog(),
+  );
+
+  if (shouldDownload == true && context.mounted) {
+    return _showDownloadProgressDialog(context, ref, startDownload: true);
+  }
+
+  // 用户选择"暂不启用"：仅阻止本次进入，不修改设置。
+  // 下次进入练习时会再次提示下载。
+  return false;
+}
+
+Future<bool> _showRepairPrompt(BuildContext context, WidgetRef ref) async {
+  final state = ref.read(offlineAsrSettingsProvider);
+  final shouldDownload = await showDialog<bool>(
+    context: context,
+    barrierDismissible: true,
+    builder: (ctx) => _RepairPromptDialog(
+      isFailed: state.downloadStatus == AsrModelDownloadStatus.failed,
+    ),
+  );
+
+  if (shouldDownload != true || !context.mounted) return false;
+  return _showDownloadProgressDialog(context, ref, startDownload: true);
+}
+
+/// 下载进度弹窗（阻塞式）。
+Future<bool> _showDownloadProgressDialog(
+  BuildContext context,
+  WidgetRef ref, {
+  required bool startDownload,
+}) async {
+  final notifier = ref.read(offlineAsrSettingsProvider.notifier);
+  if (startDownload) {
+    notifier.enable();
+  }
+
+  final result = await showDialog<bool>(
+    context: context,
+    barrierDismissible: true,
     builder: (ctx) => const _DownloadProgressDialog(),
   );
+
+  if (result == true) {
+    await _ensureEngineLoaded(ref);
+    return true;
+  }
+  return false;
 }
 
-String _formatBytes(int bytes) {
-  if (bytes < 1024) return '$bytes B';
-  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
-  return '${(bytes / (1024 * 1024)).toStringAsFixed(0)} MB';
-}
-
-// ---------------------------------------------------------------------------
-// 首次引导弹窗
-// ---------------------------------------------------------------------------
-
-class _FirstTimePromptDialog extends ConsumerWidget {
-  final String sizeText;
-  const _FirstTimePromptDialog({required this.sizeText});
+class _EnableDownloadPromptDialog extends ConsumerWidget {
+  const _EnableDownloadPromptDialog();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
 
     return AlertDialog(
-      title: Text(l10n.speechRecognitionRequiredTitle),
-      content: Text(l10n.speechRecognitionRequiredMessage(sizeText)),
+      title: _DialogTitle(
+        title: l10n.speechRecognitionRequiredTitle,
+        onClose: () => Navigator.of(context).pop(),
+      ),
+      content: Text(l10n.speechRecognitionRequiredMessage),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
@@ -143,9 +179,40 @@ class _FirstTimePromptDialog extends ConsumerWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// 下载进度弹窗
-// ---------------------------------------------------------------------------
+class _RepairPromptDialog extends ConsumerWidget {
+  final bool isFailed;
+
+  const _RepairPromptDialog({required this.isFailed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return AlertDialog(
+      title: _DialogTitle(
+        title: isFailed
+            ? l10n.speechModelDownloadFailed
+            : l10n.speechModelRepairTitle,
+        onClose: () => Navigator.of(context).pop(),
+      ),
+      content: Text(
+        isFailed
+            ? l10n.speechModelRepairMessage
+            : l10n.speechModelRepairMessage,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l10n.notNow),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(isFailed ? l10n.retryDownload : l10n.downloadNow),
+        ),
+      ],
+    );
+  }
+}
 
 class _DownloadProgressDialog extends ConsumerWidget {
   const _DownloadProgressDialog();
@@ -155,20 +222,20 @@ class _DownloadProgressDialog extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final state = ref.watch(offlineAsrSettingsProvider);
 
-    // 下载完成或引擎就绪 → 自动关闭弹窗。
-    if (state.isFullyReady ||
-        (state.downloadStatus == AsrModelDownloadStatus.downloaded)) {
+    if (state.isOfflineReady) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) Navigator.of(context).pop();
+        if (context.mounted) Navigator.of(context).pop(true);
       });
     }
 
-    final sizeText = _formatBytes(state.recommendedModel.fileSizeBytes);
     final isFailed = state.downloadStatus == AsrModelDownloadStatus.failed;
 
     return AlertDialog(
-      title: Text(
-        isFailed ? l10n.speechModelDownloadFailed : l10n.downloadingSpeechModel,
+      title: _DialogTitle(
+        title: isFailed
+            ? l10n.speechModelDownloadFailed
+            : l10n.downloadingSpeechModel,
+        onClose: () => Navigator.of(context).pop(),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -176,7 +243,7 @@ class _DownloadProgressDialog extends ConsumerWidget {
         children: [
           if (!isFailed)
             Text(
-              l10n.speechRecognitionRequiredMessage(sizeText),
+              l10n.speechRecognitionRequiredMessage,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           if (state.isDownloading) ...[
@@ -197,18 +264,40 @@ class _DownloadProgressDialog extends ConsumerWidget {
           ],
         ],
       ),
-      actions: [
-        if (state.downloadStatus == AsrModelDownloadStatus.failed) ...[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.later),
-          ),
-          FilledButton(
-            onPressed: () =>
-                ref.read(offlineAsrSettingsProvider.notifier).retryDownload(),
-            child: Text(l10n.retryDownload),
-          ),
-        ],
+      actions: state.downloadStatus == AsrModelDownloadStatus.failed
+          ? [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(l10n.notNow),
+              ),
+              FilledButton(
+                onPressed: () => ref
+                    .read(offlineAsrSettingsProvider.notifier)
+                    .retryDownload(),
+                child: Text(l10n.retryDownload),
+              ),
+            ]
+          : const [],
+    );
+  }
+}
+
+class _DialogTitle extends StatelessWidget {
+  final String title;
+  final VoidCallback onClose;
+
+  const _DialogTitle({required this.title, required this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: Text(title)),
+        IconButton(
+          onPressed: onClose,
+          icon: const Icon(Icons.close),
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+        ),
       ],
     );
   }

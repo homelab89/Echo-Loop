@@ -24,7 +24,6 @@ const _whisperTinyModel = AsrModelInfo(
   id: 'whisper-tiny-en-int8',
   displayName: 'Whisper Tiny.en',
   type: AsrModelType.whisper,
-  fileSizeBytes: 0,
 );
 
 void main() {

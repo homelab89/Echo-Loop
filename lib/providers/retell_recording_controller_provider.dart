@@ -32,6 +32,7 @@ import '../services/speech_completion_detector.dart';
 import '../services/speech_practice_matcher.dart';
 import '../services/speech_practice_platform.dart';
 import '../services/study_event_recorder.dart';
+import 'offline_asr_settings_provider.dart';
 import '../services/text_embedding_platform.dart';
 import '../widgets/common/speech_rating_badge.dart';
 
@@ -223,6 +224,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     required String promptId,
     required String referenceText,
   }) async {
+    final backend = ref.read(speechPracticeBackendProvider);
     if (state.promptId == promptId && state.isActive) {
       AppLogger.log('RetellRec', '⏭ startRecording 跳过: 已在录音中 ($promptId)');
       return;
@@ -245,6 +247,10 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     AppLogger.log('RetellRec', '┌ startRecording (manual=$_isManualMode)');
     AppLogger.log('RetellRec', '│ promptId=$promptId');
     AppLogger.log('RetellRec', '│ referenceText=${referenceText.length}字');
+    AppLogger.log(
+      'RetellRec',
+      '│ backend=${backend.runtimeType} permissions=${state.permissions.microphone.name}/${state.permissions.speech.name}',
+    );
 
     state = RetellRecordingState(
       phase: RetellRecordingPhase.recording,
@@ -301,7 +307,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
 
     AppLogger.log('RetellRec', '● 手动停止录音');
     _isStopping = true;
-    _enterProcessing(promptId);
+    _cancelAllTimers();
     await _doStopAndEvaluate(promptId: promptId, referenceText: referenceText);
   }
 
@@ -365,6 +371,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     required String promptId,
     required String referenceText,
   }) async {
+    final backend = ref.read(speechPracticeBackendProvider);
     _cancelAllTimers();
     await _eventSub?.cancel();
     _eventSub = null;
@@ -383,6 +390,13 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
       promptId: promptId,
       effectiveDurationMs: effectiveDurationMs,
     );
+    AppLogger.log('RetellRec', '│ backend=${backend.runtimeType}');
+    AppLogger.log(
+      'RetellRec',
+      '│ stopRecording result filePath=${result.filePath ?? '(null)'} '
+          'finalLen=${result.finalTranscript?.trim().length ?? 0} '
+          'errorCode=${result.errorCode ?? '(null)'}',
+    );
 
     // 确定用于评估的 transcript：优先 final，超时时回退到 live
     String? transcript = result.finalTranscript;
@@ -399,14 +413,21 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
 
     AppLogger.log('RetellRec', '📋 final: "${transcript ?? '(null)'}"');
 
-    // 无法获得任何 transcript → 走错误分支
+    // ASR 关闭时强制视为无 transcript（iOS 平台后端仍会返回 transcript，但用户意图是不评分）
+    final asrEnabled = ref.read(offlineAsrSettingsProvider).enabled;
+    if (!asrEnabled) transcript = null;
+
+    // 无法获得任何 transcript → 直接存录音，跳过 processing 和评估
     if (transcript == null || transcript.isEmpty) {
+      final status = result.errorCode != null
+          ? _statusFromError(result.errorCode)
+          : SpeechPracticeAttemptStatus.unavailable;
       final attempt = SpeechPracticeAttempt(promptId: promptId).copyWith(
         filePath: result.filePath,
-        status: _statusFromError(result.errorCode),
+        status: status,
         errorMessage: result.errorMessage,
       );
-      AppLogger.log('RetellRec', '✗ 录音失败: ${result.errorCode}');
+      AppLogger.log('RetellRec', '✗ 无转录结果: status=${status.name}');
       state = state.copyWith(
         phase: RetellRecordingPhase.idle,
         currentAttempt: attempt,
@@ -417,8 +438,16 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
       return;
     }
 
+    // 有转录 → 进入 processing + 评估（同步块内完成）
+    _enterProcessing(promptId);
+
     // 评估：覆盖率 + embedding 取最高级别
     final matcher = ref.read(speechTranscriptMatcherProvider);
+    AppLogger.log(
+      'RetellRec',
+      '│ evaluate transcriptLen=${transcript.trim().length} '
+          'liveLen=${(_lastKnownTranscript ?? '').trim().length}',
+    );
     final matchResult = matcher.evaluate(
       referenceText: referenceText,
       transcript: transcript,
@@ -443,6 +472,13 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
       transcriptSegments: matchResult.transcriptSegments,
       referenceSegments: matchResult.referenceSegments,
     );
+
+    if (attempt.isRecognitionFailure) {
+      AppLogger.log(
+        'RetellRec',
+        '✗ 识别失败: status=${attempt.status.name}, final="${attempt.finalTranscript ?? ''}"',
+      );
+    }
 
     AppLogger.log(
       'RetellRec',
@@ -757,7 +793,7 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
     if (_isStopping) return; // 已在停止中，防止重复触发
     AppLogger.log('RetellRec', '⏹ 自动停止录音 ($reason)');
     _isStopping = true;
-    _enterProcessing(promptId);
+    _cancelAllTimers();
 
     final referenceText = _cachedReferenceText;
     if (referenceText == null) {

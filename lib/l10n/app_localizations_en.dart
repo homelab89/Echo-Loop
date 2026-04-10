@@ -1347,7 +1347,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get speechRecognitionDescription =>
-      'Your device does not support Google speech services. Enable local AI model for offline speech recognition.';
+      'When enabled, speech recognition automatically evaluates your pronunciation during repeat and retell practice.';
+
+  @override
+  String get asrBackendPlatform => 'Apple Speech';
+
+  @override
+  String get asrBackendPlatformDescription =>
+      'Uses the built-in system speech recognition, no download needed';
+
+  @override
+  String get asrBackendOffline => 'Echo Loop AI';
+
+  @override
+  String asrBackendOfflineDescription(String size) {
+    return 'Uses the app\'s AI model, works offline (~$size download)';
+  }
 
   @override
   String get localSpeechRecognition => 'Local Speech Recognition';
@@ -1376,6 +1391,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get deleteModelAction => 'Delete Model';
+
+  @override
   String get deleteModelConfirmTitle => 'Delete Model?';
 
   @override
@@ -1397,9 +1415,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get speechRecognitionRequiredTitle => 'Speech Recognition Required';
 
   @override
-  String speechRecognitionRequiredMessage(String size) {
-    return 'Your device does not support Google speech services. Download a local speech recognition model ($size) to enable voice practice.';
-  }
+  String get speechRecognitionRequiredMessage =>
+      'A speech recognition model is required for voice practice. Download now?';
 
   @override
   String get downloadAndEnable => 'Download & Enable';

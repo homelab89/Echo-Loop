@@ -46,6 +46,18 @@ enum SpeechPracticeAttemptStatus {
   error,
 }
 
+extension SpeechPracticeAttemptStatusX on SpeechPracticeAttemptStatus {
+  /// 是否属于“识别失败”。
+  ///
+  /// 识别失败才允许回退到「录音」badge；评估成功但 transcript 为空时，
+  /// 仍然应显示评级 badge。
+  bool get isRecognitionFailure =>
+      this == SpeechPracticeAttemptStatus.noEnglishDetected ||
+      this == SpeechPracticeAttemptStatus.permissionDenied ||
+      this == SpeechPracticeAttemptStatus.unavailable ||
+      this == SpeechPracticeAttemptStatus.error;
+}
+
 /// 原生事件类型。
 enum SpeechPracticeEventType {
   /// 录音中的中间转录。
@@ -251,6 +263,9 @@ class SpeechPracticeAttempt {
       status == SpeechPracticeAttemptStatus.permissionDenied ||
       status == SpeechPracticeAttemptStatus.unavailable ||
       status == SpeechPracticeAttemptStatus.error;
+
+  /// 是否属于“识别失败”。
+  bool get isRecognitionFailure => status.isRecognitionFailure;
 
   SpeechPracticeAttempt copyWith({
     String? filePath,

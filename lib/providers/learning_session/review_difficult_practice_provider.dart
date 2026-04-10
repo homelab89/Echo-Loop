@@ -676,8 +676,8 @@ class ReviewDifficultPractice extends _$ReviewDifficultPractice {
       return;
     }
 
-    // 评估完成 → 通知引擎
-    if (prev.phase == SpeechRecordingPhase.processing &&
+    // 评估完成（有 ASR: processing→idle，无 ASR: speaking→idle）
+    if (prev.phase != SpeechRecordingPhase.idle &&
         next.phase == SpeechRecordingPhase.idle &&
         next.currentAttempt != null) {
       final attempt = next.currentAttempt!;

@@ -1,59 +1,34 @@
 /// sherpa-onnx 离线 ASR 引擎实现。
 ///
-/// 通过 sherpa-onnx FFI 绑定加载 Moonshine 或 Whisper ONNX 模型，
-/// Recognizer 实例在 [initialize] 时创建并常驻内存，
-/// [transcribe] 直接复用，避免每次重新加载模型。
+/// 通过 sherpa-onnx FFI 绑定加载 Moonshine 或 Whisper ONNX 模型。
+/// Recognizer 在常驻 Worker Isolate 内创建并保持，
+/// [transcribe] 通过消息传递将推理委托给后台 Isolate，不阻塞 UI 线程。
 library;
 
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import 'audio_file_reader.dart';
+import '../app_logger.dart';
 import 'offline_asr_engine.dart';
 
 /// sherpa-onnx 离线 ASR 引擎。
 ///
-/// [initialize] 时加载模型到内存（耗时数秒），之后 [transcribe] 仅执行推理。
+/// [initialize] 时在后台 Isolate 内加载模型（耗时数秒），
+/// 之后 [transcribe] 通过消息传递在后台执行推理，不阻塞主线程。
 /// 切换模型需先 [dispose] 再重新 [initialize]。
 class SherpaOnnxEngine implements OfflineAsrEngine {
   AsrModelConfig? _config;
-  sherpa.OfflineRecognizer? _recognizer;
-  static bool _bindingsInitialized = false;
-
-  /// 创建 Recognizer，使用指定 provider，失败时回退到 CPU。
-  static sherpa.OfflineRecognizer _createRecognizer(AsrModelConfig config) {
-    final requestedProvider = config.provider ?? _platformProvider();
-    final primaryConfig = _buildConfig(
-      modelDir: config.modelDir,
-      modelType: config.model.type,
-      modelId: config.model.id,
-      numThreads: config.numThreads,
-      provider: requestedProvider,
-    );
-
-    try {
-      return sherpa.OfflineRecognizer(primaryConfig);
-    } catch (e) {
-      if (requestedProvider == 'cpu') rethrow;
-      // 硬件加速失败，回退到 CPU。
-      final cpuConfig = _buildConfig(
-        modelDir: config.modelDir,
-        modelType: config.model.type,
-        modelId: config.model.id,
-        numThreads: config.numThreads,
-        provider: 'cpu',
-      );
-      return sherpa.OfflineRecognizer(cpuConfig);
-    }
-  }
+  _AsrWorker? _worker;
 
   @override
   String get name => 'sherpa-onnx';
 
   @override
-  bool get isReady => _recognizer != null;
+  bool get isReady => _worker != null;
 
   @override
   AsrModelInfo? get currentModel => _config?.model;
@@ -63,42 +38,212 @@ class SherpaOnnxEngine implements OfflineAsrEngine {
     // 如果已加载相同模型且 provider 相同，跳过。
     if (_config?.model.id == config.model.id &&
         _config?.provider == config.provider &&
-        _recognizer != null) {
+        _worker != null) {
+      AppLogger.log(
+        'ASREngine',
+        '⏭ initialize skipped model=${config.model.id} provider=${config.provider ?? 'auto'}',
+      );
       return;
     }
 
-    // 先释放旧 Recognizer。
+    // 先释放旧 Worker Isolate。
+    AppLogger.log(
+      'ASREngine',
+      '┌ initialize model=${config.model.id} '
+          'dir=${config.modelDir} provider=${config.provider ?? 'auto'} '
+          'threads=${config.numThreads}',
+    );
     await dispose();
 
-    if (!_bindingsInitialized) {
-      sherpa.initBindings();
-      _bindingsInitialized = true;
-    }
-
-    _recognizer = _createRecognizer(config);
+    final stopwatch = Stopwatch()..start();
+    _worker = await _AsrWorker.spawn(config);
+    stopwatch.stop();
     _config = config;
+    AppLogger.log(
+      'ASREngine',
+      '└ initialize done model=${config.model.id} '
+          'provider=${_config?.provider ?? 'auto'} '
+          'elapsed=${stopwatch.elapsedMilliseconds}ms',
+    );
   }
 
-  /// 转录音频文件。
-  ///
-  /// 当前限制：FFI 推理在主线程同步执行（~0.5-2s），会短暂阻塞 UI。
-  /// Recognizer FFI 指针无法跨 Isolate 传递，常驻 Isolate + SendPort
-  /// 模式留待生产环境接入时优化。
   @override
   Future<AsrResult> transcribe(String wavPath) async {
-    final recognizer = _recognizer;
-    if (recognizer == null) {
+    final worker = _worker;
+    if (worker == null) {
       throw StateError('Engine not initialized. Call initialize() first.');
     }
 
-    // 读取音频文件（支持 WAV 和 CAF 格式）。
-    final audioData = readAudioFile(wavPath);
+    AppLogger.log(
+      'ASREngine',
+      '┌ transcribe wavPath=$wavPath model=${_config?.model.id ?? '(null)'}',
+    );
+    final result = await worker.transcribe(wavPath);
+    AppLogger.log(
+      'ASREngine',
+      '└ transcribe done textLen=${result.text.trim().length} '
+          'elapsed=${result.inferenceTime.inMilliseconds}ms',
+    );
+    return result;
+  }
+
+  @override
+  Future<void> dispose() async {
+    if (_worker != null) {
+      AppLogger.log(
+        'ASREngine',
+        '● dispose model=${_config?.model.id ?? '(null)'} provider=${_config?.provider ?? 'auto'}',
+      );
+    }
+    await _worker?.dispose();
+    _worker = null;
+    _config = null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Worker Isolate — 在后台持有 Recognizer 并处理转录请求
+// ---------------------------------------------------------------------------
+
+/// 常驻后台 Isolate，持有 sherpa-onnx Recognizer。
+///
+/// 主线程通过 [SendPort] 发送转录请求，
+/// Worker 在后台执行文件读取 + FFI 推理并返回结果。
+class _AsrWorker {
+  final Isolate _isolate;
+  final SendPort _commandPort;
+
+  _AsrWorker._(this._isolate, this._commandPort);
+
+  /// 创建 Worker Isolate 并在其中初始化 Recognizer。
+  ///
+  /// 初始化失败时抛出 [StateError]。
+  static Future<_AsrWorker> spawn(AsrModelConfig config) async {
+    final initPort = ReceivePort();
+    final isolate = await Isolate.spawn(
+      _isolateEntryPoint,
+      _InitPayload(sendPort: initPort.sendPort, config: config),
+    );
+
+    final response = await initPort.first;
+    initPort.close();
+
+    if (response is SendPort) {
+      return _AsrWorker._(isolate, response);
+    }
+
+    // 初始化失败，清理 Isolate。
+    isolate.kill(priority: Isolate.immediate);
+    throw StateError('ASR Worker init failed: $response');
+  }
+
+  /// 发送转录请求到 Worker，等待结果返回。
+  Future<AsrResult> transcribe(String wavPath) async {
+    final replyPort = ReceivePort();
+    _commandPort.send(
+      _TranscribeRequest(wavPath: wavPath, replyPort: replyPort.sendPort),
+    );
+
+    final response = await replyPort.first;
+    replyPort.close();
+
+    if (response is _TranscribeResponse) {
+      return AsrResult(
+        text: response.text,
+        inferenceTime: Duration(milliseconds: response.inferenceTimeMs),
+      );
+    }
+    throw StateError('Transcription failed: $response');
+  }
+
+  /// 释放 Recognizer 并关闭 Worker Isolate。
+  Future<void> dispose() async {
+    final replyPort = ReceivePort();
+    _commandPort.send(_DisposeRequest(replyPort: replyPort.sendPort));
+    await replyPort.first;
+    replyPort.close();
+    _isolate.kill(priority: Isolate.immediate);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Isolate 消息类型
+// ---------------------------------------------------------------------------
+
+/// Worker 启动参数。
+class _InitPayload {
+  final SendPort sendPort;
+  final AsrModelConfig config;
+  const _InitPayload({required this.sendPort, required this.config});
+}
+
+/// 转录请求（主线程 → Worker）。
+class _TranscribeRequest {
+  final String wavPath;
+  final SendPort replyPort;
+  const _TranscribeRequest({required this.wavPath, required this.replyPort});
+}
+
+/// 转录结果（Worker → 主线程）。
+class _TranscribeResponse {
+  final String text;
+  final int inferenceTimeMs;
+  const _TranscribeResponse({required this.text, required this.inferenceTimeMs});
+}
+
+/// 释放请求（主线程 → Worker）。
+class _DisposeRequest {
+  final SendPort replyPort;
+  const _DisposeRequest({required this.replyPort});
+}
+
+// ---------------------------------------------------------------------------
+// Isolate 入口点
+// ---------------------------------------------------------------------------
+
+/// Worker Isolate 入口函数。
+///
+/// 在 Isolate 内初始化 sherpa-onnx FFI 绑定、创建 Recognizer，
+/// 然后循环处理转录请求直到收到释放指令。
+void _isolateEntryPoint(_InitPayload init) {
+  try {
+    sherpa.initBindings();
+    final recognizer = _createRecognizer(init.config);
+
+    final commandPort = ReceivePort();
+    // 握手：把 commandPort 发回主线程。
+    init.sendPort.send(commandPort.sendPort);
+
+    commandPort.listen((message) {
+      if (message is _TranscribeRequest) {
+        _handleTranscribe(recognizer, message);
+      } else if (message is _DisposeRequest) {
+        recognizer.free();
+        message.replyPort.send(null);
+        commandPort.close();
+      }
+    });
+  } catch (e) {
+    // 初始化失败，把错误信息发回主线程。
+    init.sendPort.send('Init failed: $e');
+  }
+}
+
+/// 在 Worker 内执行转录：读取音频文件 → FFI 推理 → 返回结果。
+void _handleTranscribe(
+  sherpa.OfflineRecognizer recognizer,
+  _TranscribeRequest request,
+) {
+  try {
+    final audioData = readAudioFile(request.wavPath);
     if (audioData.samples.isEmpty) {
-      return const AsrResult(text: '', inferenceTime: Duration.zero);
+      request.replyPort.send(
+        const _TranscribeResponse(text: '', inferenceTimeMs: 0),
+      );
+      return;
     }
 
     final stopwatch = Stopwatch()..start();
-
     final stream = recognizer.createStream();
     stream.acceptWaveform(
       samples: audioData.samples,
@@ -106,26 +251,52 @@ class SherpaOnnxEngine implements OfflineAsrEngine {
     );
     recognizer.decode(stream);
     final result = recognizer.getResult(stream);
-
     stopwatch.stop();
 
     final text = result.text.trim();
     stream.free();
 
-    return AsrResult(text: text, inferenceTime: stopwatch.elapsed);
-  }
-
-  @override
-  Future<void> dispose() async {
-    _recognizer?.free();
-    _recognizer = null;
-    _config = null;
+    request.replyPort.send(
+      _TranscribeResponse(
+        text: text,
+        inferenceTimeMs: stopwatch.elapsedMilliseconds,
+      ),
+    );
+  } catch (e) {
+    request.replyPort.send('Transcribe failed: $e');
   }
 }
 
 // ---------------------------------------------------------------------------
 // sherpa-onnx 配置构建
 // ---------------------------------------------------------------------------
+
+/// 创建 Recognizer，使用指定 provider，失败时回退到 CPU。
+sherpa.OfflineRecognizer _createRecognizer(AsrModelConfig config) {
+  final requestedProvider = config.provider ?? _platformProvider();
+  final primaryConfig = _buildConfig(
+    modelDir: config.modelDir,
+    modelType: config.model.type,
+    modelId: config.model.id,
+    numThreads: config.numThreads,
+    provider: requestedProvider,
+  );
+
+  try {
+    return sherpa.OfflineRecognizer(primaryConfig);
+  } catch (e) {
+    if (requestedProvider == 'cpu') rethrow;
+    // 硬件加速失败，回退到 CPU。
+    final cpuConfig = _buildConfig(
+      modelDir: config.modelDir,
+      modelType: config.model.type,
+      modelId: config.model.id,
+      numThreads: config.numThreads,
+      provider: 'cpu',
+    );
+    return sherpa.OfflineRecognizer(cpuConfig);
+  }
+}
 
 /// 获取当前平台的推理加速 provider。
 ///

@@ -77,10 +77,7 @@ class _ListenAndRepeatPlayerScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Controller.initialize() 已在路由跳转前准备好数据，
-    // 进入页面后开始播放。
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await checkAndShowAsrPrompt(context, ref);
       if (!mounted) return;
       ref.read(listenAndRepeatControllerProvider.notifier).startPlaying();
     });
@@ -96,7 +93,6 @@ class _ListenAndRepeatPlayerScreenState
 
   @override
   void dispose() {
-    unloadAsrEngine(ref);
     _settingsSubscription?.close();
     _controllerSubscription?.close();
     WidgetsBinding.instance.removeObserver(this);
@@ -310,7 +306,7 @@ class _ListenAndRepeatPlayerScreenState
     if (!mounted) return;
 
     if (result.action == StepCompleteAction.continueNext) {
-      _navigateBackToPlanAndAutoStart();
+      await _navigateBackToPlanAndAutoStart();
     } else {
       context.pop();
     }
@@ -320,15 +316,27 @@ class _ListenAndRepeatPlayerScreenState
   ///
   /// 先 go 回学习 Tab 清空导航栈，再 push 新的学习计划页（autoStart=true），
   /// 效果等同于用户在学习列表点击"继续学习"。
-  void _navigateBackToPlanAndAutoStart() {
+  Future<void> _navigateBackToPlanAndAutoStart() async {
     if (!mounted) return;
+    final nextSubStage = ref
+        .read(learningProgressNotifierProvider)
+        .progressMap[widget.audioItemId]
+        ?.currentSubStage;
+    final canAutoStart = nextSubStage == null
+        ? true
+        : await ensureAsrReadyForSubStage(context, ref, nextSubStage);
+    if (!mounted) return;
+
     final route = widget.collectionId != null
         ? AppRoutes.learningPlan(
             widget.collectionId!,
             widget.audioItemId,
-            autoStart: true,
+            autoStart: canAutoStart,
           )
-        : AppRoutes.audioLearningPlan(widget.audioItemId, autoStart: true);
+        : AppRoutes.audioLearningPlan(
+            widget.audioItemId,
+            autoStart: canAutoStart,
+          );
     GoRouter.of(context).go(AppRoutes.study);
     GoRouter.of(context).push(route);
   }

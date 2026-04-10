@@ -68,6 +68,7 @@
 - 已完成逐句精听页面按难句补练模式重构：blind mode 接入 `BlindPracticeFlowEngine`，新增 `IntensiveAnnotationState` 管理“看不懂后”的详情流程，页面收敛为“顶部进度 + 中间内容切换 + 单一 footer”
 - 已完成全文盲听 + 段落复述共享骨架重构：两页统一到 `ParagraphPracticeScaffold`，共享段落句子卡片、顶部进度区和底部播放控制，复述可见性菜单上移为独立内容控制区
 - 已完成全文盲听/段落复述等待态补齐：两页新增显式 `isWaitingForUser` 语义，设置弹窗打开前统一接管流程，播放中支持当前段自然播完后再进入等待
+- 已完成本地 ASR 入口交互重构：改为在学习计划页/Favorites 入口前做阻塞式检查与下载弹窗，未完成下载前不进入录音页
 
 ---
 

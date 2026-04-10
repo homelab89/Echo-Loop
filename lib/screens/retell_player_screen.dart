@@ -13,7 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../database/enums.dart';
-import '../widgets/asr_download_prompt_dialog.dart';
 import '../l10n/app_localizations.dart';
 import '../models/retell_settings.dart';
 import '../models/sentence.dart';
@@ -69,6 +68,8 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
 
   /// 用户在当前段手动停止过录音 → 本段不再自动录音/倒计时
   bool _manualStoppedThisParagraph = false;
+  RetellPlayerState? _latestPlayerState;
+  RetellRecordingState? _latestRecordingState;
 
   ProviderSubscription<RetellPlayerState>? _playerSubscription;
   ProviderSubscription<RetellRecordingState>? _recordingSubscription;
@@ -84,22 +85,25 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
       retellRecordingControllerProvider,
       _onRetellRecordingStateChanged,
     );
+    _latestPlayerState = ref.read(retellPlayerProvider);
+    _latestRecordingState = ref.read(retellRecordingControllerProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await checkAndShowAsrPrompt(context, ref);
       if (!mounted) return;
-      // 同步初始控制模式到录音控制器
       final settings = ref.read(retellPlayerProvider).settings;
       ref
           .read(retellRecordingControllerProvider.notifier)
           .setManualMode(settings.isManualMode);
       ref.read(retellPlayerProvider.notifier).startPlaying();
-      _maybeAutoStartRecording();
+      final playerState = _latestPlayerState;
+      final recState = _latestRecordingState;
+      if (playerState != null && recState != null) {
+        _maybeAutoStartRecording(playerState: playerState, recState: recState);
+      }
     });
   }
 
   @override
   void dispose() {
-    unloadAsrEngine(ref);
     _playerSubscription?.close();
     _recordingSubscription?.close();
     super.dispose();
@@ -109,7 +113,8 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
     RetellPlayerState? prev,
     RetellPlayerState next,
   ) {
-    if (_isExiting || prev == null) return;
+    _latestPlayerState = next;
+    if (!mounted || _isExiting || prev == null) return;
     _logRetellPlayerStateTransition(prev, next);
 
     if (!prev.stepFinished && next.stepFinished) {
@@ -136,17 +141,23 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
       ref.read(retellRecordingControllerProvider.notifier).clearRecording();
     }
 
-    _maybeAutoStartRecording();
+    final recState = _latestRecordingState;
+    if (recState != null) {
+      _maybeAutoStartRecording(playerState: next, recState: recState);
+    }
   }
 
   void _onRetellRecordingStateChanged(
     RetellRecordingState? prev,
     RetellRecordingState next,
   ) {
+    _latestRecordingState = next;
+    if (!mounted || _isExiting) return;
     if (prev != null) {
       _logRetellRecordingStateTransition(prev, next);
     }
-    if (prev?.phase == RetellRecordingPhase.processing &&
+    // 评估完成（有 ASR: processing→idle，无 ASR: recording→idle）
+    if (prev?.phase != RetellRecordingPhase.idle &&
         next.phase == RetellRecordingPhase.idle) {
       final currentPlayerState = ref.read(retellPlayerProvider);
       if (!currentPlayerState.userOverrodeDisplayMode) {
@@ -166,25 +177,30 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
       }
     }
 
-    _maybeAutoStartRecording();
+    final playerState = _latestPlayerState;
+    if (playerState != null) {
+      _maybeAutoStartRecording(playerState: playerState, recState: next);
+    }
   }
 
-  void _maybeAutoStartRecording() {
+  void _maybeAutoStartRecording({
+    required RetellPlayerState playerState,
+    required RetellRecordingState recState,
+  }) {
     if (!mounted || _isShowingDialog) return;
 
-    final state = ref.read(retellPlayerProvider);
-    final retellRecState = ref.read(retellRecordingControllerProvider);
-    if (state.phase != RetellPhase.retelling ||
-        state.isWaitingForUser ||
-        state.settings.isManualMode ||
-        retellRecState.phase != RetellRecordingPhase.idle ||
-        retellRecState.awaitingSpeechTimedOut ||
-        state.isRetellCountdown ||
+    if (playerState.phase != RetellPhase.retelling ||
+        playerState.isWaitingForUser ||
+        playerState.settings.isManualMode ||
+        recState.phase != RetellRecordingPhase.idle ||
+        recState.awaitingSpeechTimedOut ||
+        playerState.isRetellCountdown ||
         _manualStoppedThisParagraph) {
       return;
     }
 
-    final promptId = _currentPromptId();
+    final promptId =
+        'retell:${widget.audioItemId}:${playerState.currentParagraphIndex}';
     final referenceText = ref
         .read(retellPlayerProvider.notifier)
         .currentParagraphReferenceText;

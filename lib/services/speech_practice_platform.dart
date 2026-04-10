@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/speech_practice_models.dart';
+import 'app_logger.dart';
 
 /// 统一后端 provider。
 final speechPracticeBackendProvider = Provider<SpeechPracticeBackend>((ref) {
@@ -132,18 +133,12 @@ class SpeechPracticePlatform implements SpeechPracticeBackend {
         .asBroadcastStream();
   }
 
-  /// 最近一次 warmup 返回的 hasGms 标志。
-  ///
-  /// Android 端 warmup 时检测 GMS 可用性并返回，
-  /// iOS/macOS 不返回此字段，默认视为 true（平台 ASR 可用）。
-  bool? hasGms;
-
   @override
   Future<void> warmup({String locale = 'en-US'}) async {
     _ensureSupported();
-    final result = await _invokeMap('warmup', {'locale': locale});
-    // 仅当 Native 端返回了 hasGms 时才更新（二次 warmup 时 Android 返回空 map）。
-    hasGms = (result['hasGms'] as bool?) ?? hasGms;
+    AppLogger.log('SpeechPlatform', '┌ warmup locale=$locale');
+    await _invokeMap('warmup', {'locale': locale});
+    AppLogger.log('SpeechPlatform', '└ warmup done');
   }
 
   @override
@@ -152,42 +147,62 @@ class SpeechPracticePlatform implements SpeechPracticeBackend {
     String locale = 'en-US',
   }) async {
     _ensureSupported();
+    AppLogger.log(
+      'SpeechPlatform',
+      '┌ startSession promptId=$promptId locale=$locale',
+    );
     final result = await _invokeMap('startSession', {
       'promptId': promptId,
       'locale': locale,
     });
     final filePath = result['filePath'] as String?;
     if (filePath == null || filePath.isEmpty) {
+      AppLogger.log(
+        'SpeechPlatform',
+        '└ startSession failed: missing filePath',
+      );
       throw const SpeechPracticePlatformException(
         'invalidResult',
         'Missing recording file path',
       );
     }
+    AppLogger.log('SpeechPlatform', '└ startSession filePath=$filePath');
     return filePath;
   }
 
   @override
   Future<SpeechPracticeStopResult> stopSession() async {
     _ensureSupported();
+    AppLogger.log('SpeechPlatform', '┌ stopSession');
     final result = await _invokeMap('stopSession');
-    return SpeechPracticeStopResult(filePath: result['filePath'] as String?);
+    final stopResult = SpeechPracticeStopResult(
+      filePath: result['filePath'] as String?,
+    );
+    AppLogger.log(
+      'SpeechPlatform',
+      '└ stopSession filePath=${stopResult.filePath ?? '(null)'}',
+    );
+    return stopResult;
   }
 
   @override
   Future<void> cancelSession() async {
     _ensureSupported();
+    AppLogger.log('SpeechPlatform', '● cancelSession');
     await _invokeMap('cancelSession');
   }
 
   @override
   Future<void> deleteRecording(String filePath) async {
     _ensureSupported();
+    AppLogger.log('SpeechPlatform', '● deleteRecording filePath=$filePath');
     await _invokeMap('deleteRecording', {'filePath': filePath});
   }
 
   @override
   Future<void> shutdown() async {
     _ensureSupported();
+    AppLogger.log('SpeechPlatform', '● shutdown');
     await _invokeMap('shutdown');
   }
 

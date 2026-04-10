@@ -731,7 +731,16 @@
   "speechRecognitionNotConfigured": "Not configured",
   "speechRecognitionEnabled": "Enabled",
   "speechRecognitionDisabled": "Disabled",
-  "speechRecognitionDescription": "Your device does not support Google speech services. Enable local AI model for offline speech recognition.",
+  "speechRecognitionDescription": "When enabled, speech recognition automatically evaluates your pronunciation during repeat and retell practice.",
+  "asrBackendPlatform": "Apple Speech",
+  "asrBackendPlatformDescription": "Uses the built-in system speech recognition, no download needed",
+  "asrBackendOffline": "Echo Loop AI",
+  "asrBackendOfflineDescription": "Uses the app's AI model, works offline (~{size} download)",
+  "@asrBackendOfflineDescription": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
   "localSpeechRecognition": "Local Speech Recognition",
   "speechModelSize": "Model size: ~{size}",
   "@speechModelSize": {
@@ -758,6 +767,7 @@
       "size": { "type": "String" }
     }
   },
+  "deleteModelAction": "Delete Model",
   "deleteModelConfirmTitle": "Delete Model?",
   "deleteModelConfirmMessage": "This will free up {size} of storage space.",
   "@deleteModelConfirmMessage": {
@@ -769,12 +779,7 @@
   "disableSpeechRecognitionMessage": "Speech practice scoring will be unavailable. Delete the downloaded model?",
   "keepModel": "Keep Model",
   "speechRecognitionRequiredTitle": "Speech Recognition Required",
-  "speechRecognitionRequiredMessage": "Your device does not support Google speech services. Download a local speech recognition model ({size}) to enable voice practice.",
-  "@speechRecognitionRequiredMessage": {
-    "placeholders": {
-      "size": { "type": "String" }
-    }
-  },
+  "speechRecognitionRequiredMessage": "A speech recognition model is required for voice practice. Download now?",
   "downloadAndEnable": "Download & Enable",
   "notNow": "Not Now",
   "speechModelRepairTitle": "Model Download Incomplete",
