@@ -95,6 +95,13 @@ class AndroidSpeechPracticeHandler(
             "cancelSession" -> cancelSession(result)
             "shutdown" -> shutdown(result)
             "deleteRecording" -> deleteRecording(call, result)
+            "getDeviceInfo" -> {
+                val runtime = Runtime.getRuntime()
+                val memInfo = android.app.ActivityManager.MemoryInfo()
+                (activity.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager)
+                    .getMemoryInfo(memInfo)
+                result.success(mapOf("ramBytes" to memInfo.totalMem))
+            }
             "setRecognitionEnabled" -> result.success(emptyMap<String, Any>()) // Android 纯录音，ASR 由 Dart 层处理
             else -> result.notImplemented()
         }

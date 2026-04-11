@@ -88,6 +88,8 @@ private final class IOSSpeechPracticeHandler: NSObject, FlutterStreamHandler {
       shutdown(result: result)
     case "deleteRecording":
       deleteRecording(call.arguments as? [String: Any], result: result)
+    case "getDeviceInfo":
+      result(["ramBytes": ProcessInfo.processInfo.physicalMemory])
     case "setRecognitionEnabled":
       let args = call.arguments as? [String: Any]
       recognitionEnabled = (args?["enabled"] as? Bool) ?? false

@@ -33,6 +33,7 @@ import 'providers/offline_asr_settings_provider.dart';
 import 'services/asr/asr_model_manager.dart';
 import 'services/asr/offline_asr_engine.dart';
 import 'services/app_logger.dart';
+import 'services/speech_practice_platform.dart';
 
 /// 通过原生网络栈连接后端服务器。
 ///
@@ -168,8 +169,12 @@ void main() async {
     final defaultBackend =
         Platform.isAndroid ? AsrBackend.offline : AsrBackend.platform;
     AppLogger.log('App', 'ASR: platform=${Platform.operatingSystem}, defaultBackend=${defaultBackend.name}');
+    final platform = SpeechPracticePlatform.instance;
+    final ramBytes = platform.isSupported
+        ? await platform.getDeviceRamBytes()
+        : 0;
     final modelManager = AsrModelManager();
-    recommendedAsrModel = modelManager.recommendModel();
+    recommendedAsrModel = modelManager.recommendModel(ramBytes: ramBytes);
     initialOfflineAsrSettingsState = await loadInitialOfflineAsrSettingsState(
       prefs: prefs,
       modelManager: modelManager,

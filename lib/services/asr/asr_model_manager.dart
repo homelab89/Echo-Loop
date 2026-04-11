@@ -464,32 +464,19 @@ class AsrModelManager {
 
   /// 根据设备性能推荐 Whisper 模型。
   ///
-  /// 当前默认切到 Whisper 系列，便于对比 Moonshine 在真机上的识别表现。
-  /// 核心数 ≥ 6 且 RAM ≥ 4GB → Base（更准确，模型更大）。
-  /// 其他 → Tiny（更快，模型更小）。
-  AsrModelInfo recommendModel() {
+  /// 根据设备硬件推荐模型。
+  ///
+  /// [ramBytes] 由原生层提供（全平台统一）。
+  /// 核心数 ≥ 6 且 RAM ≥ 4GB → Base（更准确）。
+  /// 其他 → Tiny（更快）。
+  AsrModelInfo recommendModel({int ramBytes = 0}) {
     final cores = Platform.numberOfProcessors;
-    final ramGb = _getTotalRamGb();
+    final ramGb = ramBytes ~/ (1024 * 1024 * 1024);
+    AppLogger.log('ASR', 'recommendModel: cores=$cores, ramGb=$ramGb');
     if (cores >= 6 && ramGb >= 4) {
       return availableModels.firstWhere((m) => m.id == 'whisper-base-en-int8');
     }
     return availableModels.firstWhere((m) => m.id == 'whisper-tiny-en-int8');
-  }
-
-  /// 获取设备总 RAM（GB）。
-  ///
-  /// Android 上读取 /proc/meminfo，其他平台返回 0（降级到 Tiny）。
-  static int _getTotalRamGb() {
-    try {
-      if (!Platform.isAndroid && !Platform.isLinux) return 0;
-      final meminfo = File('/proc/meminfo').readAsStringSync();
-      final match = RegExp(r'MemTotal:\s+(\d+)\s+kB').firstMatch(meminfo);
-      if (match == null) return 0;
-      final totalKb = int.tryParse(match.group(1) ?? '') ?? 0;
-      return totalKb ~/ (1024 * 1024); // kB → GB
-    } catch (_) {
-      return 0;
-    }
   }
 
   /// 释放资源。

@@ -51,6 +51,9 @@ class OfflineAsrBackend implements SpeechPracticeBackend {
       _platform.requestPermissions();
 
   @override
+  Future<int> getDeviceRamBytes() => _platform.getDeviceRamBytes();
+
+  @override
   Future<void> setRecognitionEnabled(bool enabled) =>
       _platform.setRecognitionEnabled(enabled);
 

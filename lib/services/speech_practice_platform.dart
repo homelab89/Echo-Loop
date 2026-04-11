@@ -63,6 +63,9 @@ abstract class SpeechPracticeBackend {
   /// 录音识别事件流。
   Stream<SpeechPracticeEvent> get events;
 
+  /// 获取设备物理 RAM（字节数）。
+  Future<int> getDeviceRamBytes();
+
   /// 设置是否启用平台语音识别。
   ///
   /// `false`（默认）：纯录音 + VAD，stopSession 返回空 transcript。
@@ -157,6 +160,13 @@ class SpeechPracticePlatform implements SpeechPracticeBackend {
           throw _parseException(error);
         })
         .asBroadcastStream();
+  }
+
+  @override
+  Future<int> getDeviceRamBytes() async {
+    _ensureSupported();
+    final result = await _invokeMap('getDeviceInfo');
+    return (result['ramBytes'] as int?) ?? 0;
   }
 
   @override
