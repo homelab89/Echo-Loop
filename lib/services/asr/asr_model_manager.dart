@@ -42,64 +42,6 @@ class AsrModelManifest {
 ///
 /// 下载 URL: `$_cdnBase/model/$modelId/$filename`
 const _defaultModelFileRegistry = <String, AsrModelManifest>{
-  'moonshine-tiny-en-int8': AsrModelManifest(
-    files: [
-      AsrModelFileSpec(
-        path: 'preprocess.onnx',
-        sha256:
-            'f33addce61a143460fe753b5ee5b7db255e5140b5b779c065b94f6c83ff0bf4e',
-      ),
-      AsrModelFileSpec(
-        path: 'encode.int8.onnx',
-        sha256:
-            '8774dfba578de027ec6595c2c654a0836434489bc963a0db124a7f181f571acb',
-      ),
-      AsrModelFileSpec(
-        path: 'uncached_decode.int8.onnx',
-        sha256:
-            '216737000dd5881a17aa043f6bbd286add33e4c3b0ae257153e2ec15438bdc41',
-      ),
-      AsrModelFileSpec(
-        path: 'cached_decode.int8.onnx',
-        sha256:
-            '2aff28bba6a03d8dcf5c9feac45462629bae37317442299f28115ad09da773f6',
-      ),
-      AsrModelFileSpec(
-        path: 'tokens.txt',
-        sha256:
-            '1165c2aeb9f72f457a83be2d459a09054f27490acd9b41bd43794dfd25e296ea',
-      ),
-    ],
-  ),
-  'moonshine-base-en-int8': AsrModelManifest(
-    files: [
-      AsrModelFileSpec(
-        path: 'preprocess.onnx',
-        sha256:
-            'ffa630d395c5ccf76f5d4954be5b882df76aaf6491519ec01fd82ea7a3819fb2',
-      ),
-      AsrModelFileSpec(
-        path: 'encode.int8.onnx',
-        sha256:
-            '7e38770f776f2e5583a53b052936005df2ba5c833d7e09c2a5fd796b94bf73e2',
-      ),
-      AsrModelFileSpec(
-        path: 'uncached_decode.int8.onnx',
-        sha256:
-            'c01f4b35093bcac20d352d23a75a539e772964579f9d024a90e5e6f09cae9987',
-      ),
-      AsrModelFileSpec(
-        path: 'cached_decode.int8.onnx',
-        sha256:
-            '2db74e51cedf64a8b1be3c8192e0bb5e4923af0e90bd9e87f8e8771873f8ea03',
-      ),
-      AsrModelFileSpec(
-        path: 'tokens.txt',
-        sha256:
-            '1165c2aeb9f72f457a83be2d459a09054f27490acd9b41bd43794dfd25e296ea',
-      ),
-    ],
-  ),
   'whisper-tiny-en-int8': AsrModelManifest(
     files: [
       AsrModelFileSpec(
@@ -161,16 +103,6 @@ const _defaultModelFileRegistry = <String, AsrModelManifest>{
 
 /// 所有可用模型的元信息。
 final List<AsrModelInfo> availableModels = [
-  const AsrModelInfo(
-    id: 'moonshine-tiny-en-int8',
-    displayName: 'Moonshine Tiny',
-    type: AsrModelType.moonshine,
-  ),
-  const AsrModelInfo(
-    id: 'moonshine-base-en-int8',
-    displayName: 'Moonshine Base',
-    type: AsrModelType.moonshine,
-  ),
   const AsrModelInfo(
     id: 'whisper-tiny-en-int8',
     displayName: 'Whisper Tiny.en',

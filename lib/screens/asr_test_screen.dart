@@ -55,7 +55,7 @@ class AsrTestScreen extends ConsumerStatefulWidget {
 class _AsrTestScreenState extends ConsumerState<AsrTestScreen> {
   // 引擎选择
   _AsrMode _mode = Platform.isAndroid ? _AsrMode.offline : _AsrMode.platform;
-  String _selectedModelId = 'moonshine-tiny-en-int8';
+  String _selectedModelId = 'whisper-tiny-en-int8';
 
   // 录音状态
   bool _isRecording = false;
