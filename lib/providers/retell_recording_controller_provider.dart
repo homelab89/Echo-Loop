@@ -417,13 +417,14 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
 
     // ── ASR 关闭：直接存录音 ──
     if (!asrEnabled) {
-      AppLogger.log('RetellRec', '✗ ASR 关闭，跳过转录');
+      AppLogger.log('RetellRec', '● ASR 关闭，保留录音，跳过转录');
       await _recordingService.shutdown();
       state = state.copyWith(
         phase: RetellRecordingPhase.idle,
         currentAttempt: SpeechPracticeAttempt(promptId: promptId).copyWith(
           filePath: filePath,
           status: SpeechPracticeAttemptStatus.unavailable,
+          score: 0,
         ),
         clearLiveTranscript: true,
         hasDetectedSpeech: false,
@@ -457,12 +458,13 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
       final status = result.errorCode != null
           ? _statusFromError(result.errorCode)
           : SpeechPracticeAttemptStatus.unavailable;
-      AppLogger.log('RetellRec', '✗ 无转录结果: status=${status.name}');
+      AppLogger.log('RetellRec', '✗ 无转录结果，保留录音: status=${status.name}');
       state = state.copyWith(
         phase: RetellRecordingPhase.idle,
         currentAttempt: SpeechPracticeAttempt(promptId: promptId).copyWith(
           filePath: filePath,
           status: status,
+          score: 0,
           errorMessage: result.errorMessage,
         ),
         clearLiveTranscript: true,

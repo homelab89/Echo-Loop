@@ -478,13 +478,14 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
 
     // ── ASR 关闭：直接存录音，不等转录 ──
     if (!asrEnabled) {
-      AppLogger.log('SpeechRec', '✗ ASR 关闭，跳过转录');
+      AppLogger.log('SpeechRec', '● ASR 关闭，保留录音，跳过转录');
       await _recordingService.shutdown();
       state = state.copyWith(
         phase: SpeechRecordingPhase.idle,
         currentAttempt: SpeechPracticeAttempt(promptId: promptId).copyWith(
           filePath: filePath,
           status: SpeechPracticeAttemptStatus.unavailable,
+          score: 0,
         ),
         clearLiveTranscript: true,
         hasDetectedSpeech: false,
@@ -523,12 +524,13 @@ class SpeechRecordingController extends Notifier<SpeechRecordingState> {
         result: result,
       );
     } else {
-      AppLogger.log('SpeechRec', '✗ 无转录结果，跳过评估');
+      AppLogger.log('SpeechRec', '✗ 无转录结果，保留录音');
       state = state.copyWith(
         phase: SpeechRecordingPhase.idle,
         currentAttempt: SpeechPracticeAttempt(promptId: promptId).copyWith(
           filePath: filePath,
           status: SpeechPracticeAttemptStatus.unavailable,
+          score: 0,
         ),
         clearLiveTranscript: true,
         hasDetectedSpeech: false,
