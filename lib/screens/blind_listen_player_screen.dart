@@ -28,6 +28,7 @@ import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/blind_listen_settings_sheet.dart';
 import '../widgets/common/countdown_chip.dart';
 import '../widgets/common/paragraph_practice_scaffold.dart';
+import '../widgets/common/playback_controls.dart';
 import '../widgets/common/paragraph_sentence_list_card.dart';
 import '../widgets/dialogs/free_play_complete_dialog.dart';
 import '../widgets/player_hotkey_scope.dart';
@@ -525,28 +526,83 @@ class _BlindListenPlayerScreenState
               ),
               SizedBox(
                 height: 56,
-                child: Center(
-                  child: playerState.isPauseCountdown
-                      ? Consumer(
-                          builder: (context, ref, _) {
-                            final s = ref.watch(
-                              blindListenPlayerProvider.select(
-                                (s) => (
-                                  total: s.pauseDuration,
-                                  paused: s.isCountdownPaused,
+                child: playerState.isPauseCountdown
+                    ? Consumer(
+                        builder: (context, ref, _) {
+                          final s = ref.watch(
+                            blindListenPlayerProvider.select(
+                              (s) => (
+                                total: s.pauseDuration,
+                                paused: s.isCountdownPaused,
+                                fastForward: s.isCountdownFastForward,
+                              ),
+                            ),
+                          );
+                          final hasFF = !s.paused && !s.fastForward;
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // 左槽位：占位（与 prev 按钮对齐）
+                              const SizedBox(
+                                width: PlaybackControls.controlButtonSize,
+                              ),
+                              const SizedBox(width: 48),
+                              // 中间槽位：倒计时（与中心按钮对齐）
+                              SizedBox(
+                                width: PlaybackControls.controlButtonSize,
+                                child: Center(
+                                  child: CountdownChip(
+                                    total: s.total,
+                                    isPaused: s.paused,
+                                    isFastForward: s.fastForward,
+                                    onPause: () =>
+                                        player.pauseCountdown(),
+                                    onResume: () =>
+                                        player.resumeCountdown(),
+                                  ),
                                 ),
                               ),
-                            );
-                            return CountdownChip(
-                              total: s.total,
-                              isPaused: s.paused,
-                              onPause: () => player.pauseCountdown(),
-                              onResume: () => player.resumeCountdown(),
-                            );
-                          },
-                        )
-                      : _buildManualHint(playerState, l10n, theme),
-                ),
+                              const SizedBox(width: 48),
+                              // 右槽位：快进按钮（与 next 按钮对齐）
+                              SizedBox(
+                                width: PlaybackControls.controlButtonSize,
+                                height: 56,
+                                child: Center(
+                                  child: AnimatedOpacity(
+                                    opacity: hasFF ? 1.0 : 0.0,
+                                    duration: const Duration(
+                                      milliseconds: 200,
+                                    ),
+                                    child: IgnorePointer(
+                                      ignoring: !hasFF,
+                                      child: hasFF
+                                          ? GestureDetector(
+                                              onTap: player
+                                                  .toggleCountdownFastForward,
+                                              child: Icon(
+                                                Icons
+                                                    .fast_forward_rounded,
+                                                size: 32,
+                                                color: theme.colorScheme
+                                                    .onSurface
+                                                    .withValues(
+                                                      alpha: 0.6,
+                                                    ),
+                                              ),
+                                            )
+                                          : const SizedBox.shrink(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      )
+                    : Center(
+                        child:
+                            _buildManualHint(playerState, l10n, theme),
+                      ),
               ),
             ],
           ),

@@ -71,6 +71,9 @@ class BlindListenPlayerState {
   /// 倒计时是否暂停中
   final bool isCountdownPaused;
 
+  /// 倒计时是否快进中
+  final bool isCountdownFastForward;
+
   /// 文本显示模式
   final BlindListenDisplayMode displayMode;
 
@@ -94,6 +97,7 @@ class BlindListenPlayerState {
     this.pauseRemaining = Duration.zero,
     this.pauseDuration = Duration.zero,
     this.isCountdownPaused = false,
+    this.isCountdownFastForward = false,
     this.displayMode = BlindListenDisplayMode.hideAll,
     this.isWaitingForUser = false,
     this.settings = const BlindListenSettings(),
@@ -111,6 +115,7 @@ class BlindListenPlayerState {
     Duration? pauseRemaining,
     Duration? pauseDuration,
     bool? isCountdownPaused,
+    bool? isCountdownFastForward,
     BlindListenDisplayMode? displayMode,
     bool? isWaitingForUser,
     BlindListenSettings? settings,
@@ -130,6 +135,8 @@ class BlindListenPlayerState {
       pauseRemaining: pauseRemaining ?? this.pauseRemaining,
       pauseDuration: pauseDuration ?? this.pauseDuration,
       isCountdownPaused: isCountdownPaused ?? this.isCountdownPaused,
+      isCountdownFastForward:
+          isCountdownFastForward ?? this.isCountdownFastForward,
       displayMode: displayMode ?? this.displayMode,
       isWaitingForUser: isWaitingForUser ?? this.isWaitingForUser,
       settings: settings ?? this.settings,
@@ -404,6 +411,26 @@ class BlindListenPlayer extends _$BlindListenPlayer {
     state = state.copyWith(isPauseCountdown: false, isCountdownPaused: false);
   }
 
+  /// 切换倒计时快进
+  ///
+  /// 快进时剩余倒计时在 ~1.5 秒内完成。
+  /// 如果当前暂停中，快进会同时恢复倒计时。
+  void toggleCountdownFastForward() {
+    final isFF = !state.isCountdownFastForward;
+    if (isFF) {
+      _countdown.fastForward();
+    } else {
+      _countdown.setSpeed(1.0);
+    }
+    if (state.isCountdownPaused) {
+      _countdown.resume();
+    }
+    state = state.copyWith(
+      isCountdownFastForward: isFF,
+      isCountdownPaused: false,
+    );
+  }
+
   /// 释放资源
   void disposePlayer() {
     _cleanup();
@@ -548,6 +575,7 @@ class BlindListenPlayer extends _$BlindListenPlayer {
       pauseDuration: duration,
       pauseRemaining: duration,
       isCountdownPaused: false,
+      isCountdownFastForward: false,
       playingSentenceIndex: -1,
       hasCompletedCurrentParagraphPlayback: true,
       isWaitingForUser: false,
