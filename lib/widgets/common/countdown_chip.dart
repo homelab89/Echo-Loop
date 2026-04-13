@@ -7,7 +7,7 @@
 /// 不依赖外部高频传入 remaining，避免 Provider 每 100ms rebuild。
 ///
 /// **快进内置**：收到 [isFastForward] = true 时，自动将剩余动画压缩到
-/// ~1.5 秒内完成，调用方无需关心具体速度。
+/// ~1 秒内完成，调用方无需关心具体速度。
 ///
 /// **纯展示组件**：只负责倒计时圆环，快进按钮由调用方控制。
 library;
@@ -26,7 +26,7 @@ class CountdownChip extends StatefulWidget {
   /// 是否已暂停
   final bool isPaused;
 
-  /// 是否快进中（剩余动画将在 ~1.5 秒内完成）
+  /// 是否快进中（剩余动画将在 ~1 秒内完成）
   final bool isFastForward;
 
   /// 暂停回调
@@ -53,7 +53,7 @@ class _CountdownChipState extends State<CountdownChip>
   late AnimationController _controller;
 
   /// 快进目标时长
-  static const _fastForwardDuration = Duration(milliseconds: 1500);
+  static const _fastForwardDuration = Duration(milliseconds: 1000);
 
   @override
   void initState() {
@@ -91,10 +91,8 @@ class _CountdownChipState extends State<CountdownChip>
 
   /// 创建 AnimationController，正常速度 = total 时长
   AnimationController _createController() {
-    return AnimationController(
-      vsync: this,
-      duration: widget.total,
-    )..addListener(_onTick);
+    return AnimationController(vsync: this, duration: widget.total)
+      ..addListener(_onTick);
   }
 
   /// 快进/恢复正常速度
@@ -103,7 +101,7 @@ class _CountdownChipState extends State<CountdownChip>
     _controller.stop();
 
     if (widget.isFastForward) {
-      // 快进：让剩余动画在 ~1.5 秒内走完
+      // 快进：让剩余动画在 ~1 秒内走完
       final remainingFraction = 1.0 - currentValue;
       if (remainingFraction > 0) {
         // duration 是 0→1 的总时长，只跑 remainingFraction 这段
