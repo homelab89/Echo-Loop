@@ -182,6 +182,26 @@ Float32List pcm16ToFloat32(Uint8List bytes, Endian endian, int numChannels) {
   return result;
 }
 
+/// 将音频从 [fromRate] 降采样到 [toRate]（整数倍降采样）。
+///
+/// 要求 [fromRate] 是 [toRate] 的整数倍（如 48000→16000，比率 3）。
+/// 对每 N 个样本取均值，兼做简易低通滤波，避免混叠。
+Float32List downsample(Float32List samples, int fromRate, int toRate) {
+  assert(fromRate > toRate && fromRate % toRate == 0);
+  final ratio = fromRate ~/ toRate;
+  final outLen = samples.length ~/ ratio;
+  final result = Float32List(outLen);
+  for (var i = 0; i < outLen; i++) {
+    var sum = 0.0;
+    final base = i * ratio;
+    for (var j = 0; j < ratio; j++) {
+      sum += samples[base + j];
+    }
+    result[i] = sum / ratio;
+  }
+  return result;
+}
+
 /// 从 IEEE 754 64-bit 位模式还原 double。
 double float64FromBits(int bits) {
   final bd = ByteData(8)..setUint64(0, bits, Endian.big);

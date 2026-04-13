@@ -49,11 +49,17 @@ class AsrModelConfig {
   /// null 时自动选择平台默认值（Android: nnapi, 其他: cpu）。
   final String? provider;
 
+  /// Silero VAD 模型文件路径（可选）。
+  ///
+  /// 提供时，转录前先用 VAD 裁掉静音段以加速 whisper 推理。
+  final String? vadModelPath;
+
   const AsrModelConfig({
     required this.model,
     required this.modelDir,
     this.numThreads = 4,
     this.provider,
+    this.vadModelPath,
   });
 
   /// 根据设备 CPU 核心数推荐线程数。

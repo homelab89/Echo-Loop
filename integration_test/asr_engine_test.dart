@@ -14,11 +14,16 @@ import 'package:integration_test/integration_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'package:fluency/services/asr/audio_file_reader.dart';
 import 'package:fluency/services/asr/offline_asr_engine.dart';
 import 'package:fluency/services/asr/sherpa_onnx_engine.dart';
+import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
-/// 测试 WAV 固件路径（运行时从 asset 复制到 sandbox tmp）。
+/// 测试 WAV 固件路径（运行时从网络下载到 sandbox tmp）。
 late String _testWav;
+
+/// 16kHz 测试 WAV（VAD 测试用）。
+late String _testWav16k;
 
 const _whisperTinyModel = AsrModelInfo(
   id: 'whisper-tiny-en-int8',
@@ -54,6 +59,26 @@ void main() {
       client.close();
     }
     _testWav = wavDest.path;
+
+    // 下载 16kHz 测试 WAV（VAD 测试用）。
+    final wav16kDest = File(p.join(tmpDir.path, 'test_speech_16k.wav'));
+    if (!wav16kDest.existsSync()) {
+      final client = HttpClient();
+      try {
+        final request = await client.getUrl(
+          Uri.parse(
+            'https://hf-mirror.com/csukuangfj/sherpa-onnx-whisper-tiny.en'
+            '/resolve/main/test_wavs/0.wav',
+          ),
+        );
+        final response = await request.close();
+        final sink = wav16kDest.openWrite();
+        await response.pipe(sink);
+      } finally {
+        client.close();
+      }
+    }
+    _testWav16k = wav16kDest.path;
   });
 
   group('SherpaOnnxEngine 端到端', () {
@@ -97,6 +122,124 @@ void main() {
 
       await engine.dispose();
       expect(engine.isReady, isFalse);
+    });
+  });
+
+  group('Silero VAD 端到端', () {
+    testWidgets('VAD 对有语音的音频保留合理比例', (tester) async {
+      // 下载 VAD 模型。
+      final appDir = await getApplicationSupportDirectory();
+      final vadDir = Directory('${appDir.path}/asr-models/silero-vad');
+      final vadFile = File(p.join(vadDir.path, 'silero_vad.onnx'));
+      if (!vadFile.existsSync()) {
+        await vadDir.create(recursive: true);
+        final client = HttpClient();
+        try {
+          final request = await client.getUrl(
+            Uri.parse(
+              'https://cdn.echo-loop.top/model/silero-vad/silero_vad.onnx',
+            ),
+          );
+          final response = await request.close();
+          final sink = vadFile.openWrite();
+          await response.pipe(sink);
+        } finally {
+          client.close();
+        }
+      }
+      final vadPath = vadFile.path;
+      if (!File(_testWav16k).existsSync()) {
+        markTestSkipped('测试 WAV 不存在：$_testWav16k');
+        return;
+      }
+
+      // 读取 16kHz 测试 WAV。
+      if (!File(_testWav16k).existsSync()) {
+        markTestSkipped('测试 WAV 不存在：$_testWav16k');
+        return;
+      }
+      final audio = readAudioFile(_testWav16k);
+      debugPrint(
+        '[VAD Test] 原始: ${audio.sampleRate}Hz, '
+        '${audio.samples.length} samples, '
+        '${(audio.samples.length / audio.sampleRate).toStringAsFixed(1)}s',
+      );
+
+      // 降采样到 16kHz（VAD 要求）。
+      final Float32List samples16k;
+      if (audio.sampleRate == 16000) {
+        samples16k = audio.samples;
+      } else if (audio.sampleRate > 16000 && audio.sampleRate % 16000 == 0) {
+        samples16k = downsample(audio.samples, audio.sampleRate, 16000);
+      } else {
+        markTestSkipped('测试音频 ${audio.sampleRate}Hz 无法降采样到 16kHz');
+        return;
+      }
+      final beforeSec = samples16k.length / 16000;
+      debugPrint('[VAD Test] 降采样后: ${beforeSec.toStringAsFixed(1)}s');
+
+      // 创建 VAD。
+      sherpa.initBindings();
+      final config = sherpa.VadModelConfig(
+        sileroVad: sherpa.SileroVadModelConfig(
+          model: vadPath,
+          minSilenceDuration: 0.25,
+          minSpeechDuration: 0.5,
+          maxSpeechDuration: 60.0,
+        ),
+        sampleRate: 16000,
+        numThreads: 1,
+        provider: 'cpu',
+        debug: false,
+      );
+      final vad = sherpa.VoiceActivityDetector(
+        config: config,
+        bufferSizeInSeconds: 600,
+      );
+
+      // 按 windowSize 分块喂入（与官方示例一致）。
+      final windowSize = config.sileroVad.windowSize;
+      final numIter = samples16k.length ~/ windowSize;
+
+      final segments = <Float32List>[];
+      var totalLen = 0;
+
+      for (var i = 0; i < numIter; i++) {
+        final start = i * windowSize;
+        vad.acceptWaveform(
+          Float32List.sublistView(samples16k, start, start + windowSize),
+        );
+        while (!vad.isEmpty()) {
+          final seg = vad.front();
+          segments.add(seg.samples);
+          totalLen += seg.samples.length;
+          vad.pop();
+        }
+      }
+      vad.flush();
+      while (!vad.isEmpty()) {
+        final seg = vad.front();
+        segments.add(seg.samples);
+        totalLen += seg.samples.length;
+        vad.pop();
+      }
+      vad.free();
+
+      final afterSec = totalLen / 16000;
+      final ratio = afterSec / beforeSec;
+      debugPrint(
+        '[VAD Test] VAD: ${beforeSec.toStringAsFixed(1)}s → '
+        '${afterSec.toStringAsFixed(1)}s '
+        '(${(ratio * 100).toStringAsFixed(0)}% 保留)',
+      );
+
+      // 有语音的音频至少保留 10%，不应被全部裁掉。
+      expect(afterSec, greaterThan(beforeSec * 0.1),
+          reason: 'VAD 不应裁掉超过 90% 的有声音频');
+      // 也不应完全不裁（测试音频不是纯语音）。
+      expect(afterSec, lessThan(beforeSec),
+          reason: 'VAD 应裁掉部分静音');
+      expect(segments.isNotEmpty, isTrue);
     });
   });
 }

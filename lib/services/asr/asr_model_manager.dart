@@ -38,10 +38,24 @@ class AsrModelManifest {
   const AsrModelManifest({required this.files});
 }
 
+/// Silero VAD 模型 ID。
+///
+/// VAD 模型是所有 whisper 模型的共享依赖，用于转录前裁剪静音段。
+const vadModelId = 'silero-vad';
+
 /// 各模型的文件清单。
 ///
 /// 下载 URL: `$_cdnBase/model/$modelId/$filename`
 const _defaultModelFileRegistry = <String, AsrModelManifest>{
+  vadModelId: AsrModelManifest(
+    files: [
+      AsrModelFileSpec(
+        path: 'silero_vad.onnx',
+        sha256:
+            '9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6',
+      ),
+    ],
+  ),
   'whisper-tiny-en-int8': AsrModelManifest(
     files: [
       AsrModelFileSpec(
@@ -382,7 +396,8 @@ class AsrModelManager {
     await for (final entity in root.list()) {
       if (entity is Directory) {
         final dirName = p.basename(entity.path);
-        if (dirName != keepModelId) {
+        // 保留当前使用的 whisper 模型和共享的 VAD 模型。
+        if (dirName != keepModelId && dirName != vadModelId) {
           AppLogger.log('ASRModel', '🗑 清理旧模型: $dirName');
           await entity.delete(recursive: true);
         }

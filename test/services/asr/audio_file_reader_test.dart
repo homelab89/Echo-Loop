@@ -192,6 +192,80 @@ void main() {
       expect(result.samples[0], closeTo(500 / 32768, 0.001));
     });
   });
+
+  group('downsample', () {
+    test('48kHz → 16kHz（3:1）均值降采样', () {
+      // 3 组各 3 个样本，均值分别为 0.3, -0.6, 0.0
+      final input = Float32List.fromList([
+        0.1, 0.3, 0.5, // avg = 0.3
+        -0.4, -0.6, -0.8, // avg = -0.6
+        -0.1, 0.0, 0.1, // avg = 0.0
+      ]);
+
+      final result = downsample(input, 48000, 16000);
+
+      expect(result.length, 3);
+      expect(result[0], closeTo(0.3, 0.0001));
+      expect(result[1], closeTo(-0.6, 0.0001));
+      expect(result[2], closeTo(0.0, 0.0001));
+    });
+
+    test('振幅保持在合理范围', () {
+      // 模拟真实语音信号（振幅 ~0.1）
+      final input = Float32List(48000); // 1 秒 48kHz
+      for (var i = 0; i < input.length; i++) {
+        input[i] = 0.1 * (i.isEven ? 1.0 : -1.0);
+      }
+
+      final result = downsample(input, 48000, 16000);
+
+      expect(result.length, 16000);
+      for (final sample in result) {
+        expect(sample.abs(), lessThanOrEqualTo(0.15));
+      }
+      expect(result.any((s) => s.abs() > 0.01), isTrue);
+    });
+
+    test('余尾样本被截断', () {
+      // 10 个样本，ratio=3 → 输出 3 个，第 10 个被丢弃
+      final input = Float32List.fromList([
+        0.1, 0.2, 0.3,
+        0.4, 0.5, 0.6,
+        0.7, 0.8, 0.9,
+        1.0, // 尾部不足一组，截断
+      ]);
+
+      final result = downsample(input, 48000, 16000);
+
+      expect(result.length, 3);
+    });
+
+    test('对 CAF 48kHz Float32 降采样后保持非零', () {
+      final caf = _buildMinimalCaf(
+        sampleRate: 48000,
+        numChannels: 1,
+        bitsPerChannel: 32,
+        isFloat: true,
+        isLittleEndian: true,
+        float32Samples: [
+          // 模拟 3 帧 × 3 样本 = 9 个 48kHz 样本
+          0.5, 0.5, 0.5,
+          -0.3, -0.3, -0.3,
+          0.1, 0.1, 0.1,
+        ],
+      );
+
+      final audio = readCaf(ByteData.sublistView(caf));
+      expect(audio.sampleRate, 48000);
+
+      final result = downsample(audio.samples, 48000, 16000);
+
+      expect(result.length, 3);
+      expect(result[0], closeTo(0.5, 0.0001));
+      expect(result[1], closeTo(-0.3, 0.0001));
+      expect(result[2], closeTo(0.1, 0.0001));
+    });
+  });
 }
 
 /// 构造最小有效 CAF 文件。

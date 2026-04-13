@@ -217,11 +217,18 @@ class RecordingService {
   /// 等待转录结果并释放引擎。
   ///
   /// 必须在 [stopSession] 之后调用。等待平台或离线引擎返回 finalTranscript。
-  Future<RecordingResult> waitForTranscript({required String filePath}) async {
+  Future<RecordingResult> waitForTranscript({
+    required String filePath,
+    Duration? timeout,
+  }) async {
     try {
-      AppLogger.log('Recording', '┌ waitForTranscript ...');
+      final effectiveTimeout = timeout ?? _finalTranscriptTimeout;
+      AppLogger.log(
+        'Recording',
+        '┌ waitForTranscript timeout=${effectiveTimeout.inSeconds}s ...',
+      );
       final event = await _finalEventCompleter!.future.timeout(
-        _finalTranscriptTimeout,
+        effectiveTimeout,
       );
       _clearFinalCompleter();
       await _shutdown();

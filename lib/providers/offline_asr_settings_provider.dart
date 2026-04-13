@@ -314,6 +314,14 @@ class OfflineAsrSettingsNotifier extends Notifier<OfflineAsrSettingsState> {
         },
       );
 
+      // 下载 VAD 模型（静默，不影响主进度条）。
+      if (!await modelManager.isModelDownloaded(vadModelId)) {
+        await modelManager.downloadModel(
+          vadModelId,
+          cancelToken: _downloadCancelToken,
+        );
+      }
+
       _downloadCancelToken = null;
       final localSize = await modelManager.modelLocalSize(modelId);
 
@@ -354,12 +362,20 @@ class OfflineAsrSettingsNotifier extends Notifier<OfflineAsrSettingsState> {
     final modelManager = ref.read(asrModelManagerProvider);
     final modelDir = await modelManager.modelDir(modelId);
 
+    // VAD 模型路径（可选，未下载时跳过静音裁剪）。
+    String? vadPath;
+    if (await modelManager.isModelDownloaded(vadModelId)) {
+      final vadDir = await modelManager.modelDir(vadModelId);
+      vadPath = '$vadDir/silero_vad.onnx';
+    }
+
     try {
       await engine.initialize(
         AsrModelConfig(
           model: state.recommendedModel,
           modelDir: modelDir,
           numThreads: AsrModelConfig.recommendedThreads(),
+          vadModelPath: vadPath,
         ),
       );
       state = state.copyWith(engineReady: true);

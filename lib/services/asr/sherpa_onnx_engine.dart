@@ -7,6 +7,7 @@ library;
 
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
@@ -204,11 +205,13 @@ class _DisposeRequest {
 /// Worker Isolate 入口函数。
 ///
 /// 在 Isolate 内初始化 sherpa-onnx FFI 绑定、创建 Recognizer，
+/// 可选创建 VAD（用于转录前裁剪静音段），
 /// 然后循环处理转录请求直到收到释放指令。
 void _isolateEntryPoint(_InitPayload init) {
   try {
     sherpa.initBindings();
     final recognizer = _createRecognizer(init.config);
+    final vad = _createVad(init.config.vadModelPath);
 
     final commandPort = ReceivePort();
     // 握手：把 commandPort 发回主线程。
@@ -216,8 +219,9 @@ void _isolateEntryPoint(_InitPayload init) {
 
     commandPort.listen((message) {
       if (message is _TranscribeRequest) {
-        _handleTranscribe(recognizer, message);
+        _handleTranscribe(recognizer, vad, message);
       } else if (message is _DisposeRequest) {
+        vad?.free();
         recognizer.free();
         message.replyPort.send(null);
         commandPort.close();
@@ -229,9 +233,85 @@ void _isolateEntryPoint(_InitPayload init) {
   }
 }
 
-/// 在 Worker 内执行转录：读取音频文件 → FFI 推理 → 返回结果。
+/// 创建 Silero VAD 实例（可选）。
+///
+/// [vadModelPath] 为 null 时返回 null，转录流程跳过静音裁剪。
+sherpa.VoiceActivityDetector? _createVad(String? vadModelPath) {
+  if (vadModelPath == null) return null;
+  final config = sherpa.VadModelConfig(
+    sileroVad: sherpa.SileroVadModelConfig(
+      model: vadModelPath,
+      minSilenceDuration: 0.25,
+      minSpeechDuration: 0.5,
+      maxSpeechDuration: 60.0,
+    ),
+    sampleRate: 16000,
+    numThreads: 1,
+    provider: 'cpu',
+    debug: false,
+  );
+  return sherpa.VoiceActivityDetector(config: config, bufferSizeInSeconds: 600);
+}
+
+/// 用 VAD 提取语音段，拼接后返回纯语音 16kHz 采样。
+///
+/// 按 windowSize（默认 512）分块喂入 VAD，与官方示例一致。
+/// 返回 null 表示无语音段（全静音）。
+Float32List? _extractSpeechWithVad(
+  sherpa.VoiceActivityDetector vad,
+  Float32List samples16k,
+) {
+  final windowSize = vad.config.sileroVad.windowSize;
+  final numIter = samples16k.length ~/ windowSize;
+
+  final segments = <Float32List>[];
+  var totalLen = 0;
+
+  // 按 windowSize 分块喂入，每次检查是否检测到语音段。
+  for (var i = 0; i < numIter; i++) {
+    final start = i * windowSize;
+    vad.acceptWaveform(
+      Float32List.sublistView(samples16k, start, start + windowSize),
+    );
+    while (!vad.isEmpty()) {
+      final seg = vad.front();
+      segments.add(seg.samples);
+      totalLen += seg.samples.length;
+      vad.pop();
+    }
+  }
+
+  // 处理尾部不足一个 window 的残余。
+  vad.flush();
+  while (!vad.isEmpty()) {
+    final seg = vad.front();
+    segments.add(seg.samples);
+    totalLen += seg.samples.length;
+    vad.pop();
+  }
+  vad.reset();
+
+  if (segments.isEmpty) return null;
+
+  // 单段直接返回，避免拷贝。
+  if (segments.length == 1) return segments.first;
+
+  final merged = Float32List(totalLen);
+  var offset = 0;
+  for (final seg in segments) {
+    merged.setAll(offset, seg);
+    offset += seg.length;
+  }
+  return merged;
+}
+
+/// VAD 目标采样率。
+const _vadSampleRate = 16000;
+
+/// 在 Worker 内执行转录：读取音频文件 → VAD 裁静音 → FFI 推理 → 返回结果。
 void _handleTranscribe(
   sherpa.OfflineRecognizer recognizer,
+  sherpa.VoiceActivityDetector? vad,
   _TranscribeRequest request,
 ) {
   try {
@@ -243,12 +323,47 @@ void _handleTranscribe(
       return;
     }
 
+    // VAD 裁剪静音段（需要 16kHz 输入）。
+    Float32List samples;
+    int sampleRate;
+    if (vad != null && audioData.sampleRate >= _vadSampleRate) {
+      final samples16k = audioData.sampleRate == _vadSampleRate
+          ? audioData.samples
+          : downsample(audioData.samples, audioData.sampleRate, _vadSampleRate);
+      final beforeSec = samples16k.length / _vadSampleRate;
+      // 诊断：计算 RMS 确认输入音频有效。
+      var sumSq = 0.0;
+      for (final s in samples16k) {
+        sumSq += s * s;
+      }
+      final rms = (sumSq / samples16k.length);
+      // rms 未开根号，直接用平方均值即可判断量级。
+      AppLogger.log(
+        'ASREngine',
+        'VAD input: ${beforeSec.toStringAsFixed(1)}s, '
+            'rms²=${rms.toStringAsExponential(2)}, '
+            'max=${samples16k.reduce((a, b) => a.abs() > b.abs() ? a : b).toStringAsFixed(4)}',
+      );
+      final speech = _extractSpeechWithVad(vad, samples16k);
+      if (speech == null) {
+        AppLogger.log('ASREngine', 'VAD: ${beforeSec.toStringAsFixed(1)}s → 0.0s (全静音)');
+        request.replyPort.send(
+          const _TranscribeResponse(text: '', inferenceTimeMs: 0),
+        );
+        return;
+      }
+      final afterSec = speech.length / _vadSampleRate;
+      AppLogger.log('ASREngine', 'VAD: ${beforeSec.toStringAsFixed(1)}s → ${afterSec.toStringAsFixed(1)}s');
+      samples = speech;
+      sampleRate = _vadSampleRate;
+    } else {
+      samples = audioData.samples;
+      sampleRate = audioData.sampleRate;
+    }
+
     final stopwatch = Stopwatch()..start();
     final stream = recognizer.createStream();
-    stream.acceptWaveform(
-      samples: audioData.samples,
-      sampleRate: audioData.sampleRate,
-    );
+    stream.acceptWaveform(samples: samples, sampleRate: sampleRate);
     recognizer.decode(stream);
     final result = recognizer.getResult(stream);
     stopwatch.stop();

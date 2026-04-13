@@ -37,6 +37,7 @@ import '../theme/app_theme.dart';
 import 'asr_settings_screen.dart';
 import 'asr_test_screen.dart';
 import 'log_viewer_screen.dart';
+import 'storage_browser_screen.dart';
 import 'reminder_settings_screen.dart';
 import '../widgets/app_update_dialog.dart';
 
@@ -538,6 +539,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           subtitle: const Text('查询单词是否在词典中'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _showDictionaryLookupDialog(context),
+        ),
+        ListTile(
+          leading: _emojiIcon('💾'),
+          title: const Text('内部存储'),
+          subtitle: const Text('浏览应用沙盒目录和文件大小'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const StorageBrowserScreen(),
+            ),
+          ),
         ),
       ],
     );
