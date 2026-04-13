@@ -1,0 +1,156 @@
+import 'dart:io';
+
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:fluency/services/storage_migration_service.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late Directory fakeDocsDir;
+  late Directory fakeAppSupportDir;
+
+  setUp(() {
+    fakeDocsDir = Directory.systemTemp.createTempSync('migration_docs_');
+    fakeAppSupportDir =
+        Directory.systemTemp.createTempSync('migration_support_');
+
+    SharedPreferences.setMockInitialValues({});
+
+    // Mock path_provider 返回伪目录
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (MethodCall call) async {
+        if (call.method == 'getApplicationDocumentsDirectory') {
+          return fakeDocsDir.path;
+        }
+        if (call.method == 'getApplicationSupportDirectory') {
+          return fakeAppSupportDir.path;
+        }
+        return null;
+      },
+    );
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      null,
+    );
+    if (fakeDocsDir.existsSync()) fakeDocsDir.deleteSync(recursive: true);
+    if (fakeAppSupportDir.existsSync()) {
+      fakeAppSupportDir.deleteSync(recursive: true);
+    }
+  });
+
+  group('migrateToAppSupportDirectory', () {
+    test('迁移数据库文件到 Application Support', () async {
+      // 在 Documents 创建数据库文件
+      File('${fakeDocsDir.path}/echo_loop.db').writeAsStringSync('db-data');
+      File('${fakeDocsDir.path}/echo_loop.db-wal').writeAsStringSync('wal');
+
+      await migrateToAppSupportDirectory();
+
+      // 源文件已移走
+      expect(File('${fakeDocsDir.path}/echo_loop.db').existsSync(), isFalse);
+      expect(
+        File('${fakeDocsDir.path}/echo_loop.db-wal').existsSync(),
+        isFalse,
+      );
+      // 目标文件存在
+      expect(
+        File('${fakeAppSupportDir.path}/echo_loop.db').readAsStringSync(),
+        'db-data',
+      );
+      expect(
+        File('${fakeAppSupportDir.path}/echo_loop.db-wal').readAsStringSync(),
+        'wal',
+      );
+    });
+
+    test('迁移媒体目录到 Application Support', () async {
+      // 在 Documents 创建媒体目录和文件
+      final audiosDir = Directory('${fakeDocsDir.path}/audios')
+        ..createSync();
+      File('${audiosDir.path}/test.mp3').writeAsStringSync('audio');
+      final transcriptsDir = Directory('${fakeDocsDir.path}/transcripts')
+        ..createSync();
+      File('${transcriptsDir.path}/test.srt').writeAsStringSync('srt');
+
+      await migrateToAppSupportDirectory();
+
+      // 源目录已移走
+      expect(audiosDir.existsSync(), isFalse);
+      expect(transcriptsDir.existsSync(), isFalse);
+      // 目标目录和文件存在
+      expect(
+        File('${fakeAppSupportDir.path}/audios/test.mp3').readAsStringSync(),
+        'audio',
+      );
+      expect(
+        File('${fakeAppSupportDir.path}/transcripts/test.srt')
+            .readAsStringSync(),
+        'srt',
+      );
+    });
+
+    test('已迁移时跳过（幂等）', () async {
+      SharedPreferences.setMockInitialValues({'data_dir_migrated': true});
+
+      // 即使 Documents 有文件也不会迁移
+      File('${fakeDocsDir.path}/echo_loop.db').writeAsStringSync('db');
+
+      await migrateToAppSupportDirectory();
+
+      // 文件仍在 Documents（未被移走）
+      expect(File('${fakeDocsDir.path}/echo_loop.db').existsSync(), isTrue);
+      // Application Support 没有该文件
+      expect(
+        File('${fakeAppSupportDir.path}/echo_loop.db').existsSync(),
+        isFalse,
+      );
+    });
+
+    test('目标已存在时不覆盖', () async {
+      // 两个目录都有同名文件
+      File('${fakeDocsDir.path}/echo_loop.db').writeAsStringSync('old');
+      File('${fakeAppSupportDir.path}/echo_loop.db')
+          .writeAsStringSync('new');
+
+      await migrateToAppSupportDirectory();
+
+      // 目标保持不变
+      expect(
+        File('${fakeAppSupportDir.path}/echo_loop.db').readAsStringSync(),
+        'new',
+      );
+      // 源文件未被删除（因为没有移动）
+      expect(File('${fakeDocsDir.path}/echo_loop.db').existsSync(), isTrue);
+    });
+
+    test('全新安装无文件时正常完成', () async {
+      // Documents 为空
+      await migrateToAppSupportDirectory();
+
+      // 仅设置了迁移标记
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('data_dir_migrated'), isTrue);
+    });
+
+    test('迁移旧版本数据库文件名', () async {
+      File('${fakeDocsDir.path}/fluency.db').writeAsStringSync('legacy');
+
+      await migrateToAppSupportDirectory();
+
+      expect(File('${fakeDocsDir.path}/fluency.db').existsSync(), isFalse);
+      expect(
+        File('${fakeAppSupportDir.path}/fluency.db').readAsStringSync(),
+        'legacy',
+      );
+    });
+  });
+}

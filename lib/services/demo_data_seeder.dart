@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:drift/drift.dart';
-import 'package:path_provider/path_provider.dart';
+import '../utils/app_data_dir.dart';
 import 'package:path/path.dart' as p;
 
 import '../data/demo_content.dart';
@@ -126,7 +126,7 @@ class DemoDataSeeder {
 
   /// 创建 SRT 字幕文件和静音 WAV 音频文件
   Future<void> _createMediaFiles() async {
-    final docsDir = await getApplicationDocumentsDirectory();
+    final docsDir = await getAppDataDirectory();
     final demoDir = Directory(p.join(docsDir.path, 'demo'));
     if (!demoDir.existsSync()) {
       await demoDir.create(recursive: true);
@@ -385,7 +385,7 @@ class DemoDataSeeder {
   ///
   /// 调用前应先切换回生产数据库并关闭演示数据库连接。
   static Future<void> cleanupFiles() async {
-    final docsDir = await getApplicationDocumentsDirectory();
+    final docsDir = await getAppDataDirectory();
 
     // 删除 demo SRT 目录
     final demoDir = Directory(p.join(docsDir.path, 'demo'));

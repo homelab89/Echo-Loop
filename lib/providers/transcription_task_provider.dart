@@ -6,7 +6,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import '../utils/app_data_dir.dart';
 import 'package:universal_io/io.dart';
 import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -41,8 +41,8 @@ class TranscriptionFileOps {
   Future<(int, int)> getStats(String srtFullPath) =>
       getTranscriptStats(srtFullPath);
 
-  /// 获取应用文档目录
-  Future<Directory> getDocDir() => getApplicationDocumentsDirectory();
+  /// 获取应用数据目录
+  Future<Directory> getDataDir() => getAppDataDirectory();
 }
 
 /// 文件操作 Provider（测试时可覆盖）
@@ -136,7 +136,7 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
 
       // ── 步骤 1: 计算 SHA256 ──
       _updateState(audioId, const TranscriptionHashing());
-      final docDir = await fileOps.getDocDir();
+      final docDir = await fileOps.getDataDir();
       final fullPath = p.join(docDir.path, audioItem.audioPath);
       final sha256 =
           audioItem.audioSha256 ?? await fileOps.computeSha256(fullPath);
@@ -332,7 +332,7 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
     final relativePath = await fileOps.saveSrt(audioItem.id, srtContent);
 
     // 获取 SRT 统计
-    final docDir = await fileOps.getDocDir();
+    final docDir = await fileOps.getDataDir();
     final srtFullPath = p.join(docDir.path, relativePath);
     final stats = await fileOps.getStats(srtFullPath);
 

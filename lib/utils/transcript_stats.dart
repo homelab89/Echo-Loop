@@ -1,19 +1,19 @@
 // 字幕统计工具
 //
 // 解析字幕文件，统计句子数和单词数。
-import 'package:path_provider/path_provider.dart';
+import 'app_data_dir.dart';
 import 'package:path/path.dart' as path;
 
 import '../services/subtitle_parser.dart';
 
 /// 解析字幕文件，返回 (sentenceCount, wordCount)
 ///
-/// [transcriptRelativePath] 为相对于 Documents 目录的路径，
+/// [transcriptRelativePath] 为相对于应用数据目录的路径，
 /// 如 "transcripts/test.srt"。
 /// 解析失败时返回 (0, 0)。
 Future<(int, int)> getTranscriptStats(String transcriptRelativePath) async {
-  final docs = await getApplicationDocumentsDirectory();
-  final fullPath = path.join(docs.path, transcriptRelativePath);
+  final dataDir = await getAppDataDirectory();
+  final fullPath = path.join(dataDir.path, transcriptRelativePath);
 
   final sentences = await SubtitleParser.parseSubtitle(fullPath);
   if (sentences.isEmpty) return (0, 0);

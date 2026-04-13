@@ -1,4 +1,4 @@
-import 'package:path_provider/path_provider.dart';
+import '../utils/app_data_dir.dart';
 import 'package:path/path.dart' as path;
 
 /// copyWith 用于区分"未传参"与"显式传 null"的哨兵值
@@ -60,15 +60,15 @@ class AudioItem {
 
   /// 获取音频文件的完整路径
   Future<String> getFullAudioPath() async {
-    final docs = await getApplicationDocumentsDirectory();
-    return path.join(docs.path, audioPath);
+    final dataDir = await getAppDataDirectory();
+    return path.join(dataDir.path, audioPath);
   }
 
   /// 获取字幕文件的完整路径
   Future<String?> getFullTranscriptPath() async {
     if (!hasTranscript) return null;
-    final docs = await getApplicationDocumentsDirectory();
-    return path.join(docs.path, transcriptPath!);
+    final dataDir = await getAppDataDirectory();
+    return path.join(dataDir.path, transcriptPath!);
   }
 
   Map<String, dynamic> toJson() => {

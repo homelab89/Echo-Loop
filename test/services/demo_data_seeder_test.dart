@@ -2,13 +2,13 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:fluency/data/demo_content.dart';
 import 'package:fluency/database/app_database.dart';
 import 'package:fluency/services/demo_data_seeder.dart';
+import 'package:fluency/utils/app_data_dir.dart';
 
 /// 创建内存数据库用于测试
 AppDatabase _createTestDatabase() {
@@ -29,34 +29,18 @@ void main() {
 
   setUp(() {
     db = _createTestDatabase();
-    // 创建临时目录模拟 documents 目录
+    // 创建临时目录模拟应用数据目录
     tempDir = Directory.systemTemp.createTempSync('demo_seeder_test_');
-
-    // Mock path_provider
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (MethodCall methodCall) async {
-        if (methodCall.method == 'getApplicationDocumentsDirectory') {
-          return tempDir.path;
-        }
-        return null;
-      },
-    );
+    appDataDirectoryOverride = tempDir;
   });
 
   tearDown(() async {
     await db.close();
+    appDataDirectoryOverride = null;
     // 清理临时目录
     if (tempDir.existsSync()) {
       tempDir.deleteSync(recursive: true);
     }
-    // 清除 mock
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      null,
-    );
   });
 
   group('DemoDataSeeder', () {

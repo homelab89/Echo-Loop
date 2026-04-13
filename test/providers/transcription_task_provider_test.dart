@@ -81,9 +81,9 @@ void main() {
     mockApi = MockTranscriptionApiClient();
     mockFileOps = MockTranscriptionFileOps();
 
-    // 所有调用 startTranscription 的测试都需要 getDocDir
+    // 所有调用 startTranscription 的测试都需要 getDataDir
     when(
-      () => mockFileOps.getDocDir(),
+      () => mockFileOps.getDataDir(),
     ).thenAnswer((_) async => Directory.systemTemp);
   });
 

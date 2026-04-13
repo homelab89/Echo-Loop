@@ -55,7 +55,11 @@ void main() async {
   final packageInfo = await PackageInfo.fromPlatform();
 
   // 数据目录迁移（Documents → Application Support）
-  await migrateToAppSupportDirectory();
+  try {
+    await migrateToAppSupportDirectory();
+  } catch (e) {
+    AppLogger.log('App', '数据目录迁移失败，下次启动重试: $e');
+  }
 
   // 检查是否处于演示模式
   final prefs = await SharedPreferences.getInstance();

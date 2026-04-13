@@ -55,6 +55,9 @@ Future<CleanupResult> cleanupAllTempFiles() async {
 }
 
 /// 获取沙盒根/tmp/ 目录（iOS/macOS），不存在时返回 null。
+///
+/// 此处保留 getApplicationDocumentsDirectory()：目的是导航沙盒目录结构
+/// 找到 tmp 目录，而非存储用户数据。
 Future<Directory?> _getNsTmpDir() async {
   try {
     final docsDir = await getApplicationDocumentsDirectory();

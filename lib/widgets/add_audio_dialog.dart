@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:universal_io/io.dart';
-import 'package:path_provider/path_provider.dart';
+import '../utils/app_data_dir.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
@@ -313,13 +313,13 @@ class _AddAudioDialogState extends ConsumerState<AddAudioDialog> {
     }
   }
 
-  /// 保存文件到应用沙盒，返回相对于 Documents 目录的相对路径
+  /// 保存文件到应用沙盒，返回相对于数据目录的相对路径
   Future<String> _savePickedFileToSandbox(
     PlatformFile file,
     String subdir,
   ) async {
-    final docs = await getApplicationDocumentsDirectory();
-    final dir = Directory(path.join(docs.path, subdir));
+    final dataDir = await getAppDataDirectory();
+    final dir = Directory(path.join(dataDir.path, subdir));
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }

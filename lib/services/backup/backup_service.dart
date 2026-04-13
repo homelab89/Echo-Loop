@@ -4,7 +4,8 @@ import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
+import '../../utils/app_data_dir.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../database/app_database.dart';
@@ -45,7 +46,7 @@ class BackupService {
     required String platform,
     void Function(BackupProgress)? onProgress,
   }) async {
-    final docsDir = await getApplicationDocumentsDirectory();
+    final docsDir = await getAppDataDirectory();
     final tempDir = await _createTempDir('echoloop_export');
 
     try {
@@ -145,7 +146,7 @@ class BackupService {
     required String zipPath,
     void Function(BackupProgress)? onProgress,
   }) async {
-    final docsDir = await getApplicationDocumentsDirectory();
+    final docsDir = await getAppDataDirectory();
     final tempDir = await _createTempDir('echoloop_import');
 
     try {

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:path_provider/path_provider.dart';
+import '../../utils/app_data_dir.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/audio_item.dart' as model;
@@ -247,7 +247,7 @@ class SpToDriftMigration {
 Future<List<model.Sentence>> defaultSubtitleLoader(
   String relativeTranscriptPath,
 ) async {
-  final docs = await getApplicationDocumentsDirectory();
-  final fullPath = '${docs.path}/$relativeTranscriptPath';
+  final dataDir = await getAppDataDirectory();
+  final fullPath = '${dataDir.path}/$relativeTranscriptPath';
   return SubtitleParser.parseSubtitle(fullPath);
 }

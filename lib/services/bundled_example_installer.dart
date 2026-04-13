@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import '../utils/app_data_dir.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/app_database.dart';
@@ -50,9 +50,9 @@ class BundledExampleInstaller {
     await prefs.setBool(_installedKey, true);
   }
 
-  /// 将 asset 文件复制到 Documents 目录
+  /// 将 asset 文件复制到应用数据目录
   Future<void> _copyAssetFiles() async {
-    final docsDir = await getApplicationDocumentsDirectory();
+    final docsDir = await getAppDataDirectory();
     final audiosDir = Directory(p.join(docsDir.path, 'audios'));
     if (!audiosDir.existsSync()) {
       await audiosDir.create(recursive: true);

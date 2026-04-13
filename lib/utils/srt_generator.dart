@@ -3,7 +3,7 @@
 // 将后端返回的 sentences 数据转为标准 SRT 格式。
 // 后端负责分句逻辑，此工具仅做格式转换。
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'app_data_dir.dart';
 import 'package:universal_io/io.dart';
 
 /// 转录句子数据
@@ -95,7 +95,7 @@ String _formatSrtTime(Duration d) {
 /// [srtContent] SRT 格式内容。
 /// 返回相对于应用文档目录的路径（如 `transcripts/{audioId}_ai.srt`）。
 Future<String> saveSrtFile(String audioId, String srtContent) async {
-  final docDir = await getApplicationDocumentsDirectory();
+  final docDir = await getAppDataDirectory();
   final transcriptsDir = p.join(docDir.path, 'transcripts');
   await _ensureDirectoryExists(transcriptsDir);
 

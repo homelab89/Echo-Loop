@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
+import '../utils/app_data_dir.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -500,7 +500,7 @@ LazyDatabase openConnection() {
 /// 用于运行时切换数据库（如演示模式使用 `echo_loop_demo.db`）。
 LazyDatabase openConnectionWithName(String fileName) {
   return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
+    final dbFolder = await getAppDataDirectory();
     final file = File(p.join(dbFolder.path, fileName));
     return NativeDatabase.createInBackground(
       file,
