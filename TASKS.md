@@ -64,6 +64,14 @@
 
   **完成时间**: 2026-04-15
 
+- [x] 修复闪卡切卡动画：`navigationDirection` / `navigationId` 移入 provider state，以 `dbKey_navId` 作唯一动画 key，解决往返同一张卡时 AnimatedSwitcher 复用旧 key 导致动画不触发的问题；同时移除 screen 中多余的 `setState` 调用
+
+  **完成时间**: 2026-04-15
+
+- [x] 修复闪卡切卡/例句播放音频竞态：切卡和播放例句前统一 `await _stopAllPlayback()`，避免 iOS 上旧 stop 事件在新 play 之后到达；`_stopActiveResources` 新增 `stopAudio` 参数，引擎内部不再发起二次 unawaited stop，防止与 `playRangeOnce` 产生竞态
+
+  **完成时间**: 2026-04-15
+
 ---
 
 ## 已完成：本地 ASR 引擎集成（sherpa-onnx）

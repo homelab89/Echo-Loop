@@ -29,9 +29,6 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
     with WakelockMixin {
   late final AppLifecycleListener _lifecycleListener;
 
-  /// 滑动方向：1.0 = 前进（下一张），-1.0 = 后退（上一张）
-  double _slideDirection = 1.0;
-
   @override
   void initState() {
     super.initState();
@@ -78,6 +75,8 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
           isShowingBack: s.isShowingBack,
           isCompleted: s.isCompleted,
           removedCount: s.removedCount,
+          navigationDirection: s.navigationDirection,
+          navigationId: s.navigationId,
         ),
       ),
     );
@@ -134,12 +133,10 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
                   onHorizontalDragEnd: (details) {
                     final velocity = details.primaryVelocity ?? 0;
                     if (velocity < -200) {
-                      setState(() => _slideDirection = 1.0);
                       ref
                           .read(flashcardNotifierProvider.notifier)
                           .userNextCard();
                     } else if (velocity > 200) {
-                      setState(() => _slideDirection = -1.0);
                       ref
                           .read(flashcardNotifierProvider.notifier)
                           .userPreviousCard();
@@ -157,15 +154,14 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
                               switchInCurve: Curves.easeInOut,
                               switchOutCurve: Curves.easeInOut,
                               transitionBuilder: (child, animation) {
-                                final isIncoming = child.key ==
-                                    ValueKey(currentWord.dbKey);
+                                final currentKey = ValueKey(
+                                  '${currentWord.dbKey}_${state.navigationId}',
+                                );
+                                final isIncoming = child.key == currentKey;
+                                final dir = state.navigationDirection;
+                                final beginX = isIncoming ? dir : -dir;
                                 final offset = Tween<Offset>(
-                                  begin: Offset(
-                                    isIncoming
-                                        ? _slideDirection
-                                        : -_slideDirection,
-                                    0,
-                                  ),
+                                  begin: Offset(beginX, 0),
                                   end: Offset.zero,
                                 );
                                 return SlideTransition(
@@ -184,7 +180,9 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
                                 );
                               },
                               child: FlashcardCard(
-                                key: ValueKey(currentWord.dbKey),
+                                key: ValueKey(
+                                  '${currentWord.dbKey}_${state.navigationId}',
+                                ),
                                 item: currentWord,
                                 isShowingBack: state.isShowingBack,
                                 onFlip: () => ref
@@ -213,19 +211,13 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
                     countdownTotal: s.countdownTotal,
                     showCountdown: s.showCountdown,
                     onPrevious: s.currentIndex > 0
-                        ? () {
-                            setState(() => _slideDirection = -1.0);
-                            ref
-                                .read(flashcardNotifierProvider.notifier)
-                                .userPreviousCard();
-                          }
+                        ? () => ref
+                            .read(flashcardNotifierProvider.notifier)
+                            .userPreviousCard()
                         : null,
-                    onNext: () {
-                      setState(() => _slideDirection = 1.0);
-                      ref
-                          .read(flashcardNotifierProvider.notifier)
-                          .userNextCard();
-                    },
+                    onNext: () => ref
+                        .read(flashcardNotifierProvider.notifier)
+                        .userNextCard(),
                     onCountdownTapped: () => ref
                         .read(flashcardNotifierProvider.notifier)
                         .onCountdownTapped(),

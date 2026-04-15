@@ -134,7 +134,9 @@ class FlashcardFlowEngine {
       '→ startCard("$word", oldToken=${_state.flowToken}, '
       'oldPhase=${_state.phase.runtimeType})',
     );
-    _stopActiveResources();
+    // provider 层已 await _stopAllPlayback()，此处只取消倒计时即可，
+    // 不再 unawaited stopAudio，避免与 _runFrontAutoPlay 中的 playRangeOnce 竞态
+    _stopActiveResources(stopAudio: false);
     _updateState(
       FlashcardFlowState(
         phase: const FlashcardIdle(),
@@ -157,7 +159,9 @@ class FlashcardFlowEngine {
   }) async {
     if (_disposed) return;
 
-    _stopActiveResources();
+    // 背面自动流程由 _onAutoFlip 调用，此前经过 400ms 翻转动画间隔，
+    // 音频已自然结束；同样不需要 unawaited stopAudio
+    _stopActiveResources(stopAudio: false);
     _updateState(
       _state.copyWith(
         phase: const FlashcardIdle(),
@@ -397,8 +401,12 @@ class FlashcardFlowEngine {
   }
 
   /// 停止所有活跃资源（播放 + 倒计时）
-  void _stopActiveResources() {
-    _callbacks.stopAllPlayback();
+  ///
+  /// [stopAudio] 为 false 时只取消倒计时，不调用 stopAllPlayback。
+  /// 当调用方（provider）已在外层 await 过 stopAllPlayback 时传 false，
+  /// 避免 unawaited 的第二次 stop 与新 playRangeOnce/setClip 产生竞态。
+  void _stopActiveResources({bool stopAudio = true}) {
+    if (stopAudio) _callbacks.stopAllPlayback();
     _countdown.cancel();
   }
 

@@ -64,6 +64,13 @@ class FlashcardState {
   /// 用户手动播放例句是否进行中（来自 engine）
   final bool isSentencePlaying;
 
+  /// 切卡方向：1.0 = 下一张（右→左），-1.0 = 上一张（左→右）
+  final double navigationDirection;
+
+  /// 切卡计数：每次切卡递增，与 currentWord.dbKey 拼接生成唯一动画 key，
+  /// 避免同一张卡往返时被 AnimatedSwitcher 复用旧动画
+  final int navigationId;
+
   const FlashcardState({
     this.words = const [],
     this.currentIndex = 0,
@@ -74,6 +81,8 @@ class FlashcardState {
     this.cardStartTime,
     this.phase = const FlashcardIdle(),
     this.isSentencePlaying = false,
+    this.navigationDirection = 1.0,
+    this.navigationId = 0,
   });
 
   /// 当前卡片
@@ -111,6 +120,8 @@ class FlashcardState {
     bool clearCardStartTime = false,
     FlashcardFlowPhase? phase,
     bool? isSentencePlaying,
+    double? navigationDirection,
+    int? navigationId,
   }) {
     return FlashcardState(
       words: words ?? this.words,
@@ -124,6 +135,8 @@ class FlashcardState {
           : (cardStartTime ?? this.cardStartTime),
       phase: phase ?? this.phase,
       isSentencePlaying: isSentencePlaying ?? this.isSentencePlaying,
+      navigationDirection: navigationDirection ?? this.navigationDirection,
+      navigationId: navigationId ?? this.navigationId,
     );
   }
 }
@@ -233,7 +246,10 @@ class FlashcardNotifier extends _$FlashcardNotifier {
     _startInputTimeTracking();
 
     // 启动第一张卡片的自动流程
+    // 先 await stop，确保前一个 session 的音频彻底停止（AudioEngine keepAlive，
+    // 外部可能有残留播放），避免 iOS 上 loadAudio 与 stop() 产生竞态
     if (withDict.isNotEmpty) {
+      await _stopAllPlayback();
       final first = withDict.first;
       await _engine.startCard(
         word: first.displayText,
@@ -356,6 +372,9 @@ class FlashcardNotifier extends _$FlashcardNotifier {
       return;
     }
 
+    // 先同步更新 currentIndex：保证第一个 await 处 rebuild 时，
+    // currentWord 已与 _slideDirection/_navCount 一致，动画方向正确。
+    // 再 await stop：iOS 上确保旧音频彻底停止后再启动新卡流程。
     _saveStudyTime();
     final nextIndex = state.currentIndex + 1;
     final nextItem = state.words[nextIndex];
@@ -363,8 +382,11 @@ class FlashcardNotifier extends _$FlashcardNotifier {
       currentIndex: nextIndex,
       isShowingBack: false,
       cardStartTime: DateTime.now(),
+      navigationDirection: 1.0,
+      navigationId: state.navigationId + 1,
     );
 
+    await _stopAllPlayback();
     await _engine.startCard(
       word: nextItem.displayText,
       hasSentence: nextItem.sentenceText != null,
@@ -380,6 +402,9 @@ class FlashcardNotifier extends _$FlashcardNotifier {
           'phase=${state.phase.runtimeType}',
     );
 
+    // 先同步更新 currentIndex：保证第一个 await 处 rebuild 时，
+    // currentWord 已与 _slideDirection/_navCount 一致，动画方向正确。
+    // 再 await stop：iOS 上确保旧音频彻底停止后再启动新卡流程。
     _saveStudyTime();
     final prevIndex = state.currentIndex - 1;
     final prevItem = state.words[prevIndex];
@@ -387,8 +412,11 @@ class FlashcardNotifier extends _$FlashcardNotifier {
       currentIndex: prevIndex,
       isShowingBack: false,
       cardStartTime: DateTime.now(),
+      navigationDirection: -1.0,
+      navigationId: state.navigationId + 1,
     );
 
+    await _stopAllPlayback();
     await _engine.startCard(
       word: prevItem.displayText,
       hasSentence: prevItem.sentenceText != null,
@@ -426,6 +454,8 @@ class FlashcardNotifier extends _$FlashcardNotifier {
     }
 
     // 开始播放（通过 engine 管理状态）
+    // 先 await stop，避免 iOS 上旧 stop() 在新 play() 之后到达产生竞态
+    await _stopAllPlayback();
     await _engine.userToggleSentence();
   }
 
