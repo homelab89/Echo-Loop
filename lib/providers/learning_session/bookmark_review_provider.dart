@@ -437,7 +437,7 @@ class BookmarkReview extends _$BookmarkReview {
     final s = _sentences[idx];
     final wasBookmarked = s.sentence.isBookmarked;
     _sentences[idx] = s.copyWithBookmark(!s.sentence.isBookmarked);
-    state = state.copyWith();
+    state = state.copyWith(bookmarkVersion: state.bookmarkVersion + 1);
 
     final bookmarkDao = ref.read(bookmarkDaoProvider);
     if (wasBookmarked) {
@@ -691,8 +691,38 @@ class BookmarkReview extends _$BookmarkReview {
         isPauseBetweenPlays: false,
         clearRepeatFlowState: true,
       );
-      unawaited(_blindEngine.startPlaying());
+      unawaited(_advanceAfterAnnotationCompleted());
     }
+  }
+
+  /// 跟读完成后直接进入下一句，不回到当前句的盲听倒计时。
+  Future<void> _advanceAfterAnnotationCompleted() async {
+    final isLastSentence =
+        state.currentSentenceIndex >= state.totalSentences - 1;
+    if (isLastSentence) {
+      state = state.copyWith(
+        isPlaying: false,
+        isPauseBetweenPlays: false,
+        isPauseBetweenSentences: false,
+        stepFinished: true,
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      currentSentenceIndex: state.currentSentenceIndex + 1,
+      currentPlayCount: 1,
+      isTextRevealed: false,
+      isPauseBetweenPlays: false,
+      isPauseBetweenSentences: false,
+      isCountdownPaused: false,
+      isCountdownFastForward: false,
+      isAnnotationMode: false,
+      isManualForSentence: false,
+      clearRepeatFlowState: true,
+      clearBlindFlowState: true,
+    );
+    await _startBlindFlow();
   }
 
   /// 退出跟读模式（停止引擎）
