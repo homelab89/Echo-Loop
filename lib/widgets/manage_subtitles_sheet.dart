@@ -11,11 +11,13 @@ import '../models/audio_item.dart';
 import '../database/providers.dart';
 import '../providers/audio_library_provider.dart';
 import '../providers/listening_practice/listening_practice_provider.dart';
+import '../providers/new_user_guide_provider.dart';
 import '../providers/transcription_task_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../utils/transcript_picker.dart';
 import '../utils/transcript_stats.dart';
+import 'guide_flow.dart';
 
 /// 字幕操作选项
 enum _SubtitleAction { localUpload, aiTranscription }
@@ -45,6 +47,9 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
   @override
   void initState() {
     super.initState();
+    if (!widget.audioItem.hasTranscript) {
+      _selectedAction = _SubtitleAction.aiTranscription;
+    }
     // 打开弹窗时异步清除之前的失败/空结果状态
     final taskState = ref.read(
       transcriptionTaskManagerProvider,
@@ -116,7 +121,7 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
       },
     );
 
-    return SafeArea(
+    final content = SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0, AppSpacing.m, 0, AppSpacing.s),
         child: SingleChildScrollView(
@@ -177,28 +182,10 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
               // 操作按钮（进度模式下隐藏）
               if (!isTaskActive && taskState is! TranscriptionCompleted)
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.m),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
                   child: SizedBox(
                     width: double.infinity,
-                    child: FilledButton(
-                      onPressed: taskState is TranscriptionFailed ||
-                              taskState is TranscriptionEmptyResult
-                          ? () => _handleAction(context, audioItem)
-                          : _getActionEnabled(audioItem)
-                          ? () => _handleAction(context, audioItem)
-                          : null,
-                      child: Text(
-                        taskState is TranscriptionFailed ||
-                                taskState is TranscriptionEmptyResult
-                            ? l10n.retryTranscription
-                            : _selectedAction == _SubtitleAction.localUpload
-                            ? l10n.uploadTranscript
-                            : _isAiDisabled(audioItem)
-                            ? l10n.alreadyTranscribedWithOption
-                            : l10n.startTranscription,
-                      ),
-                    ),
+                    child: _buildActionButton(l10n, audioItem, taskState),
                   ),
                 ),
               const SizedBox(height: AppSpacing.s),
@@ -206,6 +193,24 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
           ),
         ),
       ),
+    );
+    if (audioItem.hasTranscript) return content;
+    return GuideFlowHost(
+      flowId: GuideFlowIds.subtitleSheetTranscription,
+      shouldRun: true,
+      steps: [
+        GuideStep(
+          targetId: GuideTargetIds.aiTranscription,
+          title: l10n.guidePlanAiTranscriptionTitle,
+          description: l10n.guidePlanAiTranscriptionDescription,
+        ),
+        GuideStep(
+          targetId: GuideTargetIds.startTranscription,
+          title: l10n.guidePlanStartTranscriptionTitle,
+          description: l10n.guidePlanStartTranscriptionDescription,
+        ),
+      ],
+      child: content,
     );
   }
 
@@ -431,13 +436,21 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
                 setState(() => _selectedAction = _SubtitleAction.localUpload),
           ),
           const SizedBox(height: AppSpacing.s),
-          _buildOptionTile(
-            theme: theme,
-            icon: Icons.auto_awesome_outlined,
-            title: l10n.aiTranscription,
-            selected: _selectedAction == _SubtitleAction.aiTranscription,
-            onTap: () => setState(
-              () => _selectedAction = _SubtitleAction.aiTranscription,
+          GuideTarget(
+            flowId: GuideFlowIds.subtitleSheetTranscription,
+            step: GuideStep(
+              targetId: GuideTargetIds.aiTranscription,
+              title: l10n.guidePlanAiTranscriptionTitle,
+              description: l10n.guidePlanAiTranscriptionDescription,
+            ),
+            child: _buildOptionTile(
+              theme: theme,
+              icon: Icons.auto_awesome_outlined,
+              title: l10n.aiTranscription,
+              selected: _selectedAction == _SubtitleAction.aiTranscription,
+              onTap: () => setState(
+                () => _selectedAction = _SubtitleAction.aiTranscription,
+              ),
             ),
           ),
           // AI 转录语言选择（动画展开/收起）
@@ -622,6 +635,41 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
     if (_selectedAction == _SubtitleAction.localUpload) return true;
     // AI 转录：同语言已转录时禁用
     return !_isAiDisabled(audioItem);
+  }
+
+  Widget _buildActionButton(
+    AppLocalizations l10n,
+    AudioItem audioItem,
+    TranscriptionTaskState taskState,
+  ) {
+    final enabled =
+        taskState is TranscriptionFailed ||
+        taskState is TranscriptionEmptyResult ||
+        _getActionEnabled(audioItem);
+    final label =
+        taskState is TranscriptionFailed ||
+            taskState is TranscriptionEmptyResult
+        ? l10n.retryTranscription
+        : _selectedAction == _SubtitleAction.localUpload
+        ? l10n.uploadTranscript
+        : _isAiDisabled(audioItem)
+        ? l10n.alreadyTranscribedWithOption
+        : l10n.startTranscription;
+
+    final button = FilledButton(
+      onPressed: enabled ? () => _handleAction(context, audioItem) : null,
+      child: Text(label),
+    );
+
+    return GuideTarget(
+      flowId: GuideFlowIds.subtitleSheetTranscription,
+      step: GuideStep(
+        targetId: GuideTargetIds.startTranscription,
+        title: l10n.guidePlanStartTranscriptionTitle,
+        description: l10n.guidePlanStartTranscriptionDescription,
+      ),
+      child: button,
+    );
   }
 
   /// 处理操作按钮点击

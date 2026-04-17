@@ -8,11 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../models/collection.dart';
 import '../providers/collection_provider.dart';
+import '../providers/new_user_guide_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dialogs/confirm_dialog.dart';
 import '../widgets/dialogs/text_input_dialog.dart';
+import '../widgets/guide_flow.dart';
 
 /// 合集排序按钮（公开供 LibraryScreen 使用）
 class CollectionSortButton extends ConsumerWidget {
@@ -118,8 +120,13 @@ class CollectionEmptyState extends StatelessWidget {
 /// 合集网格视图
 class CollectionGridView extends StatelessWidget {
   final List<Collection> collections;
+  final bool guideLeadingItems;
 
-  const CollectionGridView({super.key, required this.collections});
+  const CollectionGridView({
+    super.key,
+    required this.collections,
+    this.guideLeadingItems = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +140,11 @@ class CollectionGridView extends StatelessWidget {
       ),
       itemCount: collections.length,
       itemBuilder: (context, index) {
-        return _CollectionGridTile(collection: collections[index]);
+        return _CollectionGridTile(
+          collection: collections[index],
+          isGuideMenuTarget: index == 0,
+          isGuideItemTarget: guideLeadingItems && index == 0,
+        );
       },
     );
   }
@@ -142,8 +153,13 @@ class CollectionGridView extends StatelessWidget {
 /// 合集列表视图
 class CollectionListView extends StatelessWidget {
   final List<Collection> collections;
+  final bool guideLeadingItems;
 
-  const CollectionListView({super.key, required this.collections});
+  const CollectionListView({
+    super.key,
+    required this.collections,
+    this.guideLeadingItems = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +167,11 @@ class CollectionListView extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       itemCount: collections.length,
       itemBuilder: (context, index) {
-        return _CollectionListTile(collection: collections[index]);
+        return _CollectionListTile(
+          collection: collections[index],
+          isGuideMenuTarget: index == 0,
+          isGuideItemTarget: guideLeadingItems && index == 0,
+        );
       },
     );
   }
@@ -191,8 +211,14 @@ void showCreateCollectionDialog(BuildContext context) {
 /// 文件夹网格卡片
 class _CollectionGridTile extends ConsumerWidget {
   final Collection collection;
+  final bool isGuideMenuTarget;
+  final bool isGuideItemTarget;
 
-  const _CollectionGridTile({required this.collection});
+  const _CollectionGridTile({
+    required this.collection,
+    required this.isGuideMenuTarget,
+    required this.isGuideItemTarget,
+  });
 
   static const Key _kGridMenuHitAreaKey = Key('collection_grid_menu_hit_area');
 
@@ -204,7 +230,7 @@ class _CollectionGridTile extends ConsumerWidget {
     final pinnedHighlightColor = theme.colorScheme.primary.withValues(
       alpha: 0.06,
     );
-    return Card(
+    final card = Card(
       color: collection.isPinned ? pinnedHighlightColor : null,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -217,63 +243,71 @@ class _CollectionGridTile extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  SizedBox(
-                    width: 36,
-                    height: 32,
-                    child: PopupMenuButton<String>(
-                      key: _kGridMenuHitAreaKey,
-                      padding: EdgeInsets.zero,
-                      child: Center(
-                        child: Icon(
-                          Icons.more_horiz,
-                          size: 18,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  _wrapCollectionMenuGuideTarget(
+                    context,
+                    SizedBox(
+                      width: 36,
+                      height: 32,
+                      child: PopupMenuButton<String>(
+                        key: _kGridMenuHitAreaKey,
+                        padding: EdgeInsets.zero,
+                        child: Center(
+                          child: Icon(
+                            Icons.more_horiz,
+                            size: 18,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withValues(alpha: 0.5),
+                          ),
                         ),
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'togglePin',
+                            child: _buildCollectionMenuItemRow(
+                              _buildCollectionPinIcon(
+                                isPinned: collection.isPinned,
+                              ),
+                              collection.isPinned
+                                  ? l10n.unpinCollection
+                                  : l10n.pinCollection,
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'rename',
+                            child: _buildCollectionMenuItemRow(
+                              const Icon(Icons.edit, size: 18),
+                              l10n.renameCollection,
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: _buildCollectionMenuItemRow(
+                              Icon(
+                                Icons.delete,
+                                size: 18,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              l10n.delete,
+                            ),
+                          ),
+                        ],
+                        onSelected: (value) {
+                          if (value == 'togglePin') {
+                            ref
+                                .read(collectionListProvider.notifier)
+                                .togglePin(collection.id);
+                          } else if (value == 'rename') {
+                            _showRenameCollectionDialog(
+                              context,
+                              ref,
+                              collection,
+                            );
+                          } else if (value == 'delete') {
+                            _showDeleteConfirmDialog(context, ref, collection);
+                          }
+                        },
                       ),
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'togglePin',
-                          child: _buildCollectionMenuItemRow(
-                            _buildCollectionPinIcon(
-                              isPinned: collection.isPinned,
-                            ),
-                            collection.isPinned
-                                ? l10n.unpinCollection
-                                : l10n.pinCollection,
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'rename',
-                          child: _buildCollectionMenuItemRow(
-                            const Icon(Icons.edit, size: 18),
-                            l10n.renameCollection,
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: _buildCollectionMenuItemRow(
-                            Icon(
-                              Icons.delete,
-                              size: 18,
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                            l10n.delete,
-                          ),
-                        ),
-                      ],
-                      onSelected: (value) {
-                        if (value == 'togglePin') {
-                          ref
-                              .read(collectionListProvider.notifier)
-                              .togglePin(collection.id);
-                        } else if (value == 'rename') {
-                          _showRenameCollectionDialog(context, ref, collection);
-                        } else if (value == 'delete') {
-                          _showDeleteConfirmDialog(context, ref, collection);
-                        }
-                      },
                     ),
                   ),
                 ],
@@ -308,10 +342,39 @@ class _CollectionGridTile extends ConsumerWidget {
         ),
       ),
     );
+    if (!isGuideItemTarget) return card;
+    return _wrapCollectionItemGuideTarget(context, card);
   }
 
   void _openCollection(BuildContext context) {
     context.push(AppRoutes.collectionDetail(collection.id));
+  }
+
+  Widget _wrapCollectionMenuGuideTarget(BuildContext context, Widget child) {
+    if (!isGuideMenuTarget) return child;
+    final l10n = AppLocalizations.of(context)!;
+    return GuideTarget(
+      flowId: GuideFlowIds.libraryCollectionList,
+      step: GuideStep(
+        targetId: GuideTargetIds.collectionMenu,
+        title: l10n.guideLibraryCollectionMenuTitle,
+        description: l10n.guideLibraryCollectionMenuDescription,
+      ),
+      child: child,
+    );
+  }
+
+  Widget _wrapCollectionItemGuideTarget(BuildContext context, Widget child) {
+    final l10n = AppLocalizations.of(context)!;
+    return GuideTarget(
+      flowId: GuideFlowIds.libraryCollectionList,
+      step: GuideStep(
+        targetId: GuideTargetIds.collectionList,
+        title: l10n.guideLibraryCollectionListTitle,
+        description: l10n.guideLibraryCollectionListDescription,
+      ),
+      child: child,
+    );
   }
 }
 
@@ -339,8 +402,14 @@ Widget _buildCollectionPinIcon({required bool isPinned}) {
 /// 列表项
 class _CollectionListTile extends ConsumerWidget {
   final Collection collection;
+  final bool isGuideMenuTarget;
+  final bool isGuideItemTarget;
 
-  const _CollectionListTile({required this.collection});
+  const _CollectionListTile({
+    required this.collection,
+    required this.isGuideMenuTarget,
+    required this.isGuideItemTarget,
+  });
 
   static const Key _kListMenuHitAreaKey = Key('collection_list_menu_hit_area');
   static const double _kTrailingMenuWidth = 60;
@@ -353,7 +422,7 @@ class _CollectionListTile extends ConsumerWidget {
     final pinnedHighlightColor = theme.colorScheme.primary.withValues(
       alpha: 0.06,
     );
-    return Card(
+    final card = Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       color: collection.isPinned ? pinnedHighlightColor : null,
       child: InkWell(
@@ -398,56 +467,61 @@ class _CollectionListTile extends ConsumerWidget {
                   ),
                 ),
               ),
-              SizedBox(
-                width: _kTrailingMenuWidth,
-                child: PopupMenuButton<String>(
-                  key: _kListMenuHitAreaKey,
-                  padding: EdgeInsets.zero,
-                  child: Center(
-                    child: Icon(
-                      Icons.more_horiz,
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.5,
+              _wrapCollectionMenuGuideTarget(
+                context,
+                SizedBox(
+                  width: _kTrailingMenuWidth,
+                  child: PopupMenuButton<String>(
+                    key: _kListMenuHitAreaKey,
+                    padding: EdgeInsets.zero,
+                    child: Center(
+                      child: Icon(
+                        Icons.more_horiz,
+                        size: 18,
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                     ),
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'togglePin',
+                        child: _buildCollectionMenuItemRow(
+                          _buildCollectionPinIcon(
+                            isPinned: collection.isPinned,
+                          ),
+                          collection.isPinned
+                              ? l10n.unpinCollection
+                              : l10n.pinCollection,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'rename',
+                        child: _buildCollectionMenuItemRow(
+                          const Icon(Icons.edit),
+                          l10n.renameCollection,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: _buildCollectionMenuItemRow(
+                          Icon(Icons.delete, color: theme.colorScheme.error),
+                          l10n.delete,
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      if (value == 'togglePin') {
+                        ref
+                            .read(collectionListProvider.notifier)
+                            .togglePin(collection.id);
+                      } else if (value == 'rename') {
+                        _showRenameCollectionDialog(context, ref, collection);
+                      } else if (value == 'delete') {
+                        _showDeleteConfirmDialog(context, ref, collection);
+                      }
+                    },
                   ),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'togglePin',
-                      child: _buildCollectionMenuItemRow(
-                        _buildCollectionPinIcon(isPinned: collection.isPinned),
-                        collection.isPinned
-                            ? l10n.unpinCollection
-                            : l10n.pinCollection,
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'rename',
-                      child: _buildCollectionMenuItemRow(
-                        const Icon(Icons.edit),
-                        l10n.renameCollection,
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: _buildCollectionMenuItemRow(
-                        Icon(Icons.delete, color: theme.colorScheme.error),
-                        l10n.delete,
-                      ),
-                    ),
-                  ],
-                  onSelected: (value) {
-                    if (value == 'togglePin') {
-                      ref
-                          .read(collectionListProvider.notifier)
-                          .togglePin(collection.id);
-                    } else if (value == 'rename') {
-                      _showRenameCollectionDialog(context, ref, collection);
-                    } else if (value == 'delete') {
-                      _showDeleteConfirmDialog(context, ref, collection);
-                    }
-                  },
                 ),
               ),
             ],
@@ -455,6 +529,8 @@ class _CollectionListTile extends ConsumerWidget {
         ),
       ),
     );
+    if (!isGuideItemTarget) return card;
+    return _wrapCollectionItemGuideTarget(context, card);
   }
 
   String _formatDate(DateTime date) {
@@ -463,6 +539,33 @@ class _CollectionListTile extends ConsumerWidget {
 
   void _openCollection(BuildContext context) {
     context.push(AppRoutes.collectionDetail(collection.id));
+  }
+
+  Widget _wrapCollectionMenuGuideTarget(BuildContext context, Widget child) {
+    if (!isGuideMenuTarget) return child;
+    final l10n = AppLocalizations.of(context)!;
+    return GuideTarget(
+      flowId: GuideFlowIds.libraryCollectionList,
+      step: GuideStep(
+        targetId: GuideTargetIds.collectionMenu,
+        title: l10n.guideLibraryCollectionMenuTitle,
+        description: l10n.guideLibraryCollectionMenuDescription,
+      ),
+      child: child,
+    );
+  }
+
+  Widget _wrapCollectionItemGuideTarget(BuildContext context, Widget child) {
+    final l10n = AppLocalizations.of(context)!;
+    return GuideTarget(
+      flowId: GuideFlowIds.libraryCollectionList,
+      step: GuideStep(
+        targetId: GuideTargetIds.collectionList,
+        title: l10n.guideLibraryCollectionListTitle,
+        description: l10n.guideLibraryCollectionListDescription,
+      ),
+      child: child,
+    );
   }
 }
 

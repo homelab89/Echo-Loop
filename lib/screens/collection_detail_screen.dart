@@ -8,10 +8,12 @@ import '../models/audio_item.dart';
 import '../models/collection.dart';
 import '../providers/collection_provider.dart';
 import '../providers/audio_library_provider.dart';
+import '../providers/new_user_guide_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../widgets/add_audio_dialog.dart';
 import '../widgets/audio_list_view.dart';
+import '../widgets/guide_flow.dart';
 import '../widgets/manage_subtitles_sheet.dart';
 
 /// 合集详情页面 - 展示合集中的音频，支持上传音频
@@ -43,24 +45,47 @@ class CollectionDetailScreen extends ConsumerWidget {
         .whereType<AudioItem>()
         .toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(collection.name),
-        actions: [
-          // 排序按钮（复用公开的 AudioSortButton）
-          const AudioSortButton(),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showAddAudioDialog(context, collection),
+    final hasAudioItems = audioItems.isNotEmpty;
+
+    return GuideFlowHost(
+      flowId: GuideFlowIds.collectionDetailUpload,
+      shouldRun: true,
+      steps: [
+        GuideStep(
+          targetId: GuideTargetIds.uploadAudio,
+          title: l10n.guideCollectionUploadTitle,
+          description: l10n.guideCollectionUploadDescription,
+        ),
+      ],
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(collection.name),
+          actions: [
+            // 排序按钮（复用公开的 AudioSortButton）
+            const AudioSortButton(),
+            GuideTarget(
+              flowId: GuideFlowIds.collectionDetailUpload,
+              step: GuideStep(
+                targetId: GuideTargetIds.uploadAudio,
+                title: l10n.guideCollectionUploadTitle,
+                description: l10n.guideCollectionUploadDescription,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: () => _showAddAudioDialog(context, collection),
+              ),
+            ),
+          ],
+        ),
+        body: AudioListView(
+          items: audioItems,
+          collectionId: collectionId,
+          guideFirstAudioMenu: hasAudioItems,
+          guideLeadingItems: hasAudioItems,
+          emptyState: _CollectionEmptyState(
+            l10n: l10n,
+            onAdd: () => _showAddAudioDialog(context, collection),
           ),
-        ],
-      ),
-      body: AudioListView(
-        items: audioItems,
-        collectionId: collectionId,
-        emptyState: _CollectionEmptyState(
-          l10n: l10n,
-          onAdd: () => _showAddAudioDialog(context, collection),
         ),
       ),
     );

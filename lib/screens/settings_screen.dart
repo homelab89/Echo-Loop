@@ -23,6 +23,7 @@ import '../providers/word_ai_provider.dart';
 import '../providers/audio_library_provider.dart';
 import '../providers/collection_provider.dart';
 import '../providers/learning_progress_provider.dart';
+import '../providers/new_user_guide_provider.dart';
 import '../providers/tag_provider.dart';
 import '../analytics/analytics_providers.dart';
 import '../services/backup/backup_manifest.dart';
@@ -487,6 +488,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ),
         ListTile(
+          leading: _emojiIcon('🧭'),
+          title: Text(l10n.resetNewUserGuide),
+          subtitle: Text(l10n.resetNewUserGuideSubtitle),
+          onTap: () => _resetNewUserGuide(context, ref, l10n),
+        ),
+        ListTile(
           leading: _emojiIcon('📊'),
           title: const Text('Analytics'),
           subtitle: Text(
@@ -553,6 +560,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ],
     );
+  }
+
+  /// 重置页面级新用户引导状态，便于开发调试重复验证引导流程。
+  Future<void> _resetNewUserGuide(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    await ref
+        .read(guideControllerProvider.notifier)
+        .resetFlows(GuideFlowIds.all);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.resetNewUserGuideDone)));
   }
 
   /// 显示词典查询对话框

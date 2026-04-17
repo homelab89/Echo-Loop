@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/audio_item.dart';
 import '../providers/audio_library_provider.dart';
 import '../providers/audio_list_settings_provider.dart';
+import '../providers/new_user_guide_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../widgets/add_audio_dialog.dart';
@@ -16,6 +17,7 @@ import 'audio_list_tile.dart';
 import 'dialogs/confirm_dialog.dart';
 import 'edit_collection_membership_sheet.dart';
 import 'edit_tag_membership_sheet.dart';
+import 'guide_flow.dart';
 
 /// 按排序类型排序音频列表（置顶项固定在前，不参与排序）
 List<AudioItem> sortAudioItems(List<AudioItem> items, AudioSortType sortType) {
@@ -55,11 +57,23 @@ class AudioListView extends ConsumerWidget {
   /// 自定义空状态组件
   final Widget? emptyState;
 
+  /// 是否将第一条音频的菜单作为合集详情引导 target。
+  final bool guideFirstAudioMenu;
+
+  /// 是否将第一条音频作为列表区域引导 target。
+  final bool guideLeadingItems;
+
+  /// 当前音频列表是否允许启动页面引导。
+  final bool guideEnabled;
+
   const AudioListView({
     super.key,
     this.items,
     this.collectionId,
     this.emptyState,
+    this.guideFirstAudioMenu = false,
+    this.guideLeadingItems = false,
+    this.guideEnabled = true,
   });
 
   @override
@@ -79,20 +93,43 @@ class AudioListView extends ConsumerWidget {
       return emptyState ?? _DefaultEmptyState(l10n: l10n);
     }
 
-    return ListView.builder(
+    final listView = ListView.builder(
       padding: const EdgeInsets.all(8),
       itemCount: sortedItems.length,
       itemBuilder: (context, index) {
         final item = sortedItems[index];
-        return AudioListTile(
+        final tile = AudioListTile(
           audioItem: item,
           collectionId: collectionId,
+          isGuideMenuTarget: guideEnabled && guideFirstAudioMenu && index == 0,
+          isGuideItemTarget: guideEnabled && guideLeadingItems && index == 0,
           onManageCollections: () =>
               _showManageCollectionsSheet(context, item.id),
           onManageTags: () => _showManageTagsSheet(context, item.id),
           onDelete: () => _confirmDeleteAudio(context, ref, item),
         );
+        return tile;
       },
+    );
+    if (!guideEnabled || (!guideLeadingItems && !guideFirstAudioMenu)) {
+      return listView;
+    }
+    return GuideFlowHost(
+      flowId: GuideFlowIds.collectionDetailAudioList,
+      shouldRun: true,
+      steps: [
+        GuideStep(
+          targetId: GuideTargetIds.audioList,
+          title: l10n.guideCollectionAudioListTitle,
+          description: l10n.guideCollectionAudioListDescription,
+        ),
+        GuideStep(
+          targetId: GuideTargetIds.audioMenu,
+          title: l10n.guideCollectionAudioMenuTitle,
+          description: l10n.guideCollectionAudioMenuDescription,
+        ),
+      ],
+      child: listView,
     );
   }
 

@@ -5,10 +5,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/audio_item.dart';
+import '../providers/new_user_guide_provider.dart';
 import '../providers/collection_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/audio_list_view.dart';
 import '../widgets/add_audio_dialog.dart';
+import '../widgets/guide_flow.dart';
 import '../widgets/manage_subtitles_sheet.dart';
 import 'collection_screen.dart';
 
@@ -31,37 +33,77 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final collectionState = ref.watch(collectionListProvider);
+    final shouldRunGuide =
+        _currentView == LibraryViewType.collections &&
+        !collectionState.isLoading;
+    final hasCollections = collectionState.collections.isNotEmpty;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: SegmentedButton<LibraryViewType>(
-          segments: [
-            ButtonSegment(
-              value: LibraryViewType.collections,
-              label: Text(l10n.collectionsTab),
+    return GuideFlowHost(
+      flowId: GuideFlowIds.libraryCollectionList,
+      shouldRun: shouldRunGuide && hasCollections,
+      steps: [
+        GuideStep(
+          targetId: GuideTargetIds.collectionList,
+          title: l10n.guideLibraryCollectionListTitle,
+          description: l10n.guideLibraryCollectionListDescription,
+        ),
+        if (hasCollections)
+          GuideStep(
+            targetId: GuideTargetIds.collectionMenu,
+            title: l10n.guideLibraryCollectionMenuTitle,
+            description: l10n.guideLibraryCollectionMenuDescription,
+          ),
+      ],
+      child: GuideFlowHost(
+        flowId: GuideFlowIds.libraryCreateCollection,
+        shouldRun: shouldRunGuide,
+        steps: [
+          GuideStep(
+            targetId: GuideTargetIds.createCollection,
+            title: l10n.guideLibraryCreateCollectionTitle,
+            description: l10n.guideLibraryCreateCollectionDescription,
+          ),
+        ],
+        child: Scaffold(
+          appBar: AppBar(
+            title: SegmentedButton<LibraryViewType>(
+              segments: [
+                ButtonSegment(
+                  value: LibraryViewType.collections,
+                  label: Text(l10n.collectionsTab),
+                ),
+                ButtonSegment(
+                  value: LibraryViewType.audio,
+                  label: Text(l10n.audioTab),
+                ),
+              ],
+              selected: {_currentView},
+              onSelectionChanged: (selected) {
+                setState(() {
+                  _currentView = selected.first;
+                });
+              },
+              showSelectedIcon: false,
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
-            ButtonSegment(
-              value: LibraryViewType.audio,
-              label: Text(l10n.audioTab),
-            ),
-          ],
-          selected: {_currentView},
-          onSelectionChanged: (selected) {
-            setState(() {
-              _currentView = selected.first;
-            });
-          },
-          showSelectedIcon: false,
-          style: ButtonStyle(
-            visualDensity: VisualDensity.compact,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            actions: _buildActions(l10n),
+          ),
+          body: IndexedStack(
+            index: _currentView.index,
+            children: [
+              _CollectionListBody(),
+              AudioListView(
+                guideFirstAudioMenu: true,
+                guideLeadingItems: true,
+                guideEnabled: _currentView == LibraryViewType.audio,
+              ),
+            ],
           ),
         ),
-        actions: _buildActions(l10n),
-      ),
-      body: IndexedStack(
-        index: _currentView.index,
-        children: const [_CollectionListBody(), AudioListView()],
       ),
     );
   }
@@ -87,9 +129,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           },
         ),
         // 创建合集
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: () => showCreateCollectionDialog(context),
+        GuideTarget(
+          flowId: GuideFlowIds.libraryCreateCollection,
+          step: GuideStep(
+            targetId: GuideTargetIds.createCollection,
+            title: l10n.guideLibraryCreateCollectionTitle,
+            description: l10n.guideLibraryCreateCollectionDescription,
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => showCreateCollectionDialog(context),
+          ),
         ),
       ];
     } else {
@@ -97,10 +147,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         // 音频排序
         const AudioSortButton(),
         // 添加音频
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: _handleAddAudio,
-        ),
+        IconButton(icon: const Icon(Icons.add), onPressed: _handleAddAudio),
       ];
     }
   }
@@ -171,15 +218,18 @@ class _CollectionListBody extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (collectionState.isEmpty) {
-      return const CollectionEmptyState();
-    }
+    if (collectionState.isEmpty) return const CollectionEmptyState();
 
     final collections = collectionState.collections;
     if (collectionState.viewMode == CollectionViewMode.grid) {
-      return CollectionGridView(collections: collections);
-    } else {
-      return CollectionListView(collections: collections);
+      return CollectionGridView(
+        collections: collections,
+        guideLeadingItems: true,
+      );
     }
+    return CollectionListView(
+      collections: collections,
+      guideLeadingItems: true,
+    );
   }
 }

@@ -17,8 +17,8 @@ class BundledExampleInstaller {
   static const _installedKey = 'bundled_example_installed';
 
   /// 固定 ID（保证幂等）
-  static const _audioId = 'bundled-example-audio-0001';
-  static const _collectionId = 'bundled-example-collection-0001';
+  static const audioId = 'bundled-example-audio-0001';
+  static const collectionId = 'bundled-example-collection-0001';
 
   /// assets 中的文件名
   static const _audioAsset =
@@ -72,7 +72,7 @@ class BundledExampleInstaller {
           .into(db.collections)
           .insert(
             CollectionsCompanion.insert(
-              id: _collectionId,
+              id: collectionId,
               name: 'Examples',
               createdDate: now,
               updatedAt: now,
@@ -84,7 +84,7 @@ class BundledExampleInstaller {
           .into(db.audioItems)
           .insert(
             AudioItemsCompanion.insert(
-              id: _audioId,
+              id: audioId,
               name: 'English in a Minute - On the Ball',
               audioPath: _audioRelPath,
               addedDate: now,
@@ -97,8 +97,8 @@ class BundledExampleInstaller {
           .into(db.collectionAudioItems)
           .insert(
             CollectionAudioItemsCompanion.insert(
-              collectionId: _collectionId,
-              audioItemId: _audioId,
+              collectionId: collectionId,
+              audioItemId: audioId,
               sortOrder: const Value(0),
               addedAt: now,
             ),

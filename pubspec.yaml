@@ -74,6 +74,7 @@ dependencies:
   table_calendar: ^3.2.0
   timeago: ^3.7.1
   sherpa_onnx: ^1.12.36
+  showcaseview: ^5.0.1
 
 dev_dependencies:
   flutter_test:

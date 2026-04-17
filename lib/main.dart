@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'l10n/app_localizations.dart';
 import 'utils/time_format.dart';
 import 'database/app_database.dart';
@@ -125,9 +126,7 @@ void main() async {
   }
 
   // 初始化 Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // 初始化用户 ID（SecureStorage 持久化，卸载重装可恢复）
   final userId = await initUserIdService(prefs);
@@ -147,9 +146,13 @@ void main() async {
   AsrModelInfo? recommendedAsrModel;
   OfflineAsrSettingsState? initialOfflineAsrSettingsState;
   if (!kIsWeb) {
-    final defaultBackend =
-        Platform.isAndroid ? AsrBackend.offline : AsrBackend.platform;
-    AppLogger.log('App', 'ASR: platform=${Platform.operatingSystem}, defaultBackend=${defaultBackend.name}');
+    final defaultBackend = Platform.isAndroid
+        ? AsrBackend.offline
+        : AsrBackend.platform;
+    AppLogger.log(
+      'App',
+      'ASR: platform=${Platform.operatingSystem}, defaultBackend=${defaultBackend.name}',
+    );
     final platform = SpeechPracticePlatform.instance;
     final ramBytes = platform.isSupported
         ? await platform.getDeviceRamBytes()
@@ -249,6 +252,11 @@ class _FluencyAppState extends ConsumerState<FluencyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      // ignore: deprecated_member_use
+      builder: (context, child) => ShowCaseWidget(
+        enableAutoScroll: true,
+        builder: (_) => child ?? const SizedBox.shrink(),
+      ),
       routerConfig: router,
     );
   }

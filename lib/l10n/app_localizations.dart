@@ -4465,6 +4465,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get retry;
+
+  /// No description provided for @guideNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get guideNext;
+
+  /// No description provided for @guideDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get guideDone;
+
+  /// No description provided for @guideLibraryCollectionListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your collection list'**
+  String get guideLibraryCollectionListTitle;
+
+  /// No description provided for @guideLibraryCollectionListDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections help you organize audio by topic, such as podcasts, courses, or exam materials. Open a collection to manage and study its audio.'**
+  String get guideLibraryCollectionListDescription;
+
+  /// No description provided for @guideLibraryCollectionMenuTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage a collection'**
+  String get guideLibraryCollectionMenuTitle;
+
+  /// No description provided for @guideLibraryCollectionMenuDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Each collection has a menu for pinning, renaming, or deleting it.'**
+  String get guideLibraryCollectionMenuDescription;
+
+  /// No description provided for @guideLibraryCreateCollectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your own collections'**
+  String get guideLibraryCreateCollectionTitle;
+
+  /// No description provided for @guideLibraryCreateCollectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When you want to organize your own learning materials, use the plus button in the top-right corner to create a new collection.'**
+  String get guideLibraryCreateCollectionDescription;
+
+  /// No description provided for @guideCollectionAudioListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the audio list'**
+  String get guideCollectionAudioListTitle;
+
+  /// No description provided for @guideCollectionAudioListDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio in the current collection appears here. Open an audio item to view its learning plan.'**
+  String get guideCollectionAudioListDescription;
+
+  /// No description provided for @guideCollectionAudioMenuTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate or manage subtitles'**
+  String get guideCollectionAudioMenuTitle;
+
+  /// No description provided for @guideCollectionAudioMenuDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the audio menu to manage subtitles. If there are no subtitles yet, you can upload a file or generate subtitles with AI transcription.'**
+  String get guideCollectionAudioMenuDescription;
+
+  /// No description provided for @guideCollectionUploadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload your audio here'**
+  String get guideCollectionUploadTitle;
+
+  /// No description provided for @guideCollectionUploadDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When your own material is ready, use the plus button in the top-right corner to add audio to this collection.'**
+  String get guideCollectionUploadDescription;
+
+  /// No description provided for @guidePlanAddSubtitleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add subtitles first'**
+  String get guidePlanAddSubtitleTitle;
+
+  /// No description provided for @guidePlanAddSubtitleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This audio has no subtitles yet. Add subtitles so Fluency can build a learning plan around the sentences.'**
+  String get guidePlanAddSubtitleDescription;
+
+  /// No description provided for @guidePlanAiTranscriptionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use AI transcription'**
+  String get guidePlanAiTranscriptionTitle;
+
+  /// No description provided for @guidePlanAiTranscriptionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'If you do not have a subtitle file, AI transcription is the fastest way to generate one.'**
+  String get guidePlanAiTranscriptionDescription;
+
+  /// No description provided for @guidePlanStartTranscriptionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start transcription'**
+  String get guidePlanStartTranscriptionTitle;
+
+  /// No description provided for @guidePlanStartTranscriptionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap here to let AI generate subtitles for this audio.'**
+  String get guidePlanStartTranscriptionDescription;
+
+  /// No description provided for @guidePlanFreePlayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Free practice is here'**
+  String get guidePlanFreePlayTitle;
+
+  /// No description provided for @guidePlanFreePlayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Free Practice when you want to explore or practice freely outside the plan.'**
+  String get guidePlanFreePlayDescription;
+
+  /// No description provided for @guidePlanStartLearningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the plan'**
+  String get guidePlanStartLearningTitle;
+
+  /// No description provided for @guidePlanStartLearningDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'If you are not sure where to begin, start here and follow the learning plan step by step.'**
+  String get guidePlanStartLearningDescription;
+
+  /// No description provided for @resetNewUserGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset New User Guide'**
+  String get resetNewUserGuide;
+
+  /// No description provided for @resetNewUserGuideSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all guide seen states for testing'**
+  String get resetNewUserGuideSubtitle;
+
+  /// No description provided for @resetNewUserGuideDone.
+  ///
+  /// In en, this message translates to:
+  /// **'New user guide has been reset'**
+  String get resetNewUserGuideDone;
 }
 
 class _AppLocalizationsDelegate

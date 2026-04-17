@@ -18,6 +18,7 @@ import '../providers/time_provider.dart';
 import '../providers/learning_session/learning_session_provider.dart';
 import '../providers/listen_and_repeat/listen_and_repeat_controller.dart';
 import '../providers/listening_practice/listening_practice_provider.dart';
+import '../providers/new_user_guide_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../router/app_router.dart';
 import '../services/subtitle_parser.dart';
@@ -34,6 +35,7 @@ import '../providers/learning_session/retell_player_provider.dart';
 import '../widgets/retell/retell_briefing_sheet.dart';
 import '../widgets/review/review_briefing_sheet.dart';
 import '../widgets/asr_download_prompt_dialog.dart';
+import '../widgets/guide_flow.dart';
 import '../widgets/manage_subtitles_sheet.dart';
 import '../providers/listening_practice/bookmark_manager.dart';
 import '../database/providers.dart';
@@ -739,93 +741,142 @@ class _LearningPlanScreenState extends ConsumerState<LearningPlanScreen> {
 
     final hasTranscript = audioItem.hasTranscript;
     final isLockedReview = progress?.isReviewLockedAt(now) ?? false;
+    final guideFlowId = hasTranscript
+        ? GuideFlowIds.learningPlanWithTranscript
+        : GuideFlowIds.learningPlanNoTranscript;
+    final guideSteps = hasTranscript
+        ? _buildWithTranscriptGuideSteps(l10n)
+        : _buildNoTranscriptGuideSteps(l10n);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(audioItem.name),
-        actions: [
-          TextButton.icon(
-            onPressed: () {
-              if (widget.collectionId != null) {
-                context.push(
-                  AppRoutes.player(widget.collectionId!, widget.audioItemId),
-                );
-              } else {
-                context.push(AppRoutes.audioPlayer(widget.audioItemId));
-              }
-            },
-            icon: const Icon(Icons.headphones),
-            label: Text(l10n.freePlay),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.m),
-              children: [
-                _ProgressCard(
-                  l10n: l10n,
-                  progress: progress,
-                  audioItem: audioItem,
-                  now: now,
-                ),
-                if (!hasTranscript) ...[
-                  const SizedBox(height: AppSpacing.s),
-                  _NoTranscriptBanner(l10n: l10n, audioItem: audioItem),
-                ],
-                const SizedBox(height: AppSpacing.l),
-                _FirstStudySection(
-                  l10n: l10n,
-                  progress: progress,
-                  collectionId: widget.collectionId,
-                  audioItemId: widget.audioItemId,
-                  isExpanded: _isFirstLearnExpanded ??=
-                      progress?.isCurrentStage(LearningStage.firstLearn) ??
-                      true,
-                  onToggle: () => setState(
-                    () => _isFirstLearnExpanded =
-                        !(_isFirstLearnExpanded ?? true),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.m),
-                ...List.generate(reviewStages.length, (index) {
-                  final review = reviewStages[index];
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: index == reviewStages.length - 1
-                          ? 0
-                          : AppSpacing.m,
-                    ),
-                    child: _ReviewRoundSection(
-                      l10n: l10n,
-                      progress: progress,
-                      review: review,
-                      now: now,
-                      collectionId: widget.collectionId,
-                      audioItemId: widget.audioItemId,
-                      isExpanded: _isReviewRoundExpanded(
-                        review.stage,
-                        progress,
+    return GuideFlowHost(
+      flowId: guideFlowId,
+      shouldRun: guideSteps.isNotEmpty,
+      steps: guideSteps,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(audioItem.name),
+          actions: [
+            GuideTarget(
+              flowId: GuideFlowIds.learningPlanWithTranscript,
+              step: GuideStep(
+                targetId: GuideTargetIds.freePlay,
+                title: l10n.guidePlanFreePlayTitle,
+                description: l10n.guidePlanFreePlayDescription,
+              ),
+              child: TextButton.icon(
+                onPressed: () {
+                  if (widget.collectionId != null) {
+                    context.push(
+                      AppRoutes.player(
+                        widget.collectionId!,
+                        widget.audioItemId,
                       ),
-                      onToggle: () => _toggleReviewRoundExpanded(review.stage),
-                    ),
-                  );
-                }),
-              ],
+                    );
+                  } else {
+                    context.push(AppRoutes.audioPlayer(widget.audioItemId));
+                  }
+                },
+                icon: const Icon(Icons.headphones),
+                label: Text(l10n.freePlay),
+              ),
             ),
-          ),
-          _BottomButton(
-            l10n: l10n,
-            progress: progress,
-            onPressed: hasTranscript && !isLockedReview
-                ? () => _handleStartLearning(context, progress)
-                : null,
-          ),
-        ],
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.m),
+                children: [
+                  _ProgressCard(
+                    l10n: l10n,
+                    progress: progress,
+                    audioItem: audioItem,
+                    now: now,
+                  ),
+                  if (!hasTranscript) ...[
+                    const SizedBox(height: AppSpacing.s),
+                    _NoTranscriptBanner(l10n: l10n, audioItem: audioItem),
+                  ],
+                  const SizedBox(height: AppSpacing.l),
+                  _FirstStudySection(
+                    l10n: l10n,
+                    progress: progress,
+                    collectionId: widget.collectionId,
+                    audioItemId: widget.audioItemId,
+                    isExpanded: _isFirstLearnExpanded ??=
+                        progress?.isCurrentStage(LearningStage.firstLearn) ??
+                        true,
+                    onToggle: () => setState(
+                      () => _isFirstLearnExpanded =
+                          !(_isFirstLearnExpanded ?? true),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.m),
+                  ...List.generate(reviewStages.length, (index) {
+                    final review = reviewStages[index];
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: index == reviewStages.length - 1
+                            ? 0
+                            : AppSpacing.m,
+                      ),
+                      child: _ReviewRoundSection(
+                        l10n: l10n,
+                        progress: progress,
+                        review: review,
+                        now: now,
+                        collectionId: widget.collectionId,
+                        audioItemId: widget.audioItemId,
+                        isExpanded: _isReviewRoundExpanded(
+                          review.stage,
+                          progress,
+                        ),
+                        onToggle: () =>
+                            _toggleReviewRoundExpanded(review.stage),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            _BottomButton(
+              l10n: l10n,
+              progress: progress,
+              enableGuide: hasTranscript,
+              onPressed: hasTranscript && !isLockedReview
+                  ? () => _handleStartLearning(context, progress)
+                  : null,
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  List<GuideStep> _buildNoTranscriptGuideSteps(AppLocalizations l10n) {
+    return [
+      GuideStep(
+        targetId: GuideTargetIds.addSubtitle,
+        title: l10n.guidePlanAddSubtitleTitle,
+        description: l10n.guidePlanAddSubtitleDescription,
+      ),
+    ];
+  }
+
+  List<GuideStep> _buildWithTranscriptGuideSteps(AppLocalizations l10n) {
+    return [
+      GuideStep(
+        targetId: GuideTargetIds.freePlay,
+        title: l10n.guidePlanFreePlayTitle,
+        description: l10n.guidePlanFreePlayDescription,
+      ),
+      GuideStep(
+        targetId: GuideTargetIds.startLearning,
+        title: l10n.guidePlanStartLearningTitle,
+        description: l10n.guidePlanStartLearningDescription,
+      ),
+    ];
   }
 
   /// 构建复习阶段列表（review0 ~ review28，共 7 个）
@@ -2349,18 +2400,28 @@ class _NoTranscriptBanner extends StatelessWidget {
                 ),
               ),
             ),
-            TextButton(
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  builder: (_) => ManageSubtitlesSheet(audioItem: audioItem),
-                );
-              },
-              child: Text(l10n.addSubtitle),
+            GuideTarget(
+              flowId: GuideFlowIds.learningPlanNoTranscript,
+              step: GuideStep(
+                targetId: GuideTargetIds.addSubtitle,
+                title: l10n.guidePlanAddSubtitleTitle,
+                description: l10n.guidePlanAddSubtitleDescription,
+              ),
+              child: TextButton(
+                onPressed: () => _showManageSubtitlesSheet(context),
+                child: Text(l10n.addSubtitle),
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showManageSubtitlesSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => ManageSubtitlesSheet(audioItem: audioItem),
     );
   }
 }
@@ -2372,11 +2433,13 @@ class _BottomButton extends StatelessWidget {
   final AppLocalizations l10n;
   final LearningProgress? progress;
   final VoidCallback? onPressed;
+  final bool enableGuide;
 
   const _BottomButton({
     required this.l10n,
     this.progress,
     required this.onPressed,
+    this.enableGuide = false,
   });
 
   @override
@@ -2384,6 +2447,19 @@ class _BottomButton extends StatelessWidget {
     final buttonText = (progress != null && progress!.isStarted)
         ? l10n.continueLearning
         : l10n.startLearning;
+
+    final button = FilledButton(onPressed: onPressed, child: Text(buttonText));
+    final guidedButton = enableGuide
+        ? GuideTarget(
+            flowId: GuideFlowIds.learningPlanWithTranscript,
+            step: GuideStep(
+              targetId: GuideTargetIds.startLearning,
+              title: l10n.guidePlanStartLearningTitle,
+              description: l10n.guidePlanStartLearningDescription,
+            ),
+            child: button,
+          )
+        : button;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.m),
@@ -2399,10 +2475,7 @@ class _BottomButton extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(onPressed: onPressed, child: Text(buttonText)),
-        ),
+        child: SizedBox(width: double.infinity, child: guidedButton),
       ),
     );
   }

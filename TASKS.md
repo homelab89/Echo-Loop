@@ -1,7 +1,20 @@
 # Fluency 任务清单
 
-> 最后更新：2026-04-15
-> 当前焦点：本地 ASR 用户流程集成
+> 最后更新：2026-04-17
+> 当前焦点：页面级新用户引导
+
+## 已完成：页面级新用户引导（showcaseview）
+
+- [x] 接入 `showcaseview`，新增可复用 `GuideFlowHost` / `GuideTarget` / `GuideRegistry`，每个 flow 独立用 SharedPreferences 记录 seen 状态
+- [x] `LibraryScreen` 新增创建合集与 Examples 预置合集引导
+- [x] `CollectionDetailScreen` 新增上传音频与 Examples 示例音频引导
+- [x] `LearningPlanScreen` 拆分无字幕 flow（添加字幕 → AI 转录 → 开始转录）和有字幕 flow（自由练习 → 按计划学习）
+- [x] 补充中英文引导文案与 guide provider 单元测试
+- [x] 重构为全展示型、互相隔离的页面级 flow：Library 合集列表/创建合集、合集详情音频列表/上传音频、学习计划字幕/学习入口、字幕弹窗 AI 转录
+
+  **完成时间**: 2026-04-17 09:36
+
+---
 
 ## 进行中：本地 ASR 用户流程集成
 
