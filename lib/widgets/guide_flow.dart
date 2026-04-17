@@ -38,6 +38,9 @@ class GuideFlow {
   });
 }
 
+/// 页面渲染完成到 tooltip 出现之间的等待时间，给用户一点反应时间。
+const Duration _kGuideAppearDelay = Duration(milliseconds: 500);
+
 /// 在 screen 内按顺序声明并启动一组页面级 flow。
 ///
 /// 对齐 showcaseview 官方示例：flow 启动时 **一次性** 把所有 step 的 key
@@ -164,8 +167,13 @@ class _GuideFlowSequenceHostState extends ConsumerState<GuideFlowSequenceHost> {
       final keys = flow.steps.map((s) => s.key).toList();
       AppLogger.log(
         'Guide',
-        'host startShowCase flow=${flow.flowId} keys=${keys.length}',
+        'host startShowCase flow=${flow.flowId} keys=${keys.length} (delayed)',
       );
+
+      await Future<void>.delayed(_kGuideAppearDelay);
+      if (!mounted) return;
+      if (!TickerMode.valuesOf(context).enabled) return;
+
       showcase.startShowCase(keys);
       return;
     }
