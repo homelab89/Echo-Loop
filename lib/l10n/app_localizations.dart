@@ -4715,7 +4715,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideSentenceAnnotationTranslationDescription.
   ///
   /// In en, this message translates to:
-  /// **'See how this sentence reads in your native language.'**
+  /// **'Translate this sentence into your native language.'**
   String get guideSentenceAnnotationTranslationDescription;
 
   /// No description provided for @guideSentenceAnnotationAnalysisDescription.
