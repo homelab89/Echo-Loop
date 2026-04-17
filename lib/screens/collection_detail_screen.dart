@@ -58,7 +58,6 @@ class _CollectionDetailScreenState
 
     final stepUpload = GuideStep(
       key: _keyUpload,
-      title: l10n.guideCollectionUploadTitle,
       description: l10n.guideCollectionUploadDescription,
     );
 

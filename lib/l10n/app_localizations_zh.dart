@@ -2434,39 +2434,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get guideDone => '知道了';
 
   @override
-  String get guideLibraryCollectionListTitle => '这里是合集列表';
-
-  @override
   String get guideLibraryCollectionListDescription =>
-      '合集用于将音频按主题分类整理。点击任意合集，可以查看其中包含的音频。';
-
-  @override
-  String get guideLibraryCollectionMenuTitle => '管理合集';
+      '这里是合集列表。合集用于将音频按主题分类整理，点击任意合集，可以查看其中包含的音频。';
 
   @override
   String get guideLibraryCollectionMenuDescription => '点击这里，可以置顶、重命名或删除合集。';
 
   @override
-  String get guideLibraryCreateCollectionTitle => '创建自己的合集';
-
-  @override
   String get guideLibraryCreateCollectionDescription => '点击这里，可以创建新的合集。';
-
-  @override
-  String get guideCollectionAudioListTitle => '这里是音频列表';
 
   @override
   String get guideCollectionAudioListDescription => '点击任意音频，可以查看它的学习计划和当前进度。';
 
   @override
-  String get guideCollectionAudioMenuTitle => '管理音频';
-
-  @override
   String get guideCollectionAudioMenuDescription =>
       '点击这里，可以管理该音频的字幕、所属合集、标签等信息。';
-
-  @override
-  String get guideCollectionUploadTitle => '上传自己的音频';
 
   @override
   String get guideCollectionUploadDescription => '点击这里，可以上传你自己的音频。';
@@ -2484,9 +2466,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get guidePlanAiTranscriptionDescription =>
       '如果你手头没有字幕文件，使用 AI 转录是最快的方式。';
-
-  @override
-  String get guidePlanStartTranscriptionTitle => '开始转录';
 
   @override
   String get guidePlanStartTranscriptionDescription => '点击这里，让 AI 为这段音频生成字幕。';
@@ -2520,13 +2499,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '今天的听力时长、口语练习时长和新学词汇量都汇总在这里。点击卡片或柱状图，可查看更详细的数据分布。';
 
   @override
-  String get guideStudyStreakTitle => '连续学习';
-
-  @override
   String get guideStudyStreakDescription => '点击这里查看学习日历。坚持每天打卡，逐步养成稳定的学习习惯。';
-
-  @override
-  String get guideFavoritesSentencesListTitle => '收藏的句子';
 
   @override
   String guideFavoritesSentencesListDescription(String dumbbellIcon) {
@@ -2534,20 +2507,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get guideFavoritesSentencesReviewTitle => '复习收藏句子';
-
-  @override
   String get guideFavoritesSentencesReviewDescription => '点击这里，一键复习所有收藏的句子。';
-
-  @override
-  String get guideFavoritesVocabularyListTitle => '收藏的词汇';
 
   @override
   String get guideFavoritesVocabularyListDescription =>
       '这里是你收藏的单词和意群。展开后可查看释义，也可以收听它们在原句中的发音。';
-
-  @override
-  String get guideFavoritesFlashcardTitle => '复习收藏词汇';
 
   @override
   String get guideFavoritesFlashcardDescription =>

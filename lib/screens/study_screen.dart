@@ -116,7 +116,6 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     );
     final stepStreakChip = GuideStep(
       key: _keyStreakChip,
-      title: l10n.guideStudyStreakTitle,
       description: l10n.guideStudyStreakDescription,
     );
     // 门槛：用户本周已经累计过学习时长才触发引导。

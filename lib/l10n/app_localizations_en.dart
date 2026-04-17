@@ -2507,42 +2507,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get guideDone => 'Done';
 
   @override
-  String get guideLibraryCollectionListTitle => 'This is your collection list';
-
-  @override
   String get guideLibraryCollectionListDescription =>
-      'Collections let you categorize audio by topic. Tap any collection to see the audio inside.';
-
-  @override
-  String get guideLibraryCollectionMenuTitle => 'Manage a collection';
+      'This is your collection list. Collections let you categorize audio by topic — tap any collection to see the audio inside.';
 
   @override
   String get guideLibraryCollectionMenuDescription =>
       'Tap here to pin, rename, or delete this collection.';
 
   @override
-  String get guideLibraryCreateCollectionTitle => 'Create your own collections';
-
-  @override
   String get guideLibraryCreateCollectionDescription =>
       'Tap here to create a new collection.';
-
-  @override
-  String get guideCollectionAudioListTitle => 'This is the audio list';
 
   @override
   String get guideCollectionAudioListDescription =>
       'Tap any audio to view its learning plan and current progress.';
 
   @override
-  String get guideCollectionAudioMenuTitle => 'Manage audio';
-
-  @override
   String get guideCollectionAudioMenuDescription =>
       'Tap here to manage this audio\'s subtitles, collection, tags, and more.';
-
-  @override
-  String get guideCollectionUploadTitle => 'Upload your own audio';
 
   @override
   String get guideCollectionUploadDescription =>
@@ -2561,9 +2543,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get guidePlanAiTranscriptionDescription =>
       'If you do not have a subtitle file, AI transcription is the fastest way.';
-
-  @override
-  String get guidePlanStartTranscriptionTitle => 'Start transcription';
 
   @override
   String get guidePlanStartTranscriptionDescription =>
@@ -2598,14 +2577,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your listening time, speaking practice time, and new vocabulary for today are all summarized here. Tap a card or bar for a more detailed breakdown.';
 
   @override
-  String get guideStudyStreakTitle => 'Learning streak';
-
-  @override
   String get guideStudyStreakDescription =>
       'Tap here to open your activity calendar. Check in every day and build a steady learning habit.';
-
-  @override
-  String get guideFavoritesSentencesListTitle => 'Saved sentences';
 
   @override
   String guideFavoritesSentencesListDescription(String dumbbellIcon) {
@@ -2613,21 +2586,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get guideFavoritesSentencesReviewTitle => 'Review saved sentences';
-
-  @override
   String get guideFavoritesSentencesReviewDescription =>
       'Tap here to review every saved sentence at once.';
 
   @override
-  String get guideFavoritesVocabularyListTitle => 'Saved vocabulary';
-
-  @override
   String get guideFavoritesVocabularyListDescription =>
       'Your saved words and phrases. Expand a card to see definitions and hear how they sound in the original sentences.';
-
-  @override
-  String get guideFavoritesFlashcardTitle => 'Review saved vocabulary';
 
   @override
   String get guideFavoritesFlashcardDescription =>

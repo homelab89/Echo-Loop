@@ -83,7 +83,6 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         : const Color(0xFF5A6270);
     final stepSentencesList = GuideStep(
       key: _keySentencesList,
-      title: l10n.guideFavoritesSentencesListTitle,
       description: sentencesListDescRaw,
       descriptionWidget: Text.rich(
         TextSpan(
@@ -111,17 +110,14 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     );
     final stepSentencesReviewBtn = GuideStep(
       key: _keySentencesReviewBtn,
-      title: l10n.guideFavoritesSentencesReviewTitle,
       description: l10n.guideFavoritesSentencesReviewDescription,
     );
     final stepWordsList = GuideStep(
       key: _keyWordsList,
-      title: l10n.guideFavoritesVocabularyListTitle,
       description: l10n.guideFavoritesVocabularyListDescription,
     );
     final stepFlashcardBtn = GuideStep(
       key: _keyVocabReviewBtn,
-      title: l10n.guideFavoritesFlashcardTitle,
       description: l10n.guideFavoritesFlashcardDescription,
     );
 

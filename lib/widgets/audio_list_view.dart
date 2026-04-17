@@ -104,12 +104,10 @@ class _AudioListViewState extends ConsumerState<AudioListView> {
 
     final stepAudioList = GuideStep(
       key: _keyAudioList,
-      title: l10n.guideCollectionAudioListTitle,
       description: l10n.guideCollectionAudioListDescription,
     );
     final stepAudioMenu = GuideStep(
       key: _keyAudioMenu,
-      title: l10n.guideCollectionAudioMenuTitle,
       description: l10n.guideCollectionAudioMenuDescription,
     );
 

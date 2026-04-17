@@ -4478,23 +4478,11 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get guideDone;
 
-  /// No description provided for @guideLibraryCollectionListTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'This is your collection list'**
-  String get guideLibraryCollectionListTitle;
-
   /// No description provided for @guideLibraryCollectionListDescription.
   ///
   /// In en, this message translates to:
-  /// **'Collections let you categorize audio by topic. Tap any collection to see the audio inside.'**
+  /// **'This is your collection list. Collections let you categorize audio by topic — tap any collection to see the audio inside.'**
   String get guideLibraryCollectionListDescription;
-
-  /// No description provided for @guideLibraryCollectionMenuTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage a collection'**
-  String get guideLibraryCollectionMenuTitle;
 
   /// No description provided for @guideLibraryCollectionMenuDescription.
   ///
@@ -4502,23 +4490,11 @@ abstract class AppLocalizations {
   /// **'Tap here to pin, rename, or delete this collection.'**
   String get guideLibraryCollectionMenuDescription;
 
-  /// No description provided for @guideLibraryCreateCollectionTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Create your own collections'**
-  String get guideLibraryCreateCollectionTitle;
-
   /// No description provided for @guideLibraryCreateCollectionDescription.
   ///
   /// In en, this message translates to:
   /// **'Tap here to create a new collection.'**
   String get guideLibraryCreateCollectionDescription;
-
-  /// No description provided for @guideCollectionAudioListTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'This is the audio list'**
-  String get guideCollectionAudioListTitle;
 
   /// No description provided for @guideCollectionAudioListDescription.
   ///
@@ -4526,23 +4502,11 @@ abstract class AppLocalizations {
   /// **'Tap any audio to view its learning plan and current progress.'**
   String get guideCollectionAudioListDescription;
 
-  /// No description provided for @guideCollectionAudioMenuTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage audio'**
-  String get guideCollectionAudioMenuTitle;
-
   /// No description provided for @guideCollectionAudioMenuDescription.
   ///
   /// In en, this message translates to:
   /// **'Tap here to manage this audio\'s subtitles, collection, tags, and more.'**
   String get guideCollectionAudioMenuDescription;
-
-  /// No description provided for @guideCollectionUploadTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload your own audio'**
-  String get guideCollectionUploadTitle;
 
   /// No description provided for @guideCollectionUploadDescription.
   ///
@@ -4573,12 +4537,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If you do not have a subtitle file, AI transcription is the fastest way.'**
   String get guidePlanAiTranscriptionDescription;
-
-  /// No description provided for @guidePlanStartTranscriptionTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Start transcription'**
-  String get guidePlanStartTranscriptionTitle;
 
   /// No description provided for @guidePlanStartTranscriptionDescription.
   ///
@@ -4634,23 +4592,11 @@ abstract class AppLocalizations {
   /// **'Your listening time, speaking practice time, and new vocabulary for today are all summarized here. Tap a card or bar for a more detailed breakdown.'**
   String get guideStudyStatsHeaderDescription;
 
-  /// No description provided for @guideStudyStreakTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Learning streak'**
-  String get guideStudyStreakTitle;
-
   /// No description provided for @guideStudyStreakDescription.
   ///
   /// In en, this message translates to:
   /// **'Tap here to open your activity calendar. Check in every day and build a steady learning habit.'**
   String get guideStudyStreakDescription;
-
-  /// No description provided for @guideFavoritesSentencesListTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved sentences'**
-  String get guideFavoritesSentencesListTitle;
 
   /// No description provided for @guideFavoritesSentencesListDescription.
   ///
@@ -4658,35 +4604,17 @@ abstract class AppLocalizations {
   /// **'Your saved sentences, grouped by source audio. Tap {dumbbellIcon} to review every saved sentence from that audio at once.'**
   String guideFavoritesSentencesListDescription(String dumbbellIcon);
 
-  /// No description provided for @guideFavoritesSentencesReviewTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Review saved sentences'**
-  String get guideFavoritesSentencesReviewTitle;
-
   /// No description provided for @guideFavoritesSentencesReviewDescription.
   ///
   /// In en, this message translates to:
   /// **'Tap here to review every saved sentence at once.'**
   String get guideFavoritesSentencesReviewDescription;
 
-  /// No description provided for @guideFavoritesVocabularyListTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved vocabulary'**
-  String get guideFavoritesVocabularyListTitle;
-
   /// No description provided for @guideFavoritesVocabularyListDescription.
   ///
   /// In en, this message translates to:
   /// **'Your saved words and phrases. Expand a card to see definitions and hear how they sound in the original sentences.'**
   String get guideFavoritesVocabularyListDescription;
-
-  /// No description provided for @guideFavoritesFlashcardTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Review saved vocabulary'**
-  String get guideFavoritesFlashcardTitle;
 
   /// No description provided for @guideFavoritesFlashcardDescription.
   ///

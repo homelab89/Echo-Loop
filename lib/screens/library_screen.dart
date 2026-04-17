@@ -47,17 +47,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
     final stepCollectionList = GuideStep(
       key: _keyCollectionList,
-      title: l10n.guideLibraryCollectionListTitle,
       description: l10n.guideLibraryCollectionListDescription,
     );
     final stepCollectionMenu = GuideStep(
       key: _keyCollectionMenu,
-      title: l10n.guideLibraryCollectionMenuTitle,
       description: l10n.guideLibraryCollectionMenuDescription,
     );
     final stepCreateCollection = GuideStep(
       key: _keyCreateCollection,
-      title: l10n.guideLibraryCreateCollectionTitle,
       description: l10n.guideLibraryCreateCollectionDescription,
     );
 

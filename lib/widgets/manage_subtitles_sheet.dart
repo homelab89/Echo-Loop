@@ -220,7 +220,6 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
 
   GuideStep _stepStartTranscription(AppLocalizations l10n) => GuideStep(
     key: _keyStartTranscription,
-    title: l10n.guidePlanStartTranscriptionTitle,
     description: l10n.guidePlanStartTranscriptionDescription,
   );
 
