@@ -72,10 +72,42 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         : l10n.favoritesVocabulary;
 
     // ----- 新手引导 flow 声明 -----
+    // 句子列表描述中嵌入真实的哑铃图标，让用户更易辨识 tap 目标
+    const iconPlaceholder = '{ICON}';
+    final sentencesListDescRaw = l10n
+        .guideFavoritesSentencesListDescription(iconPlaceholder);
+    final sentencesListDescParts = sentencesListDescRaw.split(iconPlaceholder);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tooltipDescColor = isDark
+        ? const Color(0xFF9BA3AE)
+        : const Color(0xFF5A6270);
     final stepSentencesList = GuideStep(
       key: _keySentencesList,
       title: l10n.guideFavoritesSentencesListTitle,
-      description: l10n.guideFavoritesSentencesListDescription,
+      description: sentencesListDescRaw,
+      descriptionWidget: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: sentencesListDescParts[0]),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Icon(
+                Icons.fitness_center,
+                size: 15,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            if (sentencesListDescParts.length > 1)
+              TextSpan(text: sentencesListDescParts[1]),
+          ],
+          style: TextStyle(
+            fontSize: 13,
+            height: 1.55,
+            fontWeight: FontWeight.w400,
+            color: tooltipDescColor,
+          ),
+        ),
+      ),
     );
     final stepSentencesReviewBtn = GuideStep(
       key: _keySentencesReviewBtn,

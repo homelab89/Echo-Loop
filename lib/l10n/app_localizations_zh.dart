@@ -2510,48 +2510,49 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get guideStudyTasksOverviewDescription =>
-      '包括到期的复习和新学的音频。按顺序完成，Echo Loop 会自动安排后续的复习节奏。';
+      '包括待学习的新音频、到期的复习任务和已完成的任务等。Echo Loop 会自动帮你安排学习节奏。';
 
   @override
-  String get guideStudyStatsHeaderTitle => '今日学习时长';
+  String get guideStudyStatsHeaderTitle => '今日学习统计';
 
   @override
   String get guideStudyStatsHeaderDescription =>
-      '今天听、说的时长和新学词汇量都在这里。点击卡片可以查看更详细的分布。';
+      '今天的听力时长、口语练习时长和新学词汇量都汇总在这里。点击卡片或柱状图，可查看更详细的数据分布。';
 
   @override
   String get guideStudyStreakTitle => '连续学习';
 
   @override
-  String get guideStudyStreakDescription => '点击这里查看学习日历，坚持每天打卡，养成稳定的学习习惯。';
+  String get guideStudyStreakDescription => '点击这里查看学习日历。坚持每天打卡，逐步养成稳定的学习习惯。';
 
   @override
   String get guideFavoritesSentencesListTitle => '收藏的句子';
 
   @override
-  String get guideFavoritesSentencesListDescription =>
-      '按音频分组展示你收藏的句子。展开卡片可以播放原声，也能单独练习该音频下的收藏句。';
+  String guideFavoritesSentencesListDescription(String dumbbellIcon) {
+    return '这里是你收藏的句子，并按来源音频分组展示。点击 $dumbbellIcon 按钮，可以一键复习该音频中的所有收藏句子。';
+  }
 
   @override
-  String get guideFavoritesSentencesReviewTitle => '开始句子复习';
+  String get guideFavoritesSentencesReviewTitle => '复习收藏句子';
 
   @override
   String get guideFavoritesSentencesReviewDescription =>
-      '点击这里进入跟读练习，对收藏的句子反复打磨发音。';
+      '点击这里，可以一键复习所有收藏的句子。Echo Loop 会自动为你排序。';
 
   @override
   String get guideFavoritesVocabularyListTitle => '收藏的词汇';
 
   @override
   String get guideFavoritesVocabularyListDescription =>
-      '收藏的单词和意群按时间排序。展开可查看释义，也能听来源句子的原声。';
+      '这里是你收藏的单词和意群。展开后可查看释义，也可以收听它们在原句中的发音。';
 
   @override
-  String get guideFavoritesFlashcardTitle => '开始闪卡复习';
+  String get guideFavoritesFlashcardTitle => '复习收藏词汇';
 
   @override
   String get guideFavoritesFlashcardDescription =>
-      '点击这里进入闪卡模式，通过看词、听句、回忆的节奏高效巩固记忆。';
+      '点击这里进入闪卡模式，复习所有收藏的词汇。通过看单词、听原句，可以更高效地巩固记忆。';
 
   @override
   String get resetNewUserGuide => '重置新手引导';

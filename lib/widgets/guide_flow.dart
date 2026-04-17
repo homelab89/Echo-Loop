@@ -18,10 +18,15 @@ class GuideStep {
   final String title;
   final String description;
 
+  /// 可选的富文本描述：用于在 description 中嵌入 Icon 等 widget。
+  /// 传入时取代 [description] 字符串渲染，支持 [Text.rich] + [WidgetSpan] 内联图标。
+  final Widget? descriptionWidget;
+
   const GuideStep({
     required this.key,
     required this.title,
     required this.description,
+    this.descriptionWidget,
   });
 }
 
@@ -267,6 +272,7 @@ class _GuideTooltipScheme {
 abstract class _GuideTooltipStyle {
   static const tooltipRadius = BorderRadius.all(Radius.circular(14));
   static const tooltipPadding = EdgeInsets.fromLTRB(18, 16, 18, 14);
+  static const titlePadding = EdgeInsets.only(bottom: 8);
   static const targetPadding = EdgeInsets.all(4);
   static const targetRadius = BorderRadius.all(Radius.circular(16));
   static const actionRadius = BorderRadius.all(Radius.circular(8));
@@ -316,6 +322,26 @@ class GuideTarget extends StatelessWidget {
     final isLastStep = _GuideFlowLastStepKeys.of(context).contains(step.key);
     final actionName = isLastStep ? l10n.guideDone : l10n.guideNext;
 
+    // 若提供了 descriptionWidget，走 Showcase.withWidget 自定义 container；
+    // 按钮在 container 内部渲染，点击时调 ShowcaseView.next() 推进流程，
+    // 保持与默认 tooltip 视觉一致。
+    if (step.descriptionWidget != null) {
+      return Showcase.withWidget(
+        key: step.key,
+        targetPadding: _GuideTooltipStyle.targetPadding,
+        targetBorderRadius: _GuideTooltipStyle.targetRadius,
+        overlayColor: scheme.barrier,
+        overlayOpacity: scheme.barrierOpacity,
+        container: _RichTooltipContainer(
+          title: step.title,
+          description: step.descriptionWidget!,
+          actionName: actionName,
+          scheme: scheme,
+        ),
+        child: Semantics(label: step.title, child: child),
+      );
+    }
+
     return Showcase(
       key: step.key,
       title: step.title,
@@ -331,6 +357,7 @@ class GuideTarget extends StatelessWidget {
       // 版式
       titleTextStyle: _GuideTooltipStyle.title(scheme.title),
       descTextStyle: _GuideTooltipStyle.description(scheme.description),
+      titlePadding: _GuideTooltipStyle.titlePadding,
       titleAlignment: Alignment.centerLeft,
       descriptionAlignment: Alignment.centerLeft,
       titleTextAlign: TextAlign.left,
@@ -358,6 +385,79 @@ class GuideTarget extends StatelessWidget {
         ),
       ],
       child: Semantics(label: step.title, child: child),
+    );
+  }
+}
+
+/// 富文本 tooltip 容器，用于 [GuideStep.descriptionWidget] 场景。
+///
+/// 完整复刻默认 tooltip 的视觉方案（surface + radius + padding + action button），
+/// 并将 action 按钮内嵌在容器中，点击时调用 [ShowcaseView.next] 推进流程。
+class _RichTooltipContainer extends StatelessWidget {
+  final String title;
+  final Widget description;
+  final String actionName;
+  final _GuideTooltipScheme scheme;
+
+  const _RichTooltipContainer({
+    required this.title,
+    required this.description,
+    required this.actionName,
+    required this.scheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicWidth(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 320),
+        padding: _GuideTooltipStyle.tooltipPadding,
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: _GuideTooltipStyle.tooltipRadius,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.left,
+              style: _GuideTooltipStyle.title(scheme.title),
+            ),
+            const SizedBox(height: 8),
+            DefaultTextStyle(
+              style: _GuideTooltipStyle.description(scheme.description),
+              child: description,
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Material(
+                color: scheme.actionBg,
+                borderRadius: _GuideTooltipStyle.actionRadius,
+                child: InkWell(
+                  borderRadius: _GuideTooltipStyle.actionRadius,
+                  onTap: () {
+                    try {
+                      ShowcaseView.get().next();
+                    } catch (_) {
+                      // 无 ShowcaseView（测试环境）时忽略
+                    }
+                  },
+                  child: Padding(
+                    padding: _GuideTooltipStyle.actionPadding,
+                    child: Text(
+                      actionName,
+                      style: _GuideTooltipStyle.action(scheme.actionText),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -4619,19 +4619,19 @@ abstract class AppLocalizations {
   /// No description provided for @guideStudyTasksOverviewDescription.
   ///
   /// In en, this message translates to:
-  /// **'This area shows reviews that are due and new audio to learn. Finish them in order and Echo Loop will schedule the next reviews for you.'**
+  /// **'This area includes new audio to learn, due reviews, completed tasks, and more. Echo Loop will pace your learning for you.'**
   String get guideStudyTasksOverviewDescription;
 
   /// No description provided for @guideStudyStatsHeaderTitle.
   ///
   /// In en, this message translates to:
-  /// **'Today\'s study time'**
+  /// **'Today at a glance'**
   String get guideStudyStatsHeaderTitle;
 
   /// No description provided for @guideStudyStatsHeaderDescription.
   ///
   /// In en, this message translates to:
-  /// **'Today\'s listening, speaking time, and new vocabulary all live here. Tap the card for a detailed breakdown.'**
+  /// **'Your listening time, speaking practice time, and new vocabulary for today are all summarized here. Tap a card or bar for a more detailed breakdown.'**
   String get guideStudyStatsHeaderDescription;
 
   /// No description provided for @guideStudyStreakTitle.
@@ -4643,7 +4643,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideStudyStreakDescription.
   ///
   /// In en, this message translates to:
-  /// **'Tap here to open the activity calendar and keep your streak going every day.'**
+  /// **'Tap here to open your activity calendar. Check in every day and build a steady learning habit.'**
   String get guideStudyStreakDescription;
 
   /// No description provided for @guideFavoritesSentencesListTitle.
@@ -4655,19 +4655,19 @@ abstract class AppLocalizations {
   /// No description provided for @guideFavoritesSentencesListDescription.
   ///
   /// In en, this message translates to:
-  /// **'Your saved sentences are grouped by audio. Expand a card to play the original or practice just that audio\'s sentences.'**
-  String get guideFavoritesSentencesListDescription;
+  /// **'Your saved sentences, grouped by source audio. Tap {dumbbellIcon} to review every saved sentence from that audio at once.'**
+  String guideFavoritesSentencesListDescription(String dumbbellIcon);
 
   /// No description provided for @guideFavoritesSentencesReviewTitle.
   ///
   /// In en, this message translates to:
-  /// **'Start sentence review'**
+  /// **'Review saved sentences'**
   String get guideFavoritesSentencesReviewTitle;
 
   /// No description provided for @guideFavoritesSentencesReviewDescription.
   ///
   /// In en, this message translates to:
-  /// **'Tap here to enter shadowing practice and polish your pronunciation on saved sentences.'**
+  /// **'Tap here to review every saved sentence at once. Echo Loop will order them for you.'**
   String get guideFavoritesSentencesReviewDescription;
 
   /// No description provided for @guideFavoritesVocabularyListTitle.
@@ -4679,19 +4679,19 @@ abstract class AppLocalizations {
   /// No description provided for @guideFavoritesVocabularyListDescription.
   ///
   /// In en, this message translates to:
-  /// **'Saved words and phrases are sorted by date. Expand a card to see definitions or listen to the source sentence.'**
+  /// **'Your saved words and phrases. Expand a card to see definitions and hear how they sound in the original sentences.'**
   String get guideFavoritesVocabularyListDescription;
 
   /// No description provided for @guideFavoritesFlashcardTitle.
   ///
   /// In en, this message translates to:
-  /// **'Start flashcard review'**
+  /// **'Review saved vocabulary'**
   String get guideFavoritesFlashcardTitle;
 
   /// No description provided for @guideFavoritesFlashcardDescription.
   ///
   /// In en, this message translates to:
-  /// **'Tap here to enter flashcard mode and reinforce memory through a see-listen-recall rhythm.'**
+  /// **'Tap here to enter flashcard mode and review every saved word. Seeing the word and hearing it in context makes memory stick.'**
   String get guideFavoritesFlashcardDescription;
 
   /// No description provided for @resetNewUserGuide.

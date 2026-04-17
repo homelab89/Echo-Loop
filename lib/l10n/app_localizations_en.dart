@@ -2589,49 +2589,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guideStudyTasksOverviewDescription =>
-      'This area shows reviews that are due and new audio to learn. Finish them in order and Echo Loop will schedule the next reviews for you.';
+      'This area includes new audio to learn, due reviews, completed tasks, and more. Echo Loop will pace your learning for you.';
 
   @override
-  String get guideStudyStatsHeaderTitle => 'Today\'s study time';
+  String get guideStudyStatsHeaderTitle => 'Today at a glance';
 
   @override
   String get guideStudyStatsHeaderDescription =>
-      'Today\'s listening, speaking time, and new vocabulary all live here. Tap the card for a detailed breakdown.';
+      'Your listening time, speaking practice time, and new vocabulary for today are all summarized here. Tap a card or bar for a more detailed breakdown.';
 
   @override
   String get guideStudyStreakTitle => 'Learning streak';
 
   @override
   String get guideStudyStreakDescription =>
-      'Tap here to open the activity calendar and keep your streak going every day.';
+      'Tap here to open your activity calendar. Check in every day and build a steady learning habit.';
 
   @override
   String get guideFavoritesSentencesListTitle => 'Saved sentences';
 
   @override
-  String get guideFavoritesSentencesListDescription =>
-      'Your saved sentences are grouped by audio. Expand a card to play the original or practice just that audio\'s sentences.';
+  String guideFavoritesSentencesListDescription(String dumbbellIcon) {
+    return 'Your saved sentences, grouped by source audio. Tap $dumbbellIcon to review every saved sentence from that audio at once.';
+  }
 
   @override
-  String get guideFavoritesSentencesReviewTitle => 'Start sentence review';
+  String get guideFavoritesSentencesReviewTitle => 'Review saved sentences';
 
   @override
   String get guideFavoritesSentencesReviewDescription =>
-      'Tap here to enter shadowing practice and polish your pronunciation on saved sentences.';
+      'Tap here to review every saved sentence at once. Echo Loop will order them for you.';
 
   @override
   String get guideFavoritesVocabularyListTitle => 'Saved vocabulary';
 
   @override
   String get guideFavoritesVocabularyListDescription =>
-      'Saved words and phrases are sorted by date. Expand a card to see definitions or listen to the source sentence.';
+      'Your saved words and phrases. Expand a card to see definitions and hear how they sound in the original sentences.';
 
   @override
-  String get guideFavoritesFlashcardTitle => 'Start flashcard review';
+  String get guideFavoritesFlashcardTitle => 'Review saved vocabulary';
 
   @override
   String get guideFavoritesFlashcardDescription =>
-      'Tap here to enter flashcard mode and reinforce memory through a see-listen-recall rhythm.';
+      'Tap here to enter flashcard mode and review every saved word. Seeing the word and hearing it in context makes memory stick.';
 
   @override
   String get resetNewUserGuide => 'Reset New User Guide';
