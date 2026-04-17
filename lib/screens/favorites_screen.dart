@@ -214,14 +214,40 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 // ============================================================
 
 /// 句子视图 — 按音频分组展示收藏的书签句子
-class _SentencesView extends ConsumerWidget {
+class _SentencesView extends ConsumerStatefulWidget {
   /// 新手引导高亮目标：只包第一个音频分组卡片
   final GuideStep? firstItemStep;
 
   const _SentencesView({this.firstItemStep});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SentencesView> createState() => _SentencesViewState();
+}
+
+class _SentencesViewState extends ConsumerState<_SentencesView> {
+  /// 首个分组卡片的展开控制器：引导激活时自动展开
+  final ExpansibleController _firstGroupController =
+      ExpansibleController();
+
+  @override
+  void initState() {
+    super.initState();
+    // 引导 flow 激活时主动展开第一条，让用户更直观看到内部内容
+    ref.listenManual<GuideControllerState>(guideControllerProvider, (
+      prev,
+      next,
+    ) {
+      if (next.activeFlowId != GuideFlowIds.favoritesSentencesReview) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_firstGroupController.isExpanded) return;
+        _firstGroupController.expand();
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final bookmarksAsync = ref.watch(bookmarkListProvider);
 
     return bookmarksAsync.when(
@@ -250,14 +276,16 @@ class _SentencesView extends ConsumerWidget {
             final audioId = grouped.keys.elementAt(index);
             final items = grouped[audioId]!;
             final audioName = items.first.audioName;
+            final isFirst = index == 0;
 
             final tile = _AudioBookmarkGroup(
               audioId: audioId,
               audioName: audioName,
               bookmarks: items,
+              expansionController: isFirst ? _firstGroupController : null,
             );
-            if (index == 0 && firstItemStep != null) {
-              return GuideTarget(step: firstItemStep!, child: tile);
+            if (isFirst && widget.firstItemStep != null) {
+              return GuideTarget(step: widget.firstItemStep!, child: tile);
             }
             return tile;
           },
@@ -451,10 +479,14 @@ class _AudioBookmarkGroup extends ConsumerWidget {
   final String audioName;
   final List<BookmarkWithAudio> bookmarks;
 
+  /// 展开控制器（可选）：用于新手引导时由外部主动展开
+  final ExpansibleController? expansionController;
+
   const _AudioBookmarkGroup({
     required this.audioId,
     required this.audioName,
     required this.bookmarks,
+    this.expansionController,
   });
 
   @override
@@ -466,6 +498,7 @@ class _AudioBookmarkGroup extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.s),
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
+        controller: expansionController,
         initiallyExpanded: false,
         iconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
         collapsedIconColor: theme.colorScheme.onSurfaceVariant.withValues(
@@ -717,6 +750,26 @@ class _WordsViewState extends ConsumerState<_WordsView> {
   /// 上次触发查询的单词列表，用于去重
   List<String> _lastWordKeys = [];
 
+  /// 首个词汇卡片的展开控制器：引导激活时自动展开
+  final ExpansibleController _firstItemController =
+      ExpansibleController();
+
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual<GuideControllerState>(guideControllerProvider, (
+      prev,
+      next,
+    ) {
+      if (next.activeFlowId != GuideFlowIds.favoritesVocabularyReview) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_firstItemController.isExpanded) return;
+        _firstItemController.expand();
+      });
+    });
+  }
+
   /// 当单词列表变化时，批量查询字典释义
   void _loadDictEntries(List<SavedWord> words) {
     final wordStrings = words.map((w) => w.word).toList();
@@ -776,18 +829,22 @@ class _WordsViewState extends ConsumerState<_WordsView> {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
+        final isFirst = index == 0;
+        final controller = isFirst ? _firstItemController : null;
         final tile = switch (item) {
           _VocabularyWord(word: final w) => _SavedWordTile(
             key: ValueKey('w_${w.id}'),
             savedWord: w,
             dictEntry: _dictMap[w.word],
+            expansionController: controller,
           ),
           _VocabularyPhrase(phrase: final p) => _SavedPhraseTile(
             key: ValueKey('p_${p.id}'),
             savedPhrase: p,
+            expansionController: controller,
           ),
         };
-        if (index == 0 && widget.firstItemStep != null) {
+        if (isFirst && widget.firstItemStep != null) {
           return GuideTarget(step: widget.firstItemStep!, child: tile);
         }
         return tile;
@@ -819,7 +876,14 @@ class _VocabularyPhrase extends _VocabularyItem {
 class _SavedPhraseTile extends ConsumerStatefulWidget {
   final SavedSenseGroup savedPhrase;
 
-  const _SavedPhraseTile({super.key, required this.savedPhrase});
+  /// 展开控制器（可选）：用于新手引导时由外部主动展开
+  final ExpansibleController? expansionController;
+
+  const _SavedPhraseTile({
+    super.key,
+    required this.savedPhrase,
+    this.expansionController,
+  });
 
   @override
   ConsumerState<_SavedPhraseTile> createState() => _SavedPhraseTileState();
@@ -933,6 +997,7 @@ class _SavedPhraseTileState extends ConsumerState<_SavedPhraseTile> {
       child: Card(
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: ExpansionTile(
+          controller: widget.expansionController,
           iconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           collapsedIconColor: theme.colorScheme.onSurfaceVariant.withValues(
             alpha: 0.4,
@@ -1052,7 +1117,15 @@ class _SavedWordTile extends ConsumerStatefulWidget {
   /// 由父组件批量预加载的字典条目，避免每个 tile 独立异步查询
   final DictEntry? dictEntry;
 
-  const _SavedWordTile({super.key, required this.savedWord, this.dictEntry});
+  /// 展开控制器（可选）：用于新手引导时由外部主动展开
+  final ExpansibleController? expansionController;
+
+  const _SavedWordTile({
+    super.key,
+    required this.savedWord,
+    this.dictEntry,
+    this.expansionController,
+  });
 
   @override
   ConsumerState<_SavedWordTile> createState() => _SavedWordTileState();
@@ -1221,6 +1294,7 @@ class _SavedWordTileState extends ConsumerState<_SavedWordTile> {
       child: Card(
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: ExpansionTile(
+          controller: widget.expansionController,
           iconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           collapsedIconColor: theme.colorScheme.onSurfaceVariant.withValues(
             alpha: 0.4,
