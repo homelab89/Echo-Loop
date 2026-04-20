@@ -112,6 +112,12 @@ class TestSpeechPracticePlatform implements SpeechPracticeBackend {
   Future<void> warmup({String locale = 'en-US'}) async {}
 
   @override
+  Future<int> getDeviceRamBytes() async => 0;
+
+  @override
+  Future<void> setRecognitionEnabled(bool enabled) async {}
+
+  @override
   Future<void> shutdown() async {}
 
   @override
@@ -445,7 +451,10 @@ class TestListeningPractice extends ListeningPractice {
   ListeningPracticeState build() => const ListeningPracticeState();
 
   @override
-  Future<void> loadAudio(AudioItem audioItem) async {
+  Future<void> loadAudio(
+    AudioItem audioItem, {
+    bool forceTranscriptReload = false,
+  }) async {
     // 保留 currentAudioItem，不做真实 I/O
     state = state.copyWith(currentAudioItem: audioItem);
   }
@@ -636,7 +645,6 @@ class TestLearningProgressNotifier extends LearningProgressNotifier {
     state = state.copyWith(progressMap: newMap);
   }
 
-  @override
   Future<void> saveDifficultCount(String audioItemId, int count) async {
     final progress = state.progressMap[audioItemId];
     if (progress == null) return;

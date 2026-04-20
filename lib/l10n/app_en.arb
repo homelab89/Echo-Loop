@@ -1448,6 +1448,11 @@
       "name": {"type": "String"}
     }
   },
+  "updateOfficialSubtitle": "Update Subtitle",
+  "updateOfficialSubtitleConfirm": "Update subtitle?",
+  "updateOfficialSubtitleWarning": "Updating the subtitle will replace the local subtitle and clear all bookmarked sentences and learning progress for this audio.",
+  "officialSubtitleUpdated": "Subtitle updated",
+  "officialSubtitleUpdateFailed": "Subtitle update failed, please retry",
   "downloadInProgressSnackbar": "Downloading {name}, please wait",
   "@downloadInProgressSnackbar": {
     "placeholders": {

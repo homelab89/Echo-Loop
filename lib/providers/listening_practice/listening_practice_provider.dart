@@ -155,11 +155,15 @@ class ListeningPractice extends _$ListeningPractice {
   }
 
   // --- 加载音频（业务编排）---
-  Future<void> loadAudio(AudioItem audioItem) async {
+  Future<void> loadAudio(
+    AudioItem audioItem, {
+    bool forceTranscriptReload = false,
+  }) async {
     state = state.copyWith(autoScrollEnabled: true);
 
     // 同一音频且字幕未变化时跳过
-    if (state.currentAudioItem?.id == audioItem.id &&
+    if (!forceTranscriptReload &&
+        state.currentAudioItem?.id == audioItem.id &&
         state.currentAudioItem?.transcriptPath == audioItem.transcriptPath) {
       // 如果当前正在加载，等待加载完成（而不是直接跳过）
       if (_loadingCompleter != null && !_loadingCompleter!.isCompleted) {

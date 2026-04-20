@@ -2,6 +2,8 @@
 //
 // 统一的音频列表项，同时用于资源库全局列表和合集详情页。
 // 通过 collectionId 参数区分两种上下文，自动调整菜单、路由和显示逻辑。
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,7 +15,6 @@ import '../models/tag.dart';
 import '../providers/audio_library_provider.dart';
 import '../providers/collection_provider.dart';
 import '../providers/learning_progress_provider.dart';
-import '../providers/listening_practice/listening_practice_provider.dart';
 import '../providers/tag_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/review/review_briefing_sheet.dart';
@@ -21,6 +22,7 @@ import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../features/official_collections/download/download_progress.dart';
 import '../features/official_collections/download/official_download_notifier.dart';
+import '../features/official_collections/data/official_collection_api.dart';
 import '../features/official_collections/widgets/prepare_learning_dialog.dart';
 import 'guide_flow.dart';
 import 'learning_progress_icon.dart';
@@ -97,15 +99,6 @@ class AudioListTile extends ConsumerWidget {
       ),
     );
 
-    // 合集上下文：监听当前播放状态以显示"正在播放"标记
-    final isCurrentlyPlaying = _isCollectionContext
-        ? ref.watch(
-            listeningPracticeProvider.select(
-              (s) => s.currentAudioItem?.id == audioItem.id,
-            ),
-          )
-        : false;
-
     // 全局上下文：精确订阅所属合集名称
     final collectionNames = _isCollectionContext
         ? const <String>[]
@@ -124,11 +117,7 @@ class AudioListTile extends ConsumerWidget {
         final isDesktop = constraints.maxWidth >= 600;
         final card = Card(
           margin: EdgeInsets.zero,
-          color: isCurrentlyPlaying
-              ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-              : audioItem.isPinned
-              ? pinnedHighlightColor
-              : null,
+          color: audioItem.isPinned ? pinnedHighlightColor : null,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () => _handleTap(context, ref, l10n),
@@ -464,6 +453,14 @@ class AudioListTile extends ConsumerWidget {
                 l10n.manageSubtitles,
               ),
             ),
+          if (isOfficial)
+            PopupMenuItem(
+              value: 'updateOfficialSubtitle',
+              child: _buildMenuItemRow(
+                const Icon(Icons.sync, size: 20),
+                l10n.updateOfficialSubtitle,
+              ),
+            ),
           if (!isOfficial)
             PopupMenuItem(
               value: 'manage',
@@ -517,6 +514,8 @@ class AudioListTile extends ConsumerWidget {
             _showRenameDialog(context, ref);
           } else if (value == 'manageSubtitles') {
             _showManageSubtitlesSheet(context);
+          } else if (value == 'updateOfficialSubtitle') {
+            unawaited(_handleUpdateOfficialSubtitle(context, ref, l10n));
           } else if (value == 'manage') {
             onManageCollections?.call();
           } else if (value == 'manageTags') {
@@ -600,9 +599,7 @@ class AudioListTile extends ConsumerWidget {
                 ?.displayName ??
             '';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.downloadInProgressSnackbar(activeName)),
-          ),
+          SnackBar(content: Text(l10n.downloadInProgressSnackbar(activeName))),
         );
       case StartResult.alreadyDownloaded:
         // 极端情况：点击间隙被其它路径标记为已下载；按已下载走常规路径
@@ -620,6 +617,67 @@ class AudioListTile extends ConsumerWidget {
       barrierDismissible: true,
       builder: (_) => PrepareLearningDialog(audioItemId: audioItemId),
     );
+  }
+
+  Future<void> _handleUpdateOfficialSubtitle(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          color: Theme.of(ctx).colorScheme.error,
+        ),
+        title: Text(l10n.updateOfficialSubtitleConfirm),
+        content: Text(l10n.updateOfficialSubtitleWarning),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+              foregroundColor: Theme.of(ctx).colorScheme.onError,
+            ),
+            child: Text(l10n.updateOfficialSubtitle),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final result = await ref
+          .read(officialDownloadProvider.notifier)
+          .updateTranscript(audioItemId: audioItem.id);
+      if (!context.mounted) return;
+      switch (result) {
+        case SubtitleUpdateResult.updated:
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.officialSubtitleUpdated)));
+        case SubtitleUpdateResult.notFound:
+        case SubtitleUpdateResult.notOfficial:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.officialSubtitleUpdateFailed)),
+          );
+      }
+    } on AudioTranscriptUnavailable {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.noTranscript)));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.officialSubtitleUpdateFailed)),
+      );
+    }
   }
 
   /// 用户自建音频：相对时间（如「8 分钟前」）。
@@ -708,9 +766,9 @@ class AudioListTile extends ConsumerWidget {
       final audioPath = await audioItem.getFullAudioPath();
       if (audioPath == null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.audioFileNotFound)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.audioFileNotFound)));
         }
         return;
       }

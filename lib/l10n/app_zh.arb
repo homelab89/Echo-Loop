@@ -1082,6 +1082,11 @@
       "name": {"type": "String"}
     }
   },
+  "updateOfficialSubtitle": "更新字幕",
+  "updateOfficialSubtitleConfirm": "确定更新字幕？",
+  "updateOfficialSubtitleWarning": "更新字幕将替换本地字幕，并清空该音频的所有收藏句子和学习进度。",
+  "officialSubtitleUpdated": "字幕已更新",
+  "officialSubtitleUpdateFailed": "字幕更新失败，请重试",
   "downloadInProgressSnackbar": "正在下载《{name}》，完成后再开始这条",
   "@downloadInProgressSnackbar": {
     "placeholders": {

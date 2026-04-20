@@ -2747,6 +2747,23 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get updateOfficialSubtitle => 'Update Subtitle';
+
+  @override
+  String get updateOfficialSubtitleConfirm => 'Update subtitle?';
+
+  @override
+  String get updateOfficialSubtitleWarning =>
+      'Updating the subtitle will replace the local subtitle and clear all bookmarked sentences and learning progress for this audio.';
+
+  @override
+  String get officialSubtitleUpdated => 'Subtitle updated';
+
+  @override
+  String get officialSubtitleUpdateFailed =>
+      'Subtitle update failed, please retry';
+
+  @override
   String downloadInProgressSnackbar(String name) {
     return 'Downloading $name, please wait';
   }

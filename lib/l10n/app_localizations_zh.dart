@@ -2658,6 +2658,21 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get updateOfficialSubtitle => '更新字幕';
+
+  @override
+  String get updateOfficialSubtitleConfirm => '确定更新字幕？';
+
+  @override
+  String get updateOfficialSubtitleWarning => '更新字幕将替换本地字幕，并清空该音频的所有收藏句子和学习进度。';
+
+  @override
+  String get officialSubtitleUpdated => '字幕已更新';
+
+  @override
+  String get officialSubtitleUpdateFailed => '字幕更新失败，请重试';
+
+  @override
   String downloadInProgressSnackbar(String name) {
     return '正在下载《$name》，完成后再开始这条';
   }

@@ -446,7 +446,10 @@ class TestListeningPractice extends ListeningPractice {
   ListeningPracticeState build() => _initialState;
 
   @override
-  Future<void> loadAudio(AudioItem audioItem) async {
+  Future<void> loadAudio(
+    AudioItem audioItem, {
+    bool forceTranscriptReload = false,
+  }) async {
     // 测试中不做任何 I/O
   }
 
@@ -1574,6 +1577,7 @@ class TestRetellRecordingController extends RetellRecordingController {
   Future<void> startRecording({
     required String promptId,
     required String referenceText,
+    Duration? referenceDuration,
   }) async {
     state = state.copyWith(
       phase: RetellRecordingPhase.recording,

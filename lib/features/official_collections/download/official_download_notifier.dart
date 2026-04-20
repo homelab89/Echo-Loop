@@ -12,6 +12,8 @@ import '../../../database/providers.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/word_timestamp.dart';
 import '../../../providers/audio_library_provider.dart';
+import '../../../providers/learning_progress_provider.dart';
+import '../../../providers/listening_practice/listening_practice_provider.dart';
 import '../../../services/app_logger.dart';
 import '../../../utils/app_data_dir.dart';
 import '../data/official_collection_api.dart';
@@ -103,6 +105,127 @@ class OfficialDownload extends _$OfficialDownload {
     return s is DownloadInProgress ? s.audioItemId : null;
   }
 
+  /// 拉取官方音频最新字幕并覆盖本地字幕文件。
+  ///
+  /// 字幕更新会改变句子切分和索引，因此同步清空该音频的收藏句子和学习进度，
+  /// 避免旧的 sentenceIndex / paragraphIndex 指向新版字幕中的错误位置。
+  Future<SubtitleUpdateResult> updateTranscript({
+    required String audioItemId,
+  }) async {
+    AppLogger.log('OfficialSubtitle', 'update start audioItemId=$audioItemId');
+    final database = ref.read(appDatabaseProvider);
+    final audioItem = await database.audioItemDao.getById(audioItemId);
+    if (audioItem == null) {
+      AppLogger.log('OfficialSubtitle', 'update skipped: local audio missing');
+      return SubtitleUpdateResult.notFound;
+    }
+
+    final remoteAudioId = audioItem.remoteAudioId;
+    if (remoteAudioId == null || remoteAudioId.isEmpty) {
+      AppLogger.log('OfficialSubtitle', 'update skipped: not official audio');
+      return SubtitleUpdateResult.notOfficial;
+    }
+
+    final content = await ref
+        .read(officialCollectionApiProvider)
+        .getAudioContent(remoteAudioId);
+    AppLogger.log(
+      'OfficialSubtitle',
+      'content fetched remoteAudioId=$remoteAudioId '
+          'srtBytes=${content.srt.length} words=${content.wordTimestamps.length}',
+    );
+
+    final docDir = await getAppDataDirectory();
+    final relativeTranscriptPath =
+        (audioItem.transcriptPath != null &&
+            audioItem.transcriptPath!.isNotEmpty)
+        ? audioItem.transcriptPath!
+        : 'transcripts/official_${audioItem.id}.srt';
+    final transcriptFile = File(p.join(docDir.path, relativeTranscriptPath));
+    await transcriptFile.parent.create(recursive: true);
+    await transcriptFile.writeAsString(content.srt);
+    AppLogger.log(
+      'OfficialSubtitle',
+      'srt written path=$relativeTranscriptPath bytes=${content.srt.length}',
+    );
+
+    final wordsJson = encodeWordTimestamps(content.wordTimestamps);
+    await (database.update(
+      database.audioItems,
+    )..where((t) => t.id.equals(audioItem.id))).write(
+      db.AudioItemsCompanion(
+        transcriptPath: Value(relativeTranscriptPath),
+        wordTimestampsJson: Value(wordsJson),
+        transcriptSource: const Value(1),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    AppLogger.log(
+      'OfficialSubtitle',
+      'db updated audioItemId=${audioItem.id} wordsJsonBytes=${wordsJson.length}',
+    );
+
+    await ref.read(bookmarkDaoProvider).removeAllForAudio(audioItem.id);
+    await ref
+        .read(learningProgressNotifierProvider.notifier)
+        .deleteProgress(audioItem.id);
+    AppLogger.log(
+      'OfficialSubtitle',
+      'progress cleared audioItemId=${audioItem.id}',
+    );
+
+    await ref.read(audioLibraryProvider.notifier).loadLibrary();
+    await _reloadCurrentSessionIfNeeded(audioItem.id);
+    return SubtitleUpdateResult.updated;
+  }
+
+  Future<void> _reloadCurrentSessionIfNeeded(String audioItemId) async {
+    try {
+      if (!ref.exists(listeningPracticeProvider)) {
+        AppLogger.log(
+          'OfficialSubtitle',
+          'session reload skipped: listeningPractice not initialized',
+        );
+        return;
+      }
+
+      final current = ref.read(listeningPracticeProvider).currentAudioItem;
+      if (current?.id != audioItemId) {
+        AppLogger.log(
+          'OfficialSubtitle',
+          'session reload skipped: currentAudioItem=${current?.id}',
+        );
+        return;
+      }
+
+      final updated = ref
+          .read(audioLibraryProvider.notifier)
+          .getItemById(audioItemId);
+      if (updated == null) {
+        AppLogger.log(
+          'OfficialSubtitle',
+          'session reload skipped: updated audio missing',
+        );
+        return;
+      }
+
+      await ref
+          .read(listeningPracticeProvider.notifier)
+          .loadAudio(updated, forceTranscriptReload: true);
+      final sentenceCount = ref
+          .read(listeningPracticeProvider)
+          .sentences
+          .length;
+      AppLogger.log(
+        'OfficialSubtitle',
+        'session reloaded audioItemId=$audioItemId sentences=$sentenceCount',
+      );
+    } catch (e, st) {
+      AppLogger.log('OfficialSubtitle', 'session reload failed: $e');
+      AppLogger.log('OfficialSubtitle', st.toString());
+    }
+  }
+
   Future<void> _runDownload(
     int sid,
     db.AudioItem audioItem,
@@ -113,9 +236,7 @@ class OfficialDownload extends _$OfficialDownload {
     final docDir = await getAppDataDirectory();
     final tmpDir = Directory(p.join(docDir.path, 'tmp', 'official_audio'));
     await tmpDir.create(recursive: true);
-    final tmpAudioFile = File(
-      p.join(tmpDir.path, '${audioItem.id}.m4a.part'),
-    );
+    final tmpAudioFile = File(p.join(tmpDir.path, '${audioItem.id}.m4a.part'));
 
     try {
       // 1) 拉 /content（SRT + wordTimestamps + audioUrl）
@@ -168,17 +289,17 @@ class OfficialDownload extends _$OfficialDownload {
       // 4) 写 DB —— audioPath / transcriptPath 是「下载是否就绪」的单一真实来源，
       //    必须在文件落盘之后写入。
       final database = ref.read(appDatabaseProvider);
-      await (database.update(database.audioItems)
-            ..where((t) => t.id.equals(audioItem.id)))
-          .write(
-            db.AudioItemsCompanion(
-              audioPath: Value(relativeAudioPath),
-              transcriptPath: Value(relativeTranscriptPath),
-              wordTimestampsJson: Value(wordsJson),
-              transcriptSource: const Value(1),
-              updatedAt: Value(DateTime.now()),
-            ),
-          );
+      await (database.update(
+        database.audioItems,
+      )..where((t) => t.id.equals(audioItem.id))).write(
+        db.AudioItemsCompanion(
+          audioPath: Value(relativeAudioPath),
+          transcriptPath: Value(relativeTranscriptPath),
+          wordTimestampsJson: Value(wordsJson),
+          transcriptSource: const Value(1),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
       if (sid != _sessionId) return;
 
       // 5) 刷新 audioLibrary state，让学习计划页等 watcher 立即读到新路径
@@ -233,6 +354,8 @@ class OfficialDownload extends _$OfficialDownload {
 }
 
 enum StartResult { started, alreadyDownloaded, busy }
+
+enum SubtitleUpdateResult { updated, notFound, notOfficial }
 
 /// 启动时扫清 `documents/tmp/official_audio/*.m4a.part` 残留文件。
 ///

@@ -135,6 +135,45 @@ void main() {
 
       expect(find.text('Unpin'), findsOneWidget);
     });
+
+    testWidgets('官方音频菜单显示更新字幕，不显示管理字幕', (tester) async {
+      final officialItem = baseItem.copyWith(
+        remoteAudioId: 'remote-audio-1',
+        transcriptPath: null,
+      );
+      await tester.pumpWidget(
+        buildCompactTile(AudioLibraryState(audioItems: [officialItem])),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('audio_list_tile_menu_hit_area')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Update Subtitle'), findsOneWidget);
+      expect(find.text('Manage Subtitles'), findsNothing);
+    });
+
+    testWidgets('点击官方更新字幕先弹出清空进度确认框', (tester) async {
+      final officialItem = baseItem.copyWith(
+        remoteAudioId: 'remote-audio-1',
+        transcriptPath: 'transcripts/official_x.srt',
+      );
+      await tester.pumpWidget(
+        buildCompactTile(AudioLibraryState(audioItems: [officialItem])),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('audio_list_tile_menu_hit_area')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Update Subtitle'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Update subtitle?'), findsOneWidget);
+      expect(
+        find.textContaining('clear all bookmarked sentences'),
+        findsOneWidget,
+      );
+    });
   });
 
   group('AudioListTile 当前播放展示', () {
@@ -174,6 +213,8 @@ void main() {
       await tester.pumpWidget(buildCollectionTile());
       await tester.pumpAndSettle();
 
+      final card = tester.widget<Card>(find.byType(Card).first);
+      expect(card.color, isNull, reason: '当前播放态不应持久保留卡片背景色');
       expect(find.text('Last'), findsNothing);
       expect(find.text('上次'), findsNothing);
       expect(find.byIcon(Icons.push_pin_outlined), findsNothing);

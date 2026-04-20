@@ -4880,6 +4880,36 @@ abstract class AppLocalizations {
   /// **'{name} download failed, please retry'**
   String downloadFailed(String name);
 
+  /// No description provided for @updateOfficialSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Subtitle'**
+  String get updateOfficialSubtitle;
+
+  /// No description provided for @updateOfficialSubtitleConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Update subtitle?'**
+  String get updateOfficialSubtitleConfirm;
+
+  /// No description provided for @updateOfficialSubtitleWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating the subtitle will replace the local subtitle and clear all bookmarked sentences and learning progress for this audio.'**
+  String get updateOfficialSubtitleWarning;
+
+  /// No description provided for @officialSubtitleUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtitle updated'**
+  String get officialSubtitleUpdated;
+
+  /// No description provided for @officialSubtitleUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtitle update failed, please retry'**
+  String get officialSubtitleUpdateFailed;
+
   /// No description provided for @downloadInProgressSnackbar.
   ///
   /// In en, this message translates to:

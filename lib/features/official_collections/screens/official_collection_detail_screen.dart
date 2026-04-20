@@ -90,8 +90,9 @@ class _OfficialCollectionDetailScreenState
         onRefresh: () async {
           final outcome = await _syncCatalog(force: true);
           if (!mounted || outcome is! CatalogFailed) return;
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(l10n.discoverLoadFailed)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.discoverLoadFailed)));
         },
       );
     }
@@ -101,9 +102,9 @@ class _OfficialCollectionDetailScreenState
         final outcome = await _syncCatalog(force: true);
         if (!mounted) return;
         if (outcome is CatalogFailed) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.discoverLoadFailed)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.discoverLoadFailed)));
         }
       },
       child: _buildContent(detail, l10n),
@@ -346,8 +347,8 @@ class _EnrolledAudioList extends ConsumerWidget {
       collectionId: localCollectionId,
       // 官方空合集不应展示通用的「+ 添加音频」按钮（用户不能手动添加官方内容）；
       // 显示中性的「该合集暂无音频」文字即可。
-      emptyState: Center(
-        child: Text(l10n.officialCollectionEmpty),
+      emptyState: _OfficialEmptyAudioList(
+        message: l10n.officialCollectionEmpty,
       ),
     );
   }
@@ -358,18 +359,16 @@ class _UnenrolledAudioList extends StatelessWidget {
   final List<CatalogAudio> audios;
   final void Function(CatalogAudio) onTapAudio;
 
-  const _UnenrolledAudioList({
-    required this.audios,
-    required this.onTapAudio,
-  });
+  const _UnenrolledAudioList({required this.audios, required this.onTapAudio});
 
   @override
   Widget build(BuildContext context) {
     if (audios.isEmpty) {
       final l10n = AppLocalizations.of(context)!;
-      return Center(child: Text(l10n.officialCollectionEmpty));
+      return _OfficialEmptyAudioList(message: l10n.officialCollectionEmpty);
     }
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
       itemCount: audios.length,
       separatorBuilder: (_, __) => const Divider(height: 1),
@@ -384,6 +383,25 @@ class _UnenrolledAudioList extends StatelessWidget {
   }
 }
 
+class _OfficialEmptyAudioList extends StatelessWidget {
+  final String message;
+
+  const _OfficialEmptyAudioList({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.45,
+          child: Center(child: Text(message)),
+        ),
+      ],
+    );
+  }
+}
+
 class _UnenrolledAudioTile extends StatelessWidget {
   final CatalogAudio audio;
   final VoidCallback onTap;
@@ -394,10 +412,7 @@ class _UnenrolledAudioTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListTile(
-      leading: Icon(
-        Icons.graphic_eq,
-        color: theme.colorScheme.outline,
-      ),
+      leading: Icon(Icons.graphic_eq, color: theme.colorScheme.outline),
       title: Text(
         audio.title,
         maxLines: 1,

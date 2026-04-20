@@ -1,11 +1,60 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:fluency/database/app_database.dart';
+import 'package:fluency/features/official_collections/data/official_collection_api.dart';
 import 'package:fluency/features/official_collections/download/download_progress.dart';
 import 'package:fluency/features/official_collections/download/official_download_notifier.dart';
+import 'package:fluency/features/official_collections/models/audio_content_dto.dart';
 import 'package:fluency/database/providers.dart';
+import 'package:fluency/models/audio_item.dart' as model;
+import 'package:fluency/models/word_timestamp.dart';
+import 'package:fluency/providers/listening_practice/listening_practice_provider.dart';
+import 'package:fluency/services/subtitle_parser.dart';
+import 'package:fluency/utils/app_data_dir.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../helpers/mock_providers.dart';
+
+class _FakeOfficialCollectionApi extends OfficialCollectionApi {
+  AudioContent? nextContent;
+  int callCount = 0;
+
+  _FakeOfficialCollectionApi() : super.withDio(Dio());
+
+  @override
+  Future<AudioContent> getAudioContent(
+    String remoteAudioId, {
+    CancelToken? cancelToken,
+  }) async {
+    callCount++;
+    return nextContent ??
+        const AudioContent(
+          audioUrl: 'https://example.com/audio.m4a',
+          srt: '1\n00:00:00,000 --> 00:00:01,000\nhello\n',
+          wordTimestamps: [],
+        );
+  }
+}
+
+class _TrackingListeningPractice extends TestListeningPractice {
+  int loadCallCount = 0;
+  bool? lastForceTranscriptReload;
+
+  _TrackingListeningPractice(super.initialState);
+
+  @override
+  Future<void> loadAudio(
+    model.AudioItem audioItem, {
+    bool forceTranscriptReload = false,
+  }) async {
+    loadCallCount++;
+    lastForceTranscriptReload = forceTranscriptReload;
+  }
+}
 
 /// 只测 start() 的纯逻辑分支（busy / alreadyDownloaded）。
 ///
@@ -13,17 +62,28 @@ import 'package:flutter_test/flutter_test.dart';
 /// 端到端走 integration test + 手动 E2E 验证。
 void main() {
   late AppDatabase db;
+  late Directory tmpDir;
   late ProviderContainer container;
+  late _FakeOfficialCollectionApi fakeApi;
 
   setUp(() async {
+    tmpDir = await Directory.systemTemp.createTemp('official_download_test_');
+    appDataDirectoryOverride = tmpDir;
     db = AppDatabase(NativeDatabase.memory());
     initAppDatabase(db);
-    container = ProviderContainer();
+    fakeApi = _FakeOfficialCollectionApi();
+    container = ProviderContainer(
+      overrides: [officialCollectionApiProvider.overrideWithValue(fakeApi)],
+    );
   });
 
   tearDown(() async {
     container.dispose();
     await db.close();
+    appDataDirectoryOverride = null;
+    if (await tmpDir.exists()) {
+      await tmpDir.delete(recursive: true);
+    }
   });
 
   Future<void> seedAudio(
@@ -66,15 +126,12 @@ void main() {
     expect(result, StartResult.alreadyDownloaded);
   });
 
-  test(
-    'audioItemId 在 DB 不存在 → alreadyDownloaded（防御性，调用端可忽略）',
-    () async {
-      final result = await container
-          .read(officialDownloadProvider.notifier)
-          .start(audioItemId: 'missing', displayName: 'x');
-      expect(result, StartResult.alreadyDownloaded);
-    },
-  );
+  test('audioItemId 在 DB 不存在 → alreadyDownloaded（防御性，调用端可忽略）', () async {
+    final result = await container
+        .read(officialDownloadProvider.notifier)
+        .start(audioItemId: 'missing', displayName: 'x');
+    expect(result, StartResult.alreadyDownloaded);
+  });
 
   test('并发约束：已有任务在跑 → busy', () async {
     await seedAudio('a1', remoteAudioId: 'r1');
@@ -122,5 +179,93 @@ void main() {
       progress: 0,
     );
     expect(notifier.activeAudioItemId, 'a1');
+  });
+
+  test('updateTranscript 覆盖句子/词级字幕，并清空收藏句子和学习进度', () async {
+    await seedAudio('a1', remoteAudioId: 'r1', downloaded: true);
+    final transcriptFile = File('${tmpDir.path}/transcripts/official_x.srt');
+    await transcriptFile.parent.create(recursive: true);
+    await transcriptFile.writeAsString('old subtitle');
+    await db.bookmarkDao.addBookmark(
+      BookmarksCompanion.insert(
+        audioItemId: 'a1',
+        sentenceIndex: 0,
+        sentenceText: 'old subtitle',
+        startTime: 0,
+        endTime: 1,
+        createdAt: DateTime(2026, 4, 20),
+        updatedAt: DateTime(2026, 4, 20),
+      ),
+    );
+    await db.learningProgressDao.upsert(
+      LearningProgressesCompanion(
+        audioItemId: const Value('a1'),
+        totalStudyDurationMs: const Value(12345),
+        updatedAt: Value(DateTime(2026, 4, 20)),
+      ),
+    );
+    fakeApi.nextContent = const AudioContent(
+      audioUrl: 'https://example.com/new-audio.m4a',
+      srt: '1\n00:00:00,000 --> 00:00:01,000\nnew subtitle\n',
+      wordTimestamps: [
+        WordTimestamp(
+          word: 'new',
+          startTime: Duration.zero,
+          endTime: Duration(milliseconds: 500),
+          confidence: 0.9,
+        ),
+      ],
+    );
+
+    final result = await container
+        .read(officialDownloadProvider.notifier)
+        .updateTranscript(audioItemId: 'a1');
+
+    expect(result, SubtitleUpdateResult.updated);
+    expect(fakeApi.callCount, 1);
+    expect(await transcriptFile.readAsString(), contains('new subtitle'));
+    final sentences = await SubtitleParser.parseSubtitle(transcriptFile.path);
+    expect(sentences, hasLength(1));
+    expect(sentences.single.text, 'new subtitle');
+
+    final row = await db.audioItemDao.getById('a1');
+    expect(row?.transcriptPath, 'transcripts/official_x.srt');
+    expect(row?.wordTimestampsJson, contains('"word":"new"'));
+
+    final progress = await db.learningProgressDao.getByAudioId('a1');
+    expect(progress, isNull);
+    expect(await db.bookmarkDao.getByAudioId('a1'), isEmpty);
+  });
+
+  test('updateTranscript 更新当前音频时强制重载学习会话', () async {
+    container.dispose();
+    final tracking = _TrackingListeningPractice(
+      ListeningPracticeState(
+        currentAudioItem: model.AudioItem(
+          id: 'a1',
+          name: 'Track',
+          audioPath: 'audios/official/sha.m4a',
+          transcriptPath: 'transcripts/official_x.srt',
+          addedDate: DateTime(2026, 4, 19),
+          remoteAudioId: 'r1',
+        ),
+      ),
+    );
+    container = ProviderContainer(
+      overrides: [
+        officialCollectionApiProvider.overrideWithValue(fakeApi),
+        listeningPracticeProvider.overrideWith(() => tracking),
+      ],
+    );
+    await seedAudio('a1', remoteAudioId: 'r1', downloaded: true);
+    container.read(listeningPracticeProvider);
+
+    final result = await container
+        .read(officialDownloadProvider.notifier)
+        .updateTranscript(audioItemId: 'a1');
+
+    expect(result, SubtitleUpdateResult.updated);
+    expect(tracking.loadCallCount, 1);
+    expect(tracking.lastForceTranscriptReload, isTrue);
   });
 }
