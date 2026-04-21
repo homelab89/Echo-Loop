@@ -4,6 +4,7 @@
 // 勾选/取消即时生效，支持底部"创建新合集"入口。
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/collection.dart';
 import '../providers/collection_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
@@ -23,7 +24,10 @@ class EditCollectionMembershipSheet extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final collectionState = ref.watch(collectionListProvider);
-    final collections = collectionState.collections;
+    // 只显示用户自建合集，官方精选合集不允许用户添加音频
+    final collections = collectionState.collections
+        .where((c) => c.source == CollectionSource.local)
+        .toList();
     final audioCollectionIds =
         collectionState.audioToCollectionsMap[audioId] ?? [];
 
