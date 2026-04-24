@@ -2,6 +2,9 @@
 ///
 /// 根据本地音频的静音区间微调句子边界。
 /// 当原生解码不可用或任意阶段失败时，只记录日志并回退到原始字幕。
+///
+/// 算法对齐 fluency-frontend 的 auto-align-subtitle.ts（commit 24c8c21），
+/// 实现两级校准 + 三重后置保护，宗旨是「校准不能让情况变得更差」。
 library;
 
 import 'dart:math' as math;
@@ -23,9 +26,19 @@ class SilenceInterval {
 
 /// 静音检测配置。
 class SilenceDetectionConfig {
+  /// 动态阈值上限（单位 dB）。
+  ///
+  /// 实际阈值 = `min(noiseFloor + 10dB, thresholdDb)`，
+  /// 其中 `noiseFloor` 是当前候选区间帧级 dBFS 分布下半的中位数。
   final double thresholdDb;
+
+  /// 分帧窗口长度（毫秒）。
   final int analysisWindowMs;
+
+  /// 识别为静音的最小持续时间（毫秒），小于此值的静音段会被合并进语音。
   final int minSilenceMs;
+
+  /// 语音内部允许被填平的噪声突发长度（毫秒）。
   final int noiseBurstMs;
 
   const SilenceDetectionConfig({
@@ -38,8 +51,17 @@ class SilenceDetectionConfig {
 
 /// 自动校准配置。
 class AutoAlignConfig extends SilenceDetectionConfig {
+  /// 检测到静音时边界相对静音端点向内留出的 padding（毫秒）。
   final int paddingMs;
-  final int shortSilenceSplitMs;
+
+  /// 第二级兜底时单侧位移上限（毫秒）。
+  final int boundaryNudgeMs;
+
+  /// 第一级静音校准的位移硬帽（毫秒），防止过度偏离原始边界。
+  final int maxBoundaryShiftMs;
+
+  /// 相邻句之间保留的最小间隙（毫秒）。
+  final int minBoundaryGapMs;
 
   const AutoAlignConfig({
     required super.thresholdDb,
@@ -47,7 +69,9 @@ class AutoAlignConfig extends SilenceDetectionConfig {
     required super.minSilenceMs,
     required super.noiseBurstMs,
     required this.paddingMs,
-    required this.shortSilenceSplitMs,
+    required this.boundaryNudgeMs,
+    required this.maxBoundaryShiftMs,
+    required this.minBoundaryGapMs,
   });
 }
 
@@ -82,13 +106,17 @@ abstract class SilenceDetectionStrategy {
 }
 
 /// 自动校准默认配置。
+///
+/// 默认值来自 fluency-frontend DEFAULT_AUTO_ALIGN_CONFIG。
 const defaultAutoAlignConfig = AutoAlignConfig(
-  thresholdDb: -40,
-  analysisWindowMs: 10,
+  thresholdDb: -35,
+  analysisWindowMs: 20,
   minSilenceMs: 25,
   noiseBurstMs: 25,
-  paddingMs: 150,
-  shortSilenceSplitMs: 300,
+  paddingMs: 100,
+  boundaryNudgeMs: 150,
+  maxBoundaryShiftMs: 500,
+  minBoundaryGapMs: 50,
 );
 
 const _epsilon = 1e-6;
@@ -146,6 +174,17 @@ double _toDbfs(double rms) {
     return double.negativeInfinity;
   }
   return 20 * math.log(rms) / math.ln10;
+}
+
+double _median(List<double> sortedValues) {
+  if (sortedValues.isEmpty) {
+    return double.negativeInfinity;
+  }
+  final mid = sortedValues.length ~/ 2;
+  if (sortedValues.length.isOdd) {
+    return sortedValues[mid];
+  }
+  return (sortedValues[mid - 1] + sortedValues[mid]) / 2;
 }
 
 List<_FrameRange> _buildRanges(List<bool> flags) {
@@ -303,14 +342,16 @@ SilenceInterval _expandCandidateInterval(
   );
 }
 
-/// 固定阈值静音检测。
+/// 动态阈值静音检测。
 ///
-/// 直接在解码后的单声道 PCM 上做逐窗 RMS 计算。
+/// 每次调用都会基于当前候选区间内的帧级 dBFS 分布估算噪声底，
+/// 实际判静阈值 = `min(noiseFloor + 10dB, config.thresholdDb)`，
+/// 其中 `config.thresholdDb` 是绝对上限。
 class FixedThresholdSilenceStrategy implements SilenceDetectionStrategy {
   const FixedThresholdSilenceStrategy();
 
-  @override
-  List<SilenceInterval> detectSilenceIntervals(
+  /// 逐帧计算 dBFS 值（不做判静），供上层决定阈值。
+  List<double> _collectFrameDbfs(
     DecodedAudioData audioData,
     double candidateStart,
     double candidateEnd,
@@ -327,7 +368,7 @@ class FixedThresholdSilenceStrategy implements SilenceDetectionStrategy {
     );
     final sampleRate = audioData.sampleRate;
     final samples = audioData.samples;
-    final silentFrames = List<bool>.filled(totalFrames, false);
+    final frameDbfs = List<double>.filled(totalFrames, double.negativeInfinity);
 
     for (var frame = 0; frame < totalFrames; frame++) {
       final frameStartTime = candidateStart + frame * frameSec;
@@ -351,8 +392,46 @@ class FixedThresholdSilenceStrategy implements SilenceDetectionStrategy {
 
       final count = math.max(1, endSample - startSample);
       final rms = math.sqrt(sumSquares / count);
-      silentFrames[frame] = _toDbfs(rms) <= config.thresholdDb;
+      frameDbfs[frame] = _toDbfs(rms);
     }
+
+    return frameDbfs;
+  }
+
+  /// 基于帧级 dBFS 分布的下半中位数估算噪声底，并以 capDb 兜底。
+  double _computeDynamicThresholdDb(List<double> frameDbfs, double capDb) {
+    if (frameDbfs.isEmpty) {
+      return capDb;
+    }
+
+    final sorted = [...frameDbfs]..sort();
+    final lowestHalfCount = math.max(1, (sorted.length / 2).ceil());
+    final noiseFloor = _median(sorted.sublist(0, lowestHalfCount));
+    return math.min(noiseFloor + 10, capDb);
+  }
+
+  @override
+  List<SilenceInterval> detectSilenceIntervals(
+    DecodedAudioData audioData,
+    double candidateStart,
+    double candidateEnd,
+    SilenceDetectionConfig config,
+  ) {
+    if (candidateEnd - candidateStart <= _epsilon) {
+      return const [];
+    }
+
+    final frameSec = _frameDurationSec(config);
+    final frameDbfs = _collectFrameDbfs(
+      audioData,
+      candidateStart,
+      candidateEnd,
+      config,
+    );
+    final thresholdDb = _computeDynamicThresholdDb(frameDbfs, config.thresholdDb);
+    final silentFrames = [
+      for (final db in frameDbfs) db <= thresholdDb,
+    ];
 
     final normalized = _normalizeFlags(silentFrames, config);
     return _toSilenceIntervals(
@@ -378,36 +457,212 @@ class FixedThresholdSilenceStrategy implements SilenceDetectionStrategy {
   }
 }
 
-double _resolveBoundary(
-  double originalValue,
-  SilenceInterval candidate,
-  SilenceInterval? silence,
+// ---- 第一级：静音 + padding + 位移帽 ---------------------------------------
+
+/// 把静音区间换算为带 padding 的边界时间。
+double _toPaddedBoundary(
+  SilenceInterval silence,
   bool isStartEdge,
   AutoAlignConfig config,
-  bool splitShortCandidate,
 ) {
-  final candidateDurationMs = (candidate.endTime - candidate.startTime) * 1000;
-  if (splitShortCandidate &&
-      candidateDurationMs + _epsilon < config.shortSilenceSplitMs) {
-    return _midpoint(candidate.startTime, candidate.endTime);
-  }
-
-  if (silence == null) {
-    return originalValue;
-  }
-
-  final silenceDurationMs = (silence.endTime - silence.startTime) * 1000;
-  if (silenceDurationMs + _epsilon < config.shortSilenceSplitMs) {
-    return _midpoint(silence.startTime, silence.endTime);
-  }
-
   final paddingSec = config.paddingMs / 1000;
   return isStartEdge
       ? silence.endTime - paddingSec
       : silence.startTime + paddingSec;
 }
 
-List<SentenceBoundaryUpdate> _computeAutoAlignedSentenceBoundaries({
+/// 用 `maxBoundaryShiftMs` 钳制建议位移，防止第一级偏离原始边界过大。
+double _truncateBoundaryShift(
+  double proposedValue,
+  double originalValue,
+  AutoAlignConfig config,
+) {
+  final maxShiftSec = config.maxBoundaryShiftMs / 1000;
+  final delta = proposedValue - originalValue;
+  if (delta.abs() <= maxShiftSec + _epsilon) {
+    return proposedValue;
+  }
+  return originalValue + (delta.isNegative ? -maxShiftSec : maxShiftSec);
+}
+
+bool _hasMeaningfulShift(double next, double original) {
+  return (next - original).abs() > _epsilon;
+}
+
+bool _hasEnoughGap(
+  double endTime,
+  double startTime,
+  AutoAlignConfig config,
+) {
+  return startTime - endTime + _epsilon >= config.minBoundaryGapMs / 1000;
+}
+
+// ---- 第二级：150ms 对称兜底 ------------------------------------------------
+
+class _GapFallback {
+  final double endTime;
+  final double startTime;
+
+  const _GapFallback({required this.endTime, required this.startTime});
+}
+
+/// 无静音或第一级不完全生效时，以原始边界为起点在 slack 内对称微调。
+///
+/// 宗旨：至多把 end 向后移 / start 向前移 `boundaryNudgeMs`，
+/// 且分配后的间隙不得小于 `minBoundaryGapMs`。如果原端点已落在静音内，
+/// 则该侧保持原值（避免把边界推出静音）。
+_GapFallback? _applyGapFallbackAdjustment(
+  double currentEndTime,
+  double nextStartTime,
+  List<SilenceInterval> silenceRanges,
+  AutoAlignConfig config,
+) {
+  final minGapSec = config.minBoundaryGapMs / 1000;
+  final maxNudgeSec = config.boundaryNudgeMs / 1000;
+  final gap = nextStartTime - currentEndTime;
+  if (gap + _epsilon < minGapSec) {
+    return null;
+  }
+
+  final canMoveEnd =
+      _findContainingSilence(silenceRanges, currentEndTime) == null;
+  final canMoveStart =
+      _findContainingSilence(silenceRanges, nextStartTime) == null;
+  if (!canMoveEnd && !canMoveStart) {
+    return null;
+  }
+
+  var remainingSlack = math.max(0.0, gap - minGapSec);
+  var endShift = 0.0;
+  var startShift = 0.0;
+
+  if (canMoveEnd && canMoveStart) {
+    final sharedShift = math.min(maxNudgeSec, remainingSlack / 2);
+    endShift = sharedShift;
+    startShift = sharedShift;
+    remainingSlack -= sharedShift * 2;
+
+    final endExtra = math.min(maxNudgeSec - endShift, remainingSlack);
+    endShift += endExtra;
+    remainingSlack -= endExtra;
+
+    final startExtra = math.min(maxNudgeSec - startShift, remainingSlack);
+    startShift += startExtra;
+  } else if (canMoveEnd) {
+    endShift = math.min(maxNudgeSec, remainingSlack);
+  } else if (canMoveStart) {
+    startShift = math.min(maxNudgeSec, remainingSlack);
+  }
+
+  final endTime = currentEndTime + endShift;
+  final startTime = nextStartTime - startShift;
+  if (startTime - endTime + _epsilon < minGapSec) {
+    return _GapFallback(
+      endTime: currentEndTime,
+      startTime: nextStartTime,
+    );
+  }
+
+  return _GapFallback(endTime: endTime, startTime: startTime);
+}
+
+// ---- 合法性门禁与原值回退 ---------------------------------------------------
+
+double _safeTime(double? value, double fallback, double duration) {
+  if (value == null || !value.isFinite) {
+    return _clampDouble(fallback, 0, duration);
+  }
+  return _clampDouble(value, 0, duration);
+}
+
+SentenceBoundaryUpdate _safeOriginalBoundary(
+  TranscriptSentence sentence,
+  List<WordTimestamp> words,
+  double duration,
+  int sentenceIndex,
+) {
+  final startWordIndex = sentence.startWordIndex;
+  final endWordIndex = sentence.endWordIndex;
+  final firstWord = (startWordIndex != null &&
+          startWordIndex >= 0 &&
+          startWordIndex < words.length)
+      ? words[startWordIndex]
+      : null;
+  final lastWord = (endWordIndex != null &&
+          endWordIndex >= 0 &&
+          endWordIndex < words.length)
+      ? words[endWordIndex]
+      : null;
+  final wordStart = firstWord == null
+      ? null
+      : _clampDouble(firstWord.startTime.inMilliseconds / 1000, 0, duration);
+  final wordEnd = lastWord == null
+      ? null
+      : _clampDouble(lastWord.endTime.inMilliseconds / 1000, 0, duration);
+
+  var startTime = _safeTime(
+    sentence.startTime.inMilliseconds / 1000,
+    wordStart ?? 0,
+    duration,
+  );
+  var endTime = _safeTime(
+    sentence.endTime.inMilliseconds / 1000,
+    wordEnd ?? startTime,
+    duration,
+  );
+
+  if (startTime > endTime + _epsilon) {
+    if (wordStart != null &&
+        wordEnd != null &&
+        wordStart <= wordEnd + _epsilon) {
+      startTime = wordStart;
+      endTime = wordEnd;
+    } else {
+      endTime = startTime;
+    }
+  }
+
+  return SentenceBoundaryUpdate(
+    sentenceIndex: sentenceIndex,
+    startTime: startTime,
+    endTime: endTime,
+  );
+}
+
+bool _hasValidBoundaryWords(
+  TranscriptSentence sentence,
+  List<WordTimestamp> words,
+) {
+  final startWordIndex = sentence.startWordIndex;
+  final endWordIndex = sentence.endWordIndex;
+  if (startWordIndex == null ||
+      endWordIndex == null ||
+      startWordIndex < 0 ||
+      endWordIndex < startWordIndex ||
+      endWordIndex >= words.length) {
+    return false;
+  }
+  final firstWord = words[startWordIndex];
+  final lastWord = words[endWordIndex];
+  // 对齐 TS 的 isFiniteNumber 四字段检查：Duration 天然有限，实际检查非负。
+  return firstWord.startTime.inMilliseconds >= 0 &&
+      firstWord.endTime.inMilliseconds >= 0 &&
+      lastWord.startTime.inMilliseconds >= 0 &&
+      lastWord.endTime.inMilliseconds >= 0;
+}
+
+SentenceBoundaryUpdate _restoreOriginal(SentenceBoundaryUpdate original) {
+  return SentenceBoundaryUpdate(
+    sentenceIndex: original.sentenceIndex,
+    startTime: original.startTime,
+    endTime: original.endTime,
+  );
+}
+
+// ---- 主算法 ----------------------------------------------------------------
+
+/// 计算句子边界的校准更新（纯函数，便于测试直接注入 Mock Strategy）。
+List<SentenceBoundaryUpdate> computeAutoAlignedSentenceBoundaries({
   required List<TranscriptSentence> sentences,
   required List<WordTimestamp> words,
   required DecodedAudioData audioData,
@@ -419,69 +674,84 @@ List<SentenceBoundaryUpdate> _computeAutoAlignedSentenceBoundaries({
   }
 
   final duration = audioData.samples.length / audioData.sampleRate;
-  final allSilenceRanges = strategy.detectSilenceIntervals(
-    audioData,
-    0,
-    duration,
-    config,
-  );
-  AppLogger.log(
-    _logTag,
-    'detect silence done: duration=${_fmtSec(duration)}s, intervals=${allSilenceRanges.length}',
-  );
-  final nextBoundaries = <SentenceBoundaryUpdate>[
-    for (var i = 0; i < sentences.length; i++)
-      SentenceBoundaryUpdate(
-        sentenceIndex: i,
-        startTime: sentences[i].startTime.inMilliseconds / 1000,
-        endTime: sentences[i].endTime.inMilliseconds / 1000,
-      ),
-  ];
   final originals = <SentenceBoundaryUpdate>[
     for (var i = 0; i < sentences.length; i++)
-      SentenceBoundaryUpdate(
-        sentenceIndex: i,
-        startTime: sentences[i].startTime.inMilliseconds / 1000,
-        endTime: sentences[i].endTime.inMilliseconds / 1000,
-      ),
+      _safeOriginalBoundary(sentences[i], words, duration, i),
+  ];
+  final nextBoundaries = <SentenceBoundaryUpdate>[
+    for (final original in originals) _restoreOriginal(original),
   ];
 
-  final first = sentences.first;
-  final firstCandidate = _expandCandidateInterval(
-    allSilenceRanges,
-    0,
-    _clampDouble(first.startTime.inMilliseconds / 1000, 0, duration),
-  );
-  final startSilence = strategy.detectLongestSilence(
-    audioData,
-    firstCandidate.startTime,
-    firstCandidate.endTime,
-    config,
-  );
   AppLogger.log(
     _logTag,
-    'sentence start candidate: sentence=0 range=${_describeSilence(firstCandidate)} chosen=${_describeSilence(startSilence)}',
-  );
-  nextBoundaries[0] = SentenceBoundaryUpdate(
-    sentenceIndex: 0,
-    startTime: _resolveBoundary(
-      first.startTime.inMilliseconds / 1000,
-      firstCandidate,
-      startSilence,
-      true,
-      config,
-      false,
-    ),
-    endTime: nextBoundaries[0].endTime,
+    'auto-align begin: sentences=${sentences.length} duration=${_fmtSec(duration)}s',
   );
 
+  // ① 首句起点
+  {
+    final first = sentences[0];
+    final firstPairSilenceRanges = strategy.detectSilenceIntervals(
+      audioData,
+      0,
+      originals[0].startTime,
+      config,
+    );
+    final firstCandidate = _expandCandidateInterval(
+      firstPairSilenceRanges,
+      0,
+      originals[0].startTime,
+    );
+    if (_hasValidBoundaryWords(first, words)) {
+      final startSilence = strategy.detectLongestSilence(
+        audioData,
+        firstCandidate.startTime,
+        firstCandidate.endTime,
+        config,
+      );
+      AppLogger.log(
+        _logTag,
+        'first-start candidate=${_describeSilence(firstCandidate)} chosen=${_describeSilence(startSilence)}',
+      );
+      if (startSilence != null) {
+        final proposed = _toPaddedBoundary(startSilence, true, config);
+        final nextStart = _truncateBoundaryShift(
+          proposed,
+          originals[0].startTime,
+          config,
+        );
+        nextBoundaries[0] = SentenceBoundaryUpdate(
+          sentenceIndex: 0,
+          startTime: nextStart,
+          endTime: nextBoundaries[0].endTime,
+        );
+      }
+    }
+  }
+
+  // ② 相邻句对
   for (var i = 0; i < sentences.length - 1; i++) {
-    final current = sentences[i];
-    final next = sentences[i + 1];
+    if (!_hasValidBoundaryWords(sentences[i], words) ||
+        !_hasValidBoundaryWords(sentences[i + 1], words)) {
+      AppLogger.log(
+        _logTag,
+        'pair-skip-invalid left=$i right=${i + 1}',
+      );
+      continue;
+    }
+
+    final originalEndTime = originals[i].endTime;
+    final originalStartTime = originals[i + 1].startTime;
+
+    final pairSilenceRanges = strategy.detectSilenceIntervals(
+      audioData,
+      originalEndTime,
+      originalStartTime,
+      config,
+    );
     final candidate = _expandCandidateInterval(
-      allSilenceRanges,
-      _clampDouble(current.endTime.inMilliseconds / 1000, 0, duration),
-      _clampDouble(next.startTime.inMilliseconds / 1000, 0, duration),
+      pairSilenceRanges,
+      originalEndTime,
+      originalStartTime,
     );
     final silence = strategy.detectLongestSilence(
       audioData,
@@ -489,74 +759,159 @@ List<SentenceBoundaryUpdate> _computeAutoAlignedSentenceBoundaries({
       candidate.endTime,
       config,
     );
+
+    var appliedSilenceEnd = false;
+    var appliedSilenceStart = false;
+
+    if (silence != null) {
+      final nextEndTime = _truncateBoundaryShift(
+        _toPaddedBoundary(silence, false, config),
+        originalEndTime,
+        config,
+      );
+      final nextStartTime = _truncateBoundaryShift(
+        _toPaddedBoundary(silence, true, config),
+        originalStartTime,
+        config,
+      );
+      nextBoundaries[i] = SentenceBoundaryUpdate(
+        sentenceIndex: i,
+        startTime: nextBoundaries[i].startTime,
+        endTime: nextEndTime,
+      );
+      nextBoundaries[i + 1] = SentenceBoundaryUpdate(
+        sentenceIndex: i + 1,
+        startTime: nextStartTime,
+        endTime: nextBoundaries[i + 1].endTime,
+      );
+      appliedSilenceEnd = _hasMeaningfulShift(nextEndTime, originalEndTime);
+      appliedSilenceStart = _hasMeaningfulShift(nextStartTime, originalStartTime);
+
+      AppLogger.log(
+        _logTag,
+        'pair-silence left=$i right=${i + 1}'
+        ' candidate=${_describeSilence(candidate)}'
+        ' silence=${_describeSilence(silence)}'
+        ' nextEnd=${_fmtSec(nextEndTime)} nextStart=${_fmtSec(nextStartTime)}'
+        ' appliedEnd=$appliedSilenceEnd appliedStart=$appliedSilenceStart',
+      );
+
+      if (appliedSilenceEnd &&
+          appliedSilenceStart &&
+          _hasEnoughGap(nextEndTime, nextStartTime, config)) {
+        continue;
+      }
+
+      if (!_hasEnoughGap(nextEndTime, nextStartTime, config)) {
+        nextBoundaries[i] = SentenceBoundaryUpdate(
+          sentenceIndex: i,
+          startTime: nextBoundaries[i].startTime,
+          endTime: originalEndTime,
+        );
+        nextBoundaries[i + 1] = SentenceBoundaryUpdate(
+          sentenceIndex: i + 1,
+          startTime: originalStartTime,
+          endTime: nextBoundaries[i + 1].endTime,
+        );
+        appliedSilenceEnd = false;
+        appliedSilenceStart = false;
+        AppLogger.log(
+          _logTag,
+          'pair-silence-gap-rejected left=$i right=${i + 1}'
+          ' minGapMs=${config.minBoundaryGapMs}',
+        );
+      }
+    }
+
+    final fallback = _applyGapFallbackAdjustment(
+      originalEndTime,
+      originalStartTime,
+      pairSilenceRanges,
+      config,
+    );
+    if (fallback == null) {
+      AppLogger.log(
+        _logTag,
+        'pair-no-fallback left=$i right=${i + 1}'
+        ' silence=${_describeSilence(silence)}',
+      );
+      continue;
+    }
+
+    if (!appliedSilenceEnd) {
+      nextBoundaries[i] = SentenceBoundaryUpdate(
+        sentenceIndex: i,
+        startTime: nextBoundaries[i].startTime,
+        endTime: fallback.endTime,
+      );
+    }
+    if (!appliedSilenceStart) {
+      nextBoundaries[i + 1] = SentenceBoundaryUpdate(
+        sentenceIndex: i + 1,
+        startTime: fallback.startTime,
+        endTime: nextBoundaries[i + 1].endTime,
+      );
+    }
+
     AppLogger.log(
       _logTag,
-      'sentence boundary candidate: left=$i right=${i + 1} range=${_describeSilence(candidate)} chosen=${_describeSilence(silence)}',
-    );
-    nextBoundaries[i] = SentenceBoundaryUpdate(
-      sentenceIndex: i,
-      startTime: nextBoundaries[i].startTime,
-      endTime: _resolveBoundary(
-        current.endTime.inMilliseconds / 1000,
-        candidate,
-        silence,
-        false,
-        config,
-        true,
-      ),
-    );
-    nextBoundaries[i + 1] = SentenceBoundaryUpdate(
-      sentenceIndex: i + 1,
-      startTime: _resolveBoundary(
-        next.startTime.inMilliseconds / 1000,
-        candidate,
-        silence,
-        true,
-        config,
-        true,
-      ),
-      endTime: nextBoundaries[i + 1].endTime,
+      'pair-fallback left=$i right=${i + 1}'
+      ' fallbackEnd=${_fmtSec(fallback.endTime)} fallbackStart=${_fmtSec(fallback.startTime)}'
+      ' finalEnd=${_fmtSec(nextBoundaries[i].endTime)}'
+      ' finalStart=${_fmtSec(nextBoundaries[i + 1].startTime)}',
     );
   }
 
-  final lastIndex = sentences.length - 1;
-  final last = sentences[lastIndex];
-  final lastCandidate = _expandCandidateInterval(
-    allSilenceRanges,
-    _clampDouble(last.endTime.inMilliseconds / 1000, 0, duration),
-    duration,
-  );
-  final endSilence = strategy.detectLongestSilence(
-    audioData,
-    lastCandidate.startTime,
-    lastCandidate.endTime,
-    config,
-  );
-  AppLogger.log(
-    _logTag,
-    'sentence end candidate: sentence=$lastIndex range=${_describeSilence(lastCandidate)} chosen=${_describeSilence(endSilence)}',
-  );
-  nextBoundaries[lastIndex] = SentenceBoundaryUpdate(
-    sentenceIndex: lastIndex,
-    startTime: nextBoundaries[lastIndex].startTime,
-    endTime: _resolveBoundary(
-      last.endTime.inMilliseconds / 1000,
-      lastCandidate,
-      endSilence,
-      false,
+  // ③ 末句终点
+  {
+    final lastIndex = sentences.length - 1;
+    final last = sentences[lastIndex];
+    final lastPairSilenceRanges = strategy.detectSilenceIntervals(
+      audioData,
+      originals[lastIndex].endTime,
+      duration,
       config,
-      false,
-    ),
-  );
+    );
+    final lastCandidate = _expandCandidateInterval(
+      lastPairSilenceRanges,
+      originals[lastIndex].endTime,
+      duration,
+    );
+    if (_hasValidBoundaryWords(last, words)) {
+      final endSilence = strategy.detectLongestSilence(
+        audioData,
+        lastCandidate.startTime,
+        lastCandidate.endTime,
+        config,
+      );
+      AppLogger.log(
+        _logTag,
+        'last-end candidate=${_describeSilence(lastCandidate)} chosen=${_describeSilence(endSilence)}',
+      );
+      if (endSilence != null) {
+        final proposed = _toPaddedBoundary(endSilence, false, config);
+        final nextEnd = _truncateBoundaryShift(
+          proposed,
+          originals[lastIndex].endTime,
+          config,
+        );
+        nextBoundaries[lastIndex] = SentenceBoundaryUpdate(
+          sentenceIndex: lastIndex,
+          startTime: nextBoundaries[lastIndex].startTime,
+          endTime: nextEnd,
+        );
+      }
+    }
+  }
 
+  // ④ 后置 R1: 时长合法性
   for (var i = 0; i < nextBoundaries.length; i++) {
     final boundary = nextBoundaries[i];
-    final original = originals[i];
     var startTime = _clampDouble(boundary.startTime, 0, duration);
     var endTime = _clampDouble(boundary.endTime, 0, duration);
     if (startTime > endTime + _epsilon) {
-      startTime = original.startTime;
-      endTime = original.endTime;
+      startTime = originals[i].startTime;
+      endTime = originals[i].endTime;
     }
     nextBoundaries[i] = SentenceBoundaryUpdate(
       sentenceIndex: boundary.sentenceIndex,
@@ -565,41 +920,16 @@ List<SentenceBoundaryUpdate> _computeAutoAlignedSentenceBoundaries({
     );
   }
 
-  for (var i = 0; i < nextBoundaries.length - 1; i++) {
-    final current = nextBoundaries[i];
-    final next = nextBoundaries[i + 1];
-    if (current.endTime <= next.startTime + _epsilon) {
-      continue;
-    }
-    nextBoundaries[i] = SentenceBoundaryUpdate(
-      sentenceIndex: current.sentenceIndex,
-      startTime: current.startTime,
-      endTime: originals[i].endTime,
-    );
-    nextBoundaries[i + 1] = SentenceBoundaryUpdate(
-      sentenceIndex: next.sentenceIndex,
-      startTime: originals[i + 1].startTime,
-      endTime: next.endTime,
-    );
-  }
-
+  // ⑤ 后置 R2: 词边界保护
   for (var i = 0; i < nextBoundaries.length; i++) {
     final boundary = nextBoundaries[i];
-    final original = originals[i];
-    if (boundary.startTime > boundary.endTime + _epsilon) {
-      nextBoundaries[i] = original;
-    }
-  }
-
-  // 保守保证边界词仍然存在非负时长，避免把句边界推到词内部之外。
-  for (var i = 0; i < nextBoundaries.length; i++) {
-    final boundary = nextBoundaries[i];
-    final sentence = sentences[boundary.sentenceIndex];
+    final sentence = sentences[i];
     final startWordIndex = sentence.startWordIndex;
     final endWordIndex = sentence.endWordIndex;
     if (startWordIndex == null ||
         endWordIndex == null ||
         startWordIndex < 0 ||
+        endWordIndex < startWordIndex ||
         endWordIndex >= words.length) {
       continue;
     }
@@ -607,22 +937,43 @@ List<SentenceBoundaryUpdate> _computeAutoAlignedSentenceBoundaries({
     final lastWord = words[endWordIndex];
     var startTime = boundary.startTime;
     var endTime = boundary.endTime;
-    final original = originals[i];
     if (startTime > firstWord.endTime.inMilliseconds / 1000 + _epsilon) {
-      startTime = original.startTime;
+      startTime = originals[i].startTime;
     }
     if (endTime + _epsilon < lastWord.startTime.inMilliseconds / 1000) {
-      endTime = original.endTime;
+      endTime = originals[i].endTime;
     }
     if (startTime > endTime + _epsilon) {
-      startTime = original.startTime;
-      endTime = original.endTime;
+      startTime = originals[i].startTime;
+      endTime = originals[i].endTime;
     }
     nextBoundaries[i] = SentenceBoundaryUpdate(
       sentenceIndex: boundary.sentenceIndex,
       startTime: startTime,
       endTime: endTime,
     );
+  }
+
+  // ⑥ 后置 R3: 最小间隙终检（重叠 / 间隙不足 → 两侧都回原值）
+  final minBoundaryGapSec = config.minBoundaryGapMs / 1000;
+  for (var i = 0; i < nextBoundaries.length - 1; i++) {
+    final current = nextBoundaries[i];
+    final next = nextBoundaries[i + 1];
+    if (next.startTime - current.endTime + _epsilon >= minBoundaryGapSec) {
+      continue;
+    }
+    nextBoundaries[i] = _restoreOriginal(originals[i]);
+    nextBoundaries[i + 1] = _restoreOriginal(originals[i + 1]);
+  }
+
+  // NaN / Infinity / start>end 最终扫描
+  for (var i = 0; i < nextBoundaries.length; i++) {
+    final boundary = nextBoundaries[i];
+    if (!boundary.startTime.isFinite ||
+        !boundary.endTime.isFinite ||
+        boundary.startTime > boundary.endTime + _epsilon) {
+      nextBoundaries[i] = _restoreOriginal(originals[i]);
+    }
   }
 
   return nextBoundaries;
@@ -739,7 +1090,7 @@ class SubtitleAutoAlignService {
       'decode success: sampleRate=${decoded.sampleRate} samples=${decoded.samples.length} duration=${_fmtSec(durationSec)}s',
     );
 
-    final updates = _computeAutoAlignedSentenceBoundaries(
+    final updates = computeAutoAlignedSentenceBoundaries(
       sentences: sentences,
       words: words,
       audioData: decoded,

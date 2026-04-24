@@ -7,7 +7,7 @@ part of 'official_enrollment_provider.dart';
 // **************************************************************************
 
 String _$officialEnrollmentHash() =>
-    r'cc0d266f79ba439adead2a8cacae434b85a48fc8';
+    r'c25170bcd82455edf2ea2789002e8cb4c3ae7d6f';
 
 /// 加入/移除官方合集的业务入口。
 ///

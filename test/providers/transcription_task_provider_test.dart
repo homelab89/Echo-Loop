@@ -12,6 +12,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:fluency/models/audio_item.dart';
 import 'package:fluency/models/word_timestamp.dart';
 import 'package:fluency/providers/audio_library_provider.dart';
+import 'package:fluency/providers/settings_provider.dart';
 import 'package:fluency/providers/transcription_task_provider.dart';
 import 'package:fluency/services/subtitle_auto_align_service.dart';
 import 'package:fluency/services/transcription_api_client.dart';
@@ -30,6 +31,19 @@ class MockSubtitleAutoAlignService extends Mock
     implements SubtitleAutoAlignService {}
 
 class FakeAudioItem extends Fake implements AudioItem {}
+
+/// 测试用 AppSettings：返回默认开启的 subtitleAutoAlignEnabled，不触达 SharedPreferences。
+class _FakeAppSettings extends AppSettings {
+  @override
+  AppSettingsState build() => const AppSettingsState();
+}
+
+/// 测试用：关闭自动校准开关。
+class _DisabledAutoAlignAppSettings extends AppSettings {
+  @override
+  AppSettingsState build() =>
+      const AppSettingsState(subtitleAutoAlignEnabled: false);
+}
 
 // ─── 测试辅助 ──────────────────────────────────────────────
 
@@ -65,6 +79,8 @@ ProviderContainer _createContainer({
     transcriptionApiClientProvider.overrideWithValue(mockApi),
     transcriptionFileOpsProvider.overrideWithValue(mockFileOps),
     audioLibraryProvider.overrideWith(TestAudioLibrary.new),
+    // 避免测试触达 SharedPreferences（需要 Flutter binding）。
+    appSettingsProvider.overrideWith(() => _FakeAppSettings()),
     analyticsOverride(),
   ];
   if (mockAutoAlignService != null) {
@@ -504,6 +520,102 @@ void main() {
           words: any(named: 'words'),
         ),
       ).called(1);
+
+      container.dispose();
+    });
+
+    test('开发者选项关闭自动校准时，不调用 SubtitleAutoAlignService', () async {
+      final audioItem = _testAudioItem(audioSha256: 'abc123');
+
+      when(() => mockFileOps.getFileSize(any())).thenAnswer((_) async => 1024);
+      when(
+        () => mockFileOps.saveSrt(any(), any()),
+      ).thenAnswer((_) async => 'transcripts/test_ai.srt');
+      when(() => mockFileOps.getStats(any())).thenAnswer((_) async => (1, 2));
+
+      when(
+        () => mockApi.getUploadUrl(
+          sha256: any(named: 'sha256'),
+          mimeType: any(named: 'mimeType'),
+          fileSize: any(named: 'fileSize'),
+        ),
+      ).thenAnswer(
+        (_) async => const UploadUrlResponse(
+          audioExists: true,
+          objectName: 'user-audio/abc123.mp3',
+          publicUrl: 'https://example.com/abc123.mp3',
+        ),
+      );
+      when(
+        () => mockApi.submitTranscription(
+          sha256: any(named: 'sha256'),
+          fileName: any(named: 'fileName'),
+          objectName: any(named: 'objectName'),
+          publicUrl: any(named: 'publicUrl'),
+          mimeType: any(named: 'mimeType'),
+          fileSize: any(named: 'fileSize'),
+          language: any(named: 'language'),
+        ),
+      ).thenAnswer(
+        (_) async => SubmitTranscriptionResponse(
+          cached: true,
+          transcript: TranscriptResult(
+            sentences: [
+              TranscriptSentence(
+                text: 'Hello world',
+                startTime: const Duration(milliseconds: 200),
+                endTime: const Duration(milliseconds: 800),
+                startWordIndex: 0,
+                endWordIndex: 1,
+              ),
+            ],
+            words: const [
+              WordTimestamp(
+                word: 'Hello',
+                startTime: Duration(milliseconds: 250),
+                endTime: Duration(milliseconds: 500),
+                confidence: 0.9,
+              ),
+              WordTimestamp(
+                word: 'world',
+                startTime: Duration(milliseconds: 520),
+                endTime: Duration(milliseconds: 760),
+                confidence: 0.9,
+              ),
+            ],
+            fullText: 'Hello world',
+          ),
+        ),
+      );
+
+      // 覆盖 appSettings 让 subtitleAutoAlignEnabled=false。
+      final container = ProviderContainer(
+        overrides: [
+          transcriptionApiClientProvider.overrideWithValue(mockApi),
+          transcriptionFileOpsProvider.overrideWithValue(mockFileOps),
+          audioLibraryProvider.overrideWith(TestAudioLibrary.new),
+          subtitleAutoAlignServiceProvider
+              .overrideWithValue(mockAutoAlignService),
+          appSettingsProvider
+              .overrideWith(() => _DisabledAutoAlignAppSettings()),
+          analyticsOverride(),
+        ],
+      );
+      (container.read(audioLibraryProvider.notifier) as TestAudioLibrary)
+          .setItems([audioItem]);
+
+      final notifier =
+          container.read(transcriptionTaskManagerProvider.notifier);
+
+      await notifier.startTranscription(audioItem, 'en');
+
+      verifyNever(
+        () => mockAutoAlignService.alignIfPossible(
+          audioPath: any(named: 'audioPath'),
+          sentences: any(named: 'sentences'),
+          words: any(named: 'words'),
+        ),
+      );
 
       container.dispose();
     });

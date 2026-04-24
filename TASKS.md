@@ -69,6 +69,11 @@
 
 **完成时间**: 2026-04-23
 
+- [x] 同步 fluency-frontend 最新算法（commit 24c8c21）：动态阈值 `min(noiseFloor+10, -35)`、逐对静音检测、`maxBoundaryShiftMs=500` 位移帽、`minBoundaryGapMs=50` 最小间隙、`boundaryNudgeMs=150` 对称兜底、`applyGapFallbackAdjustment` 二级算法、整对回退以及词边界保护三重后置清理；删除 `shortSilenceSplitMs` 中点启发式
+- [x] 更新测试：既有用例改为对齐新两级算法的期望值，新增 gap 不足时兜底 return null 用例
+
+  **完成时间**: 2026-04-24
+
 ---
 
 ## 已完成：页面级新用户引导（showcaseview）

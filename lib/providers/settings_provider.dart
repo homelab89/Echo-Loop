@@ -12,6 +12,7 @@ const _nativeLanguageKey = 'native_language';
 const _timeMachineDateTimeKey = 'developer_time_machine_at_ms';
 const _legacyUnlockAllReviewsKey = 'unlock_all_reviews';
 const _demoModeKey = 'demo_mode';
+const _subtitleAutoAlignEnabledKey = 'developer_subtitle_auto_align_enabled';
 
 /// 支持的母语列表（BCP 47 代码 → 本地名称）
 ///
@@ -72,6 +73,12 @@ class AppSettingsState {
   /// 演示模式切换中的加载状态。
   final bool isDemoModeLoading;
 
+  /// 开发者选项：字幕自动校准开关。
+  ///
+  /// 默认开启。关闭后 AI 转录完成不再调用 `SubtitleAutoAlignService`，
+  /// 直接使用后端返回的句边界。仅开发者选项可见，不暴露给普通用户。
+  final bool subtitleAutoAlignEnabled;
+
   const AppSettingsState({
     this.themeMode = ThemeMode.system,
     this.locale,
@@ -79,6 +86,7 @@ class AppSettingsState {
     this.timeMachineDateTime,
     this.isDemoMode = false,
     this.isDemoModeLoading = false,
+    this.subtitleAutoAlignEnabled = true,
   });
 
   AppSettingsState copyWith({
@@ -90,6 +98,7 @@ class AppSettingsState {
     bool clearTimeMachineDateTime = false,
     bool? isDemoMode,
     bool? isDemoModeLoading,
+    bool? subtitleAutoAlignEnabled,
   }) {
     return AppSettingsState(
       themeMode: themeMode ?? this.themeMode,
@@ -100,6 +109,8 @@ class AppSettingsState {
           : timeMachineDateTime ?? this.timeMachineDateTime,
       isDemoMode: isDemoMode ?? this.isDemoMode,
       isDemoModeLoading: isDemoModeLoading ?? this.isDemoModeLoading,
+      subtitleAutoAlignEnabled:
+          subtitleAutoAlignEnabled ?? this.subtitleAutoAlignEnabled,
     );
   }
 }
@@ -135,6 +146,8 @@ class AppSettings extends _$AppSettings {
 
     final timeMachineDateTime = await _loadTimeMachineDateTime(prefs);
     final isDemoMode = prefs.getBool(_demoModeKey) ?? false;
+    final subtitleAutoAlignEnabled =
+        prefs.getBool(_subtitleAutoAlignEnabledKey) ?? true;
 
     state = state.copyWith(
       themeMode: themeMode,
@@ -142,6 +155,7 @@ class AppSettings extends _$AppSettings {
       nativeLanguage: nativeLanguage,
       timeMachineDateTime: timeMachineDateTime,
       isDemoMode: isDemoMode,
+      subtitleAutoAlignEnabled: subtitleAutoAlignEnabled,
     );
   }
 
@@ -248,5 +262,13 @@ class AppSettings extends _$AppSettings {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_demoModeKey, enabled);
+  }
+
+  /// 设置字幕自动校准开关（开发者选项，默认开启）。
+  Future<void> setSubtitleAutoAlignEnabled(bool enabled) async {
+    state = state.copyWith(subtitleAutoAlignEnabled: enabled);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_subtitleAutoAlignEnabledKey, enabled);
   }
 }

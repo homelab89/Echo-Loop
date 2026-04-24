@@ -527,6 +527,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
         ),
         ListTile(
+          leading: _emojiIcon('🎯'),
+          title: const Text('字幕自动校准'),
+          subtitle: const Text('AI 转录完成后按本地音频静音微调句边界'),
+          trailing: Switch(
+            value: settings.subtitleAutoAlignEnabled,
+            onChanged: (value) =>
+                ref.read(appSettingsProvider.notifier).setSubtitleAutoAlignEnabled(value),
+          ),
+        ),
+        ListTile(
           leading: _emojiIcon('📤'),
           title: Text(l10n.exportData),
           trailing: const Icon(Icons.chevron_right),
