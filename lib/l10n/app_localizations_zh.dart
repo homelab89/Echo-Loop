@@ -2746,7 +2746,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingFinishedHint => '我们会按你的目标和节奏来安排练习。';
 
   @override
-  String get onboardingSummaryHeadline => '你知道么？学好英语，关键不在学得更多，而在练得更透';
+  String get onboardingSummaryEyebrow => '你知道么？';
+
+  @override
+  String get onboardingSummaryHeadline => '学好英语，\n关键不在学得更多，\n而在练得更透';
 
   @override
   String get onboardingSummaryPoint1 => '选择适合你水平的真实音频反复训练';

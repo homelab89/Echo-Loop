@@ -5048,10 +5048,16 @@ abstract class AppLocalizations {
   /// **'We\'ll tailor practice to your goals and pace.'**
   String get onboardingFinishedHint;
 
+  /// No description provided for @onboardingSummaryEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Did you know?'**
+  String get onboardingSummaryEyebrow;
+
   /// No description provided for @onboardingSummaryHeadline.
   ///
   /// In en, this message translates to:
-  /// **'Did you know? Mastering English isn\'t about learning more — it\'s about practicing deeper.'**
+  /// **'Mastering English\nisn\'t about learning more,\nit\'s about practicing deeper.'**
   String get onboardingSummaryHeadline;
 
   /// No description provided for @onboardingSummaryPoint1.

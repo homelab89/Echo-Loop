@@ -191,49 +191,9 @@ class _OnboardingSurveyScreenState
                     total: totalSteps,
                   ),
                   Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return SingleChildScrollView(
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: const EdgeInsets.only(bottom: 24),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: constraints.maxHeight,
-                            ),
-                            child: Center(
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 480,
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    28,
-                                    16,
-                                    28,
-                                    24,
-                                  ),
-                                  child: AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 220),
-                                    switchInCurve: Curves.easeOut,
-                                    switchOutCurve: Curves.easeIn,
-                                    transitionBuilder: (child, animation) =>
-                                        FadeTransition(
-                                          opacity: animation,
-                                          child: child,
-                                        ),
-                                    child: KeyedSubtree(
-                                      key: ValueKey(_step),
-                                      child: _buildStepBody(l10n, answers),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    child: _step == _SurveyStep.summary
+                        ? _buildSummaryLayout(l10n)
+                        : _buildQuestionLayout(l10n, answers),
                   ),
                 ],
               ),
@@ -271,7 +231,48 @@ class _OnboardingSurveyScreenState
     }
   }
 
-  Widget _buildStepBody(AppLocalizations l10n, OnboardingAnswers answers) {
+  /// 题目页布局：可滚动 + 居中 + AnimatedSwitcher 在三个题目步骤之间淡入淡出。
+  Widget _buildQuestionLayout(
+    AppLocalizations l10n,
+    OnboardingAnswers answers,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          keyboardDismissBehavior:
+              ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.only(bottom: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 16, 28, 24),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: KeyedSubtree(
+                      key: ValueKey(_step),
+                      child: _buildQuestionStepBody(l10n, answers),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuestionStepBody(
+    AppLocalizations l10n,
+    OnboardingAnswers answers,
+  ) {
     switch (_step) {
       case _SurveyStep.goal:
         return _buildGoalStep(l10n, answers);
@@ -280,8 +281,94 @@ class _OnboardingSurveyScreenState
       case _SurveyStep.dailyMinutes:
         return _buildDailyMinutesStep(l10n, answers);
       case _SurveyStep.summary:
-        return _buildSummaryStep(l10n);
+        // summary 走 _buildSummaryLayout，不会进入这里
+        return const SizedBox.shrink();
     }
+  }
+
+  /// 方法论介绍页布局：内容区垂直居中（headline + 4 要点），
+  /// "开始学习"按钮固定在底部，处于拇指可达区域。
+  Widget _buildSummaryLayout(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final points = [
+      l10n.onboardingSummaryPoint1,
+      l10n.onboardingSummaryPoint2,
+      l10n.onboardingSummaryPoint3,
+      l10n.onboardingSummaryPoint4,
+    ];
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 60),
+          child: Column(
+            children: [
+              // 内容区：headline + 要点，整体在上半部分垂直居中
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 24),
+                      Text(
+                        l10n.onboardingSummaryEyebrow,
+                        style: textTheme.titleSmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        l10n.onboardingSummaryHeadline,
+                        style: textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          height: 1.5,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      for (var i = 0; i < points.length; i++)
+                        Padding(
+                          padding: EdgeInsets.only(
+                            bottom: i == points.length - 1 ? 0 : 18,
+                          ),
+                          child: _SummaryPoint(
+                            text: points[i],
+                            color: colorScheme.primary,
+                            textColor: colorScheme.onSurface,
+                            textStyle: textTheme.bodyLarge,
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ),
+              // 底部按钮区
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: FilledButton(
+                  onPressed: _submitting ? null : _finish,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    textStyle: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: Text(l10n.onboardingStart),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildGoalStep(AppLocalizations l10n, OnboardingAnswers answers) {
@@ -417,66 +504,49 @@ class _OnboardingSurveyScreenState
     );
   }
 
-  /// 答完所有题后的方法论介绍页：headline + 4 个要点 + 开始学习按钮。
-  /// 用户点"开始学习"才触发 [_finish]，写 SP 并导航到主界面。
-  Widget _buildSummaryStep(AppLocalizations l10n) {
-    final points = [
-      l10n.onboardingSummaryPoint1,
-      l10n.onboardingSummaryPoint2,
-      l10n.onboardingSummaryPoint3,
-      l10n.onboardingSummaryPoint4,
-    ];
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+}
+
+/// summary 页的单条要点行：带圆形 check 图标，留有充足留白。
+class _SummaryPoint extends StatelessWidget {
+  const _SummaryPoint({
+    required this.text,
+    required this.color,
+    required this.textColor,
+    required this.textStyle,
+  });
+
+  final String text;
+  final Color color;
+  final Color textColor;
+  final TextStyle? textStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.onboardingSummaryHeadline,
-          textAlign: TextAlign.center,
-          style: textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-            height: 1.4,
+        Container(
+          width: 28,
+          height: 28,
+          margin: const EdgeInsets.only(top: 2, right: 14),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
           ),
+          child: Icon(Icons.check_rounded, size: 18, color: color),
         ),
-        const SizedBox(height: 28),
-        for (final text in points)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 4, right: 12),
-                  child: Icon(
-                    Icons.check_circle,
-                    size: 20,
-                    color: colorScheme.primary,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    text,
-                    style: textTheme.bodyLarge?.copyWith(
-                      height: 1.5,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              text,
+              style: textStyle?.copyWith(
+                color: textColor,
+                height: 1.55,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        const SizedBox(height: 32),
-        FilledButton(
-          onPressed: _submitting ? null : _finish,
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-          child: Text(l10n.onboardingStart),
         ),
       ],
     );

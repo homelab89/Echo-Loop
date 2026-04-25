@@ -2840,8 +2840,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'We\'ll tailor practice to your goals and pace.';
 
   @override
+  String get onboardingSummaryEyebrow => 'Did you know?';
+
+  @override
   String get onboardingSummaryHeadline =>
-      'Did you know? Mastering English isn\'t about learning more — it\'s about practicing deeper.';
+      'Mastering English\nisn\'t about learning more,\nit\'s about practicing deeper.';
 
   @override
   String get onboardingSummaryPoint1 =>
