@@ -1,5 +1,58 @@
 # Fluency 任务清单
 
+> 最后更新：2026-04-25
+> 当前焦点：首启 Onboarding 问卷
+
+## 已完成：首启 Onboarding 问卷（学习目标 + 每日时长）
+
+跨需求特性：首次安装的新用户必须先回答 2 道画像题（学习目标 / 每日学习时长）才能进入 App，用于冷启动分群和 PostHog/Firebase 留存漏斗分析。本期**只采集不消费**——答案不接入任何业务流，仅写埋点 user property。
+
+### 数据层（`lib/features/onboarding_survey/`）
+- [x] `models/onboarding_question.dart`：Q1/Q2 静态元数据 + 选项编码常量（OnboardingGoal、OnboardingDailyMinutes）
+- [x] `models/onboarding_answers.dart`：不可变答案模型 + isComplete + copyWith + equality
+- [x] `data/onboarding_survey_storage.dart`：SP 读写封装；用 `onboarding_completed_at_ms` 存在性作为完成判定锚点（不引入冗余 bool）；非法答案编码自动识别返回 null
+
+### Provider 层（`lib/features/onboarding_survey/providers/`）
+- [x] `sharedPreferencesProvider`、`onboardingStorageProvider`：基础注入
+- [x] `initialOnboardingCompletedProvider`：main 同步预读注入；`OnboardingCompletedNotifier` 内存状态
+- [x] `OnboardingAnswersNotifier`：草稿累积 + submit（先 await SP，再翻转完成态）
+- [x] `shouldShowSurveyProvider`：三层 gate（isFirstLaunch && !completed && !hasLearningProgress），router redirect 同步使用
+
+### UI（`lib/features/onboarding_survey/screens/` + `widgets/`）
+- [x] `OnboardingSurveyScreen`：PageView + 顶部进度 + PopScope.canPop=false 拦截返回 + 完成 ✓ 动画 + 老用户 initState 异步兜底
+- [x] `SurveyChoiceTile`：大块 InkWell + Card 选项（指尖区域大），选中 primaryContainer 高亮
+- [x] `SurveyProgressBar`：LinearProgressIndicator + 进度文字
+
+### 接入
+- [x] `lib/main.dart`：同步预读 `onboarding_completed_at_ms`，注入 `sharedPreferencesProvider` + `initialOnboardingCompletedProvider` override
+- [x] `lib/router/app_router.dart`：新增 `AppRoutes.onboardingSurvey = '/onboarding/survey'`、对应 GoRoute（rootNavigatorKey 全屏）；扩展 redirect（onboarding 路径自身早返防死循环）
+
+### 埋点
+- [x] `event_names.dart` 新增 3 事件常量（shown / question_answered / completed）+ 2 user property（english_goal / daily_minutes_target）+ 5 个事件参数
+
+### 国际化
+- [x] `app_en.arb` / `app_zh.arb` 新增 19 个 i18n key（标题/副标题/进度/2 题题干/10 个选项/下一题/完成/完成页提示）
+
+### 测试覆盖（28 个新测试 + 集成测试 helper 升级）
+- [x] storage 单元测试 11 个（SP 读写、完成锚点、非法编码兜底、flexible 时长、clear、模型 equals/copyWith）
+- [x] provider 测试 11 个（gate 矩阵：首启/已完成/老用户/进度兜底；submit 写 SP；幂等）
+- [x] widget 测试 6 个（按钮 disabled→enabled、2 题流程、无跳过按钮、PopScope 拦截、进度文字、老用户 initState 兜底）
+- [x] `integration_test/helpers/test_notifiers.dart` 添加 `onboardingTestOverrides()`，所有现有集成测试默认走"老用户"分支不被拦截
+- [x] `test/widget_test.dart` 冒烟测试同步加 onboarding override
+
+### 范围内不做（v1 明确排除）
+- 引入 `introduction_screen` 等第三方库（原生 PageView + Material 3 自绘 ~250 行）
+- 答案上报到后端 / 跨设备同步
+- 答案驱动业务行为（推荐难度 / 训练侧重 / 提醒频次都仍走默认）
+- 跳过按钮（产品立场是必须答完）
+- 任何 v2 问卷通过首启路径迭代——未来补问只能走柔和入口（设置页 / 学习页 banner）
+
+  **完成时间**: 2026-04-25
+
+---
+
+## 历史
+
 > 最后更新：2026-04-19
 > 当前焦点：官方合集功能（MVP）
 

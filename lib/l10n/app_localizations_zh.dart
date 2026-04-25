@@ -2685,4 +2685,60 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get audioListColumnDuration => '时长';
+
+  @override
+  String get onboardingTitle => '先问你 2 个小问题';
+
+  @override
+  String get onboardingSubtitle => '10 秒，帮你找到适合的练法';
+
+  @override
+  String onboardingProgress(int current, int total) {
+    return '第 $current 题 / 共 $total 题';
+  }
+
+  @override
+  String get onboardingNext => '下一题';
+
+  @override
+  String get onboardingDone => '完成';
+
+  @override
+  String get onboardingFinishedToast => '好了，我们大概懂你了。先从一个简单的开始吧。';
+
+  @override
+  String get onboardingQ1Prompt => '你为什么学英语？';
+
+  @override
+  String get onboardingQ1OptionExam => '考试（四六级 / 考研 / 雅思托福）';
+
+  @override
+  String get onboardingQ1OptionDaily => '日常对话（看剧、聊天）';
+
+  @override
+  String get onboardingQ1OptionWork => '职场英语（工作沟通、邮件、会议）';
+
+  @override
+  String get onboardingQ1OptionTravel => '出国旅行';
+
+  @override
+  String get onboardingQ1OptionOther => '其它';
+
+  @override
+  String get onboardingQ2Prompt => '你每天大概能学多久？';
+
+  @override
+  String get onboardingQ2Option5 => '5 分钟左右';
+
+  @override
+  String get onboardingQ2Option10 => '10 分钟左右';
+
+  @override
+  String get onboardingQ2Option20 => '15-20 分钟';
+
+  @override
+  String get onboardingQ2Option30 => '半小时以上';
+
+  @override
+  String get onboardingQ2OptionFlexible => '不固定，灵活安排';
 }

@@ -1095,5 +1095,29 @@
   },
   "downloadLoading": "加载中",
   "audioListColumnName": "名称",
-  "audioListColumnDuration": "时长"
+  "audioListColumnDuration": "时长",
+  "onboardingTitle": "先问你 2 个小问题",
+  "onboardingSubtitle": "10 秒，帮你找到适合的练法",
+  "onboardingProgress": "第 {current} 题 / 共 {total} 题",
+  "@onboardingProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "onboardingNext": "下一题",
+  "onboardingDone": "完成",
+  "onboardingFinishedToast": "好了，我们大概懂你了。先从一个简单的开始吧。",
+  "onboardingQ1Prompt": "你为什么学英语？",
+  "onboardingQ1OptionExam": "考试（四六级 / 考研 / 雅思托福）",
+  "onboardingQ1OptionDaily": "日常对话（看剧、聊天）",
+  "onboardingQ1OptionWork": "职场英语（工作沟通、邮件、会议）",
+  "onboardingQ1OptionTravel": "出国旅行",
+  "onboardingQ1OptionOther": "其它",
+  "onboardingQ2Prompt": "你每天大概能学多久？",
+  "onboardingQ2Option5": "5 分钟左右",
+  "onboardingQ2Option10": "10 分钟左右",
+  "onboardingQ2Option20": "15-20 分钟",
+  "onboardingQ2Option30": "半小时以上",
+  "onboardingQ2OptionFlexible": "不固定，灵活安排"
 }

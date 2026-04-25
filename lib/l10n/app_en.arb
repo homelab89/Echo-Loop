@@ -1461,5 +1461,29 @@
   },
   "downloadLoading": "Loading",
   "audioListColumnName": "Name",
-  "audioListColumnDuration": "Duration"
+  "audioListColumnDuration": "Duration",
+  "onboardingTitle": "2 quick questions",
+  "onboardingSubtitle": "10 seconds to set things up",
+  "onboardingProgress": "{current} of {total}",
+  "@onboardingProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "onboardingNext": "Next",
+  "onboardingDone": "Done",
+  "onboardingFinishedToast": "Got it. Let's start with something easy.",
+  "onboardingQ1Prompt": "Why are you learning English?",
+  "onboardingQ1OptionExam": "For an exam (CET / postgrad / IELTS / TOEFL)",
+  "onboardingQ1OptionDaily": "Everyday conversation (shows, chatting)",
+  "onboardingQ1OptionWork": "Work English (meetings, emails)",
+  "onboardingQ1OptionTravel": "Travel abroad",
+  "onboardingQ1OptionOther": "Other",
+  "onboardingQ2Prompt": "How much time can you spend daily?",
+  "onboardingQ2Option5": "About 5 min",
+  "onboardingQ2Option10": "About 10 min",
+  "onboardingQ2Option20": "15-20 min",
+  "onboardingQ2Option30": "30 min or more",
+  "onboardingQ2OptionFlexible": "Whenever I have time"
 }

@@ -2776,4 +2776,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get audioListColumnDuration => 'Duration';
+
+  @override
+  String get onboardingTitle => '2 quick questions';
+
+  @override
+  String get onboardingSubtitle => '10 seconds to set things up';
+
+  @override
+  String onboardingProgress(int current, int total) {
+    return '$current of $total';
+  }
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingDone => 'Done';
+
+  @override
+  String get onboardingFinishedToast =>
+      'Got it. Let\'s start with something easy.';
+
+  @override
+  String get onboardingQ1Prompt => 'Why are you learning English?';
+
+  @override
+  String get onboardingQ1OptionExam =>
+      'For an exam (CET / postgrad / IELTS / TOEFL)';
+
+  @override
+  String get onboardingQ1OptionDaily =>
+      'Everyday conversation (shows, chatting)';
+
+  @override
+  String get onboardingQ1OptionWork => 'Work English (meetings, emails)';
+
+  @override
+  String get onboardingQ1OptionTravel => 'Travel abroad';
+
+  @override
+  String get onboardingQ1OptionOther => 'Other';
+
+  @override
+  String get onboardingQ2Prompt => 'How much time can you spend daily?';
+
+  @override
+  String get onboardingQ2Option5 => 'About 5 min';
+
+  @override
+  String get onboardingQ2Option10 => 'About 10 min';
+
+  @override
+  String get onboardingQ2Option20 => '15-20 min';
+
+  @override
+  String get onboardingQ2Option30 => '30 min or more';
+
+  @override
+  String get onboardingQ2OptionFlexible => 'Whenever I have time';
 }

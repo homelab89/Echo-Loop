@@ -14,7 +14,9 @@ import 'package:fluency/analytics/analytics_channel.dart';
 import 'package:fluency/analytics/analytics_providers.dart';
 import 'package:fluency/analytics/analytics_service.dart';
 import 'package:fluency/analytics/consent_manager.dart';
+import 'package:fluency/features/onboarding_survey/providers/onboarding_survey_provider.dart';
 import 'package:fluency/main.dart';
+import 'package:fluency/providers/new_user_guide_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluency/models/audio_item.dart';
 import 'package:fluency/models/collection.dart';
@@ -1716,15 +1718,41 @@ class _NoOpChannel implements AnalyticsChannel {
   Future<void> setUserProperty(String name, String? value) async {}
 }
 
+/// 缓存的 SharedPreferences 实例（由 [initTestAnalytics] 初始化）。
+///
+/// Onboarding 问卷的 `sharedPreferencesProvider` 需要同步注入；
+/// 在 [createTestApp] 时直接读取此缓存。
+SharedPreferences? _testPrefsCache;
+
 /// 初始化测试用 AnalyticsService（须在 createTestApp 前调用一次）
 Future<void> initTestAnalytics() async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
+  _testPrefsCache = prefs;
   final service = AnalyticsService(
     channel: _NoOpChannel(),
     consent: ConsentManager(prefs),
   );
   initAnalytics(service);
+}
+
+/// Onboarding 问卷相关的 provider 测试 override。
+///
+/// 默认让现有集成测试表现为"非首启 + 已完成问卷"的老用户，
+/// 跳过 onboarding 路由拦截，不影响既有断言。
+List<Override> onboardingTestOverrides() {
+  final prefs = _testPrefsCache;
+  if (prefs == null) {
+    throw StateError(
+      'initTestAnalytics() must be called before createTestApp() '
+      'to initialize SharedPreferences for onboarding overrides',
+    );
+  }
+  return [
+    isFirstLaunchProvider.overrideWithValue(false),
+    sharedPreferencesProvider.overrideWithValue(prefs),
+    initialOnboardingCompletedProvider.overrideWithValue(true),
+  ];
 }
 
 // ========== App 工厂 ==========
@@ -1740,6 +1768,7 @@ final _testPackageInfo = PackageInfo(
 Widget createTestApp() {
   return ProviderScope(
     overrides: [
+      ...onboardingTestOverrides(),
       appSettingsProvider.overrideWith(() => TestAppSettings()),
       audioLibraryProvider.overrideWith(() => TestAudioLibrary()),
       collectionListProvider.overrideWith(() => TestCollectionList()),
@@ -1804,6 +1833,7 @@ Widget createTestAppWithAudio({
 
   return ProviderScope(
     overrides: [
+      ...onboardingTestOverrides(),
       appSettingsProvider.overrideWith(() => TestAppSettings()),
       audioLibraryProvider.overrideWith(() {
         final notifier = TestAudioLibrary();

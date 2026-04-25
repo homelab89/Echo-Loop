@@ -13,6 +13,8 @@ import '../analytics/analytics_observer.dart';
 import '../analytics/analytics_providers.dart';
 import '../features/official_collections/screens/discover_collections_screen.dart';
 import '../features/official_collections/screens/official_collection_detail_screen.dart';
+import '../features/onboarding_survey/providers/onboarding_survey_provider.dart';
+import '../features/onboarding_survey/screens/onboarding_survey_screen.dart';
 import '../screens/library_screen.dart';
 import '../screens/collection_detail_screen.dart';
 import '../screens/study_screen.dart';
@@ -114,6 +116,9 @@ abstract class AppRoutes {
       collectionId != null
       ? '/collections/$collectionId/$audioId/review-difficult-practice'
       : '/audio/$audioId/review-difficult-practice';
+
+  /// Onboarding 问卷页路径（仅首启新用户访问）
+  static const onboardingSurvey = '/onboarding/survey';
 }
 
 /// GoRouter Provider（keepAlive，不可 invalidate）
@@ -124,6 +129,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.study,
     observers: [AnalyticsObserver(analyticsService)],
     redirect: (context, state) {
+      // /onboarding/survey 自身路径必须早返，否则在拦截路径上产生死循环
+      if (state.uri.path == AppRoutes.onboardingSurvey) return null;
+      // 首启新用户、未完成且未学习过 → 强制进入问卷
+      if (ref.read(shouldShowSurveyProvider)) {
+        return AppRoutes.onboardingSurvey;
+      }
       if (state.uri.path == '/') return AppRoutes.study;
       return null;
     },
@@ -177,6 +188,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      // Onboarding 问卷（首启新用户全屏，无 tab bar / 不可返回）
+      GoRoute(
+        path: AppRoutes.onboardingSurvey,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const OnboardingSurveyScreen(),
       ),
       // 收藏句子复习（全屏）
       GoRoute(

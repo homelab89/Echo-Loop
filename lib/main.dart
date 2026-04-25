@@ -39,6 +39,8 @@ import 'services/storage_migration_service.dart';
 import 'features/official_collections/data/official_catalog_service.dart';
 import 'features/official_collections/data/trigger_official_sync.dart';
 import 'features/official_collections/download/official_download_notifier.dart';
+import 'features/onboarding_survey/data/onboarding_survey_storage.dart';
+import 'features/onboarding_survey/providers/onboarding_survey_provider.dart';
 
 /// 通过原生网络栈连接后端服务器。
 ///
@@ -79,6 +81,11 @@ void main() async {
   if (isFirstLaunch) {
     await prefs.setBool('first_launch_done', true);
   }
+
+  // Onboarding 问卷"是否已完成"同步预读：GoRouter redirect 是同步函数，
+  // 必须在 main() 阶段拿到值，否则启动闪屏期间 redirect 失效。
+  // 用 `onboarding_completed_at_ms` 存在性判定，不引入冗余 bool key。
+  final onboardingCompleted = OnboardingSurveyStorage.readIsCompletedSync(prefs);
 
   // 初始化数据库（演示模式使用独立数据库文件）
   final dbFileName = isDemoMode ? 'echo_loop_demo.db' : 'echo_loop.db';
@@ -196,6 +203,9 @@ void main() async {
         overrides: [
           packageInfoProvider.overrideWithValue(packageInfo),
           isFirstLaunchProvider.overrideWithValue(isFirstLaunch),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          initialOnboardingCompletedProvider
+              .overrideWithValue(onboardingCompleted),
           if (recommendedAsrModel != null)
             recommendedAsrModelProvider.overrideWithValue(recommendedAsrModel),
           if (initialOfflineAsrSettingsState != null)

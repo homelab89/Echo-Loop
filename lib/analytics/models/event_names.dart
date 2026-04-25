@@ -160,6 +160,26 @@ abstract class Events {
 
   /// 清除缓存成功
   static const cacheCleared = 'cache_cleared';
+
+  // ── Onboarding 问卷（首启 2 题，只采集不消费） ──
+  /// 进入问卷页
+  static const onboardingSurveyShown = 'onboarding_survey_shown';
+
+  /// 单题选择（每题答完打一次）
+  static const onboardingSurveyQuestionAnswered =
+      'onboarding_survey_question_answered';
+
+  /// 问卷全部完成
+  static const onboardingSurveyCompleted = 'onboarding_survey_completed';
+}
+
+/// User property 名称常量（写入分析通道用于分群留存）
+abstract class UserProperties {
+  /// 学习目标（exam / daily / work / travel / other）
+  static const englishGoal = 'english_goal';
+
+  /// 每日学习时长（"5" / "10" / "20" / "30" / "flexible"）
+  static const dailyMinutesTarget = 'daily_minutes_target';
 }
 
 /// 事件参数名常量
@@ -242,4 +262,23 @@ abstract class EventParams {
   static const previousLanguage = 'previous_language';
   static const newLanguage = 'new_language';
   static const bytesFreed = 'bytes_freed';
+
+  // ── Onboarding 问卷 ──
+  /// 是否首启触发（即每次进入问卷，都为 true；保留参数便于后期扩展）
+  static const isFirstLaunch = 'is_first_launch';
+
+  /// 题目 ID（goal / daily_minutes）
+  static const questionId = 'question_id';
+
+  /// 答案编码
+  static const answerCode = 'answer_code';
+
+  /// Q1 学习目标
+  static const goal = 'goal';
+
+  /// Q2 每日学习时长
+  static const dailyMinutes = 'daily_minutes';
+
+  /// 完成耗时（秒）
+  static const elapsedSeconds = 'elapsed_seconds';
 }

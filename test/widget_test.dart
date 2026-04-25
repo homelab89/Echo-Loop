@@ -7,10 +7,13 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:fluency/database/app_database.dart';
 import 'package:fluency/database/providers.dart';
+import 'package:fluency/features/onboarding_survey/providers/onboarding_survey_provider.dart';
 import 'package:fluency/main.dart';
+import 'package:fluency/providers/new_user_guide_provider.dart';
 import 'package:fluency/providers/settings_provider.dart';
 import 'package:fluency/providers/audio_library_provider.dart';
 import 'package:fluency/providers/collection_provider.dart';
@@ -31,9 +34,15 @@ void main() {
       buildNumber: '1',
     );
 
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          isFirstLaunchProvider.overrideWithValue(false),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          initialOnboardingCompletedProvider.overrideWithValue(true),
           appSettingsProvider.overrideWith(() => TestAppSettings()),
           audioLibraryProvider.overrideWith(() => TestAudioLibrary()),
           collectionListProvider.overrideWith(() => TestCollectionList()),

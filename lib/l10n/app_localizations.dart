@@ -4933,6 +4933,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Duration'**
   String get audioListColumnDuration;
+
+  /// No description provided for @onboardingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'2 quick questions'**
+  String get onboardingTitle;
+
+  /// No description provided for @onboardingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'10 seconds to set things up'**
+  String get onboardingSubtitle;
+
+  /// No description provided for @onboardingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {total}'**
+  String onboardingProgress(int current, int total);
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get onboardingDone;
+
+  /// No description provided for @onboardingFinishedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it. Let\'s start with something easy.'**
+  String get onboardingFinishedToast;
+
+  /// No description provided for @onboardingQ1Prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Why are you learning English?'**
+  String get onboardingQ1Prompt;
+
+  /// No description provided for @onboardingQ1OptionExam.
+  ///
+  /// In en, this message translates to:
+  /// **'For an exam (CET / postgrad / IELTS / TOEFL)'**
+  String get onboardingQ1OptionExam;
+
+  /// No description provided for @onboardingQ1OptionDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyday conversation (shows, chatting)'**
+  String get onboardingQ1OptionDaily;
+
+  /// No description provided for @onboardingQ1OptionWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work English (meetings, emails)'**
+  String get onboardingQ1OptionWork;
+
+  /// No description provided for @onboardingQ1OptionTravel.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel abroad'**
+  String get onboardingQ1OptionTravel;
+
+  /// No description provided for @onboardingQ1OptionOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get onboardingQ1OptionOther;
+
+  /// No description provided for @onboardingQ2Prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How much time can you spend daily?'**
+  String get onboardingQ2Prompt;
+
+  /// No description provided for @onboardingQ2Option5.
+  ///
+  /// In en, this message translates to:
+  /// **'About 5 min'**
+  String get onboardingQ2Option5;
+
+  /// No description provided for @onboardingQ2Option10.
+  ///
+  /// In en, this message translates to:
+  /// **'About 10 min'**
+  String get onboardingQ2Option10;
+
+  /// No description provided for @onboardingQ2Option20.
+  ///
+  /// In en, this message translates to:
+  /// **'15-20 min'**
+  String get onboardingQ2Option20;
+
+  /// No description provided for @onboardingQ2Option30.
+  ///
+  /// In en, this message translates to:
+  /// **'30 min or more'**
+  String get onboardingQ2Option30;
+
+  /// No description provided for @onboardingQ2OptionFlexible.
+  ///
+  /// In en, this message translates to:
+  /// **'Whenever I have time'**
+  String get onboardingQ2OptionFlexible;
 }
 
 class _AppLocalizationsDelegate
