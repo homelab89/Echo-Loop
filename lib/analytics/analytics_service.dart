@@ -56,4 +56,18 @@ class AnalyticsService {
     if (!_consent.hasConsented) return;
     await _channel.setUserProperty(name, value);
   }
+
+  /// 注册 super properties。
+  ///
+  /// 之后所有事件都会自动附加这些属性（仅 PostHog 通道生效；
+  /// 其他通道 no-op）。值在事件发出时被冻结，不会被未来覆盖。
+  /// 用户未同意采集时静默丢弃。
+  Future<void> registerSuperProperties(Map<String, Object> properties) async {
+    if (!_consent.hasConsented) return;
+    try {
+      await _channel.registerSuperProperties(properties);
+    } catch (_) {
+      // 埋点永远不应影响主业务流程，静默忽略所有异常
+    }
+  }
 }

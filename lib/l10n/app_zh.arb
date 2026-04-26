@@ -1139,5 +1139,9 @@
   "onboardingQ2Option10": "约 10 分钟",
   "onboardingQ2Option20": "约 20 分钟",
   "onboardingQ2Option30": "30 分钟以上",
-  "onboardingQ2OptionFlexible": "不固定"
+  "onboardingQ2OptionFlexible": "不固定",
+  "onboardingPermissionsHint": "为了保证体验我们将请求以下权限",
+  "onboardingPermissionsNotification": "系统通知",
+  "onboardingPermissionsMicrophone": "录音",
+  "onboardingPermissionsSpeech": "语音识别"
 }

@@ -171,6 +171,10 @@ abstract class Events {
 
   /// 问卷全部完成
   static const onboardingSurveyCompleted = 'onboarding_survey_completed';
+
+  // ── 系统授权 ──
+  /// 冷启动时上报 4 类系统授权状态快照（mic / speech / notification / network）
+  static const appPermissionSnapshot = 'app_permission_snapshot';
 }
 
 /// User property 名称常量（写入分析通道用于分群留存）
@@ -281,4 +285,17 @@ abstract class EventParams {
 
   /// 完成耗时（秒）
   static const elapsedSeconds = 'elapsed_seconds';
+
+  // ── 系统授权状态（冷启动快照 + 用户画像） ──
+  /// 麦克风权限
+  static const microphoneStatus = 'microphone_status';
+
+  /// 语音识别权限
+  static const speechStatus = 'speech_status';
+
+  /// 通知权限
+  static const notificationStatus = 'notification_status';
+
+  /// 网络授权（仅 iOS 有意义；其他平台填 not_applicable）
+  static const networkStatus = 'network_status';
 }

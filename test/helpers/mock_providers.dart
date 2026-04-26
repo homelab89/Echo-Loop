@@ -131,6 +131,9 @@ class NoOpAnalyticsChannel implements AnalyticsChannel {
 
   @override
   Future<void> setUserProperty(String name, String? value) async {}
+
+  @override
+  Future<void> registerSuperProperties(Map<String, Object> properties) async {}
 }
 
 /// 创建测试用 AnalyticsService（no-op，不会访问网络或持久化）

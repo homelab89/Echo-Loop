@@ -1716,6 +1716,8 @@ class _NoOpChannel implements AnalyticsChannel {
   Future<void> setUserId(String? id) async {}
   @override
   Future<void> setUserProperty(String name, String? value) async {}
+  @override
+  Future<void> registerSuperProperties(Map<String, Object> properties) async {}
 }
 
 /// 缓存的 SharedPreferences 实例（由 [initTestAnalytics] 初始化）。

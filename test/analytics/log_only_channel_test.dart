@@ -54,5 +54,17 @@ void main() {
       final entries = AppLogger.instance.entries;
       expect(entries.last.message, 'setUserProperty: locale=zh');
     });
+
+    test('registerSuperProperties 记录所有 key=value', () async {
+      await channel.registerSuperProperties({
+        'notification_status': 'granted',
+        'network_status': 'not_applicable',
+      });
+
+      final entries = AppLogger.instance.entries;
+      expect(entries.last.message, contains('registerSuperProperties'));
+      expect(entries.last.message, contains('notification_status=granted'));
+      expect(entries.last.message, contains('network_status=not_applicable'));
+    });
   });
 }

@@ -351,9 +351,52 @@ class _OnboardingSurveyScreenState
                   ),
                 ),
               ),
+              // 权限预告：紧贴"开始学习"按钮上方，确保总能看到（无论滚动）。
+                // 纯展示，让用户对开始后的系统弹窗有预期；不实现拦截 / 跳设置等。
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        l10n.onboardingPermissionsHint,
+                        textAlign: TextAlign.center,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 16,
+                        runSpacing: 6,
+                        children: [
+                          _PermissionPreviewChip(
+                            icon: Icons.notifications_outlined,
+                            label: l10n.onboardingPermissionsNotification,
+                            color: colorScheme.onSurfaceVariant,
+                            textStyle: textTheme.bodySmall,
+                          ),
+                          _PermissionPreviewChip(
+                            icon: Icons.mic_outlined,
+                            label: l10n.onboardingPermissionsMicrophone,
+                            color: colorScheme.onSurfaceVariant,
+                            textStyle: textTheme.bodySmall,
+                          ),
+                          _PermissionPreviewChip(
+                            icon: Icons.record_voice_over_outlined,
+                            label: l10n.onboardingPermissionsSpeech,
+                            color: colorScheme.onSurfaceVariant,
+                            textStyle: textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               // 底部按钮区
               Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.only(top: 16),
                 child: FilledButton(
                   onPressed: _submitting ? null : _finish,
                   style: FilledButton.styleFrom(
@@ -503,6 +546,33 @@ class _OnboardingSurveyScreenState
     );
   }
 
+}
+
+/// summary 页底部的权限预告 chip：图标 + 简短 label，仅展示，无交互。
+class _PermissionPreviewChip extends StatelessWidget {
+  const _PermissionPreviewChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.textStyle,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final TextStyle? textStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 6),
+        Text(label, style: textStyle?.copyWith(color: color)),
+      ],
+    );
+  }
 }
 
 /// summary 页的单条要点行：带圆形 check 图标，留有充足留白。

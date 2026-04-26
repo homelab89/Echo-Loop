@@ -26,4 +26,17 @@ abstract class AnalyticsChannel {
 
   /// 设置用户属性
   Future<void> setUserProperty(String name, String? value);
+
+  /// 注册 super properties（事件级冻结属性）。
+  ///
+  /// 调用后，本地 SDK 之后发出的所有事件都会自动附加这些属性，
+  /// 值在事件发出时被冻结，不会被未来覆盖。
+  /// 仅 PostHog 实现实际行为；其他通道（Firebase / 友盟 / LogOnly）no-op。
+  ///
+  /// 与 [setUserProperty] 的区别：
+  /// - super property 写到事件上，可查"事件发生时的状态"
+  /// - user property 写到用户画像，覆盖式更新，查"用户当前状态"
+  ///
+  /// [properties] 的 value 只允许 String/int/double/bool。
+  Future<void> registerSuperProperties(Map<String, Object> properties);
 }

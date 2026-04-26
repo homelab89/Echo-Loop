@@ -79,10 +79,15 @@ void main() {
     await tester.tap(find.text('不固定'));
     await tester.pumpAndSettle(const Duration(milliseconds: 600));
 
-    // summary 页：headline + 4 要点 + 开始学习 按钮，仍未提交
+    // summary 页：headline + 4 要点 + 权限预告 + 开始学习 按钮，仍未提交
     expect(find.textContaining('提升英语听说'), findsOneWidget);
     expect(find.text('选择适合你水平的音频反复练习'), findsOneWidget);
     expect(find.text('通过复述练习口语，把听懂变成会说'), findsOneWidget);
+    // 权限预告：纯展示 label，无交互
+    expect(find.text('为了保证体验我们将请求以下权限'), findsOneWidget);
+    expect(find.text('系统通知'), findsOneWidget);
+    expect(find.text('录音'), findsOneWidget);
+    expect(find.text('语音识别'), findsOneWidget);
     expect(find.text('开始学习'), findsOneWidget);
     expect(OnboardingSurveyStorage(prefs).isCompleted, isFalse);
     expect(find.text('STUDY_PLACEHOLDER'), findsNothing);

@@ -10,6 +10,11 @@ class MockChannel implements AnalyticsChannel {
   final List<({String name, Map<String, Object>? params})> events = [];
   final List<String?> userIds = [];
   final List<({String name, String? value})> userProperties = [];
+  final List<Map<String, Object>> superPropertiesCalls = [];
+
+  /// 测试时把它设为 true，下一次 [registerSuperProperties] 抛错；
+  /// 验证 [AnalyticsService] 是否吞掉异常。
+  bool throwOnRegister = false;
 
   @override
   String get name => 'Mock';
@@ -30,6 +35,12 @@ class MockChannel implements AnalyticsChannel {
   @override
   Future<void> setUserProperty(String name, String? value) async {
     userProperties.add((name: name, value: value));
+  }
+
+  @override
+  Future<void> registerSuperProperties(Map<String, Object> properties) async {
+    if (throwOnRegister) throw StateError('register failed');
+    superPropertiesCalls.add(properties);
   }
 }
 
@@ -124,6 +135,38 @@ void main() {
 
     test('channelName 返回通道名', () {
       expect(service.channelName, 'Mock');
+    });
+
+    test('registerSuperProperties 转发到 channel', () async {
+      await service.registerSuperProperties({
+        'notification_status': 'granted',
+        'network_status': 'not_applicable',
+      });
+
+      expect(channel.superPropertiesCalls, hasLength(1));
+      expect(channel.superPropertiesCalls.first, {
+        'notification_status': 'granted',
+        'network_status': 'not_applicable',
+      });
+    });
+
+    test('用户未同意时 registerSuperProperties 静默丢弃', () async {
+      await consent.revokeConsent();
+
+      await service.registerSuperProperties({
+        'notification_status': 'granted',
+      });
+
+      expect(channel.superPropertiesCalls, isEmpty);
+    });
+
+    test('channel 抛错时 registerSuperProperties 静默吞掉，不传播', () async {
+      channel.throwOnRegister = true;
+
+      // 不应抛
+      await service.registerSuperProperties({'k': 'v'});
+
+      expect(channel.superPropertiesCalls, isEmpty); // 抛错时不会写入
     });
   });
 }

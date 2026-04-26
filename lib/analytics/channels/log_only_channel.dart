@@ -37,4 +37,10 @@ class LogOnlyChannel implements AnalyticsChannel {
   Future<void> setUserProperty(String name, String? value) async {
     AppLogger.log(_tag, 'setUserProperty: $name=$value');
   }
+
+  @override
+  Future<void> registerSuperProperties(Map<String, Object> properties) async {
+    final pairs = properties.entries.map((e) => '${e.key}=${e.value}').join(', ');
+    AppLogger.log(_tag, 'registerSuperProperties: {$pairs}');
+  }
 }

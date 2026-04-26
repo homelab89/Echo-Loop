@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:audio_session/audio_session.dart';
@@ -27,6 +26,8 @@ import 'providers/review_reminder_provider.dart';
 import 'services/notification_tap_router_bridge.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'analytics/analytics_providers.dart';
+import 'analytics/permission_snapshot.dart';
+import 'services/network_permission_trigger.dart';
 import 'services/user_id_service.dart';
 import 'firebase_options.dart';
 import 'providers/new_user_guide_provider.dart';
@@ -41,20 +42,6 @@ import 'features/official_collections/data/trigger_official_sync.dart';
 import 'features/official_collections/download/official_download_notifier.dart';
 import 'features/onboarding_survey/data/onboarding_survey_storage.dart';
 import 'features/onboarding_survey/providers/onboarding_survey_provider.dart';
-
-/// 通过原生网络栈连接后端服务器。
-///
-/// Flutter 的 dart:io HttpClient 绕过了 iOS 原生网络栈，
-/// 不会触发系统网络权限弹窗。此方法通过 Method Channel
-/// 调用 iOS 原生 URLSession 发起请求，确保触发权限弹窗。
-Future<void> _triggerNetworkPermission() async {
-  try {
-    const channel = MethodChannel('top.echo-loop/network');
-    await channel.invokeMethod('triggerNetworkPermission', {'url': apiBaseUrl});
-  } catch (_) {
-    // 忽略错误——目的只是触发权限弹窗
-  }
-}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -145,9 +132,12 @@ void main() async {
     print('Web platform: skipping audio session configuration');
   }
 
-  // iOS: 通过原生网络栈触发系统网络权限弹窗
+  // iOS: 通过原生网络栈触发系统网络权限弹窗。
+  // 启动时立即触发（包括 Onboarding 期间的新用户），原因：埋点上报
+  // （app_permission_snapshot / onboarding_survey_shown 等）依赖网络通畅，
+  // 推迟会丢失事件。系统弹窗由 OS 决定具体呈现时机，可能延后。
   if (!kIsWeb && Platform.isIOS) {
-    unawaited(_triggerNetworkPermission());
+    unawaited(NetworkPermissionTrigger.trigger(prefs, apiBaseUrl));
   }
 
   // 初始化 Firebase
@@ -159,6 +149,16 @@ void main() async {
   // 初始化分析服务（根据 geo 选择 Firebase/友盟/Log 通道）
   final analyticsService = await initAnalyticsService(prefs, userId: userId);
   initAnalytics(analyticsService);
+
+  // 上报 4 类系统授权状态（mic / speech / notification / network）：
+  // super properties + person properties + app_permission_snapshot 三路写入。
+  // 失败不影响启动；底层方法已各自做 consent gate + try/catch。
+  try {
+    final snapshot = await PermissionSnapshot.capture(prefs);
+    await analyticsService.reportPermissionSnapshot(snapshot);
+  } catch (e) {
+    AppLogger.log('App', '权限状态埋点失败: $e');
+  }
 
   // 清理上次残留的录音临时文件（沙盒/tmp/ 中超过 60 秒的文件），不阻塞启动
   unawaited(cleanupRecordingTempFiles());

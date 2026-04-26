@@ -5161,6 +5161,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'It varies'**
   String get onboardingQ2OptionFlexible;
+
+  /// No description provided for @onboardingPermissionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'To ensure the best experience, we\'ll request these permissions'**
+  String get onboardingPermissionsHint;
+
+  /// No description provided for @onboardingPermissionsNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get onboardingPermissionsNotification;
+
+  /// No description provided for @onboardingPermissionsMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone'**
+  String get onboardingPermissionsMicrophone;
+
+  /// No description provided for @onboardingPermissionsSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition'**
+  String get onboardingPermissionsSpeech;
 }
 
 class _AppLocalizationsDelegate

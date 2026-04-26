@@ -1146,12 +1146,25 @@ private final class IOSAudioDecodeHandler: NSObject {
         guard let args = call.arguments as? [String: String],
               let urlString = args["url"],
               let url = URL(string: urlString) else {
-          result(FlutterError(code: "INVALID_URL", message: "Invalid URL", details: nil))
+          result(["ok": false, "reason": "invalid_url"])
           return
         }
-        let task = URLSession.shared.dataTask(with: url) { _, _, _ in }
-        task.resume()
-        result(nil)
+        // method channel result 只允许回一次（参考 CLAUDE.md §7.2 flutter_tts 踩坑）。
+        // dataTask 回调与 5s 超时回调存在竞争，用 hasResponded 守护避免双发。
+        var hasResponded = false
+        let respond: ([String: Any]) -> Void = { payload in
+          DispatchQueue.main.async {
+            if hasResponded { return }
+            hasResponded = true
+            result(payload)
+          }
+        }
+        URLSession.shared.dataTask(with: url) { _, _, error in
+          respond(["ok": error == nil])
+        }.resume()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+          respond(["ok": false, "reason": "timeout"])
+        }
       } else {
         result(FlutterMethodNotImplemented)
       }

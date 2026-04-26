@@ -2901,4 +2901,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingQ2OptionFlexible => 'It varies';
+
+  @override
+  String get onboardingPermissionsHint =>
+      'To ensure the best experience, we\'ll request these permissions';
+
+  @override
+  String get onboardingPermissionsNotification => 'Notifications';
+
+  @override
+  String get onboardingPermissionsMicrophone => 'Microphone';
+
+  @override
+  String get onboardingPermissionsSpeech => 'Speech recognition';
 }

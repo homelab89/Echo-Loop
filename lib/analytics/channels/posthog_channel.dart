@@ -58,4 +58,12 @@ class PostHogChannel implements AnalyticsChannel {
       userPropertiesToSet: {name: value ?? ''},
     );
   }
+
+  @override
+  Future<void> registerSuperProperties(Map<String, Object> properties) async {
+    // PostHog SDK 5.x 的 register 一次只接受一个 key/value，循环写入即可。
+    for (final entry in properties.entries) {
+      await Posthog().register(entry.key, entry.value);
+    }
+  }
 }

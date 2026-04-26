@@ -1505,5 +1505,9 @@
   "onboardingQ2Option10": "About 10 min",
   "onboardingQ2Option20": "About 20 min",
   "onboardingQ2Option30": "30 min or more",
-  "onboardingQ2OptionFlexible": "It varies"
+  "onboardingQ2OptionFlexible": "It varies",
+  "onboardingPermissionsHint": "To ensure the best experience, we'll request these permissions",
+  "onboardingPermissionsNotification": "Notifications",
+  "onboardingPermissionsMicrophone": "Microphone",
+  "onboardingPermissionsSpeech": "Speech recognition"
 }

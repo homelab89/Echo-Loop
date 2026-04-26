@@ -2801,4 +2801,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get onboardingQ2OptionFlexible => '不固定';
+
+  @override
+  String get onboardingPermissionsHint => '为了保证体验我们将请求以下权限';
+
+  @override
+  String get onboardingPermissionsNotification => '系统通知';
+
+  @override
+  String get onboardingPermissionsMicrophone => '录音';
+
+  @override
+  String get onboardingPermissionsSpeech => '语音识别';
 }
