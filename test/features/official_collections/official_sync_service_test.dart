@@ -213,6 +213,38 @@ void main() {
       expect(row?.name, 'New Name');
     });
 
+    test('用例 5b：远端音频 title 变更 → 本地 audio name 被更新', () async {
+      final localId = await seedEnrolledCollection(
+        db,
+        remoteId: 'r1',
+        audios: [
+          (remoteAudioId: 'a1', sha256: 'sha-a1', sortOrder: 0, downloaded: false),
+          (remoteAudioId: 'a2', sha256: 'sha-a2', sortOrder: 1, downloaded: true),
+        ],
+      );
+      // catalog 把两条音频的 title 改了
+      fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: [
+        makeCatalogCollection(id: 'r1', audios: [
+          makeCatalogAudio(id: 'a1', title: 'Renamed A1', sortOrder: 0),
+          makeCatalogAudio(id: 'a2', title: 'Renamed A2', sortOrder: 1),
+        ]),
+      ]));
+
+      await sync.syncAll();
+
+      final a1 = await db.audioItemDao.getById('local-a1');
+      final a2 = await db.audioItemDao.getById('local-a2');
+      expect(a1?.name, 'Renamed A1', reason: '未下载音频也要同步 title');
+      expect(a2?.name, 'Renamed A2', reason: '已下载音频同样要同步 title');
+      // 不应影响 collection 数量或 junction
+      expect(await _audioRowCount(), 2);
+      expect(await _junctionCount(), 2);
+      // 同时不应破坏已下载音频的 audioPath
+      expect(a2?.audioPath, isNotNull);
+      // 防回归：localId 仍然存在
+      expect((await db.collectionDao.getById(localId))?.id, localId);
+    });
+
     test('用例 6：合集 deprecate → republish（可逆性）', () async {
       final localId = await seedEnrolledCollection(db, remoteId: 'r1');
       // 手动标 deprecated

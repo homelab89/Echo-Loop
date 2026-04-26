@@ -262,12 +262,17 @@ class OfficialSyncService {
                   ),
                 );
           }
-          if (existing.originalDate != a.originalDate) {
+          final changedName = existing.name != a.title;
+          final changedOriginalDate = existing.originalDate != a.originalDate;
+          if (changedName || changedOriginalDate) {
             await (_db.update(_db.audioItems)
                   ..where((t) => t.id.equals(existing.id)))
                 .write(
                   db.AudioItemsCompanion(
-                    originalDate: Value(a.originalDate),
+                    name: changedName ? Value(a.title) : const Value.absent(),
+                    originalDate: changedOriginalDate
+                        ? Value(a.originalDate)
+                        : const Value.absent(),
                     updatedAt: Value(DateTime.now()),
                   ),
                 );
