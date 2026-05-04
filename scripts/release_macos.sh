@@ -76,7 +76,9 @@ flutter clean
 
 log "Building release app..."
 FLUTTER_ARGS=(
-  build macos --release
+  build
+  macos
+  --release
   "--flavor=prod"
   "--build-name=$VERSION"
 )

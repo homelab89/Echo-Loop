@@ -129,9 +129,12 @@ if [[ "$SKIP_BUILD" == false ]]; then
   [[ -n "${POSTHOG_API_KEY:-}" ]] && DART_DEFINES+=("--dart-define=POSTHOG_API_KEY=${POSTHOG_API_KEY}")
 
   FLUTTER_ARGS=(
-    build apk --release
+    build
+    apk
+    --release
     "--flavor=$FLAVOR"
-    "--target-platform android-arm64"
+    --target-platform
+    android-arm64
     "--build-name=$VERSION"
   )
   # 仅当有构建号时才传 --build-number
