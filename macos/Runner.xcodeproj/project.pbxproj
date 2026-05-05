@@ -501,7 +501,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "top.echo-loop.RunnerTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/fluency.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/fluency";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Echo Loop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Echo Loop";
 			};
 			name = "Debug-prod";
 		};
@@ -516,7 +516,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "top.echo-loop.dev.RunnerTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/fluency.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/fluency";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Echo Loop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Echo Loop";
 			};
 			name = "Release-dev";
 		};
@@ -539,7 +539,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "top.echo-loop.RunnerTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/fluency.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/fluency";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Echo Loop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Echo Loop";
 			};
 			name = Debug;
 		};
@@ -554,7 +554,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "top.echo-loop.RunnerTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/fluency.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/fluency";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Echo Loop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Echo Loop";
 			};
 			name = Release;
 		};
@@ -569,7 +569,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "top.echo-loop.RunnerTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/fluency.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/fluency";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Echo Loop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Echo Loop";
 			};
 			name = Profile;
 		};
@@ -826,7 +826,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "top.echo-loop.RunnerTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/fluency.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/fluency";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Echo Loop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Echo Loop";
 			};
 			name = "Release-prod";
 		};
@@ -865,7 +865,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "top.echo-loop.dev.RunnerTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/fluency.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/fluency";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Echo Loop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Echo Loop";
 			};
 			name = "Debug-dev";
 		};

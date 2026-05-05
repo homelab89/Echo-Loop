@@ -1,11 +1,11 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(fluency LANGUAGES CXX)
+project(echo_loop LANGUAGES CXX)
 set(APPLICATION_NAME "Echo Loop")
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "fluency")
+set(BINARY_NAME "echo_loop")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

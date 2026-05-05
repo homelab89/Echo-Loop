@@ -4,7 +4,7 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "fluency")
+set(BINARY_NAME "echo_loop")
 # Application display name
 set(APPLICATION_NAME "Echo Loop")
 # The unique GTK application identifier for this application. See:
