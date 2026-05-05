@@ -103,18 +103,14 @@ if [[ -z "$BUILD_NUMBER" ]]; then
   calculate_build_number "$BUILD_NAME"
 fi
 
-# 安装包名字包含构建号（构建号 > 0 时）
-if [[ -n "${BUILD_NUMBER:-}" && "$BUILD_NUMBER" != "0" ]]; then
-  VERSION="${BUILD_NAME}+${BUILD_NUMBER}"
-else
-  VERSION="$BUILD_NAME"
-fi
+# 安装包名字统一包含构建号
+VERSION="${BUILD_NAME}+${BUILD_NUMBER}"
 ARCH="arm64"
 APK_NAME="Echo-Loop-${VERSION}-${ARCH}.apk"
 APK_PATH="build/release/$APK_NAME"
 
 log "Version: $VERSION"
-log "Build number: ${BUILD_NUMBER:-0} (default)"
+log "Build number: ${BUILD_NUMBER:-0}"
 log "Architecture: $ARCH"
 log "Flavor: $FLAVOR"
 log "API base URL: $API_BASE_URL"
