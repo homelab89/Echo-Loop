@@ -10,13 +10,13 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fluency/main.dart';
-import 'package:fluency/database/enums.dart';
-import 'package:fluency/providers/learning_progress_provider.dart';
-import 'package:fluency/providers/learning_session/learning_session_provider.dart';
-import 'package:fluency/router/app_router.dart';
-import 'package:fluency/screens/listen_and_repeat_player_screen.dart';
-import 'package:fluency/widgets/practice/sentence_annotation_card.dart';
+import 'package:echo_loop/main.dart';
+import 'package:echo_loop/database/enums.dart';
+import 'package:echo_loop/providers/learning_progress_provider.dart';
+import 'package:echo_loop/providers/learning_session/learning_session_provider.dart';
+import 'package:echo_loop/router/app_router.dart';
+import 'package:echo_loop/screens/listen_and_repeat_player_screen.dart';
+import 'package:echo_loop/widgets/practice/sentence_annotation_card.dart';
 
 import '../helpers/test_notifiers.dart';
 
@@ -28,7 +28,7 @@ void listenAndRepeatTests() {
     /// 设置 LearningSession 为跟读模式并导航到跟读页面。
     Future<void> navigateToListenAndRepeat(WidgetTester tester) async {
       await tester.pumpAndSettle();
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container = ProviderScope.containerOf(context);
 
       // 设置学习会话为跟读模式
@@ -169,7 +169,7 @@ void listenAndRepeatTests() {
       expect(find.byType(ListenAndRepeatPlayerScreen), findsNothing);
 
       // 验证断点已保存
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container2 = ProviderScope.containerOf(context);
       final progressState = container2.read(learningProgressNotifierProvider);
       final progress = progressState.progressMap['test-audio-1'];

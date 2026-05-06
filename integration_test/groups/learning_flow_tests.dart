@@ -7,14 +7,14 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fluency/database/enums.dart';
-import 'package:fluency/main.dart';
-import 'package:fluency/providers/learning_progress_provider.dart';
-import 'package:fluency/providers/learning_session/learning_session_provider.dart';
-import 'package:fluency/router/app_router.dart';
-import 'package:fluency/providers/learning_session/blind_listen_player_provider.dart';
-import 'package:fluency/screens/blind_listen_player_screen.dart';
-import 'package:fluency/widgets/dialogs/step_complete_dialog.dart';
+import 'package:echo_loop/database/enums.dart';
+import 'package:echo_loop/main.dart';
+import 'package:echo_loop/providers/learning_progress_provider.dart';
+import 'package:echo_loop/providers/learning_session/learning_session_provider.dart';
+import 'package:echo_loop/router/app_router.dart';
+import 'package:echo_loop/providers/learning_session/blind_listen_player_provider.dart';
+import 'package:echo_loop/screens/blind_listen_player_screen.dart';
+import 'package:echo_loop/widgets/dialogs/step_complete_dialog.dart';
 
 import '../helpers/test_notifiers.dart';
 
@@ -44,7 +44,7 @@ void learningFlowTests() {
       await _pumpUi(tester, 1000);
 
       // === 1. 导航到学习计划页 ===
-      final appContext = tester.element(find.byType(FluencyApp));
+      final appContext = tester.element(find.byType(EchoLoopApp));
       final appContainer = ProviderScope.containerOf(appContext);
       appContainer
           .read(appRouterProvider)
@@ -144,7 +144,7 @@ void learningFlowTests() {
       await tester.pumpAndSettle();
 
       // === 2. 导航到学习计划页 ===
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container = ProviderScope.containerOf(context);
       container
           .read(appRouterProvider)

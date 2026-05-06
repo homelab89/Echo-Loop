@@ -169,7 +169,7 @@ class ReviewReminderService {
 
         await _plugin.zonedSchedule(
           _savedReviewIdBase + i,
-          'Fluency',
+          'Echo Loop',
           body,
           triggerTz,
           const NotificationDetails(
@@ -225,7 +225,7 @@ class ReviewReminderService {
 
         await _plugin.zonedSchedule(
           nid,
-          'Fluency',
+          'Echo Loop',
           '${r.audioName} · 第${r.reviewRound}轮复习时间到了',
           scheduledTz,
           const NotificationDetails(

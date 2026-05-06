@@ -9,7 +9,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fluency/models/audio_item.dart';
+import 'package:echo_loop/models/audio_item.dart';
 
 import '../helpers/test_notifiers.dart';
 

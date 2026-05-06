@@ -28,7 +28,7 @@ import 'helpers/mock_providers.dart';
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     final packageInfo = PackageInfo(
-      appName: 'Fluency',
+      appName: 'Echo Loop',
       packageName: 'top.echo-loop',
       version: '1.0.0',
       buildNumber: '1',
@@ -62,7 +62,7 @@ void main() {
             ),
           ),
         ],
-        child: const FluencyApp(),
+        child: const EchoLoopApp(),
       ),
     );
     // pump 足够帧数让 UI 渲染完成

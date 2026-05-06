@@ -9,14 +9,14 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fluency/database/enums.dart';
-import 'package:fluency/database/app_database.dart' show BookmarksCompanion;
-import 'package:fluency/database/providers.dart';
-import 'package:fluency/main.dart';
-import 'package:fluency/providers/learning_session/learning_session_provider.dart';
-import 'package:fluency/providers/learning_session/review_difficult_practice_provider.dart';
-import 'package:fluency/router/app_router.dart';
-import 'package:fluency/screens/review_difficult_practice_screen.dart';
+import 'package:echo_loop/database/enums.dart';
+import 'package:echo_loop/database/app_database.dart' show BookmarksCompanion;
+import 'package:echo_loop/database/providers.dart';
+import 'package:echo_loop/main.dart';
+import 'package:echo_loop/providers/learning_session/learning_session_provider.dart';
+import 'package:echo_loop/providers/learning_session/review_difficult_practice_provider.dart';
+import 'package:echo_loop/router/app_router.dart';
+import 'package:echo_loop/screens/review_difficult_practice_screen.dart';
 
 import '../helpers/test_notifiers.dart';
 
@@ -26,7 +26,7 @@ void reviewSubStageTests() {
     /// 导航到学习计划页的辅助方法
     Future<void> navigateToLearningPlan(WidgetTester tester) async {
       await tester.pumpAndSettle();
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container = ProviderScope.containerOf(context);
       container
           .read(appRouterProvider)
@@ -87,7 +87,7 @@ void reviewSubStageTests() {
       await navigateToLearningPlan(tester);
 
       // 预置书签数据（难句补练需要 bookmarked 句子）
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container = ProviderScope.containerOf(context);
       final bookmarkDao =
           container.read(bookmarkDaoProvider) as TestBookmarkDao;
@@ -212,7 +212,7 @@ void reviewSubStageTests() {
       await tester.pumpAndSettle();
 
       // 预置难句播放器状态
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container = ProviderScope.containerOf(context);
 
       // 设置 learningSession 为 reviewDifficultPractice 模式
@@ -282,7 +282,7 @@ void reviewSubStageTests() {
       );
       await tester.pumpAndSettle();
 
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container = ProviderScope.containerOf(context);
 
       // 设置 learningSession 为 reviewDifficultPractice 模式

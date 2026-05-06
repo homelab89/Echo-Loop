@@ -298,7 +298,7 @@ void main() {
       // 模拟系统中已有一个 per-audio 范围内的 pending 通知（上次启动遗留）
       when(() => mockPlugin.pendingNotificationRequests()).thenAnswer(
         (_) async => [
-          const PendingNotificationRequest(5000, 'Fluency', 'old', 'old_payload'),
+          const PendingNotificationRequest(5000, 'Echo Loop', 'old', 'old_payload'),
         ],
       );
 
@@ -314,7 +314,7 @@ void main() {
       // 模拟系统中有 daily reminder（ID 1001，范围外）
       when(() => mockPlugin.pendingNotificationRequests()).thenAnswer(
         (_) async => [
-          const PendingNotificationRequest(1001, 'Fluency', 'daily', 'open_study_tasks'),
+          const PendingNotificationRequest(1001, 'Echo Loop', 'daily', 'open_study_tasks'),
         ],
       );
 
@@ -332,9 +332,9 @@ void main() {
       // 模拟系统中有 per-audio 通知
       when(() => mockPlugin.pendingNotificationRequests()).thenAnswer(
         (_) async => [
-          const PendingNotificationRequest(3000, 'Fluency', 'a', 'open_audio:a'),
-          const PendingNotificationRequest(4000, 'Fluency', 'b', 'open_audio:b'),
-          const PendingNotificationRequest(1001, 'Fluency', 'daily', 'open_study_tasks'),
+          const PendingNotificationRequest(3000, 'Echo Loop', 'a', 'open_audio:a'),
+          const PendingNotificationRequest(4000, 'Echo Loop', 'b', 'open_audio:b'),
+          const PendingNotificationRequest(1001, 'Echo Loop', 'daily', 'open_study_tasks'),
         ],
       );
 

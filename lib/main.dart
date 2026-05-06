@@ -164,7 +164,7 @@ void main() async {
   unawaited(cleanupRecordingTempFiles());
 
   // 词典由 dictionaryProvider 管理下载和打开，
-  // 在 FluencyApp.initState 中 eagerly read 触发初始化。
+  // 在 EchoLoopApp.initState 中 eagerly read 触发初始化。
 
   // 离线 ASR 初始化（全平台）。
   // Android 固定 offline 后端，iOS/macOS 默认 platform 后端（可切换）。
@@ -218,20 +218,20 @@ void main() async {
               initialOfflineAsrSettingsState,
             ),
         ],
-        child: const FluencyApp(),
+        child: const EchoLoopApp(),
       ),
     ),
   );
 }
 
-class FluencyApp extends ConsumerStatefulWidget {
-  const FluencyApp({super.key});
+class EchoLoopApp extends ConsumerStatefulWidget {
+  const EchoLoopApp({super.key});
 
   @override
-  ConsumerState<FluencyApp> createState() => _FluencyAppState();
+  ConsumerState<EchoLoopApp> createState() => _EchoLoopAppState();
 }
 
-class _FluencyAppState extends ConsumerState<FluencyApp>
+class _EchoLoopAppState extends ConsumerState<EchoLoopApp>
     with WidgetsBindingObserver {
   StreamSubscription<NotificationIntent>? _intentSubscription;
   late final ShowcaseView _showcase;

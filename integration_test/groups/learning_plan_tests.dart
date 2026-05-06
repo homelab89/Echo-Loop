@@ -7,11 +7,11 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fluency/database/enums.dart';
-import 'package:fluency/main.dart';
-import 'package:fluency/providers/audio_library_provider.dart';
-import 'package:fluency/router/app_router.dart';
-import 'package:fluency/widgets/intensive_listen/intensive_listen_briefing_sheet.dart';
+import 'package:echo_loop/database/enums.dart';
+import 'package:echo_loop/main.dart';
+import 'package:echo_loop/providers/audio_library_provider.dart';
+import 'package:echo_loop/router/app_router.dart';
+import 'package:echo_loop/widgets/intensive_listen/intensive_listen_briefing_sheet.dart';
 
 import '../helpers/test_notifiers.dart';
 
@@ -22,7 +22,7 @@ void learningPlanTests() {
     Future<void> navigateToLearningPlan(WidgetTester tester) async {
       await tester.pumpAndSettle();
       // 通过 appRouterProvider 直接导航到学习计划页
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container = ProviderScope.containerOf(context);
       container
           .read(appRouterProvider)
@@ -74,7 +74,7 @@ void learningPlanTests() {
       await tester.pumpAndSettle();
 
       // 替换音频为无字幕版本
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container = ProviderScope.containerOf(context);
       final audioLib =
           container.read(audioLibraryProvider.notifier) as TestAudioLibrary;

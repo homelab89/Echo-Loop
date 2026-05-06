@@ -7,15 +7,15 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fluency/main.dart';
-import 'package:fluency/database/enums.dart';
-import 'package:fluency/database/providers.dart';
-import 'package:fluency/providers/learning_progress_provider.dart';
-import 'package:fluency/providers/learning_session/intensive_listen_player_provider.dart';
-import 'package:fluency/providers/learning_session/learning_session_provider.dart';
-import 'package:fluency/router/app_router.dart';
-import 'package:fluency/screens/intensive_listen_player_screen.dart';
-import 'package:fluency/widgets/practice/sentence_annotation_card.dart';
+import 'package:echo_loop/main.dart';
+import 'package:echo_loop/database/enums.dart';
+import 'package:echo_loop/database/providers.dart';
+import 'package:echo_loop/providers/learning_progress_provider.dart';
+import 'package:echo_loop/providers/learning_session/intensive_listen_player_provider.dart';
+import 'package:echo_loop/providers/learning_session/learning_session_provider.dart';
+import 'package:echo_loop/router/app_router.dart';
+import 'package:echo_loop/screens/intensive_listen_player_screen.dart';
+import 'package:echo_loop/widgets/practice/sentence_annotation_card.dart';
 
 import '../helpers/test_notifiers.dart';
 
@@ -28,7 +28,7 @@ void intensiveListenTests() {
     /// 并初始化 IntensiveListenPlayer 句子数据。
     Future<void> navigateToIntensiveListen(WidgetTester tester) async {
       await tester.pumpAndSettle();
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container = ProviderScope.containerOf(context);
 
       // 设置学习会话为精听模式
@@ -282,7 +282,7 @@ void intensiveListenTests() {
       expect(find.byType(IntensiveListenPlayerScreen), findsNothing);
 
       // 验证断点已保存（通过检查进度 state）
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container2 = ProviderScope.containerOf(context);
       final progressState = container2.read(learningProgressNotifierProvider);
       final progress = progressState.progressMap['test-audio-1'];
@@ -324,7 +324,7 @@ void intensiveListenTests() {
       expect(find.byType(IntensiveListenPlayerScreen), findsNothing);
 
       // 验证书签已持久化到数据库
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container2 = ProviderScope.containerOf(context);
       final bookmarkDao =
           container2.read(bookmarkDaoProvider) as TestBookmarkDao;
@@ -351,7 +351,7 @@ void intensiveListenTests() {
 
       // 导航到精听并设置为 freePlay 模式
       await tester.pumpAndSettle();
-      final ctx = tester.element(find.byType(FluencyApp));
+      final ctx = tester.element(find.byType(EchoLoopApp));
       final container = ProviderScope.containerOf(ctx);
 
       final session =
@@ -399,7 +399,7 @@ void intensiveListenTests() {
 
       // 验证书签已持久化到数据库
       final container2 = ProviderScope.containerOf(
-        tester.element(find.byType(FluencyApp)),
+        tester.element(find.byType(EchoLoopApp)),
       );
       final bookmarkDao =
           container2.read(bookmarkDaoProvider) as TestBookmarkDao;
@@ -449,7 +449,7 @@ void intensiveListenTests() {
       await tester.pumpAndSettle();
 
       // 验证两个书签都已持久化
-      final context = tester.element(find.byType(FluencyApp));
+      final context = tester.element(find.byType(EchoLoopApp));
       final container2 = ProviderScope.containerOf(context);
       final bookmarkDao =
           container2.read(bookmarkDaoProvider) as TestBookmarkDao;

@@ -10,56 +10,56 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:fluency/analytics/analytics_channel.dart';
-import 'package:fluency/analytics/analytics_providers.dart';
-import 'package:fluency/analytics/analytics_service.dart';
-import 'package:fluency/analytics/consent_manager.dart';
-import 'package:fluency/features/onboarding_survey/providers/onboarding_survey_provider.dart';
-import 'package:fluency/main.dart';
-import 'package:fluency/providers/new_user_guide_provider.dart';
+import 'package:echo_loop/analytics/analytics_channel.dart';
+import 'package:echo_loop/analytics/analytics_providers.dart';
+import 'package:echo_loop/analytics/analytics_service.dart';
+import 'package:echo_loop/analytics/consent_manager.dart';
+import 'package:echo_loop/features/onboarding_survey/providers/onboarding_survey_provider.dart';
+import 'package:echo_loop/main.dart';
+import 'package:echo_loop/providers/new_user_guide_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fluency/models/audio_item.dart';
-import 'package:fluency/models/collection.dart';
-import 'package:fluency/models/tag.dart';
-import 'package:fluency/models/audio_engine_state.dart';
-import 'package:fluency/models/intensive_listen_settings.dart';
-import 'package:fluency/models/learning_progress.dart';
-import 'package:fluency/models/playback_settings.dart';
-import 'package:fluency/models/blind_listen_settings.dart';
-import 'package:fluency/models/sentence.dart';
-import 'package:fluency/database/enums.dart';
-import 'package:fluency/database/app_database.dart'
+import 'package:echo_loop/models/audio_item.dart';
+import 'package:echo_loop/models/collection.dart';
+import 'package:echo_loop/models/tag.dart';
+import 'package:echo_loop/models/audio_engine_state.dart';
+import 'package:echo_loop/models/intensive_listen_settings.dart';
+import 'package:echo_loop/models/learning_progress.dart';
+import 'package:echo_loop/models/playback_settings.dart';
+import 'package:echo_loop/models/blind_listen_settings.dart';
+import 'package:echo_loop/models/sentence.dart';
+import 'package:echo_loop/database/enums.dart';
+import 'package:echo_loop/database/app_database.dart'
     show Bookmark, BookmarksCompanion, SavedWord;
-import 'package:fluency/database/daos/bookmark_dao.dart';
-import 'package:fluency/database/daos/saved_word_dao.dart';
-import 'package:fluency/database/providers.dart';
-import 'package:fluency/providers/review_reminder_provider.dart';
-import 'package:fluency/providers/settings_provider.dart';
-import 'package:fluency/services/review_reminder_service.dart';
-import 'package:fluency/providers/audio_library_provider.dart';
-import 'package:fluency/providers/collection_provider.dart';
-import 'package:fluency/providers/tag_provider.dart';
-import 'package:fluency/providers/listening_practice/listening_practice_provider.dart';
-import 'package:fluency/providers/audio_engine/audio_engine_provider.dart';
-import 'package:fluency/providers/learning_progress_provider.dart';
-import 'package:fluency/providers/learning_session/learning_session_provider.dart';
-import 'package:fluency/providers/learning_session/blind_listen_player_provider.dart';
-import 'package:fluency/providers/learning_session/intensive_listen_player_provider.dart';
-import 'package:fluency/providers/learning_session/retell_player_provider.dart';
-import 'package:fluency/providers/learning_session/review_difficult_practice_provider.dart';
-import 'package:fluency/providers/package_info_provider.dart';
-import 'package:fluency/models/retell_settings.dart';
-import 'package:fluency/models/speech_practice_models.dart';
-import 'package:fluency/database/daos/sentence_ai_cache_dao.dart';
-import 'package:fluency/services/sentence_ai_api_client.dart';
-import 'package:fluency/services/speech_practice_platform.dart';
-import 'package:fluency/providers/sentence_ai_provider.dart';
-import 'package:fluency/providers/daily_study_time_provider.dart';
-import 'package:fluency/providers/saved_word_provider.dart';
-import 'package:fluency/providers/flashcard/flashcard_provider.dart';
-import 'package:fluency/providers/flashcard/flashcard_flow_phase.dart';
-import 'package:fluency/models/flashcard_item.dart';
-import 'package:fluency/models/flashcard_settings.dart';
+import 'package:echo_loop/database/daos/bookmark_dao.dart';
+import 'package:echo_loop/database/daos/saved_word_dao.dart';
+import 'package:echo_loop/database/providers.dart';
+import 'package:echo_loop/providers/review_reminder_provider.dart';
+import 'package:echo_loop/providers/settings_provider.dart';
+import 'package:echo_loop/services/review_reminder_service.dart';
+import 'package:echo_loop/providers/audio_library_provider.dart';
+import 'package:echo_loop/providers/collection_provider.dart';
+import 'package:echo_loop/providers/tag_provider.dart';
+import 'package:echo_loop/providers/listening_practice/listening_practice_provider.dart';
+import 'package:echo_loop/providers/audio_engine/audio_engine_provider.dart';
+import 'package:echo_loop/providers/learning_progress_provider.dart';
+import 'package:echo_loop/providers/learning_session/learning_session_provider.dart';
+import 'package:echo_loop/providers/learning_session/blind_listen_player_provider.dart';
+import 'package:echo_loop/providers/learning_session/intensive_listen_player_provider.dart';
+import 'package:echo_loop/providers/learning_session/retell_player_provider.dart';
+import 'package:echo_loop/providers/learning_session/review_difficult_practice_provider.dart';
+import 'package:echo_loop/providers/package_info_provider.dart';
+import 'package:echo_loop/models/retell_settings.dart';
+import 'package:echo_loop/models/speech_practice_models.dart';
+import 'package:echo_loop/database/daos/sentence_ai_cache_dao.dart';
+import 'package:echo_loop/services/sentence_ai_api_client.dart';
+import 'package:echo_loop/services/speech_practice_platform.dart';
+import 'package:echo_loop/providers/sentence_ai_provider.dart';
+import 'package:echo_loop/providers/daily_study_time_provider.dart';
+import 'package:echo_loop/providers/saved_word_provider.dart';
+import 'package:echo_loop/providers/flashcard/flashcard_provider.dart';
+import 'package:echo_loop/providers/flashcard/flashcard_flow_phase.dart';
+import 'package:echo_loop/models/flashcard_item.dart';
+import 'package:echo_loop/models/flashcard_settings.dart';
 
 /// 测试用 SavedWordList（返回空列表，不依赖数据库）
 class TestSavedWordList extends SavedWordList {
@@ -1760,7 +1760,7 @@ List<Override> onboardingTestOverrides() {
 // ========== App 工厂 ==========
 
 final _testPackageInfo = PackageInfo(
-  appName: 'Fluency',
+  appName: 'Echo Loop',
   packageName: 'top.echo-loop',
   version: '1.0.0',
   buildNumber: '1',
@@ -1808,7 +1808,7 @@ Widget createTestApp() {
       ),
       savedWordDaoProvider.overrideWithValue(TestSavedWordDao()),
     ],
-    child: const FluencyApp(),
+    child: const EchoLoopApp(),
   );
 }
 
@@ -1891,7 +1891,7 @@ Widget createTestAppWithAudio({
 /// 预加载音频数据的 Wrapper
 ///
 /// 在 App 启动后通过 [ProviderScope.containerOf] 获取 notifier，
-/// 预置测试数据，然后渲染 [FluencyApp]。
+/// 预置测试数据，然后渲染 [EchoLoopApp]。
 class _AudioPreloadWrapper extends ConsumerStatefulWidget {
   final AudioItem audioItem;
   final Collection collection;
@@ -1953,6 +1953,6 @@ class _AudioPreloadWrapperState extends ConsumerState<_AudioPreloadWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return const FluencyApp();
+    return const EchoLoopApp();
   }
 }

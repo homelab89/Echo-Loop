@@ -14,9 +14,9 @@ import 'package:integration_test/integration_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'package:fluency/services/asr/audio_file_reader.dart';
-import 'package:fluency/services/asr/offline_asr_engine.dart';
-import 'package:fluency/services/asr/sherpa_onnx_engine.dart';
+import 'package:echo_loop/services/asr/audio_file_reader.dart';
+import 'package:echo_loop/services/asr/offline_asr_engine.dart';
+import 'package:echo_loop/services/asr/sherpa_onnx_engine.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 /// 测试 WAV 固件路径（运行时从网络下载到 sandbox tmp）。
