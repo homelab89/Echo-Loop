@@ -192,8 +192,6 @@ flutter run -d <macos|chrome|ios|android>
 |  |  | Android 原生 ASR |
 |  |  | macOS / Windows 桌面版正式发布 |
 
-详见 [PLAN.md](./PLAN.md) 和 [TASKS.md](./TASKS.md)。
-
 ---
 
 ## ⭐ Star History
@@ -210,15 +208,10 @@ flutter run -d <macos|chrome|ios|android>
 
 **核心依赖**
 
-[just_audio](https://pub.dev/packages/just_audio) · [drift](https://pub.dev/packages/drift) · [flutter_riverpod](https://pub.dev/packages/flutter_riverpod) · [flutter_tts](https://pub.dev/packages/flutter_tts) · [subtitle](https://pub.dev/packages/subtitle) · [file_picker](https://pub.dev/packages/file_picker)
-
-**示例素材**
-
-`assets/demo/` 中的示例音频片段来自 BBC *English in a Minute*，仅供学习演示用途。
-
-**贡献者**
-
-[![Contributors](https://contrib.rocks/image?repo=echo-loop/Echo-Loop)](https://github.com/echo-loop/Echo-Loop/graphs/contributors)
+- 音频与语音：[just_audio](https://pub.dev/packages/just_audio) · [audio_session](https://pub.dev/packages/audio_session) · [flutter_tts](https://pub.dev/packages/flutter_tts) · [sherpa_onnx](https://pub.dev/packages/sherpa_onnx)
+- 数据与状态：[drift](https://pub.dev/packages/drift) · [flutter_riverpod](https://pub.dev/packages/flutter_riverpod)
+- 文本处理：[subtitle](https://pub.dev/packages/subtitle) · [lemmatizerx](https://pub.dev/packages/lemmatizerx)
+- 系统能力：[file_picker](https://pub.dev/packages/file_picker) · [flutter_local_notifications](https://pub.dev/packages/flutter_local_notifications)
 
 ---
 
