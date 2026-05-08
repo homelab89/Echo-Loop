@@ -265,7 +265,7 @@ flutter analyze
 flutter test
 ```
 
-Commit 风格遵循现有 `FEAT/FIX/CHORE/REFACTOR/CI/RELEASE` 前缀。详细贡献流程见 [CONTRIBUTING.md](#)（待补）。本项目遵循 [Contributor Covenant](https://www.contributor-covenant.org/) 行为准则。
+Commit 标题遵循 `PREFIX: 内容` 格式（参考 `git log` 看常用前缀，如 FEAT / FIX / DOCS / MOD / OPT / CHORE / CI / RELEASE 等）。详细贡献流程见 [CONTRIBUTING.md](#)（待补）。本项目遵循 [Contributor Covenant](https://www.contributor-covenant.org/) 行为准则。
 
 </details>
 
