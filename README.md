@@ -185,20 +185,6 @@ flowchart LR
 
 ---
 
-## 🚀 开发者快速开始
-
-```bash
-git clone git@github.com:echo-loop/Echo-Loop.git
-cd Echo-Loop
-flutter pub get
-dart run build_runner build
-flutter run -d <macos|chrome|ios|android>
-```
-
-更多命令见末尾「开发命令速查」折叠区。
-
----
-
 ## 🗺️ Roadmap
 
 ### ✅ 1 · 核心功能
@@ -254,7 +240,23 @@ flutter run -d <macos|chrome|ios|android>
 
 ---
 
-## 🤝 贡献
+## 🧑‍💻 给开发者
+
+<details open>
+<summary><strong>🚀 快速开始</strong></summary>
+
+```bash
+git clone git@github.com:echo-loop/Echo-Loop.git
+cd Echo-Loop
+flutter pub get
+dart run build_runner build
+flutter run -d <ios|android|macos>
+```
+
+</details>
+
+<details>
+<summary><strong>🤝 如何贡献</strong></summary>
 
 欢迎提 Issue / PR。提交前请运行：
 
@@ -265,13 +267,7 @@ flutter test
 
 Commit 风格遵循现有 `FEAT/FIX/CHORE/REFACTOR/CI/RELEASE` 前缀。详细贡献流程见 [CONTRIBUTING.md](#)（待补）。本项目遵循 [Contributor Covenant](https://www.contributor-covenant.org/) 行为准则。
 
----
-
-## 📄 License
-
-[AGPL-3.0](./LICENSE)
-
----
+</details>
 
 <details>
 <summary><strong>🛠️ 技术栈</strong></summary>
@@ -372,3 +368,9 @@ flutter run --release -d <DEVICE_ID> --dart-define=API_BASE_URL=https://dev.echo
 - 桌面端：macOS / Windows / Linux 开发环境
 
 </details>
+
+---
+
+## 📄 License
+
+[AGPL-3.0](./LICENSE)
