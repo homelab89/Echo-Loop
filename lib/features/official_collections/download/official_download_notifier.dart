@@ -320,17 +320,7 @@ class OfficialDownload extends _$OfficialDownload {
       await ref.read(audioLibraryProvider.notifier).loadLibrary();
       if (sid != _sessionId) return;
 
-      // 6) snackbar 成功提示
-      final messenger = officialDownloadScaffoldMessengerKey.currentState;
-      final l10n = _pickL10n();
-      if (messenger != null && l10n != null) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(l10n.downloadCompleted(_activeDisplayName ?? '')),
-          ),
-        );
-      }
-
+      // 6) 成功不提示，避免遮挡「开始学习」按钮；状态切回 idle 即可
       state = const DownloadIdle();
     } catch (e, st) {
       if (sid != _sessionId) return;
