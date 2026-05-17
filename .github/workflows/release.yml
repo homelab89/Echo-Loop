@@ -382,3 +382,27 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: true
           draft: true
+
+      - name: Prune old draft releases (keep latest 3)
+        # 仅清理 draft，不会动已发布的 release。按 created_at 倒序保留最近 3 个，其余删除。
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          KEEP: 3
+        run: |
+          set -e
+          mapfile -t OLD < <(
+            gh api --paginate \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/${GH_REPO}/releases" \
+              --jq '[.[] | select(.draft==true)] | sort_by(.created_at) | reverse | .['"$KEEP"':][] | .id'
+          )
+          if [[ ${#OLD[@]} -eq 0 ]]; then
+            echo "No stale draft releases to prune."
+            exit 0
+          fi
+          echo "Will delete ${#OLD[@]} old draft release(s): ${OLD[*]}"
+          for id in "${OLD[@]}"; do
+            gh api -X DELETE "/repos/${GH_REPO}/releases/${id}"
+            echo "Deleted draft release id=${id}"
+          done
