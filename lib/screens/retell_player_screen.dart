@@ -196,6 +196,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
       final latestState = ref.read(retellPlayerProvider);
       if (latestState.phase == RetellPhase.retelling &&
           !latestState.isWaitingForUser &&
+          !latestState.stepFinished &&
           !latestState.settings.isManualMode) {
         AppLogger.log('RetellScreen', '评估完成 → 启动段间停顿');
         ref
@@ -218,6 +219,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
 
     if (playerState.phase != RetellPhase.retelling ||
         playerState.isWaitingForUser ||
+        playerState.stepFinished ||
         playerState.settings.isManualMode ||
         recState.phase != RetellRecordingPhase.idle ||
         recState.awaitingSpeechTimedOut ||
@@ -229,6 +231,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
           'RetellScreen',
           '⏭ autoRec 预检查跳过: '
               'waiting=${playerState.isWaitingForUser}, '
+              'stepFinished=${playerState.stepFinished}, '
               'manual=${playerState.settings.isManualMode}, '
               'recPhase=${recState.phase.name}, '
               'timedOut=${recState.awaitingSpeechTimedOut}, '
@@ -695,10 +698,14 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
   Future<void> _openSettings() async {
     final recordingState = ref.read(retellRecordingControllerProvider);
     if (recordingState.phase == RetellRecordingPhase.recording) {
+      // 先进入等待态，再取消录音：避免取消触发的 idle 监听器
+      // 看到 isWaitingForUser=false 而误启动段间倒计时或自动录音。
+      ref
+          .read(retellPlayerProvider.notifier)
+          .enterWaitingForUser(stopImmediately: true);
       await ref
           .read(retellRecordingControllerProvider.notifier)
           .cancelActiveRecording();
-      ref.read(retellPlayerProvider.notifier).enterWaitingForUser();
     } else {
       ref
           .read(retellPlayerProvider.notifier)
@@ -715,14 +722,17 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
 
     final recordingState = ref.read(retellRecordingControllerProvider);
 
+    // 先进入等待态，再取消录音：避免取消触发的 idle 监听器
+    // 看到 isWaitingForUser=false 而误启动段间倒计时或自动录音。
+    ref
+        .read(retellPlayerProvider.notifier)
+        .enterWaitingForUser(stopImmediately: true);
+
     if (recordingState.phase == RetellRecordingPhase.recording) {
       await ref
           .read(retellRecordingControllerProvider.notifier)
           .cancelActiveRecording();
     }
-    ref
-        .read(retellPlayerProvider.notifier)
-        .enterWaitingForUser(stopImmediately: true);
 
     if (!mounted) {
       _isNavigatingToDetail = false;
