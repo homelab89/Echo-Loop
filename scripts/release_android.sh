@@ -139,8 +139,9 @@ elif [[ -z "$BUILD_NAME" || -z "$BUILD_NUMBER" ]]; then
   fail "Both --build-name and --build-number are required when one is provided via command line."
 fi
 
-# 安装包名字统一包含构建号
-VERSION="${BUILD_NAME}+${BUILD_NUMBER}"
+# 安装包名字只用 versionName。versionCode 已经隐藏在 APK 元数据里，
+# 对外分发不需要暴露。同 versionName 重发会覆盖。
+VERSION="${BUILD_NAME}"
 ARCH="arm64"
 APK_NAME="Echo-Loop-${VERSION}-${ARCH}.apk"
 APK_PATH="build/release/$APK_NAME"

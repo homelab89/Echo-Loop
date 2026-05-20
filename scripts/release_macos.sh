@@ -69,8 +69,9 @@ if [[ -z "$BUILD_NAME" || -z "$BUILD_NUMBER" ]]; then
   fi
 fi
 
-# 安装包名字统一包含构建号
-VERSION="${BUILD_NAME}+${BUILD_NUMBER}"
+# 安装包名字只用 versionName。versionCode 已经隐藏在 .app 元数据里，
+# 对外分发不需要暴露。同 versionName 重发会覆盖。
+VERSION="${BUILD_NAME}"
 APP_NAME="Echo-Loop-${VERSION}-macos"
 
 log "Version: $VERSION"

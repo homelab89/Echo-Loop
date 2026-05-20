@@ -147,7 +147,6 @@ jobs:
         env:
           BUILD_NAME: ${{ steps.ver.outputs.name }}
           BUILD_NUMBER: ${{ steps.ver.outputs.number }}
-          BUILD_VERSION: ${{ steps.ver.outputs.version }}
           API_BASE_URL: ${{ vars.API_BASE_URL }}
           POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
           POSTHOG_API_KEY: ${{ vars.POSTHOG_API_KEY }}
@@ -166,20 +165,22 @@ jobs:
             --build-number="$BUILD_NUMBER" \
             "${DART_DEFINES[@]}"
           mkdir -p build/release
+          # 文件名只用 versionName。versionCode 已经隐藏在 APK 元数据里，
+          # 对外分发不需要暴露。同 versionName 重发会覆盖。
           cp build/app/outputs/flutter-apk/app-prod-release.apk \
-             "build/release/Echo-Loop-${BUILD_VERSION}-arm64.apk"
+             "build/release/Echo-Loop-${BUILD_NAME}-arm64.apk"
 
       - name: Upload APK to Cloudflare R2
         if: matrix.platform == 'android'
         env:
-          BUILD_VERSION: ${{ steps.ver.outputs.version }}
+          BUILD_NAME: ${{ steps.ver.outputs.name }}
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_BUCKET: ${{ vars.R2_BUCKET }}
         run: |
           : "${R2_BUCKET:=public}"
-          APK="build/release/Echo-Loop-${BUILD_VERSION}-arm64.apk"
+          APK="build/release/Echo-Loop-${BUILD_NAME}-arm64.apk"
           aws s3 cp "$APK" "s3://${R2_BUCKET}/android/$(basename "$APK")" \
             --endpoint-url "$R2_ENDPOINT" --region auto \
             --content-type "application/vnd.android.package-archive"
