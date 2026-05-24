@@ -91,6 +91,11 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 启动时同步系统通知权限状态到 SP，防止已授权设备误弹 pre-prompt
+      ref
+          .read(notificationPermissionServiceProvider)
+          .syncSystemAuthorizationStatus();
+
       AppLogger.log('StartupLoad', 'library bootstrap start');
       try {
         await ref.read(audioLibraryProvider.notifier).loadLibrary();
@@ -347,11 +352,15 @@ class _MainShellState extends ConsumerState<MainShell> {
     ref.read(studyStatsNotifierProvider.notifier).refresh();
   }
 
-  /// App 回到前台回调：刷新学习数据 + 后台检查版本更新
+  /// App 回到前台回调：刷新学习数据 + 后台检查版本更新 + 同步通知权限
   void _onAppResume() {
     AppLogger.log('AppUpdate', 'onAppResume: trigger checkInBackground');
     _refreshStudyData();
     ref.read(appUpdateProvider.notifier).checkInBackground();
+    // 回前台时同步系统通知权限状态，覆盖用户在系统设置中手动变更的情况
+    ref
+        .read(notificationPermissionServiceProvider)
+        .syncSystemAuthorizationStatus();
   }
 
   /// 提醒设置变更回调：重新同步收藏复习提醒和音频复习提醒

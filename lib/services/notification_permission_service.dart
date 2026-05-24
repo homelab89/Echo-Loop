@@ -105,6 +105,32 @@ class NotificationPermissionService {
     return true;
   }
 
+  /// 从系统读取实际权限状态并同步到 SP。
+  ///
+  /// 启动和回前台时调用。若系统已授权（如 Android 默认开启）或已拒绝，
+  /// 写入 SP 阻止 pre-prompt 弹窗。notDetermined 时保留 SP 原样，
+  /// 让用户仍有机会通过 pre-prompt 触发系统授权。
+  Future<void> syncSystemAuthorizationStatus() async {
+    try {
+      final status = await _reporter.getAuthorizationStatus();
+      switch (status) {
+        case NotificationAuthorization.authorized:
+          await _prefs.setBool(_spKeyAuthorizationStatus, true);
+          AppLogger.log(_logTag, 'syncSystemStatus: authorized -> SP=true');
+        case NotificationAuthorization.denied:
+        case NotificationAuthorization.restricted:
+          await _prefs.setBool(_spKeyAuthorizationStatus, false);
+          AppLogger.log(_logTag, 'syncSystemStatus: $status -> SP=false');
+        case NotificationAuthorization.notDetermined:
+        case NotificationAuthorization.unsupported:
+          // 保留 SP 原样，用户尚未做决定
+          AppLogger.log(_logTag, 'syncSystemStatus: $status -> SP unchanged');
+      }
+    } catch (e) {
+      AppLogger.log(_logTag, 'syncSystemStatus ERROR: $e');
+    }
+  }
+
   /// 价值锚点调用入口：每次"用户产生学习成果 / 首次收藏"时调用，
   /// 由本服务决定是否真的弹 pre-prompt。
   ///
