@@ -359,7 +359,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           leading: _emojiIcon('👥'),
           title: Text(l10n.joinCommunity),
           trailing: const Icon(Icons.chevron_right),
-          onTap: () => launchUrl(Uri.parse('$apiBaseUrl/social')),
+          onTap: () {
+            final isZh = Localizations.localeOf(context).languageCode == 'zh';
+            final path = isZh ? '/zh-CN/social' : '/social';
+            launchUrl(Uri.parse('$apiBaseUrl$path'));
+          },
         ),
         ListTile(
           leading: SizedBox(
