@@ -82,37 +82,27 @@ void main() {
 
     group('fromJson 防御性解析', () {
       test('hour 超出范围回退默认 20', () {
-        final settings = ReminderSettings.fromJson({
-          'dailyReminderHour': 25,
-        });
+        final settings = ReminderSettings.fromJson({'dailyReminderHour': 25});
         expect(settings.savedReviewReminderHour, 20);
       });
 
       test('hour 为负数回退默认 20', () {
-        final settings = ReminderSettings.fromJson({
-          'dailyReminderHour': -1,
-        });
+        final settings = ReminderSettings.fromJson({'dailyReminderHour': -1});
         expect(settings.savedReviewReminderHour, 20);
       });
 
       test('minute 超出范围回退默认 0', () {
-        final settings = ReminderSettings.fromJson({
-          'dailyReminderMinute': 60,
-        });
+        final settings = ReminderSettings.fromJson({'dailyReminderMinute': 60});
         expect(settings.savedReviewReminderMinute, 0);
       });
 
       test('minute 为负数回退默认 0', () {
-        final settings = ReminderSettings.fromJson({
-          'dailyReminderMinute': -5,
-        });
+        final settings = ReminderSettings.fromJson({'dailyReminderMinute': -5});
         expect(settings.savedReviewReminderMinute, 0);
       });
 
       test('hour 非 int 类型回退默认 20', () {
-        final settings = ReminderSettings.fromJson({
-          'dailyReminderHour': '8',
-        });
+        final settings = ReminderSettings.fromJson({'dailyReminderHour': '8'});
         expect(settings.savedReviewReminderHour, 20);
       });
 

@@ -283,8 +283,9 @@ void main() {
     });
 
     /// 复习模式（隐藏难度选择器）
-    testWidgets('showDifficultySelector=false — 隐藏难度选择器，按钮直接可用',
-        (tester) async {
+    testWidgets('showDifficultySelector=false — 隐藏难度选择器，按钮直接可用', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestApp(
           Builder(
@@ -328,8 +329,9 @@ void main() {
       expect(doneButton.onPressed, isNotNull);
     });
 
-    testWidgets('showDifficultySelector=false — 点击继续返回 null difficulty',
-        (tester) async {
+    testWidgets('showDifficultySelector=false — 点击继续返回 null difficulty', (
+      tester,
+    ) async {
       StepCompleteResult? result;
 
       await tester.pumpWidget(
@@ -356,9 +358,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 直接点击"继续"
-      await tester.tap(
-        find.text('Continue: Difficult Sentence Practice'),
-      );
+      await tester.tap(find.text('Continue: Difficult Sentence Practice'));
       await tester.pumpAndSettle();
 
       expect(result, isNotNull);

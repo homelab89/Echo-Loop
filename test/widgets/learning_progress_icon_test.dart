@@ -18,9 +18,7 @@ void main() {
       ],
       child: MaterialApp(
         home: Scaffold(
-          body: Center(
-            child: LearningProgressIcon(progress: progress),
-          ),
+          body: Center(child: LearningProgressIcon(progress: progress)),
         ),
       ),
     );
@@ -32,17 +30,14 @@ void main() {
 
       expect(find.byIcon(Icons.graphic_eq), findsOneWidget);
       // Container with circle shape
-      final container = tester.widget<Container>(
-        find.byType(Container).first,
-      );
+      final container = tester.widget<Container>(find.byType(Container).first);
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.shape, BoxShape.circle);
       // 没有 CircularProgressIndicator
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
-    testWidgets('进行中 → 显示 CircularProgressIndicator + 进度值',
-        (tester) async {
+    testWidgets('进行中 → 显示 CircularProgressIndicator + 进度值', (tester) async {
       final progress = LearningProgress(
         audioItemId: 'test-1',
         currentStage: LearningStage.firstLearn,

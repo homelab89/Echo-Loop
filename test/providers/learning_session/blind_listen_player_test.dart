@@ -20,10 +20,7 @@ void main() {
 
     test('copyWith 设置播放中状态', () {
       const state = BlindListenPlayerState();
-      final updated = state.copyWith(
-        isPlaying: true,
-        totalParagraphs: 5,
-      );
+      final updated = state.copyWith(isPlaying: true, totalParagraphs: 5);
 
       expect(updated.isPlaying, true);
       expect(updated.totalParagraphs, 5);
@@ -40,7 +37,9 @@ void main() {
 
     test('copyWith 切换显示模式', () {
       const state = BlindListenPlayerState();
-      final showAll = state.copyWith(displayMode: BlindListenDisplayMode.showAll);
+      final showAll = state.copyWith(
+        displayMode: BlindListenDisplayMode.showAll,
+      );
 
       expect(showAll.displayMode, BlindListenDisplayMode.showAll);
     });

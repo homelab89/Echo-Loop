@@ -38,10 +38,7 @@ void main() {
       ]);
 
       // 手动调用 onResponse（模拟 Dio 拦截器链）
-      interceptor.onResponse(
-        response,
-        ResponseInterceptorHandler(),
-      );
+      interceptor.onResponse(response, ResponseInterceptorHandler());
 
       expect(prefs.getString(geoCountryKey), 'CN');
     });
@@ -57,9 +54,7 @@ void main() {
     });
 
     test('无 x-geo-country cookie 时不修改缓存', () {
-      final response = _makeResponse([
-        'NEXT_LOCALE=en; Path=/; SameSite=lax',
-      ]);
+      final response = _makeResponse(['NEXT_LOCALE=en; Path=/; SameSite=lax']);
 
       interceptor.onResponse(response, ResponseInterceptorHandler());
 
@@ -75,9 +70,7 @@ void main() {
     });
 
     test('空 country 值不缓存', () {
-      final response = _makeResponse([
-        'x-geo-country=; Path=/; SameSite=lax',
-      ]);
+      final response = _makeResponse(['x-geo-country=; Path=/; SameSite=lax']);
 
       interceptor.onResponse(response, ResponseInterceptorHandler());
 

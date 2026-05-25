@@ -287,8 +287,7 @@ void main() {
     });
 
     test('练习次数多的词间隔更长，不容易超期', () {
-      final lastPracticed =
-          DateTime.now().subtract(const Duration(days: 1));
+      final lastPracticed = DateTime.now().subtract(const Duration(days: 1));
       final scoreLow = FlashcardSettings.calculateSmartScore(
         practiceCount: 1,
         lastPracticedAt: lastPracticed,

@@ -133,18 +133,20 @@ void main() {
       );
 
       // 直接插入一个带 deletedAt 的书签
-      await db.into(db.bookmarks).insert(
-        BookmarksCompanion(
-          audioItemId: const Value('audio-1'),
-          sentenceIndex: const Value(1),
-          sentenceText: const Value('Deleted bookmark'),
-          startTime: const Value(3.0),
-          endTime: const Value(6.0),
-          createdAt: Value(now),
-          updatedAt: Value(now),
-          deletedAt: Value(now),
-        ),
-      );
+      await db
+          .into(db.bookmarks)
+          .insert(
+            BookmarksCompanion(
+              audioItemId: const Value('audio-1'),
+              sentenceIndex: const Value(1),
+              sentenceText: const Value('Deleted bookmark'),
+              startTime: const Value(3.0),
+              endTime: const Value(6.0),
+              createdAt: Value(now),
+              updatedAt: Value(now),
+              deletedAt: Value(now),
+            ),
+          );
 
       final results = await db.bookmarkDao.watchAllWithAudioName().first;
       expect(results.length, 1);

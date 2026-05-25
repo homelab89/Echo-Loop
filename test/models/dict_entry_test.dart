@@ -45,29 +45,19 @@ void main() {
     });
 
     test('fromRow 空标签', () {
-      final entry = DictEntry.fromRow(
-        word: 'test',
-        phonetic: 'test',
-        tag: '',
-      );
+      final entry = DictEntry.fromRow(word: 'test', phonetic: 'test', tag: '');
 
       expect(entry.examTags, isEmpty);
     });
 
     test('fromRow null 标签', () {
-      final entry = DictEntry.fromRow(
-        word: 'test',
-        phonetic: 'test',
-      );
+      final entry = DictEntry.fromRow(word: 'test', phonetic: 'test');
 
       expect(entry.examTags, isEmpty);
     });
 
     test('fromRow 无星级默认为 0', () {
-      final entry = DictEntry.fromRow(
-        word: 'test',
-        phonetic: 'test',
-      );
+      final entry = DictEntry.fromRow(word: 'test', phonetic: 'test');
 
       expect(entry.collins, 0);
     });

@@ -55,15 +55,17 @@ void main() {
   });
 
   test('pragma table_info 包含 original_date 且 nullable', () async {
-    final rows = await db
-        .customSelect('PRAGMA table_info(audio_items)')
-        .get();
-    final byName = {
-      for (final r in rows) r.data['name'] as String: r.data,
-    };
-    expect(byName.containsKey('original_date'), isTrue,
-        reason: 'v31 schema 必须包含 original_date 列');
-    expect(byName['original_date']!['notnull'], 0,
-        reason: 'original_date 必须 nullable');
+    final rows = await db.customSelect('PRAGMA table_info(audio_items)').get();
+    final byName = {for (final r in rows) r.data['name'] as String: r.data};
+    expect(
+      byName.containsKey('original_date'),
+      isTrue,
+      reason: 'v31 schema 必须包含 original_date 列',
+    );
+    expect(
+      byName['original_date']!['notnull'],
+      0,
+      reason: 'original_date 必须 nullable',
+    );
   });
 }

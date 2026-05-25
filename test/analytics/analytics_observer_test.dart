@@ -75,10 +75,7 @@ void main() {
       observer.didPush(route2, route1);
 
       expect(channel.events, hasLength(2));
-      expect(
-        channel.events[1].params?[EventParams.previousScreen],
-        'study',
-      );
+      expect(channel.events[1].params?[EventParams.previousScreen], 'study');
     });
 
     test('didPop 上报回退目标页面的 screen_view', () {
@@ -114,13 +111,17 @@ void main() {
     test('从深层路径提取最后一个非参数段', () {
       final route = MaterialPageRoute(
         settings: const RouteSettings(
-          name: '/collections/550e8400-e29b-41d4-a716-446655440000/blind-listen',
+          name:
+              '/collections/550e8400-e29b-41d4-a716-446655440000/blind-listen',
         ),
         builder: (_) => const SizedBox(),
       );
       observer.didPush(route, null);
 
-      expect(channel.events.first.params?[EventParams.screenName], 'blind-listen');
+      expect(
+        channel.events.first.params?[EventParams.screenName],
+        'blind-listen',
+      );
     });
 
     test('纯数字路径段被视为参数', () {
@@ -135,9 +136,7 @@ void main() {
 
     test('GoRouter 模板参数 :collectionId 被过滤', () {
       final route = MaterialPageRoute(
-        settings: const RouteSettings(
-          name: '/collections/:collectionId',
-        ),
+        settings: const RouteSettings(name: '/collections/:collectionId'),
         builder: (_) => const SizedBox(),
       );
       observer.didPush(route, null);

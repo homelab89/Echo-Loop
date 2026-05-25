@@ -17,11 +17,7 @@ void main() {
   group('SentenceAnnotationCard — 基本渲染', () {
     testWidgets('显示句子文本', (tester) async {
       await tester.pumpWidget(
-        createTestApp(
-          SentenceAnnotationCard(
-            text: 'Hello world',
-          ),
-        ),
+        createTestApp(SentenceAnnotationCard(text: 'Hello world')),
       );
 
       // 句子文本通过 RichText 渲染
@@ -77,11 +73,7 @@ void main() {
 
     testWidgets('无 AI 回调和缓存时翻译/解析按钮禁用', (tester) async {
       await tester.pumpWidget(
-        createTestApp(
-          SentenceAnnotationCard(
-            text: 'Test',
-          ),
-        ),
+        createTestApp(SentenceAnnotationCard(text: 'Test')),
       );
 
       // 无回调/缓存时按钮不渲染（因为三个按钮都无法使用）
@@ -123,8 +115,7 @@ void main() {
       expect(find.text('这是翻译结果'), findsOneWidget);
     });
 
-    testWidgets('cachedTranslation 初始折叠，点击后立即显示且不触发请求',
-        (tester) async {
+    testWidgets('cachedTranslation 初始折叠，点击后立即显示且不触发请求', (tester) async {
       var requested = false;
 
       await tester.pumpWidget(
@@ -288,8 +279,7 @@ void main() {
             cachedTranslation: '缓存翻译',
             onRequestTranslation: () async => '缓存翻译',
             cachedAnalysis: '缓存语法${sep}缓存词汇${sep}缓存用法',
-            onRequestAnalysis: () async =>
-                '缓存语法${sep}缓存词汇${sep}缓存用法',
+            onRequestAnalysis: () async => '缓存语法${sep}缓存词汇${sep}缓存用法',
           ),
         ),
       );
@@ -433,11 +423,9 @@ void main() {
 
     /// 找到 IPA chip 内的 monospace Text
     Finder findIpaChip(String content) => find.byWidgetPredicate(
-          (w) =>
-              w is Text &&
-              w.style?.fontFamily == 'monospace' &&
-              w.data == content,
-        );
+      (w) =>
+          w is Text && w.style?.fontFamily == 'monospace' && w.data == content,
+    );
 
     /// 找到任意 monospace Text，用于断言"没有任何 IPA chip"
     final anyIpaChipFinder = find.byWidgetPredicate(

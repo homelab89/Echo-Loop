@@ -18,22 +18,22 @@ void main() {
     // Mock path_provider 的 getTemporaryDirectory
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (call) async {
-        if (call.method == 'getTemporaryDirectory') {
-          return tempDir.path;
-        }
-        return null;
-      },
-    );
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (call) async {
+            if (call.method == 'getTemporaryDirectory') {
+              return tempDir.path;
+            }
+            return null;
+          },
+        );
   });
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      null,
-    );
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          null,
+        );
     if (tempDir.existsSync()) {
       tempDir.deleteSync(recursive: true);
     }

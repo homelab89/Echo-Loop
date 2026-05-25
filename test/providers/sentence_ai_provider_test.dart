@@ -42,9 +42,7 @@ void main() {
           targetLanguage: lang,
           cancelToken: any(named: 'cancelToken'),
         ),
-      ).thenAnswer(
-        (_) async => const SentenceTranslation(translation: '你好世界'),
-      );
+      ).thenAnswer((_) async => const SentenceTranslation(translation: '你好世界'));
       when(
         () => mockDao.upsert(any(), l2TranslationType, any()),
       ).thenAnswer((_) async {});
@@ -53,10 +51,7 @@ void main() {
       await notifier.getTranslation(text, targetLanguage: lang);
 
       // 第二次：L1 命中，不再调 DAO 或 API
-      final result = await notifier.getTranslation(
-        text,
-        targetLanguage: lang,
-      );
+      final result = await notifier.getTranslation(text, targetLanguage: lang);
       expect(result.translation, '你好世界');
 
       // API 只调了一次
@@ -74,10 +69,7 @@ void main() {
         () => mockDao.getByHash(any(), l2TranslationType),
       ).thenAnswer((_) async => '{"translation":"你好世界"}');
 
-      final result = await notifier.getTranslation(
-        text,
-        targetLanguage: lang,
-      );
+      final result = await notifier.getTranslation(text, targetLanguage: lang);
       expect(result.translation, '你好世界');
 
       // 不应调用 API
@@ -100,23 +92,16 @@ void main() {
           targetLanguage: lang,
           cancelToken: any(named: 'cancelToken'),
         ),
-      ).thenAnswer(
-        (_) async => const SentenceTranslation(translation: '你好世界'),
-      );
+      ).thenAnswer((_) async => const SentenceTranslation(translation: '你好世界'));
       when(
         () => mockDao.upsert(any(), l2TranslationType, any()),
       ).thenAnswer((_) async {});
 
-      final result = await notifier.getTranslation(
-        text,
-        targetLanguage: lang,
-      );
+      final result = await notifier.getTranslation(text, targetLanguage: lang);
       expect(result.translation, '你好世界');
 
       // 验证写入 SQLite
-      verify(
-        () => mockDao.upsert(any(), l2TranslationType, any()),
-      ).called(1);
+      verify(() => mockDao.upsert(any(), l2TranslationType, any())).called(1);
 
       // 验证 L1 也已缓存
       expect(notifier.getCachedTranslation(text)?.translation, '你好世界');
@@ -166,17 +151,12 @@ void main() {
     const text = 'She has been studying.';
 
     test('L2 SQLite 缓存命中', () async {
-      when(
-        () => mockDao.getByHash(any(), l2AnalysisType),
-      ).thenAnswer(
+      when(() => mockDao.getByHash(any(), l2AnalysisType)).thenAnswer(
         (_) async =>
             '{"analysis":{"grammar":"现在完成进行时","vocabulary":"study","listening":"持续动作"}}',
       );
 
-      final result = await notifier.getAnalysis(
-        text,
-        targetLanguage: lang,
-      );
+      final result = await notifier.getAnalysis(text, targetLanguage: lang);
       expect(result.grammar, '现在完成进行时');
       expect(result.vocabulary, 'study');
       expect(result.listening, '持续动作');
@@ -203,10 +183,7 @@ void main() {
         () => mockDao.upsert(any(), l2AnalysisType, any()),
       ).thenAnswer((_) async {});
 
-      final result = await notifier.getAnalysis(
-        text,
-        targetLanguage: lang,
-      );
+      final result = await notifier.getAnalysis(text, targetLanguage: lang);
       expect(result.grammar, 'g');
 
       verify(() => mockDao.upsert(any(), l2AnalysisType, any())).called(1);
@@ -231,12 +208,8 @@ void main() {
           targetLanguage: lang,
           cancelToken: any(named: 'cancelToken'),
         ),
-      ).thenAnswer(
-        (_) async => const SentenceTranslation(translation: 't'),
-      );
-      when(
-        () => mockDao.upsert(any(), any(), any()),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) async => const SentenceTranslation(translation: 't'));
+      when(() => mockDao.upsert(any(), any(), any())).thenAnswer((_) async {});
 
       await notifier.getTranslation('test', targetLanguage: lang);
       expect(notifier.getCachedTranslation('test'), isNotNull);
@@ -279,10 +252,7 @@ void main() {
       reset(mockApi);
 
       // 第二次：L1 命中，不查 DB 也不调 API
-      final result = await notifier.getAnalysis(
-        text,
-        targetLanguage: lang,
-      );
+      final result = await notifier.getAnalysis(text, targetLanguage: lang);
       expect(result.grammar, 'g');
 
       verifyNever(() => mockDao.getByHash(any(), any()));
@@ -316,11 +286,9 @@ void main() {
       final f1 = notifier.getAnalysis(text, targetLanguage: lang);
       final f2 = notifier.getAnalysis(text, targetLanguage: lang);
 
-      completer.complete(const SentenceAnalysis(
-        grammar: 'g',
-        vocabulary: 'v',
-        listening: 'u',
-      ));
+      completer.complete(
+        const SentenceAnalysis(grammar: 'g', vocabulary: 'v', listening: 'u'),
+      );
 
       final r1 = await f1;
       final r2 = await f2;
@@ -376,12 +344,8 @@ void main() {
           targetLanguage: lang,
           cancelToken: any(named: 'cancelToken'),
         ),
-      ).thenAnswer(
-        (_) async => const SentenceTranslation(translation: 't'),
-      );
-      when(
-        () => mockDao.upsert(any(), any(), any()),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) async => const SentenceTranslation(translation: 't'));
+      when(() => mockDao.upsert(any(), any(), any())).thenAnswer((_) async {});
 
       // 写入 analysis
       when(
@@ -426,12 +390,8 @@ void main() {
           targetLanguage: lang,
           cancelToken: any(named: 'cancelToken'),
         ),
-      ).thenAnswer(
-        (_) async => const SentenceTranslation(translation: 'x'),
-      );
-      when(
-        () => mockDao.upsert(any(), any(), any()),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) async => const SentenceTranslation(translation: 'x'));
+      when(() => mockDao.upsert(any(), any(), any())).thenAnswer((_) async {});
 
       await notifier.getTranslation('Hello World.', targetLanguage: lang);
 
@@ -460,12 +420,8 @@ void main() {
           targetLanguage: 'zh-CN',
           cancelToken: any(named: 'cancelToken'),
         ),
-      ).thenAnswer(
-        (_) async => const SentenceTranslation(translation: '你好'),
-      );
-      when(
-        () => mockDao.upsert(any(), any(), any()),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) async => const SentenceTranslation(translation: '你好'));
+      when(() => mockDao.upsert(any(), any(), any())).thenAnswer((_) async {});
 
       final zhResult = await notifier.getTranslation(
         text,
@@ -483,9 +439,7 @@ void main() {
           targetLanguage: 'zh-TW',
           cancelToken: any(named: 'cancelToken'),
         ),
-      ).thenAnswer(
-        (_) async => const SentenceTranslation(translation: '你好'),
-      );
+      ).thenAnswer((_) async => const SentenceTranslation(translation: '你好'));
 
       final twResult = await notifier.getTranslation(
         text,

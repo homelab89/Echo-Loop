@@ -85,11 +85,10 @@ void main() {
       }
 
       // 移除 index 0 和 4
-      await BookmarkManager.removeBookmarksFromDb(
-        audioId,
-        {0, 4},
-        dao: db.bookmarkDao,
-      );
+      await BookmarkManager.removeBookmarksFromDb(audioId, {
+        0,
+        4,
+      }, dao: db.bookmarkDao);
 
       final indices = await BookmarkManager.loadBookmarks(
         audioId,
@@ -101,9 +100,7 @@ void main() {
 
   group('难句标记增量同步逻辑', () {
     test('新增难句正确保存、取消难句正确移除', () async {
-      final sentences = _createTestSentences(
-        bookmarkedPositions: {1, 3},
-      );
+      final sentences = _createTestSentences(bookmarkedPositions: {1, 3});
 
       // 模拟初始状态：句子 1、3 已有书签
       for (final i in [1, 3]) {
@@ -140,8 +137,7 @@ void main() {
         );
       }
 
-      final removedPositions =
-          initialBookmarks.difference(difficultSentences);
+      final removedPositions = initialBookmarks.difference(difficultSentences);
       expect(removedPositions, {3});
 
       if (removedPositions.isNotEmpty) {
@@ -193,11 +189,7 @@ void main() {
 
       // 预存已有书签（sentence.index 5 和 15）
       for (final s in sentences.where((s) => s.isBookmarked)) {
-        await BookmarkManager.addBookmarkToDb(
-          audioId,
-          s,
-          dao: db.bookmarkDao,
-        );
+        await BookmarkManager.addBookmarkToDb(audioId, s, dao: db.bookmarkDao);
       }
 
       // 初始书签用位置索引: position 0 (index=5), position 2 (index=15)
@@ -222,8 +214,7 @@ void main() {
       }
 
       // 移除: position 0 → sentence.index = 5
-      final removedPositions =
-          initialBookmarks.difference(difficultSentences);
+      final removedPositions = initialBookmarks.difference(difficultSentences);
       expect(removedPositions, {0});
 
       final removedSentenceIndices = <int>{

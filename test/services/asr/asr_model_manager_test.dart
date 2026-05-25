@@ -15,16 +15,16 @@ class MockHttpClientAdapter implements HttpClientAdapter {
   MockHttpClientAdapter({required this.filePayloads});
 
   @override
-  Future<ResponseBody> fetch(RequestOptions options, Stream<List<int>>? requestStream, Future<void>? cancelFuture) async {
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
     final fileName = options.path.split('/').last;
     final payload = filePayloads[fileName];
 
     if (payload == null) {
-      return ResponseBody(
-        Stream.empty(),
-        404,
-        headers: {},
-      );
+      return ResponseBody(Stream.empty(), 404, headers: {});
     }
 
     return ResponseBody(
@@ -123,9 +123,7 @@ void main() {
 
     // 使用 mock Dio adapter 而非真实 HTTP server
     final dio = Dio();
-    dio.httpClientAdapter = MockHttpClientAdapter(
-      filePayloads: filePayloads,
-    );
+    dio.httpClientAdapter = MockHttpClientAdapter(filePayloads: filePayloads);
 
     addTearDown(() async {
       if (await rootDir.exists()) {

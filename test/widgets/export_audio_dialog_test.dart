@@ -22,17 +22,17 @@ Widget _buildTestApp({required Widget child}) {
 void main() {
   group('ExportAudioDialog', () {
     testWidgets('有字幕时两个 checkbox 都可用', (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => showExportAudioDialog(
-              context: context,
-              hasTranscript: true,
+      await tester.pumpWidget(
+        _buildTestApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () =>
+                  showExportAudioDialog(context: context, hasTranscript: true),
+              child: const Text('Open'),
             ),
-            child: const Text('Open'),
           ),
         ),
-      ));
+      );
 
       // 打开对话框
       await tester.tap(find.text('Open'));
@@ -48,40 +48,42 @@ void main() {
     });
 
     testWidgets('无字幕时字幕 checkbox disabled', (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => showExportAudioDialog(
-              context: context,
-              hasTranscript: false,
+      await tester.pumpWidget(
+        _buildTestApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () =>
+                  showExportAudioDialog(context: context, hasTranscript: false),
+              child: const Text('Open'),
             ),
-            child: const Text('Open'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
       // 字幕 checkbox 应该是 disabled 且未选中
-      final checkboxes = tester.widgetList<Checkbox>(find.byType(Checkbox)).toList();
+      final checkboxes = tester
+          .widgetList<Checkbox>(find.byType(Checkbox))
+          .toList();
       // 第一个是音频，第二个是字幕
       expect(checkboxes[1].onChanged, isNull); // disabled
       expect(checkboxes[1].value, false); // 未选中
     });
 
     testWidgets('默认只选中字幕时导出按钮可用', (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => showExportAudioDialog(
-              context: context,
-              hasTranscript: true,
+      await tester.pumpWidget(
+        _buildTestApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () =>
+                  showExportAudioDialog(context: context, hasTranscript: true),
+              child: const Text('Open'),
             ),
-            child: const Text('Open'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
@@ -94,17 +96,17 @@ void main() {
     });
 
     testWidgets('全部未选时导出按钮 disabled', (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => showExportAudioDialog(
-              context: context,
-              hasTranscript: true,
+      await tester.pumpWidget(
+        _buildTestApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () =>
+                  showExportAudioDialog(context: context, hasTranscript: true),
+              child: const Text('Open'),
             ),
-            child: const Text('Open'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
@@ -123,19 +125,21 @@ void main() {
     testWidgets('取消返回 null', (tester) async {
       ExportAudioSelection? result;
 
-      await tester.pumpWidget(_buildTestApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () async {
-              result = await showExportAudioDialog(
-                context: context,
-                hasTranscript: true,
-              );
-            },
-            child: const Text('Open'),
+      await tester.pumpWidget(
+        _buildTestApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                result = await showExportAudioDialog(
+                  context: context,
+                  hasTranscript: true,
+                );
+              },
+              child: const Text('Open'),
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
@@ -149,19 +153,21 @@ void main() {
     testWidgets('确认返回正确的 selection', (tester) async {
       ExportAudioSelection? result;
 
-      await tester.pumpWidget(_buildTestApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () async {
-              result = await showExportAudioDialog(
-                context: context,
-                hasTranscript: true,
-              );
-            },
-            child: const Text('Open'),
+      await tester.pumpWidget(
+        _buildTestApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                result = await showExportAudioDialog(
+                  context: context,
+                  hasTranscript: true,
+                );
+              },
+              child: const Text('Open'),
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
@@ -182,19 +188,21 @@ void main() {
     testWidgets('无字幕时只能导出音频', (tester) async {
       ExportAudioSelection? result;
 
-      await tester.pumpWidget(_buildTestApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () async {
-              result = await showExportAudioDialog(
-                context: context,
-                hasTranscript: false,
-              );
-            },
-            child: const Text('Open'),
+      await tester.pumpWidget(
+        _buildTestApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                result = await showExportAudioDialog(
+                  context: context,
+                  hasTranscript: false,
+                );
+              },
+              child: const Text('Open'),
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();

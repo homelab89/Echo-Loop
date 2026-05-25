@@ -197,17 +197,72 @@ void main() {
       },
     );
 
+    test('review1 v2 阶段内推进：reviewDifficultPractice → blindListen', () async {
+      final now = DateTime(2026, 3, 5, 10, 0);
+      // lastStageCompletedAt 设为 2 天前，让 review1（24h 间隔）已解锁
+      final completedAt = now.subtract(const Duration(days: 2));
+      // 无 review1 completion → v2 plan = [reviewDifficultPractice, blindListen]
+      final progress = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.review1,
+        currentSubStage: SubStageType.reviewDifficultPractice,
+        lastStageCompletedAt: completedAt,
+        currentStageStartedAt: now,
+        updatedAt: now,
+      );
+
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': progress}),
+        nowGetter: () => now,
+      );
+
+      await notifier(container).completeCurrentSubStage('a1');
+
+      final after = readProgress(container, 'a1')!;
+      expect(after.currentStage, LearningStage.review1);
+      expect(after.currentSubStage, SubStageType.blindListen);
+    });
+
     test(
-      'review1 v2 阶段内推进：reviewDifficultPractice → blindListen',
+      'review1 v1（snapshot v1）内推进：blindListen → reviewDifficultPractice',
       () async {
         final now = DateTime(2026, 3, 5, 10, 0);
-        // lastStageCompletedAt 设为 2 天前，让 review1（24h 间隔）已解锁
         final completedAt = now.subtract(const Duration(days: 2));
-        // 无 review1 completion → v2 plan = [reviewDifficultPractice, blindListen]
+        // 显式 stamp review1=1 → v1 plan = [blindListen, difficult, retellPara]
         final progress = LearningProgress(
           audioItemId: 'a1',
           currentStage: LearningStage.review1,
-          currentSubStage: SubStageType.reviewDifficultPractice,
+          currentSubStage: SubStageType.blindListen,
+          lastStageCompletedAt: completedAt,
+          currentStageStartedAt: now,
+          updatedAt: now,
+          planVersionsByStage: const {LearningStage.review1: 1},
+        );
+
+        final container = createContainer(
+          LearningProgressState(progressMap: {'a1': progress}),
+          nowGetter: () => now,
+        );
+
+        await notifier(container).completeCurrentSubStage('a1');
+
+        final after = readProgress(container, 'a1')!;
+        expect(after.currentStage, LearningStage.review1);
+        expect(after.currentSubStage, SubStageType.reviewDifficultPractice);
+      },
+    );
+
+    test(
+      'review1 v2 最后一步推进到下一轮：blindListen → review2.reviewDifficultPractice',
+      () async {
+        final now = DateTime(2026, 3, 5, 10, 0);
+        final completedAt = now.subtract(const Duration(days: 2));
+        // 无 completion → v2 plan = [difficult, blindListen]；blindListen 是末项
+        final progress = LearningProgress(
+          audioItemId: 'a1',
+          currentStage: LearningStage.review1,
+          currentSubStage: SubStageType.blindListen,
+          firstLearnCompletedAt: DateTime(2026, 3, 1),
           lastStageCompletedAt: completedAt,
           currentStageStartedAt: now,
           updatedAt: now,
@@ -221,127 +276,80 @@ void main() {
         await notifier(container).completeCurrentSubStage('a1');
 
         final after = readProgress(container, 'a1')!;
-        expect(after.currentStage, LearningStage.review1);
-        expect(after.currentSubStage, SubStageType.blindListen);
+        expect(after.currentStage, LearningStage.review2);
+        // review2 v2 plan = [difficult, blindListen, retellPara]，first = difficult
+        expect(after.currentSubStage, SubStageType.reviewDifficultPractice);
+        expect(after.lastStageCompletedAt, isNotNull);
+        // firstLearnCompletedAt 不变
+        expect(after.firstLearnCompletedAt, DateTime(2026, 3, 1));
       },
     );
 
-    test('review1 v1（snapshot v1）内推进：blindListen → reviewDifficultPractice',
-        () async {
-      final now = DateTime(2026, 3, 5, 10, 0);
-      final completedAt = now.subtract(const Duration(days: 2));
-      // 显式 stamp review1=1 → v1 plan = [blindListen, difficult, retellPara]
-      final progress = LearningProgress(
-        audioItemId: 'a1',
-        currentStage: LearningStage.review1,
-        currentSubStage: SubStageType.blindListen,
-        lastStageCompletedAt: completedAt,
-        currentStageStartedAt: now,
-        updatedAt: now,
-        planVersionsByStage: const {LearningStage.review1: 1},
-      );
+    test(
+      'review28 v2 最后一步推进到 completed：reviewRetellParagraph → completed',
+      () async {
+        final now = DateTime(2026, 5, 1, 10, 0);
+        final completedAt = now.subtract(const Duration(days: 30));
+        // 无 completion → v2 plan = [difficult, blindListen, reviewRetellParagraph]
+        final progress = LearningProgress(
+          audioItemId: 'a1',
+          currentStage: LearningStage.review28,
+          currentSubStage: SubStageType.reviewRetellParagraph,
+          firstLearnCompletedAt: DateTime(2026, 3, 1),
+          lastStageCompletedAt: completedAt,
+          currentStageStartedAt: now,
+          updatedAt: now,
+        );
 
-      final container = createContainer(
-        LearningProgressState(progressMap: {'a1': progress}),
-        nowGetter: () => now,
-      );
+        final container = createContainer(
+          LearningProgressState(progressMap: {'a1': progress}),
+          nowGetter: () => now,
+        );
 
-      await notifier(container).completeCurrentSubStage('a1');
+        await notifier(container).completeCurrentSubStage('a1');
 
-      final after = readProgress(container, 'a1')!;
-      expect(after.currentStage, LearningStage.review1);
-      expect(after.currentSubStage, SubStageType.reviewDifficultPractice);
-    });
+        final after = readProgress(container, 'a1')!;
+        expect(after.currentStage, LearningStage.completed);
+        expect(after.isCompleted, isTrue);
+      },
+    );
 
-    test('review1 v2 最后一步推进到下一轮：blindListen → review2.reviewDifficultPractice',
-        () async {
-      final now = DateTime(2026, 3, 5, 10, 0);
-      final completedAt = now.subtract(const Duration(days: 2));
-      // 无 completion → v2 plan = [difficult, blindListen]；blindListen 是末项
-      final progress = LearningProgress(
-        audioItemId: 'a1',
-        currentStage: LearningStage.review1,
-        currentSubStage: SubStageType.blindListen,
-        firstLearnCompletedAt: DateTime(2026, 3, 1),
-        lastStageCompletedAt: completedAt,
-        currentStageStartedAt: now,
-        updatedAt: now,
-      );
+    test(
+      'review28 v1（有 completion 走 v1 plan）最后一步推进：reviewRetellSummary → completed',
+      () async {
+        final now = DateTime(2026, 5, 1, 10, 0);
+        final completedAt = now.subtract(const Duration(days: 30));
+        // 有 review28 completion → v1 plan = [blind, difficult, summary]
+        final progress = LearningProgress(
+          audioItemId: 'a1',
+          currentStage: LearningStage.review28,
+          currentSubStage: SubStageType.reviewRetellSummary,
+          firstLearnCompletedAt: DateTime(2026, 3, 1),
+          lastStageCompletedAt: completedAt,
+          currentStageStartedAt: now,
+          updatedAt: now,
+        );
 
-      final container = createContainer(
-        LearningProgressState(progressMap: {'a1': progress}),
-        nowGetter: () => now,
-      );
+        final container = createContainer(
+          LearningProgressState(
+            progressMap: {'a1': progress},
+            completionsByAudio: const {
+              'a1': {
+                'review28:blindListen',
+                'review28:reviewDifficultPractice',
+              },
+            },
+          ),
+          nowGetter: () => now,
+        );
 
-      await notifier(container).completeCurrentSubStage('a1');
+        await notifier(container).completeCurrentSubStage('a1');
 
-      final after = readProgress(container, 'a1')!;
-      expect(after.currentStage, LearningStage.review2);
-      // review2 v2 plan = [difficult, blindListen, retellPara]，first = difficult
-      expect(after.currentSubStage, SubStageType.reviewDifficultPractice);
-      expect(after.lastStageCompletedAt, isNotNull);
-      // firstLearnCompletedAt 不变
-      expect(after.firstLearnCompletedAt, DateTime(2026, 3, 1));
-    });
-
-    test('review28 v2 最后一步推进到 completed：reviewRetellParagraph → completed',
-        () async {
-      final now = DateTime(2026, 5, 1, 10, 0);
-      final completedAt = now.subtract(const Duration(days: 30));
-      // 无 completion → v2 plan = [difficult, blindListen, reviewRetellParagraph]
-      final progress = LearningProgress(
-        audioItemId: 'a1',
-        currentStage: LearningStage.review28,
-        currentSubStage: SubStageType.reviewRetellParagraph,
-        firstLearnCompletedAt: DateTime(2026, 3, 1),
-        lastStageCompletedAt: completedAt,
-        currentStageStartedAt: now,
-        updatedAt: now,
-      );
-
-      final container = createContainer(
-        LearningProgressState(progressMap: {'a1': progress}),
-        nowGetter: () => now,
-      );
-
-      await notifier(container).completeCurrentSubStage('a1');
-
-      final after = readProgress(container, 'a1')!;
-      expect(after.currentStage, LearningStage.completed);
-      expect(after.isCompleted, isTrue);
-    });
-
-    test('review28 v1（有 completion 走 v1 plan）最后一步推进：reviewRetellSummary → completed',
-        () async {
-      final now = DateTime(2026, 5, 1, 10, 0);
-      final completedAt = now.subtract(const Duration(days: 30));
-      // 有 review28 completion → v1 plan = [blind, difficult, summary]
-      final progress = LearningProgress(
-        audioItemId: 'a1',
-        currentStage: LearningStage.review28,
-        currentSubStage: SubStageType.reviewRetellSummary,
-        firstLearnCompletedAt: DateTime(2026, 3, 1),
-        lastStageCompletedAt: completedAt,
-        currentStageStartedAt: now,
-        updatedAt: now,
-      );
-
-      final container = createContainer(
-        LearningProgressState(
-          progressMap: {'a1': progress},
-          completionsByAudio: const {
-            'a1': {'review28:blindListen', 'review28:reviewDifficultPractice'},
-          },
-        ),
-        nowGetter: () => now,
-      );
-
-      await notifier(container).completeCurrentSubStage('a1');
-
-      final after = readProgress(container, 'a1')!;
-      expect(after.currentStage, LearningStage.completed);
-      expect(after.isCompleted, isTrue);
-    });
+        final after = readProgress(container, 'a1')!;
+        expect(after.currentStage, LearningStage.completed);
+        expect(after.isCompleted, isTrue);
+      },
+    );
 
     test('已完成状态不推进', () async {
       final now = DateTime(2026, 3, 1);
@@ -627,75 +635,65 @@ void main() {
         expect(after.currentSubStage, SubStageType.reviewDifficultPractice);
         expect(after.firstLearnCompletedAt, isNotNull);
         // retell 应被记录在跳过集合
-        expect(
-          after.skippedSubStageKeys
-              .contains('firstLearn:retell'),
-          isTrue,
-        );
+        expect(after.skippedSubStageKeys.contains('firstLearn:retell'), isTrue);
       },
     );
 
-    test(
-      'autoSkipRetell=true：review0 v1 难句补练完成 → review1（自动跳过段落复述）',
-      () async {
-        final now = DateTime(2026, 3, 5, 10, 0);
-        final completedAt = now.subtract(const Duration(days: 1));
-        // v1 plan：review0 = [难句补练, 段落复述]，做完难句补练后落到 retell → 自动跳过。
-        final progress = LearningProgress(
-          audioItemId: 'a1',
-          currentStage: LearningStage.review0,
-          currentSubStage: SubStageType.reviewDifficultPractice,
-          lastStageCompletedAt: completedAt,
-          currentStageStartedAt: now,
-          updatedAt: now,
-          planVersionsByStage: const {LearningStage.review0: 1},
-        );
+    test('autoSkipRetell=true：review0 v1 难句补练完成 → review1（自动跳过段落复述）', () async {
+      final now = DateTime(2026, 3, 5, 10, 0);
+      final completedAt = now.subtract(const Duration(days: 1));
+      // v1 plan：review0 = [难句补练, 段落复述]，做完难句补练后落到 retell → 自动跳过。
+      final progress = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.review0,
+        currentSubStage: SubStageType.reviewDifficultPractice,
+        lastStageCompletedAt: completedAt,
+        currentStageStartedAt: now,
+        updatedAt: now,
+        planVersionsByStage: const {LearningStage.review0: 1},
+      );
 
-        final container = createContainer(
-          LearningProgressState(progressMap: {'a1': progress}),
-          nowGetter: () => now,
-          autoSkipRetell: true,
-        );
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': progress}),
+        nowGetter: () => now,
+        autoSkipRetell: true,
+      );
 
-        await notifier(container).completeCurrentSubStage('a1');
+      await notifier(container).completeCurrentSubStage('a1');
 
-        final after = readProgress(container, 'a1')!;
-        expect(after.currentStage, LearningStage.review1);
-        // review1 默认 v2 plan = [difficult, blindListen]，first = difficult
-        expect(after.currentSubStage, SubStageType.reviewDifficultPractice);
-      },
-    );
+      final after = readProgress(container, 'a1')!;
+      expect(after.currentStage, LearningStage.review1);
+      // review1 默认 v2 plan = [difficult, blindListen]，first = difficult
+      expect(after.currentSubStage, SubStageType.reviewDifficultPractice);
+    });
 
-    test(
-      'autoSkipRetell=true：review0 v2 难句补练完成 → 停在全文盲听（不触发自动跳过）',
-      () async {
-        final now = DateTime(2026, 3, 5, 10, 0);
-        final completedAt = now.subtract(const Duration(days: 1));
-        // v2 plan：review0 = [难句补练, 全文盲听]，全文盲听非 retell → autoSkip 不触发。
-        final progress = LearningProgress(
-          audioItemId: 'a1',
-          currentStage: LearningStage.review0,
-          currentSubStage: SubStageType.reviewDifficultPractice,
-          lastStageCompletedAt: completedAt,
-          currentStageStartedAt: now,
-          updatedAt: now,
-          // 显式 v2（review0=2 与默认一致，写出来更明确）
-          planVersionsByStage: const {LearningStage.review0: 2},
-        );
+    test('autoSkipRetell=true：review0 v2 难句补练完成 → 停在全文盲听（不触发自动跳过）', () async {
+      final now = DateTime(2026, 3, 5, 10, 0);
+      final completedAt = now.subtract(const Duration(days: 1));
+      // v2 plan：review0 = [难句补练, 全文盲听]，全文盲听非 retell → autoSkip 不触发。
+      final progress = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.review0,
+        currentSubStage: SubStageType.reviewDifficultPractice,
+        lastStageCompletedAt: completedAt,
+        currentStageStartedAt: now,
+        updatedAt: now,
+        // 显式 v2（review0=2 与默认一致，写出来更明确）
+        planVersionsByStage: const {LearningStage.review0: 2},
+      );
 
-        final container = createContainer(
-          LearningProgressState(progressMap: {'a1': progress}),
-          nowGetter: () => now,
-          autoSkipRetell: true,
-        );
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': progress}),
+        nowGetter: () => now,
+        autoSkipRetell: true,
+      );
 
-        await notifier(container).completeCurrentSubStage('a1');
+      await notifier(container).completeCurrentSubStage('a1');
 
-        final after = readProgress(container, 'a1')!;
-        expect(after.currentStage, LearningStage.review0);
-        expect(after.currentSubStage, SubStageType.blindListen);
-      },
-    );
+      final after = readProgress(container, 'a1')!;
+      expect(after.currentStage, LearningStage.review0);
+      expect(after.currentSubStage, SubStageType.blindListen);
+    });
 
     test(
       'autoSkipRetell=true：review28 snapshot v1 难句补练完成 → completed（自动跳过 summary）',
@@ -756,7 +754,6 @@ void main() {
         expect(after.currentSubStage, SubStageType.blindListen);
       },
     );
-
   });
 
   // ========== Group 2: 断点保存与清除 ==========
@@ -780,11 +777,9 @@ void main() {
         LearningProgressState(progressMap: {'a1': baseProgress}),
       );
 
-      await notifier(container).saveIntensiveListenSentenceIndex(
-        'a1',
-        5,
-        isFreePlay: false,
-      );
+      await notifier(
+        container,
+      ).saveIntensiveListenSentenceIndex('a1', 5, isFreePlay: false);
 
       final after = readProgress(container, 'a1')!;
       expect(after.intensiveListenSentenceIndex, 5);
@@ -796,11 +791,9 @@ void main() {
         LearningProgressState(progressMap: {'a1': baseProgress}),
       );
 
-      await notifier(container).saveIntensiveListenSentenceIndex(
-        'a1',
-        5,
-        isFreePlay: true,
-      );
+      await notifier(
+        container,
+      ).saveIntensiveListenSentenceIndex('a1', 5, isFreePlay: true);
 
       final after = readProgress(container, 'a1')!;
       expect(after.freePlayIntensiveListenSentenceIndex, 5);
@@ -816,11 +809,9 @@ void main() {
         LearningProgressState(progressMap: {'a1': progressWithIndex}),
       );
 
-      await notifier(container).saveIntensiveListenSentenceIndex(
-        'a1',
-        null,
-        isFreePlay: false,
-      );
+      await notifier(
+        container,
+      ).saveIntensiveListenSentenceIndex('a1', null, isFreePlay: false);
 
       final after = readProgress(container, 'a1')!;
       expect(after.intensiveListenSentenceIndex, isNull);
@@ -831,11 +822,9 @@ void main() {
         LearningProgressState(progressMap: {'a1': baseProgress}),
       );
 
-      await notifier(container).saveShadowingSentenceIndex(
-        'a1',
-        3,
-        isFreePlay: false,
-      );
+      await notifier(
+        container,
+      ).saveShadowingSentenceIndex('a1', 3, isFreePlay: false);
 
       final after = readProgress(container, 'a1')!;
       expect(after.shadowingSentenceIndex, 3);
@@ -849,11 +838,9 @@ void main() {
         LearningProgressState(progressMap: {'a1': progressWithIndex}),
       );
 
-      await notifier(container).saveShadowingSentenceIndex(
-        'a1',
-        null,
-        isFreePlay: false,
-      );
+      await notifier(
+        container,
+      ).saveShadowingSentenceIndex('a1', null, isFreePlay: false);
 
       final after = readProgress(container, 'a1')!;
       expect(after.shadowingSentenceIndex, isNull);
@@ -864,11 +851,9 @@ void main() {
         LearningProgressState(progressMap: {'a1': baseProgress}),
       );
 
-      await notifier(container).saveDifficultPracticeSentenceIndex(
-        'a1',
-        7,
-        isFreePlay: false,
-      );
+      await notifier(
+        container,
+      ).saveDifficultPracticeSentenceIndex('a1', 7, isFreePlay: false);
 
       final after = readProgress(container, 'a1')!;
       expect(after.difficultPracticeSentenceIndex, 7);
@@ -882,11 +867,9 @@ void main() {
         LearningProgressState(progressMap: {'a1': progressWithIndex}),
       );
 
-      await notifier(container).saveDifficultPracticeSentenceIndex(
-        'a1',
-        null,
-        isFreePlay: false,
-      );
+      await notifier(
+        container,
+      ).saveDifficultPracticeSentenceIndex('a1', null, isFreePlay: false);
 
       final after = readProgress(container, 'a1')!;
       expect(after.difficultPracticeSentenceIndex, isNull);
@@ -897,11 +880,9 @@ void main() {
         LearningProgressState(progressMap: {'a1': baseProgress}),
       );
 
-      await notifier(container).saveRetellSentenceIndex(
-        'a1',
-        2,
-        isFreePlay: false,
-      );
+      await notifier(
+        container,
+      ).saveRetellSentenceIndex('a1', 2, isFreePlay: false);
 
       final after = readProgress(container, 'a1')!;
       expect(after.retellSentenceIndex, 2);
@@ -913,11 +894,9 @@ void main() {
         LearningProgressState(progressMap: {'a1': progressWithIndex}),
       );
 
-      await notifier(container).saveRetellSentenceIndex(
-        'a1',
-        null,
-        isFreePlay: false,
-      );
+      await notifier(
+        container,
+      ).saveRetellSentenceIndex('a1', null, isFreePlay: false);
 
       final after = readProgress(container, 'a1')!;
       expect(after.retellSentenceIndex, isNull);
@@ -926,26 +905,18 @@ void main() {
     test('audioItemId 不存在时断点保存安全返回', () async {
       final container = createContainer(const LearningProgressState());
 
-      await notifier(container).saveIntensiveListenSentenceIndex(
-        'nonexistent',
-        5,
-        isFreePlay: false,
-      );
-      await notifier(container).saveShadowingSentenceIndex(
-        'nonexistent',
-        5,
-        isFreePlay: false,
-      );
-      await notifier(container).saveDifficultPracticeSentenceIndex(
-        'nonexistent',
-        5,
-        isFreePlay: false,
-      );
-      await notifier(container).saveRetellSentenceIndex(
-        'nonexistent',
-        5,
-        isFreePlay: false,
-      );
+      await notifier(
+        container,
+      ).saveIntensiveListenSentenceIndex('nonexistent', 5, isFreePlay: false);
+      await notifier(
+        container,
+      ).saveShadowingSentenceIndex('nonexistent', 5, isFreePlay: false);
+      await notifier(
+        container,
+      ).saveDifficultPracticeSentenceIndex('nonexistent', 5, isFreePlay: false);
+      await notifier(
+        container,
+      ).saveRetellSentenceIndex('nonexistent', 5, isFreePlay: false);
 
       final progress = readProgress(container, 'nonexistent');
       expect(progress?.intensiveListenSentenceIndex, 5);
@@ -1346,11 +1317,13 @@ void main() {
       );
 
       final container = createContainer(
-        LearningProgressState(progressMap: {
-          'a1': firstLearnProgress,
-          'a2': review1Progress,
-          'a3': nonRetellProgress,
-        }),
+        LearningProgressState(
+          progressMap: {
+            'a1': firstLearnProgress,
+            'a2': review1Progress,
+            'a3': nonRetellProgress,
+          },
+        ),
         nowGetter: () => now,
         autoSkipRetell: false,
       );
@@ -1456,8 +1429,7 @@ void main() {
       expect(after.skippedSubStageKeys, isEmpty);
     });
 
-    test('autoSkipRetell=true 时手动跳过非 retell 会触发自动续跳到非 retell 位置',
-        () async {
+    test('autoSkipRetell=true 时手动跳过非 retell 会触发自动续跳到非 retell 位置', () async {
       final now = DateTime(2026, 3, 1, 10, 0);
       final progress = LearningProgress(
         audioItemId: 'a1',
@@ -1480,7 +1452,10 @@ void main() {
       expect(after.currentStage, LearningStage.review0);
       expect(
         after.skippedSubStageKeys,
-        containsAll(<String>['firstLearn:listenAndRepeat', 'firstLearn:retell']),
+        containsAll(<String>[
+          'firstLearn:listenAndRepeat',
+          'firstLearn:retell',
+        ]),
       );
     });
   });
@@ -1550,10 +1525,7 @@ void main() {
   group('recordCompletionIfNew', () {
     test('未记录过的 (stage, sub) → 写 DB + 更新内存集合', () async {
       final container = createContainer(
-        const LearningProgressState(
-          progressMap: {},
-          completionsByAudio: {},
-        ),
+        const LearningProgressState(progressMap: {}, completionsByAudio: {}),
         autoSkipRetell: false,
       );
 
@@ -1815,49 +1787,57 @@ void main() {
   // ========== T19: 回归 — 完成 v2 review1.difficult 后 plan 不翻转 ==========
 
   group('plan snapshot 不变量（回归 buggy v34）', () {
-    test('v2 review1（fresh）完成 difficult 后 plan 仍是 v2，planVersionsByStage 不被改写',
-        () async {
-      // 模拟 fresh audio 进入 review1：planVersionsByStage = kLatestPlanVersions
-      // （注意：测试 fixture 显式传完整 baseline 模拟 ensureProgress 行为）
-      final now = DateTime(2026, 5, 16, 10, 0);
-      const baseline = {
-        LearningStage.firstLearn: 1,
-        LearningStage.review0: 2,
-        LearningStage.review1: 2,
-        LearningStage.review2: 2,
-        LearningStage.review4: 2,
-        LearningStage.review7: 2,
-        LearningStage.review14: 2,
-        LearningStage.review28: 2,
-      };
-      final progress = LearningProgress(
-        audioItemId: 'a1',
-        currentStage: LearningStage.review1,
-        currentSubStage: SubStageType.reviewDifficultPractice,
-        lastStageCompletedAt: now.subtract(const Duration(days: 1)),
-        currentStageStartedAt: now,
-        updatedAt: now,
-        planVersionsByStage: baseline,
-      );
-      final container = createContainer(
-        LearningProgressState(progressMap: {'a1': progress}),
-        nowGetter: () => now,
-      );
+    test(
+      'v2 review1（fresh）完成 difficult 后 plan 仍是 v2，planVersionsByStage 不被改写',
+      () async {
+        // 模拟 fresh audio 进入 review1：planVersionsByStage = kLatestPlanVersions
+        // （注意：测试 fixture 显式传完整 baseline 模拟 ensureProgress 行为）
+        final now = DateTime(2026, 5, 16, 10, 0);
+        const baseline = {
+          LearningStage.firstLearn: 1,
+          LearningStage.review0: 2,
+          LearningStage.review1: 2,
+          LearningStage.review2: 2,
+          LearningStage.review4: 2,
+          LearningStage.review7: 2,
+          LearningStage.review14: 2,
+          LearningStage.review28: 2,
+        };
+        final progress = LearningProgress(
+          audioItemId: 'a1',
+          currentStage: LearningStage.review1,
+          currentSubStage: SubStageType.reviewDifficultPractice,
+          lastStageCompletedAt: now.subtract(const Duration(days: 1)),
+          currentStageStartedAt: now,
+          updatedAt: now,
+          planVersionsByStage: baseline,
+        );
+        final container = createContainer(
+          LearningProgressState(progressMap: {'a1': progress}),
+          nowGetter: () => now,
+        );
 
-      await notifier(container).completeCurrentSubStage('a1');
+        await notifier(container).completeCurrentSubStage('a1');
 
-      final after = readProgress(container, 'a1')!;
-      // ① 还在 review1（v2 plan = [diff, blind]，未到末项）
-      expect(after.currentStage, LearningStage.review1,
-          reason: '完成 difficult 不应翻 plan 到 review2');
-      // ② currentSubStage = blindListen（v2 plan 第二项）
-      expect(after.currentSubStage, SubStageType.blindListen);
-      // ③ **核心**：planVersionsByStage 完全不变（snapshot 不变量）
-      expect(after.planVersionsByStage, baseline,
-          reason: 'plan 版本 snapshot 必须在完成 substep 后保持不变');
-      // ④ review1 仍为 v2
-      expect(after.planVersionFor(LearningStage.review1), 2);
-    });
+        final after = readProgress(container, 'a1')!;
+        // ① 还在 review1（v2 plan = [diff, blind]，未到末项）
+        expect(
+          after.currentStage,
+          LearningStage.review1,
+          reason: '完成 difficult 不应翻 plan 到 review2',
+        );
+        // ② currentSubStage = blindListen（v2 plan 第二项）
+        expect(after.currentSubStage, SubStageType.blindListen);
+        // ③ **核心**：planVersionsByStage 完全不变（snapshot 不变量）
+        expect(
+          after.planVersionsByStage,
+          baseline,
+          reason: 'plan 版本 snapshot 必须在完成 substep 后保持不变',
+        );
+        // ④ review1 仍为 v2
+        expect(after.planVersionFor(LearningStage.review1), 2);
+      },
+    );
 
     test('v2 review1（fresh）完成 difficult 再完成 blindListen → review2', () async {
       // 连续两步推进，验证 snapshot 稳定 + 自然跨阶段

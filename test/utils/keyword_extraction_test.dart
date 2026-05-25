@@ -242,7 +242,7 @@ void main() {
         // 模拟 UI 中实际场景：句子停用词较多，旧算法会被候选词数 clamp 住。
         final sentences = _makeSentences([
           'You may take notes while you are listening.', // 8 词，候选 3
-          'You will hear the passage only once.',         // 7 词，候选 2
+          'You will hear the passage only once.', // 7 词，候选 2
         ]);
         final result = extractKeywords(
           sentences,
@@ -398,60 +398,60 @@ void main() {
     /// 期望表（5 难度 × 9 stage）。
     final expected = <DifficultyLevel, Map<LearningStage, KeywordRatio>>{
       DifficultyLevel.veryEasy: {
-        LearningStage.firstLearn: KeywordRatio.medium,    // 40%
+        LearningStage.firstLearn: KeywordRatio.medium, // 40%
         LearningStage.review0: KeywordRatio.medium,
-        LearningStage.review1: KeywordRatio.easy,         // 25%
+        LearningStage.review1: KeywordRatio.easy, // 25%
         LearningStage.review2: KeywordRatio.easy,
         LearningStage.review4: KeywordRatio.easy,
-        LearningStage.review7: KeywordRatio.veryEasy,     // 15%
+        LearningStage.review7: KeywordRatio.veryEasy, // 15%
         LearningStage.review14: KeywordRatio.veryEasy,
         LearningStage.review28: KeywordRatio.veryEasy,
         LearningStage.completed: KeywordRatio.veryEasy,
       },
       DifficultyLevel.easy: {
-        LearningStage.firstLearn: KeywordRatio.hard,      // 60%
+        LearningStage.firstLearn: KeywordRatio.hard, // 60%
         LearningStage.review0: KeywordRatio.hard,
-        LearningStage.review1: KeywordRatio.medium,       // 40%
+        LearningStage.review1: KeywordRatio.medium, // 40%
         LearningStage.review2: KeywordRatio.medium,
         LearningStage.review4: KeywordRatio.medium,
-        LearningStage.review7: KeywordRatio.easy,         // 25%
+        LearningStage.review7: KeywordRatio.easy, // 25%
         LearningStage.review14: KeywordRatio.easy,
         LearningStage.review28: KeywordRatio.easy,
         LearningStage.completed: KeywordRatio.easy,
       },
       DifficultyLevel.medium: {
-        LearningStage.firstLearn: KeywordRatio.veryHard,  // 80%
+        LearningStage.firstLearn: KeywordRatio.veryHard, // 80%
         LearningStage.review0: KeywordRatio.veryHard,
-        LearningStage.review1: KeywordRatio.hard,         // 60%
+        LearningStage.review1: KeywordRatio.hard, // 60%
         LearningStage.review2: KeywordRatio.hard,
         LearningStage.review4: KeywordRatio.hard,
-        LearningStage.review7: KeywordRatio.medium,       // 40%
+        LearningStage.review7: KeywordRatio.medium, // 40%
         LearningStage.review14: KeywordRatio.medium,
         LearningStage.review28: KeywordRatio.medium,
         LearningStage.completed: KeywordRatio.medium,
       },
       DifficultyLevel.hard: {
         // hard 比 medium 后移 1 stage 进入下一档
-        LearningStage.firstLearn: KeywordRatio.veryHard,  // 80%
+        LearningStage.firstLearn: KeywordRatio.veryHard, // 80%
         LearningStage.review0: KeywordRatio.veryHard,
         LearningStage.review1: KeywordRatio.veryHard,
-        LearningStage.review2: KeywordRatio.hard,         // 60%
+        LearningStage.review2: KeywordRatio.hard, // 60%
         LearningStage.review4: KeywordRatio.hard,
         LearningStage.review7: KeywordRatio.hard,
-        LearningStage.review14: KeywordRatio.medium,      // 40%
+        LearningStage.review14: KeywordRatio.medium, // 40%
         LearningStage.review28: KeywordRatio.medium,
         LearningStage.completed: KeywordRatio.medium,
       },
       DifficultyLevel.veryHard: {
         // veryHard 比 medium 后移 2 stage
-        LearningStage.firstLearn: KeywordRatio.veryHard,  // 80%
+        LearningStage.firstLearn: KeywordRatio.veryHard, // 80%
         LearningStage.review0: KeywordRatio.veryHard,
         LearningStage.review1: KeywordRatio.veryHard,
         LearningStage.review2: KeywordRatio.veryHard,
-        LearningStage.review4: KeywordRatio.hard,         // 60%
+        LearningStage.review4: KeywordRatio.hard, // 60%
         LearningStage.review7: KeywordRatio.hard,
         LearningStage.review14: KeywordRatio.hard,
-        LearningStage.review28: KeywordRatio.medium,      // 40%
+        LearningStage.review28: KeywordRatio.medium, // 40%
         LearningStage.completed: KeywordRatio.medium,
       },
     };

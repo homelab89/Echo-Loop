@@ -170,9 +170,8 @@ void main() {
         ),
         audioEngineProvider.overrideWith(() => TestAudioEngine()),
         learningProgressNotifierProvider.overrideWith(
-          () => TestLearningProgressNotifier(
-            _withAutoCompletions(progressState),
-          ),
+          () =>
+              TestLearningProgressNotifier(_withAutoCompletions(progressState)),
         ),
         learningSessionProvider.overrideWith(() => TestLearningSession()),
         if (fixedNow != null) nowProvider.overrideWithValue(() => fixedNow),
@@ -422,6 +421,75 @@ void main() {
       expect(find.text('Pause Learning?'), findsOneWidget);
     });
 
+    testWidgets('暂停确认弹窗→取消：状态保持未暂停，按钮不变', (tester) async {
+      final progressState = LearningProgressState(
+        progressMap: {
+          'test-1': LearningProgress(
+            audioItemId: 'test-1',
+            currentStage: LearningStage.firstLearn,
+            currentSubStage: SubStageType.listenAndRepeat,
+            updatedAt: DateTime(2026, 5, 1),
+          ),
+        },
+      );
+
+      await tester.pumpWidget(createTestWidget(progressState: progressState));
+      await tester.pumpAndSettle();
+
+      // 点击"暂停学习"
+      await tester.tap(find.text('Pause Learning'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pause Learning?'), findsOneWidget);
+
+      // 点击"Cancel"
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      // 对话框关闭，按钮恢复原状
+      expect(find.text('Pause Learning?'), findsNothing);
+      expect(find.text('Continue Learning'), findsOneWidget);
+      expect(find.text('Pause Learning'), findsOneWidget);
+    });
+
+    testWidgets('暂停确认弹窗→确认：状态翻转 isPaused，按钮变单按钮', (tester) async {
+      final progressState = LearningProgressState(
+        progressMap: {
+          'test-1': LearningProgress(
+            audioItemId: 'test-1',
+            currentStage: LearningStage.firstLearn,
+            currentSubStage: SubStageType.listenAndRepeat,
+            updatedAt: DateTime(2026, 5, 1),
+          ),
+        },
+      );
+
+      await tester.pumpWidget(createTestWidget(progressState: progressState));
+      await tester.pumpAndSettle();
+
+      // 点击"暂停学习"
+      await tester.tap(find.text('Pause Learning'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pause Learning?'), findsOneWidget);
+
+      // 弹窗内确认按钮文案也是 "Pause Learning"，取 .last
+      await tester.tap(find.text('Pause Learning').last);
+      await tester.pumpAndSettle();
+
+      // 对话框关闭，state 翻转 — 底部变单按钮
+      expect(find.text('Pause Learning?'), findsNothing);
+      expect(find.textContaining('Paused'), findsWidgets);
+      expect(find.textContaining('Resume'), findsWidgets);
+      expect(find.text('Continue Learning'), findsNothing);
+
+      // 验证 Provider 状态 isPaused=true
+      final appContext = tester.element(find.byType(LearningPlanScreen));
+      final container = ProviderScope.containerOf(appContext);
+      final p = container
+          .read(learningProgressNotifierProvider)
+          .progressMap['test-1'];
+      expect(p!.isPaused, isTrue);
+    });
+
     testWidgets('复习边界时刻到底后底部继续学习按钮可用', (tester) async {
       final now = DateTime(2026, 2, 25, 12, 0);
       final progressState = LearningProgressState(
@@ -537,13 +605,15 @@ void main() {
       );
 
       // LP 有 currentAudioItem 但无句子（模拟字幕缺失）
-      await tester.pumpWidget(createTestWidget(
-        progressState: progressState,
-        lpState: ListeningPracticeState(
-          currentAudioItem: testAudioItem,
-          sentences: const [],
+      await tester.pumpWidget(
+        createTestWidget(
+          progressState: progressState,
+          lpState: ListeningPracticeState(
+            currentAudioItem: testAudioItem,
+            sentences: const [],
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Continue Learning'));
@@ -704,15 +774,10 @@ void main() {
         matching: find.byType(InkWell),
       );
       expect(stepCardFinder, findsAtLeast(1));
-      final inkWell = tester.widgetList<InkWell>(stepCardFinder).firstWhere(
-            (w) => w.onTap != null,
-            orElse: () => const InkWell(),
-          );
-      expect(
-        inkWell.onTap,
-        isNotNull,
-        reason: '过去阶段跳过的复述卡应支持点击进入自由练习',
-      );
+      final inkWell = tester
+          .widgetList<InkWell>(stepCardFinder)
+          .firstWhere((w) => w.onTap != null, orElse: () => const InkWell());
+      expect(inkWell.onTap, isNotNull, reason: '过去阶段跳过的复述卡应支持点击进入自由练习');
     });
 
     testWidgets('无字幕时显示警告横幅且禁用开始按钮', (tester) async {
@@ -722,10 +787,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 显示无字幕警告
-      expect(
-        find.text('This audio has no transcript yet'),
-        findsOneWidget,
-      );
+      expect(find.text('This audio has no transcript yet'), findsOneWidget);
 
       // 开始学习按钮应被禁用（查找底部按钮区域）
       final startButton = find.widgetWithText(FilledButton, 'Start Learning');
@@ -867,24 +929,28 @@ void main() {
       final containers = tester.widgetList<Container>(find.byType(Container));
       final greenContainers = containers.where((c) {
         final decoration = c.decoration;
-        if (decoration is BoxDecoration && decoration.shape == BoxShape.circle) {
+        if (decoration is BoxDecoration &&
+            decoration.shape == BoxShape.circle) {
           return decoration.color == Colors.green.shade50;
         }
         return false;
       });
-      expect(greenContainers, isNotEmpty,
-          reason: '已完成步骤应使用 Colors.green.shade50 作为背景');
+      expect(
+        greenContainers,
+        isNotEmpty,
+        reason: '已完成步骤应使用 Colors.green.shade50 作为背景',
+      );
 
       // 已完成步骤应显示边框
       final borderedContainers = containers.where((c) {
         final decoration = c.decoration;
-        if (decoration is BoxDecoration && decoration.shape == BoxShape.circle) {
+        if (decoration is BoxDecoration &&
+            decoration.shape == BoxShape.circle) {
           return decoration.border != null;
         }
         return false;
       });
-      expect(borderedContainers, isNotEmpty,
-          reason: '已完成步骤应显示绿色边框');
+      expect(borderedContainers, isNotEmpty, reason: '已完成步骤应显示绿色边框');
     });
 
     testWidgets('已完成状态显示正确', (tester) async {
@@ -906,6 +972,128 @@ void main() {
       expect(find.text('100%'), findsOneWidget);
       expect(find.text('Completed'), findsOneWidget);
       expect(find.text('4/4 completed'), findsOneWidget);
+    });
+
+    // ====== Phase 2 Pilot：从 integration_test 下沉的 case ======
+
+    testWidgets('无字幕音频显示警告横幅且开始学习按钮禁用', (tester) async {
+      final progressState = LearningProgressState(
+        progressMap: {
+          'test-1': LearningProgress(
+            audioItemId: 'test-1',
+            currentStage: LearningStage.firstLearn,
+            currentSubStage: SubStageType.blindListen,
+            updatedAt: DateTime(2026, 5, 1),
+          ),
+        },
+      );
+
+      await tester.pumpWidget(
+        createTestWidget(
+          progressState: progressState,
+          audioItem: testAudioItemNoTranscript,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 验证警告横幅出现（warning 图标）
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+
+      // 验证底部按钮存在但被禁用
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Start Learning'),
+      );
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('Phase 2 Pilot：盲听已完成时显示完成标记和继续学习', (tester) async {
+      final completed = seedCompletedKeys(
+        LearningStage.firstLearn,
+        SubStageType.intensiveListen,
+      );
+      final progressState = LearningProgressState(
+        progressMap: {
+          'test-1': LearningProgress(
+            audioItemId: 'test-1',
+            currentStage: LearningStage.firstLearn,
+            currentSubStage: SubStageType.intensiveListen,
+            blindListenPassCount: 2,
+            updatedAt: DateTime(2026, 5, 1),
+          ),
+        },
+        completionsByAudio: {'test-1': completed},
+      );
+
+      await tester.pumpWidget(createTestWidget(progressState: progressState));
+      await tester.pumpAndSettle();
+
+      // 验证盲听步骤显示完成标记（绿色勾图标）
+      expect(find.byIcon(Icons.check), findsWidgets);
+
+      // 验证底部按钮文案为"Continue Learning"
+      expect(find.text('Continue Learning'), findsOneWidget);
+      expect(find.text('Start Learning'), findsNothing);
+    });
+
+    testWidgets('精听阶段点击继续学习弹出精听简报', (tester) async {
+      final completed = seedCompletedKeys(
+        LearningStage.firstLearn,
+        SubStageType.intensiveListen,
+      );
+      final progressState = LearningProgressState(
+        progressMap: {
+          'test-1': LearningProgress(
+            audioItemId: 'test-1',
+            currentStage: LearningStage.firstLearn,
+            currentSubStage: SubStageType.intensiveListen,
+            blindListenPassCount: 2,
+            updatedAt: DateTime(2026, 5, 1),
+          ),
+        },
+        completionsByAudio: {'test-1': completed},
+      );
+
+      await tester.pumpWidget(createTestWidget(progressState: progressState));
+      await tester.pumpAndSettle();
+
+      // 点击"Continue Learning"
+      await tester.tap(find.text('Continue Learning').last);
+      await tester.pumpAndSettle();
+
+      // 验证弹出的是精听简报（IntensiveListenBriefingSheet）
+      expect(find.text('Intensive Listening'), findsWidgets);
+      expect(find.text('Start Practice'), findsOneWidget);
+    });
+
+    // ====== Phase 3 Batch：从 integration_test 下沉的更多 case ======
+
+    testWidgets('学习计划页显示精听遍数和跟读遍数', (tester) async {
+      final completed = seedCompletedKeys(
+        LearningStage.firstLearn,
+        SubStageType.listenAndRepeat,
+      );
+      final progressState = LearningProgressState(
+        progressMap: {
+          'test-1': LearningProgress(
+            audioItemId: 'test-1',
+            currentStage: LearningStage.firstLearn,
+            currentSubStage: SubStageType.listenAndRepeat,
+            blindListenPassCount: 2,
+            intensiveListenPassCount: 2,
+            shadowingPassCount: 1,
+            updatedAt: DateTime(2026, 5, 1),
+          ),
+        },
+        completionsByAudio: {'test-1': completed},
+      );
+
+      await tester.pumpWidget(createTestWidget(progressState: progressState));
+      await tester.pumpAndSettle();
+
+      // 验证精听遍数显示（"Intensive listen 2x"）
+      expect(find.textContaining('2x'), findsWidgets);
+      // 验证跟读遍数显示（"Shadowing 1x"）
+      expect(find.textContaining('1x'), findsWidgets);
     });
   });
 }

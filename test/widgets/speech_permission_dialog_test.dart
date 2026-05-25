@@ -225,8 +225,9 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
     });
 
-    testWidgets('platform backend + ASR 启用 → mic + speech 都需要 granted',
-        (tester) async {
+    testWidgets('platform backend + ASR 启用 → mic + speech 都需要 granted', (
+      tester,
+    ) async {
       final fake = _FakeService(
         current: const SpeechPracticePermissionState(
           microphone: _granted,
@@ -375,8 +376,9 @@ void main() {
       expect(result, isFalse);
     });
 
-    testWidgets('AppLifecycle.resumed 后权限变 granted → 弹窗自动 dismiss',
-        (tester) async {
+    testWidgets('AppLifecycle.resumed 后权限变 granted → 弹窗自动 dismiss', (
+      tester,
+    ) async {
       final fake = _FakeService(
         current: const SpeechPracticePermissionState(
           microphone: _denied,

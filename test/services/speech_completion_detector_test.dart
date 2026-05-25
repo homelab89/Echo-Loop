@@ -11,7 +11,6 @@ SpeechMatchContext buildCtx(String reference, String transcript) {
 }
 
 void main() {
-
   // 10 个不重复的单词，用于需要精确定位的测试
   // "alpha bravo charlie delta echo foxtrot golf hotel india juliet"
   const tenWords =
@@ -652,10 +651,10 @@ void main() {
 
   group('detectTailMatch (复述收紧 minConsecutive=3, 1s)', () {
     DetectionResult retellA(SpeechMatchContext ctx) => detectTailMatch(
-          ctx,
-          minConsecutive: 3,
-          triggerDuration: const Duration(seconds: 1),
-        );
+      ctx,
+      minConsecutive: 3,
+      triggerDuration: const Duration(seconds: 1),
+    );
 
     test('尾部连续 1 词且唯一 → 不再触发（要求 ≥3）', () {
       final ctx = buildCtx(tenWords, 'juliet');
@@ -744,10 +743,10 @@ void main() {
 
   group('detectOverallMatchRate (复述 strictPerfectOnly + 1s)', () {
     DetectionResult retellB(SpeechMatchContext ctx) => detectOverallMatchRate(
-          ctx,
-          strictPerfectOnly: true,
-          perfectDuration: const Duration(seconds: 1),
-        );
+      ctx,
+      strictPerfectOnly: true,
+      perfectDuration: const Duration(seconds: 1),
+    );
 
     test('100% 匹配 → 1s（高置信快速收尾）', () {
       final ctx = buildCtx(tenWords, tenWords);
@@ -796,8 +795,7 @@ void main() {
   // ================================================================
   group('detectNearCompletion (E 规则)', () {
     // 用 20 词原文，方便构造 95%、90% 等匹配率
-    const twentyWords =
-        'a b c d e f g h i j k l m n o p q r s t';
+    const twentyWords = 'a b c d e f g h i j k l m n o p q r s t';
 
     test('matchRate=100% + 末尾 5/5 → 触发 1s', () {
       final ctx = buildCtx(twentyWords, twentyWords);
@@ -883,8 +881,7 @@ void main() {
     test('参数化：minMatchRate=0.95 时 90% 不触发', () {
       const transcript = 'a b c d e f g h i j l m n o p q r t';
       final ctx = buildCtx(twentyWords, transcript);
-      final result =
-          detectNearCompletion(ctx, minMatchRate: 0.95);
+      final result = detectNearCompletion(ctx, minMatchRate: 0.95);
       expect(result.triggered, isFalse);
     });
 
@@ -904,7 +901,6 @@ void main() {
       expect(result.triggered, isTrue);
       expect(result.threshold, const Duration(milliseconds: 2500));
     });
-
   });
 
   // ================================================================
@@ -1000,16 +996,19 @@ void main() {
       );
     });
 
-    test('voicedDuration > adjustedDuration（用户说得比原文更长） → ratio > 1, 仍走 ≥0.95 档', () {
-      // ref=30s, adjusted=39s, voiced=50s → ratio≈1.28
-      expect(
-        computeRetellDynamicFallback(
-          voicedDuration: const Duration(seconds: 50),
-          referenceDuration: const Duration(seconds: 30),
-        ),
-        const Duration(seconds: 6),
-      );
-    });
+    test(
+      'voicedDuration > adjustedDuration（用户说得比原文更长） → ratio > 1, 仍走 ≥0.95 档',
+      () {
+        // ref=30s, adjusted=39s, voiced=50s → ratio≈1.28
+        expect(
+          computeRetellDynamicFallback(
+            voicedDuration: const Duration(seconds: 50),
+            referenceDuration: const Duration(seconds: 30),
+          ),
+          const Duration(seconds: 6),
+        );
+      },
+    );
 
     test('voiced 为 0 但 matchRate >= 0.8 → ratio=0 走 <0.75 = cap', () {
       expect(

@@ -57,7 +57,10 @@ void main() {
     tearDown(() => container.dispose());
 
     test('从 audioLibraryProvider 解析名称', () {
-      final result = _readWithRef(container, (ref) => ref.audioEventParams('a1'));
+      final result = _readWithRef(
+        container,
+        (ref) => ref.audioEventParams('a1'),
+      );
       expect(result, {
         EventParams.audioId: 'a1',
         EventParams.audioName: 'Lesson One',
@@ -73,7 +76,10 @@ void main() {
     });
 
     test('audioId 为 null 时返回空 map', () {
-      final result = _readWithRef(container, (ref) => ref.audioEventParams(null));
+      final result = _readWithRef(
+        container,
+        (ref) => ref.audioEventParams(null),
+      );
       expect(result, isEmpty);
     });
   });

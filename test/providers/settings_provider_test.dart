@@ -226,10 +226,7 @@ void main() {
 
       SharedPreferences.setMockInitialValues({'locale': 'zh-CN'});
       prefs = await SharedPreferences.getInstance();
-      expect(
-        readInitialUiLocaleSync(prefs),
-        equals(const Locale('zh', 'CN')),
-      );
+      expect(readInitialUiLocaleSync(prefs), equals(const Locale('zh', 'CN')));
 
       SharedPreferences.setMockInitialValues({'locale': 'system'});
       prefs = await SharedPreferences.getInstance();

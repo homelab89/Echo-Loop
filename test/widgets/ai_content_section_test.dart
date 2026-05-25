@@ -11,10 +11,7 @@ void main() {
     testWidgets('初始状态为折叠，只显示标题', (tester) async {
       await tester.pumpWidget(
         createTestApp(
-          const AiContentSection(
-            icon: Icons.translate,
-            title: 'Translation',
-          ),
+          const AiContentSection(icon: Icons.translate, title: 'Translation'),
         ),
       );
 
@@ -177,10 +174,7 @@ void main() {
       // rebuild 传 cachedContent=null
       await tester.pumpWidget(
         createTestApp(
-          const AiContentSection(
-            icon: Icons.translate,
-            title: 'Translation',
-          ),
+          const AiContentSection(icon: Icons.translate, title: 'Translation'),
         ),
       );
 

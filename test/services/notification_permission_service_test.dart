@@ -46,10 +46,12 @@ void main() {
     bool requestResult = true,
     DateTime? now,
   }) async {
-    when(() => reporter.getAuthorizationStatus())
-        .thenAnswer((_) async => authStatus);
-    when(() => reporter.requestAuthorization())
-        .thenAnswer((_) async => requestResult);
+    when(
+      () => reporter.getAuthorizationStatus(),
+    ).thenAnswer((_) async => authStatus);
+    when(
+      () => reporter.requestAuthorization(),
+    ).thenAnswer((_) async => requestResult);
     when(() => reporter.openSettings()).thenAnswer((_) async {});
 
     final service = NotificationPermissionService(
@@ -85,10 +87,9 @@ void main() {
 
       expect(trigger.triggerCount, 0);
       verify(
-        () => analytics.track(
-          Events.notificationPromptSkipped,
-          {EventParams.reason: 'already_decided'},
-        ),
+        () => analytics.track(Events.notificationPromptSkipped, {
+          EventParams.reason: 'already_decided',
+        }),
       ).called(1);
     });
 
@@ -122,10 +123,9 @@ void main() {
 
       expect(trigger.triggerCount, 0);
       verify(
-        () => analytics.track(
-          Events.notificationPromptSkipped,
-          {EventParams.reason: 'cooldown'},
-        ),
+        () => analytics.track(Events.notificationPromptSkipped, {
+          EventParams.reason: 'cooldown',
+        }),
       ).called(1);
     });
 
@@ -164,10 +164,9 @@ void main() {
 
       expect(trigger.triggerCount, 0);
       verify(
-        () => analytics.track(
-          Events.notificationPromptSkipped,
-          {EventParams.reason: 'cooldown'},
-        ),
+        () => analytics.track(Events.notificationPromptSkipped, {
+          EventParams.reason: 'cooldown',
+        }),
       ).called(1);
     });
   });
@@ -225,16 +224,14 @@ void main() {
 
       expect(granted, isTrue);
       verify(
-        () => analytics.track(
-          Events.notificationPromptResult,
-          {EventParams.action: 'grant'},
-        ),
+        () => analytics.track(Events.notificationPromptResult, {
+          EventParams.action: 'grant',
+        }),
       ).called(1);
       verify(
-        () => analytics.track(
-          Events.notificationSystemResult,
-          {EventParams.status: 'granted'},
-        ),
+        () => analytics.track(Events.notificationSystemResult, {
+          EventParams.status: 'granted',
+        }),
       ).called(1);
       expect(
         prefs.getString('notification_prompt_last_action'),
@@ -245,42 +242,41 @@ void main() {
       verify(() => reporter.requestAuthorization()).called(1);
     });
 
-    test(
-      'onUserAccepted denied + authStatus=denied → SP=false',
-      () async {
-        final service = await buildService(
-          authStatus: NotificationAuthorization.denied,
-          requestResult: false,
-        );
+    test('onUserAccepted denied + authStatus=denied → SP=false', () async {
+      final service = await buildService(
+        authStatus: NotificationAuthorization.denied,
+        requestResult: false,
+      );
 
-        final granted = await service.onUserAcceptedPrompt();
+      final granted = await service.onUserAcceptedPrompt();
 
-        expect(granted, isFalse);
-        verify(
-          () => analytics.track(
-            Events.notificationSystemResult,
-            {EventParams.status: 'denied'},
-          ),
-        ).called(1);
-        expect(prefs.getBool('notification_authorization_status'), isFalse,
-            reason: '用户明确拒绝 → 写 false');
-      },
-    );
+      expect(granted, isFalse);
+      verify(
+        () => analytics.track(Events.notificationSystemResult, {
+          EventParams.status: 'denied',
+        }),
+      ).called(1);
+      expect(
+        prefs.getBool('notification_authorization_status'),
+        isFalse,
+        reason: '用户明确拒绝 → 写 false',
+      );
+    });
 
-    test(
-      'onUserAccepted denied + authStatus=restricted → SP=false',
-      () async {
-        final service = await buildService(
-          authStatus: NotificationAuthorization.restricted,
-          requestResult: false,
-        );
+    test('onUserAccepted denied + authStatus=restricted → SP=false', () async {
+      final service = await buildService(
+        authStatus: NotificationAuthorization.restricted,
+        requestResult: false,
+      );
 
-        await service.onUserAcceptedPrompt();
+      await service.onUserAcceptedPrompt();
 
-        expect(prefs.getBool('notification_authorization_status'), isFalse,
-            reason: 'restricted 也算明确决策，写 false');
-      },
-    );
+      expect(
+        prefs.getBool('notification_authorization_status'),
+        isFalse,
+        reason: 'restricted 也算明确决策，写 false',
+      );
+    });
 
     test(
       'onUserAccepted denied + authStatus=notDetermined → SP 不写（iOS 手势 dismiss）',
@@ -293,8 +289,11 @@ void main() {
 
         await service.onUserAcceptedPrompt();
 
-        expect(prefs.getBool('notification_authorization_status'), isNull,
-            reason: '手势 dismiss 未真正决策，SP 不写');
+        expect(
+          prefs.getBool('notification_authorization_status'),
+          isNull,
+          reason: '手势 dismiss 未真正决策，SP 不写',
+        );
       },
     );
 
@@ -306,18 +305,20 @@ void main() {
       await service.onUserDismissedPrompt();
 
       verify(
-        () => analytics.track(
-          Events.notificationPromptResult,
-          {EventParams.action: 'dismiss'},
-        ),
+        () => analytics.track(Events.notificationPromptResult, {
+          EventParams.action: 'dismiss',
+        }),
       ).called(1);
       expect(
         prefs.getString('notification_prompt_last_action'),
         equals('dismiss'),
       );
       verifyNever(() => reporter.requestAuthorization());
-      expect(prefs.getBool('notification_authorization_status'), isNull,
-          reason: 'dismiss 不调系统 API，不写 authorization_status');
+      expect(
+        prefs.getBool('notification_authorization_status'),
+        isNull,
+        reason: 'dismiss 不调系统 API，不写 authorization_status',
+      );
     });
   });
 }

@@ -103,9 +103,7 @@ void main() {
       notifier = container.read(blindListenPlayerProvider.notifier);
       notifier.initializeParagraphs(
         paragraphs,
-        const BlindListenSettings(
-          controlMode: ShadowingControlMode.manual,
-        ),
+        const BlindListenSettings(controlMode: ShadowingControlMode.manual),
       );
     });
 
@@ -146,9 +144,7 @@ void main() {
     test('自动模式下播放完段落会启动倒计时', () async {
       // 切换回自动模式
       notifier.updateSettings(
-        const BlindListenSettings(
-          controlMode: ShadowingControlMode.auto,
-        ),
+        const BlindListenSettings(controlMode: ShadowingControlMode.auto),
       );
 
       await notifier.startPlaying();
@@ -169,21 +165,18 @@ void main() {
       );
       addTearDown(delayedContainer.dispose);
 
-      final delayedNotifier =
-          delayedContainer.read(blindListenPlayerProvider.notifier);
+      final delayedNotifier = delayedContainer.read(
+        blindListenPlayerProvider.notifier,
+      );
       delayedNotifier.initializeParagraphs(
         paragraphs,
-        const BlindListenSettings(
-          controlMode: ShadowingControlMode.auto,
-        ),
+        const BlindListenSettings(controlMode: ShadowingControlMode.auto),
       );
 
       final pending = delayedNotifier.startPlaying();
       delayedNotifier.enterWaitingForUser(afterCurrentParagraph: true);
       delayedNotifier.updateSettings(
-        const BlindListenSettings(
-          controlMode: ShadowingControlMode.manual,
-        ),
+        const BlindListenSettings(controlMode: ShadowingControlMode.manual),
       );
       await pending;
 

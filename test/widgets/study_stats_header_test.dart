@@ -117,9 +117,7 @@ void main() {
 
     testWidgets('词汇今日新增显示在今日卡片内', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(
-          stats: const StudyStats(todayNewWordForms: 42),
-        ),
+        createTestWidget(stats: const StudyStats(todayNewWordForms: 42)),
       );
       await tester.pumpAndSettle();
 
@@ -175,15 +173,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final weekdayLabels = [
-        'Mon',
-        'Tue',
-        'Wed',
-        'Thu',
-        'Fri',
-        'Sat',
-        'Sun',
-      ];
+      final weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       for (final label in weekdayLabels) {
         expect(find.text(label), findsAtLeast(1));
       }
@@ -210,9 +200,7 @@ void main() {
       });
 
       await tester.pumpWidget(
-        createTestWidget(
-          stats: const StudyStats(todayNewWordForms: 1),
-        ),
+        createTestWidget(stats: const StudyStats(todayNewWordForms: 1)),
       );
       await tester.pumpAndSettle();
 
@@ -312,10 +300,7 @@ void main() {
     testWidgets('点击听区域弹窗显示完整推荐表（英文）', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          stats: const StudyStats(
-            todaySeconds: 600,
-            todayInputSeconds: 300,
-          ),
+          stats: const StudyStats(todaySeconds: 600, todayInputSeconds: 300),
         ),
       );
       await tester.pumpAndSettle();
@@ -345,9 +330,7 @@ void main() {
       expect(find.text('~1,700w'), findsOneWidget);
       // 脚注
       expect(
-        find.text(
-          'Input/output ratio trends from ~3:2 to ~1:1 as level rises',
-        ),
+        find.text('Input/output ratio trends from ~3:2 to ~1:1 as level rises'),
         findsOneWidget,
       );
     });
@@ -355,10 +338,7 @@ void main() {
     testWidgets('点击说区域弹窗显示完整推荐表（英文）', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          stats: const StudyStats(
-            todaySeconds: 600,
-            todayOutputSeconds: 300,
-          ),
+          stats: const StudyStats(todaySeconds: 600, todayOutputSeconds: 300),
         ),
       );
       await tester.pumpAndSettle();
@@ -385,10 +365,7 @@ void main() {
     testWidgets('点击听区域弹窗显示完整推荐表（中文）', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          stats: const StudyStats(
-            todaySeconds: 600,
-            todayInputSeconds: 300,
-          ),
+          stats: const StudyStats(todaySeconds: 600, todayInputSeconds: 300),
           locale: const Locale('zh'),
         ),
       );
@@ -416,10 +393,7 @@ void main() {
       expect(find.text('8分钟'), findsOneWidget);
       expect(find.text('10分钟'), findsAtLeast(1));
       // 中文脚注
-      expect(
-        find.text('输入输出比随水平提升从 ~3:2 趋近 ~1:1'),
-        findsOneWidget,
-      );
+      expect(find.text('输入输出比随水平提升从 ~3:2 趋近 ~1:1'), findsOneWidget);
     });
   });
 

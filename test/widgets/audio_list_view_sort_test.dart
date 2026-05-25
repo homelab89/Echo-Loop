@@ -162,11 +162,7 @@ void main() {
     }
 
     test('custom 保持传入顺序（但置顶项提前）', () {
-      final items = [
-        mk('a'),
-        mk('b', pinned: true),
-        mk('c'),
-      ];
+      final items = [mk('a'), mk('b', pinned: true), mk('c')];
       final sorted = sortAudioItems(items, AudioSortType.custom);
       expect(sorted.map((i) => i.id).toList(), ['b', 'a', 'c']);
     });

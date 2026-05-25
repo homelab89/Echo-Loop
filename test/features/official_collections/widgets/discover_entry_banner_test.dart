@@ -18,17 +18,14 @@ class _FakeCollectionList extends CollectionList {
 }
 
 Collection _officialCollection(int i) => Collection(
-      id: 'c$i',
-      name: 'Official $i',
-      createdDate: DateTime(2026, 1, 1),
-      source: CollectionSource.official,
-      remoteId: 'r$i',
-    );
+  id: 'c$i',
+  name: 'Official $i',
+  createdDate: DateTime(2026, 1, 1),
+  source: CollectionSource.official,
+  remoteId: 'r$i',
+);
 
-Widget _host({
-  required List<Collection> collections,
-  VoidCallback? onTap,
-}) {
+Widget _host({required List<Collection> collections, VoidCallback? onTap}) {
   return ProviderScope(
     overrides: [
       collectionListProvider.overrideWith(
@@ -56,12 +53,16 @@ void main() {
   });
 
   testWidgets('入口卡片：已加入若干官方合集后文案不切换', (tester) async {
-    await tester.pumpWidget(_host(collections: [
-      _officialCollection(1),
-      _officialCollection(2),
-      _officialCollection(3),
-      _officialCollection(4),
-    ]));
+    await tester.pumpWidget(
+      _host(
+        collections: [
+          _officialCollection(1),
+          _officialCollection(2),
+          _officialCollection(3),
+          _officialCollection(4),
+        ],
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('发现精选合集'), findsOneWidget);
@@ -70,10 +71,9 @@ void main() {
 
   testWidgets('点击整卡触发 onTap', (tester) async {
     var tapped = 0;
-    await tester.pumpWidget(_host(
-      collections: const [],
-      onTap: () => tapped++,
-    ));
+    await tester.pumpWidget(
+      _host(collections: const [], onTap: () => tapped++),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(InkWell));

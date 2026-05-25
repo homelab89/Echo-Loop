@@ -17,7 +17,10 @@ void main() {
 
   setUp(() async {
     db = _createTestDb();
-    service = StudyTimeService(db.dailyStudyRecordDao, db.dailyStageStudyRecordDao);
+    service = StudyTimeService(
+      db.dailyStudyRecordDao,
+      db.dailyStageStudyRecordDao,
+    );
   });
 
   tearDown(() async {
@@ -74,9 +77,7 @@ void main() {
 
   group('StudyTimeService - streak', () {
     test('无学习记录时 streak 为 0', () async {
-      final streak = await service.getStudyStreak(
-        now: DateTime(2026, 3, 8),
-      );
+      final streak = await service.getStudyStreak(now: DateTime(2026, 3, 8));
       expect(streak, 0);
     });
 

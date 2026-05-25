@@ -110,11 +110,7 @@ void main() {
               appSettingsProvider.overrideWith(() => TestAppSettings()),
               audioLibraryProvider.overrideWith(() => TestAudioLibrary()),
               collectionListProvider.overrideWith(
-                () => TestCollectionList(
-                  CollectionState(
-                    rawCollections: [c],
-                  ),
-                ),
+                () => TestCollectionList(CollectionState(rawCollections: [c])),
               ),
               listeningPracticeProvider.overrideWith(
                 () => TestListeningPractice(),
@@ -182,10 +178,7 @@ void main() {
         expect(addButton.onPressed, isNull);
 
         // 输入内容后按钮启用
-        await tester.enterText(
-          find.byType(TextField).first,
-          'My Collection',
-        );
+        await tester.enterText(find.byType(TextField).first, 'My Collection');
         await tester.pump();
 
         final enabledButton = tester.widget<FilledButton>(
@@ -235,11 +228,7 @@ void main() {
               appSettingsProvider.overrideWith(() => TestAppSettings()),
               audioLibraryProvider.overrideWith(() => TestAudioLibrary()),
               collectionListProvider.overrideWith(
-                () => TestCollectionList(
-                  CollectionState(
-                    rawCollections: [c],
-                  ),
-                ),
+                () => TestCollectionList(CollectionState(rawCollections: [c])),
               ),
               listeningPracticeProvider.overrideWith(
                 () => TestListeningPractice(),
@@ -264,7 +253,6 @@ void main() {
         final card = tester.widget<Card>(find.byType(Card).first);
         expect(card.color, isNotNull);
       });
-
     });
   });
 }

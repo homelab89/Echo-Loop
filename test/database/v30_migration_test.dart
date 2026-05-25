@@ -67,17 +67,15 @@ void main() {
   });
 
   test('is_audio_downloaded 列已不存在（用 raw SQL 查 pragma 验证）', () async {
-    final rows = await db
-        .customSelect('PRAGMA table_info(audio_items)')
-        .get();
+    final rows = await db.customSelect('PRAGMA table_info(audio_items)').get();
     final names = rows.map((r) => r.data['name'] as String).toSet();
-    expect(names.contains('is_audio_downloaded'), isFalse,
-        reason: 'v30 schema 不应再有 is_audio_downloaded 列');
-    // audio_path 的 notnull 字段应为 0（nullable）
-    final audioPathRow = rows.firstWhere(
-      (r) => r.data['name'] == 'audio_path',
+    expect(
+      names.contains('is_audio_downloaded'),
+      isFalse,
+      reason: 'v30 schema 不应再有 is_audio_downloaded 列',
     );
-    expect(audioPathRow.data['notnull'], 0,
-        reason: 'audio_path 必须 nullable');
+    // audio_path 的 notnull 字段应为 0（nullable）
+    final audioPathRow = rows.firstWhere((r) => r.data['name'] == 'audio_path');
+    expect(audioPathRow.data['notnull'], 0, reason: 'audio_path 必须 nullable');
   });
 }

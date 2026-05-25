@@ -594,18 +594,21 @@ void main() {
           transcriptionApiClientProvider.overrideWithValue(mockApi),
           transcriptionFileOpsProvider.overrideWithValue(mockFileOps),
           audioLibraryProvider.overrideWith(TestAudioLibrary.new),
-          subtitleAutoAlignServiceProvider
-              .overrideWithValue(mockAutoAlignService),
-          appSettingsProvider
-              .overrideWith(() => _DisabledAutoAlignAppSettings()),
+          subtitleAutoAlignServiceProvider.overrideWithValue(
+            mockAutoAlignService,
+          ),
+          appSettingsProvider.overrideWith(
+            () => _DisabledAutoAlignAppSettings(),
+          ),
           analyticsOverride(),
         ],
       );
       (container.read(audioLibraryProvider.notifier) as TestAudioLibrary)
           .setItems([audioItem]);
 
-      final notifier =
-          container.read(transcriptionTaskManagerProvider.notifier);
+      final notifier = container.read(
+        transcriptionTaskManagerProvider.notifier,
+      );
 
       await notifier.startTranscription(audioItem, 'en');
 

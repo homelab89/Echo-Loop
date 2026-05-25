@@ -59,9 +59,7 @@ void main() {
     });
 
     test('返回值始终为 Duration 类型', () {
-      final result = listenAndRepeatPauseCalculator(
-        const Duration(seconds: 3),
-      );
+      final result = listenAndRepeatPauseCalculator(const Duration(seconds: 3));
       expect(result, isA<Duration>());
       // 3s → 1000 + 1800 = 2800ms
       expect(result.inMilliseconds, 2800);

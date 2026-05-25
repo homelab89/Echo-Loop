@@ -23,10 +23,7 @@ void main() {
     test('反向向量返回 -1.0', () {
       final a = [1.0, 2.0, 3.0];
       final b = [-1.0, -2.0, -3.0];
-      expect(
-        EmbeddingSimilarity.cosineSimilarity(a, b),
-        closeTo(-1.0, 1e-10),
-      );
+      expect(EmbeddingSimilarity.cosineSimilarity(a, b), closeTo(-1.0, 1e-10));
     });
 
     test('空向量返回 0.0', () {
@@ -43,20 +40,14 @@ void main() {
     });
 
     test('零向量返回 0.0', () {
-      expect(
-        EmbeddingSimilarity.cosineSimilarity([0.0, 0.0], [1.0, 2.0]),
-        0.0,
-      );
+      expect(EmbeddingSimilarity.cosineSimilarity([0.0, 0.0], [1.0, 2.0]), 0.0);
     });
 
     test('已知向量对返回预期值', () {
       final a = [1.0, 0.0, 1.0];
       final b = [0.0, 1.0, 1.0];
       // dot = 1, normA = sqrt(2), normB = sqrt(2), similarity = 1/2 = 0.5
-      expect(
-        EmbeddingSimilarity.cosineSimilarity(a, b),
-        closeTo(0.5, 1e-10),
-      );
+      expect(EmbeddingSimilarity.cosineSimilarity(a, b), closeTo(0.5, 1e-10));
     });
 
     test('45 度角向量返回 cos(45°)', () {
@@ -89,12 +80,12 @@ void main() {
 
     test('正常流程：mock 返回已知向量并验证相似度', () async {
       when(() => mockBackend.isSupported).thenReturn(true);
-      when(() => mockBackend.embed('hello')).thenAnswer(
-        (_) async => [1.0, 0.0, 1.0],
-      );
-      when(() => mockBackend.embed('world')).thenAnswer(
-        (_) async => [0.0, 1.0, 1.0],
-      );
+      when(
+        () => mockBackend.embed('hello'),
+      ).thenAnswer((_) async => [1.0, 0.0, 1.0]);
+      when(
+        () => mockBackend.embed('world'),
+      ).thenAnswer((_) async => [0.0, 1.0, 1.0]);
 
       final result = await similarity.computeSimilarity('hello', 'world');
       expect(result, closeTo(0.5, 1e-10));
@@ -102,9 +93,9 @@ void main() {
 
     test('相同文本 embed 结果相同时返回 1.0', () async {
       when(() => mockBackend.isSupported).thenReturn(true);
-      when(() => mockBackend.embed('same')).thenAnswer(
-        (_) async => [1.0, 2.0, 3.0],
-      );
+      when(
+        () => mockBackend.embed('same'),
+      ).thenAnswer((_) async => [1.0, 2.0, 3.0]);
 
       final result = await similarity.computeSimilarity('same', 'same');
       expect(result, closeTo(1.0, 1e-10));

@@ -6,7 +6,10 @@ import 'package:echo_loop/widgets/player_hotkey_scope.dart';
 void main() {
   group('LearningHotkeyScope', () {
     /// 模拟按键事件的辅助方法
-    Future<void> sendKeyDown(WidgetTester tester, LogicalKeyboardKey key) async {
+    Future<void> sendKeyDown(
+      WidgetTester tester,
+      LogicalKeyboardKey key,
+    ) async {
       await tester.sendKeyDownEvent(key);
       await tester.sendKeyUpEvent(key);
       await tester.pump();
@@ -59,11 +62,7 @@ void main() {
 
     testWidgets('onPrevious 为 null 时按 Left Arrow 不崩溃', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: LearningHotkeyScope(
-            child: const Text('child'),
-          ),
-        ),
+        MaterialApp(home: LearningHotkeyScope(child: const Text('child'))),
       );
 
       // 不应该抛出异常
@@ -72,11 +71,7 @@ void main() {
 
     testWidgets('onPlayPause 为 null 时按 Space 不崩溃', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: LearningHotkeyScope(
-            child: const Text('child'),
-          ),
-        ),
+        MaterialApp(home: LearningHotkeyScope(child: const Text('child'))),
       );
 
       await sendKeyDown(tester, LogicalKeyboardKey.space);
@@ -84,11 +79,7 @@ void main() {
 
     testWidgets('onNext 为 null 时按 Right Arrow 不崩溃', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: LearningHotkeyScope(
-            child: const Text('child'),
-          ),
-        ),
+        MaterialApp(home: LearningHotkeyScope(child: const Text('child'))),
       );
 
       await sendKeyDown(tester, LogicalKeyboardKey.arrowRight);
@@ -148,11 +139,7 @@ void main() {
 
     testWidgets('child 组件正确渲染', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: LearningHotkeyScope(
-            child: const Text('test child'),
-          ),
-        ),
+        MaterialApp(home: LearningHotkeyScope(child: const Text('test child'))),
       );
 
       expect(find.text('test child'), findsOneWidget);

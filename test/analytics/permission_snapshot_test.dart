@@ -21,10 +21,8 @@ class _FakeProbe implements PermissionProbe {
 
   @override
   Future<({String microphone, String speech})>
-  readSpeechAndMicrophoneStatus() async => (
-    microphone: microphone,
-    speech: speech,
-  );
+  readSpeechAndMicrophoneStatus() async =>
+      (microphone: microphone, speech: speech);
 
   @override
   Future<String> readNotificationStatus() async => notification;
@@ -87,10 +85,8 @@ class _ThrowingNotificationProbe implements PermissionProbe {
 
   @override
   Future<({String microphone, String speech})>
-  readSpeechAndMicrophoneStatus() async => (
-    microphone: microphone,
-    speech: speech,
-  );
+  readSpeechAndMicrophoneStatus() async =>
+      (microphone: microphone, speech: speech);
 
   @override
   Future<String> readNotificationStatus() async {
@@ -267,9 +263,7 @@ void main() {
 
       // 4 个 person property（每类一次）
       expect(channel.userProperties, hasLength(4));
-      final byKey = {
-        for (final e in channel.userProperties) e.name: e.value,
-      };
+      final byKey = {for (final e in channel.userProperties) e.name: e.value};
       expect(byKey[EventParams.microphoneStatus], snapshot.microphone);
       expect(byKey[EventParams.speechStatus], snapshot.speech);
       expect(byKey[EventParams.notificationStatus], snapshot.notification);

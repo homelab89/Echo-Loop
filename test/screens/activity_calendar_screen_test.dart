@@ -38,9 +38,10 @@ Widget _createTestApp({
   // 如果提供了 records，覆盖 provider
   if (records != null) {
     overrides.add(
-      monthlyStudyRecordsProvider(now.year, now.month).overrideWith(
-        (ref) async => records,
-      ),
+      monthlyStudyRecordsProvider(
+        now.year,
+        now.month,
+      ).overrideWith((ref) async => records),
     );
   }
 
@@ -82,10 +83,7 @@ void main() {
   });
 
   testWidgets('日历页面正确渲染', (tester) async {
-    await tester.pumpWidget(_createTestApp(
-      db: db,
-      records: const {},
-    ));
+    await tester.pumpWidget(_createTestApp(db: db, records: const {}));
     await tester.pumpAndSettle();
 
     // 页面标题
@@ -96,34 +94,35 @@ void main() {
   });
 
   testWidgets('streak>0 时显示橙色 chip', (tester) async {
-    await tester.pumpWidget(_createTestApp(
-      db: db,
-      records: const {},
-      stats: const StudyStats(streak: 5),
-    ));
+    await tester.pumpWidget(
+      _createTestApp(
+        db: db,
+        records: const {},
+        stats: const StudyStats(streak: 5),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('5d streak'), findsOneWidget);
 
     // 验证火焰图标存在
-    expect(
-      find.byIcon(Icons.local_fire_department_rounded),
-      findsOneWidget,
-    );
+    expect(find.byIcon(Icons.local_fire_department_rounded), findsOneWidget);
   });
 
   testWidgets('有活动的日期显示迷你条', (tester) async {
     final now = DateTime.now();
-    await tester.pumpWidget(_createTestApp(
-      db: db,
-      records: {
-        now.day: const MonthDayRecord(
-          studyTimeSeconds: 1800,
-          inputTimeSeconds: 900,
-          outputTimeSeconds: 600,
-        ),
-      },
-    ));
+    await tester.pumpWidget(
+      _createTestApp(
+        db: db,
+        records: {
+          now.day: const MonthDayRecord(
+            studyTimeSeconds: 1800,
+            inputTimeSeconds: 900,
+            outputTimeSeconds: 600,
+          ),
+        },
+      ),
+    );
     await tester.pumpAndSettle();
 
     // 今天的日期数字应该存在
@@ -132,16 +131,18 @@ void main() {
 
   testWidgets('月度摘要卡片显示正确标签', (tester) async {
     final now = DateTime.now();
-    await tester.pumpWidget(_createTestApp(
-      db: db,
-      records: {
-        now.day: const MonthDayRecord(
-          studyTimeSeconds: 3600,
-          inputTimeSeconds: 1800,
-          outputTimeSeconds: 1200,
-        ),
-      },
-    ));
+    await tester.pumpWidget(
+      _createTestApp(
+        db: db,
+        records: {
+          now.day: const MonthDayRecord(
+            studyTimeSeconds: 3600,
+            inputTimeSeconds: 1800,
+            outputTimeSeconds: 1200,
+          ),
+        },
+      ),
+    );
     await tester.pumpAndSettle();
 
     // 摘要卡片标签
@@ -158,10 +159,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(_createTestApp(
-      db: db,
-      records: const {},
-    ));
+    await tester.pumpWidget(_createTestApp(db: db, records: const {}));
     await tester.pumpAndSettle();
 
     // 即使文本可能被滚动隐藏，也应该存在于 widget 树中

@@ -68,8 +68,7 @@ void main() {
         expect(collections.first.id, demoCollectionId);
         expect(collections.first.name, 'Demo Content');
 
-        final collectionItems =
-            await db.select(db.collectionAudioItems).get();
+        final collectionItems = await db.select(db.collectionAudioItems).get();
         expect(collectionItems.length, 5);
       });
 
@@ -81,13 +80,15 @@ void main() {
         expect(progresses.length, 5);
 
         // 验证各阶段/子阶段
-        final p1 =
-            progresses.firstWhere((p) => p.audioItemId == 'demo-audio-0001');
+        final p1 = progresses.firstWhere(
+          (p) => p.audioItemId == 'demo-audio-0001',
+        );
         expect(p1.currentStage, 'review4');
         expect(p1.currentSubStage, 'blindListen');
 
-        final p5 =
-            progresses.firstWhere((p) => p.audioItemId == 'demo-audio-0005');
+        final p5 = progresses.firstWhere(
+          (p) => p.audioItemId == 'demo-audio-0005',
+        );
         expect(p5.currentStage, 'firstLearn');
         expect(p5.currentSubStage, 'retell');
       });
@@ -141,12 +142,10 @@ void main() {
         final seeder = DemoDataSeeder(db);
 
         await seeder.seedIfEmpty();
-        final firstCount =
-            (await db.select(db.audioItems).get()).length;
+        final firstCount = (await db.select(db.audioItems).get()).length;
 
         await seeder.seedIfEmpty();
-        final secondCount =
-            (await db.select(db.audioItems).get()).length;
+        final secondCount = (await db.select(db.audioItems).get()).length;
 
         expect(firstCount, 5);
         expect(secondCount, 5);
@@ -183,10 +182,10 @@ void main() {
         // 先创建演示文件
         final demoDir = Directory(p.join(tempDir.path, 'demo'));
         await demoDir.create(recursive: true);
-        await File(p.join(demoDir.path, 'test.srt'))
-            .writeAsString('test');
-        await File(p.join(tempDir.path, 'echo_loop_demo.db'))
-            .writeAsString('db');
+        await File(p.join(demoDir.path, 'test.srt')).writeAsString('test');
+        await File(
+          p.join(tempDir.path, 'echo_loop_demo.db'),
+        ).writeAsString('db');
 
         await DemoDataSeeder.cleanupFiles();
 
@@ -198,10 +197,7 @@ void main() {
       });
 
       test('清理不存在的目录不抛异常', () async {
-        await expectLater(
-          DemoDataSeeder.cleanupFiles(),
-          completes,
-        );
+        await expectLater(DemoDataSeeder.cleanupFiles(), completes);
       });
     });
   });

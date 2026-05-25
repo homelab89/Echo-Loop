@@ -53,7 +53,9 @@ void main() {
   });
 
   test('节流 10min 内 outcome=throttled，dio 不发请求', () async {
-    final body = snapshotToBody(makeSnapshot(collections: [makeCatalogCollection()]));
+    final body = snapshotToBody(
+      makeSnapshot(collections: [makeCatalogCollection()]),
+    );
     final dio = _MockDio(bodyProvider: () => body);
     final svc = OfficialCatalogService.withDio(
       dio: dio,
@@ -72,7 +74,9 @@ void main() {
   });
 
   test('force=true 绕过节流，仍发请求', () async {
-    final body = snapshotToBody(makeSnapshot(collections: [makeCatalogCollection()]));
+    final body = snapshotToBody(
+      makeSnapshot(collections: [makeCatalogCollection()]),
+    );
     final dio = _MockDio(bodyProvider: () => body);
     final svc = OfficialCatalogService.withDio(
       dio: dio,
@@ -88,9 +92,10 @@ void main() {
     expect(result, isA<CatalogUnchanged>());
   });
 
-  test('远端返回相同 body → outcome=unchanged，catalog.json 文件 mtime 不变',
-      () async {
-    final body = snapshotToBody(makeSnapshot(collections: [makeCatalogCollection()]));
+  test('远端返回相同 body → outcome=unchanged，catalog.json 文件 mtime 不变', () async {
+    final body = snapshotToBody(
+      makeSnapshot(collections: [makeCatalogCollection()]),
+    );
     final dio = _MockDio(bodyProvider: () => body);
     final svc = OfficialCatalogService.withDio(
       dio: dio,
@@ -112,14 +117,13 @@ void main() {
 
   test('远端返回不同 body → outcome=updated，文件被改写', () async {
     var version = 1;
-    final dio = _MockDio(bodyProvider: () {
-      final c = makeCatalogCollection(
-        id: 'r-coll',
-        name: 'v$version',
-      );
-      version++;
-      return snapshotToBody(makeSnapshot(collections: [c]));
-    });
+    final dio = _MockDio(
+      bodyProvider: () {
+        final c = makeCatalogCollection(id: 'r-coll', name: 'v$version');
+        version++;
+        return snapshotToBody(makeSnapshot(collections: [c]));
+      },
+    );
     final svc = OfficialCatalogService.withDio(
       dio: dio,
       resolveDir: () async => tempDir,
@@ -136,7 +140,9 @@ void main() {
   });
 
   test('远端抛错 → outcome=failed，本地文件保留', () async {
-    final body = snapshotToBody(makeSnapshot(collections: [makeCatalogCollection()]));
+    final body = snapshotToBody(
+      makeSnapshot(collections: [makeCatalogCollection()]),
+    );
     final dio = _MockDio(bodyProvider: () => body);
     final svc = OfficialCatalogService.withDio(
       dio: dio,
@@ -161,11 +167,15 @@ void main() {
 
   test('并发 refresh 复用 inflight：连发 3 次只算 1 次 dio 请求', () async {
     final completer = Completer<String>();
-    final body = snapshotToBody(makeSnapshot(collections: [makeCatalogCollection()]));
-    final dio = _MockDio(bodyProvider: () {
-      // 等 completer 才返回，确保多次 refresh 同时挂起
-      return body;
-    });
+    final body = snapshotToBody(
+      makeSnapshot(collections: [makeCatalogCollection()]),
+    );
+    final dio = _MockDio(
+      bodyProvider: () {
+        // 等 completer 才返回，确保多次 refresh 同时挂起
+        return body;
+      },
+    );
     // 改写 get 让首次挂起
     final waitDio = _SlowDio(body: body, gate: completer.future);
     final svc = OfficialCatalogService.withDio(

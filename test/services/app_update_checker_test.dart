@@ -221,10 +221,7 @@ void main() {
           requestOptions: RequestOptions(),
           data: {
             'results': [
-              {
-                'version': '1.0.12',
-                'trackViewUrl': 'https://apps.apple.com/x',
-              },
+              {'version': '1.0.12', 'trackViewUrl': 'https://apps.apple.com/x'},
             ],
           },
         ),

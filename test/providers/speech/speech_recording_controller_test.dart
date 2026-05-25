@@ -440,7 +440,9 @@ void main() {
         );
 
         // 完全匹配 → 阈值 1s，等 1s 后停滞计时器触发
-        await Future<void>.delayed(const Duration(seconds: 1, milliseconds: 50));
+        await Future<void>.delayed(
+          const Duration(seconds: 1, milliseconds: 50),
+        );
 
         expect(
           container!.read(speechRecordingControllerProvider).phase,
@@ -494,7 +496,9 @@ void main() {
         );
 
         // 5s 后停滞计时器触发（需要额外 50ms 让 async 完成）
-        await Future<void>.delayed(const Duration(seconds: 1, milliseconds: 50));
+        await Future<void>.delayed(
+          const Duration(seconds: 1, milliseconds: 50),
+        );
         expect(
           container!.read(speechRecordingControllerProvider).phase,
           SpeechRecordingPhase.processing,
@@ -555,7 +559,9 @@ void main() {
         );
 
         // 再过 1s（共 5s 无更新）→ 触发
-        await Future<void>.delayed(const Duration(seconds: 1, milliseconds: 50));
+        await Future<void>.delayed(
+          const Duration(seconds: 1, milliseconds: 50),
+        );
         expect(
           container!.read(speechRecordingControllerProvider).phase,
           SpeechRecordingPhase.processing,

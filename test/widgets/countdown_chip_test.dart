@@ -27,9 +27,7 @@ void main() {
 
   group('CountdownChip', () {
     testWidgets('初始状态显示总秒数和暂停徽章', (tester) async {
-      await tester.pumpWidget(buildChip(
-        total: const Duration(seconds: 5),
-      ));
+      await tester.pumpWidget(buildChip(total: const Duration(seconds: 5)));
 
       // 刚开始时显示 5 秒
       expect(find.text('5'), findsOneWidget);
@@ -48,11 +46,13 @@ void main() {
       var pauseCalled = false;
       var resumeCalled = false;
 
-      await tester.pumpWidget(buildChip(
-        isPaused: false,
-        onPause: () => pauseCalled = true,
-        onResume: () => resumeCalled = true,
-      ));
+      await tester.pumpWidget(
+        buildChip(
+          isPaused: false,
+          onPause: () => pauseCalled = true,
+          onResume: () => resumeCalled = true,
+        ),
+      );
 
       await tester.tap(find.text('5'));
       await tester.pumpAndSettle();
@@ -65,11 +65,13 @@ void main() {
       var pauseCalled = false;
       var resumeCalled = false;
 
-      await tester.pumpWidget(buildChip(
-        isPaused: true,
-        onPause: () => pauseCalled = true,
-        onResume: () => resumeCalled = true,
-      ));
+      await tester.pumpWidget(
+        buildChip(
+          isPaused: true,
+          onPause: () => pauseCalled = true,
+          onResume: () => resumeCalled = true,
+        ),
+      );
 
       await tester.tap(find.text('5'));
       await tester.pumpAndSettle();
@@ -79,9 +81,7 @@ void main() {
     });
 
     testWidgets('动画推进后进度环和秒数更新', (tester) async {
-      await tester.pumpWidget(buildChip(
-        total: const Duration(seconds: 5),
-      ));
+      await tester.pumpWidget(buildChip(total: const Duration(seconds: 5)));
 
       // 初始进度为 0
       final progressFinder = find.byType(CircularProgressIndicator);
@@ -99,10 +99,9 @@ void main() {
     });
 
     testWidgets('暂停时动画不推进', (tester) async {
-      await tester.pumpWidget(buildChip(
-        total: const Duration(seconds: 5),
-        isPaused: true,
-      ));
+      await tester.pumpWidget(
+        buildChip(total: const Duration(seconds: 5), isPaused: true),
+      );
 
       final progressFinder = find.byType(CircularProgressIndicator);
       var progress = tester.widget<CircularProgressIndicator>(progressFinder);

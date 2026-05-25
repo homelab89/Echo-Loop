@@ -153,9 +153,7 @@ void main() {
     test('用户未同意时 registerSuperProperties 静默丢弃', () async {
       await consent.revokeConsent();
 
-      await service.registerSuperProperties({
-        'notification_status': 'granted',
-      });
+      await service.registerSuperProperties({'notification_status': 'granted'});
 
       expect(channel.superPropertiesCalls, isEmpty);
     });

@@ -108,10 +108,7 @@ void main() {
         originalSentenceIndex: 0,
       );
 
-      expect(
-        bookmarkSentence.sentence.duration,
-        const Duration(seconds: 3),
-      );
+      expect(bookmarkSentence.sentence.duration, const Duration(seconds: 3));
     });
   });
 
@@ -172,10 +169,7 @@ void main() {
         totalSentences: 1,
       );
 
-      final afterRemove = state.copyWith(
-        isPlaying: false,
-        totalSentences: 0,
-      );
+      final afterRemove = state.copyWith(isPlaying: false, totalSentences: 0);
 
       expect(afterRemove.isPlaying, false);
       expect(afterRemove.totalSentences, 0);
@@ -257,11 +251,7 @@ void main() {
           currentAudioId = s.audioItemId;
           lastIndex = -1;
         }
-        expect(
-          s.originalSentenceIndex > lastIndex,
-          true,
-          reason: '组内顺序应递增',
-        );
+        expect(s.originalSentenceIndex > lastIndex, true, reason: '组内顺序应递增');
         lastIndex = s.originalSentenceIndex;
       }
     });
@@ -311,10 +301,7 @@ void main() {
         ),
       ];
 
-      notifier.initialize(
-        bookmarks,
-        getAudioItemById: (_) async => null,
-      );
+      notifier.initialize(bookmarks, getAudioItemById: (_) async => null);
       unawaited(notifier.startPlaying());
       await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(
@@ -324,10 +311,7 @@ void main() {
 
       notifier.disposePlayer();
 
-      notifier.initialize(
-        bookmarks,
-        getAudioItemById: (_) async => null,
-      );
+      notifier.initialize(bookmarks, getAudioItemById: (_) async => null);
       unawaited(notifier.startPlaying());
       await Future<void>.delayed(const Duration(milliseconds: 10));
 

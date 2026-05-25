@@ -22,10 +22,7 @@ AppDatabase _createTestDb() {
 
 Widget _buildTestApp(AppDatabase db) {
   return ProviderScope(
-    overrides: [
-      analyticsOverride(),
-      appDatabaseProvider.overrideWithValue(db),
-    ],
+    overrides: [analyticsOverride(), appDatabaseProvider.overrideWithValue(db)],
     child: MaterialApp(
       supportedLocales: const [Locale('en'), Locale('zh')],
       localizationsDelegates: const [

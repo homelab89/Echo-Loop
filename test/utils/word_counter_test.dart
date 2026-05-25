@@ -37,10 +37,7 @@ void main() {
     });
 
     test('普通英文句子', () {
-      expect(
-        countWords('The quick brown fox jumps over the lazy dog.'),
-        9,
-      );
+      expect(countWords('The quick brown fox jumps over the lazy dog.'), 9);
     });
 
     test('混合空白字符', () {

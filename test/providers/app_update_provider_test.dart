@@ -5,10 +5,7 @@ import 'package:echo_loop/utils/version_compare.dart';
 
 void main() {
   group('AppUpdate._determineUpdateType', () {
-    const info = AppUpdateInfo(
-      latestVersion: '2.0.0',
-      minimumVersion: '1.5.0',
-    );
+    const info = AppUpdateInfo(latestVersion: '2.0.0', minimumVersion: '1.5.0');
 
     test('低于最低版本时强制更新', () {
       expect(
@@ -25,17 +22,11 @@ void main() {
     });
 
     test('高于最新版时无需更新', () {
-      expect(
-        AppUpdate.determineUpdateType('2.0.0', info),
-        AppUpdateType.none,
-      );
+      expect(AppUpdate.determineUpdateType('2.0.0', info), AppUpdateType.none);
     });
 
     test('高于最新版时无需更新（更高版本）', () {
-      expect(
-        AppUpdate.determineUpdateType('3.0.0', info),
-        AppUpdateType.none,
-      );
+      expect(AppUpdate.determineUpdateType('3.0.0', info), AppUpdateType.none);
     });
 
     test('恰好等于最低版本时软更新', () {
@@ -92,10 +83,7 @@ void main() {
         latestVersion: '1.0.9+5',
         minimumVersion: '1.0.0',
       );
-      expect(
-        AppUpdate.determineUpdateType('1.0.9', info),
-        AppUpdateType.none,
-      );
+      expect(AppUpdate.determineUpdateType('1.0.9', info), AppUpdateType.none);
     });
 
     test('patch 升级，构建号被忽略', () {
@@ -114,10 +102,7 @@ void main() {
         latestVersion: '1.0.8+5',
         minimumVersion: '1.0.0',
       );
-      expect(
-        AppUpdate.determineUpdateType('1.0.9', info),
-        AppUpdateType.none,
-      );
+      expect(AppUpdate.determineUpdateType('1.0.9', info), AppUpdateType.none);
     });
   });
 }

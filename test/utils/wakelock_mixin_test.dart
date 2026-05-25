@@ -58,33 +58,33 @@ void main() {
     });
 
     testWidgets('initState 时调用 WakelockPlus.enable', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: _TestWidget()),
-      );
+      await tester.pumpWidget(const MaterialApp(home: _TestWidget()));
       await tester.pump();
 
       // 应有 toggle(enable: true) 调用
-      expect(mockPlatform.toggleCalls, contains(true),
-          reason: 'WakelockPlus.enable 应在 initState 时被调用');
+      expect(
+        mockPlatform.toggleCalls,
+        contains(true),
+        reason: 'WakelockPlus.enable 应在 initState 时被调用',
+      );
     });
 
     testWidgets('dispose 时调用 WakelockPlus.disable', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: _TestWidget()),
-      );
+      await tester.pumpWidget(const MaterialApp(home: _TestWidget()));
       await tester.pump();
 
       mockPlatform.toggleCalls.clear();
 
       // 移除 widget 触发 dispose
-      await tester.pumpWidget(
-        const MaterialApp(home: SizedBox()),
-      );
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
       await tester.pump();
 
       // 应有 toggle(enable: false) 调用
-      expect(mockPlatform.toggleCalls, contains(false),
-          reason: 'WakelockPlus.disable 应在 dispose 时被调用');
+      expect(
+        mockPlatform.toggleCalls,
+        contains(false),
+        reason: 'WakelockPlus.disable 应在 dispose 时被调用',
+      );
     });
   });
 }

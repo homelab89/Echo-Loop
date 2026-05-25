@@ -257,9 +257,7 @@ void main() {
             totalParagraphs: 1,
             phase: RetellPhase.retelling,
             isPlaying: false,
-            settings: const RetellSettings(
-              keywordMethod: KeywordMethod.random,
-            ),
+            settings: const RetellSettings(keywordMethod: KeywordMethod.random),
           ),
           playerFactory: _StaticRetellPlayer.new,
         ),
@@ -286,9 +284,7 @@ void main() {
             totalParagraphs: 1,
             phase: RetellPhase.listening,
             isPlaying: false,
-            settings: const RetellSettings(
-              keywordMethod: KeywordMethod.random,
-            ),
+            settings: const RetellSettings(keywordMethod: KeywordMethod.random),
           ),
           playerFactory: _StaticRetellPlayer.new,
         ),
@@ -299,9 +295,7 @@ void main() {
       expect(find.text('Listening...'), findsNothing);
     });
 
-    testWidgets('WaitingForUser 态即使 isPlaying 为 true 也显示播放图标', (
-      tester,
-    ) async {
+    testWidgets('WaitingForUser 态即使 isPlaying 为 true 也显示播放图标', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           playerState: RetellPlayerState(
@@ -310,9 +304,7 @@ void main() {
             phase: RetellPhase.listening,
             isPlaying: true,
             isWaitingForUser: true,
-            settings: const RetellSettings(
-              keywordMethod: KeywordMethod.random,
-            ),
+            settings: const RetellSettings(keywordMethod: KeywordMethod.random),
           ),
           playerFactory: _StaticRetellPlayer.new,
         ),
@@ -380,9 +372,7 @@ void main() {
         isPlaying: true,
         playingSentenceIndex: 0,
         displayMode: RetellDisplayMode.showAll,
-        settings: const RetellSettings(
-          keywordMethod: KeywordMethod.random,
-        ),
+        settings: const RetellSettings(keywordMethod: KeywordMethod.random),
       );
       final trackingPlayer = _TrackingRetellPlayer(
         initialState,

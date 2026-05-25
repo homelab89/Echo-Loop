@@ -23,9 +23,7 @@ void main() {
               child: const Text('Open'),
             ),
           ),
-          overrides: [
-            tagListProvider.overrideWith(() => TestTagList()),
-          ],
+          overrides: [tagListProvider.overrideWith(() => TestTagList())],
         ),
       );
 
@@ -94,9 +92,7 @@ void main() {
               child: const Text('Open'),
             ),
           ),
-          overrides: [
-            tagListProvider.overrideWith(() => TestTagList()),
-          ],
+          overrides: [tagListProvider.overrideWith(() => TestTagList())],
         ),
       );
 
@@ -133,12 +129,14 @@ void main() {
           ),
           overrides: [
             tagListProvider.overrideWith(
-              () => TestTagList(TagState(
-                tags: [tag1],
-                audioIdsMap: {
-                  't1': ['a1'],
-                },
-              )),
+              () => TestTagList(
+                TagState(
+                  tags: [tag1],
+                  audioIdsMap: {
+                    't1': ['a1'],
+                  },
+                ),
+              ),
             ),
           ],
         ),
@@ -197,9 +195,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 勾选后立即显示选中
-      checkbox = tester.widget<CheckboxListTile>(
-        find.byType(CheckboxListTile),
-      );
+      checkbox = tester.widget<CheckboxListTile>(find.byType(CheckboxListTile));
       expect(checkbox.value, isTrue);
     });
 

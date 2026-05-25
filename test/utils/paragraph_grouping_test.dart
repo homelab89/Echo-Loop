@@ -4,23 +4,25 @@ import 'package:echo_loop/utils/paragraph_grouping.dart';
 
 /// 辅助：用 (startMs, endMs) 创建带句间空白的句子（不连续）
 Sentence _s(int idx, int startMs, int endMs) => Sentence(
-      index: idx,
-      text: 'Sentence $idx',
-      startTime: Duration(milliseconds: startMs),
-      endTime: Duration(milliseconds: endMs),
-    );
+  index: idx,
+  text: 'Sentence $idx',
+  startTime: Duration(milliseconds: startMs),
+  endTime: Duration(milliseconds: endMs),
+);
 
 /// 辅助函数：创建指定时长的句子列表
 List<Sentence> _makeSentences(List<int> durationsMs) {
   final sentences = <Sentence>[];
   var start = 0;
   for (var i = 0; i < durationsMs.length; i++) {
-    sentences.add(Sentence(
-      index: i,
-      text: 'Sentence $i',
-      startTime: Duration(milliseconds: start),
-      endTime: Duration(milliseconds: start + durationsMs[i]),
-    ));
+    sentences.add(
+      Sentence(
+        index: i,
+        text: 'Sentence $i',
+        startTime: Duration(milliseconds: start),
+        endTime: Duration(milliseconds: start + durationsMs[i]),
+      ),
+    );
     start += durationsMs[i];
   }
   return sentences;
@@ -36,7 +38,10 @@ int _paragraphDurationMs(List<Sentence> paragraph) {
 void main() {
   group('groupSentencesIntoParagraphs', () {
     test('空列表返回空', () {
-      final result = groupSentencesIntoParagraphs([], const Duration(seconds: 30));
+      final result = groupSentencesIntoParagraphs(
+        [],
+        const Duration(seconds: 30),
+      );
       expect(result, isEmpty);
     });
 
@@ -99,8 +104,11 @@ void main() {
       // 不应有极短段（<10s）
       for (final group in result) {
         final durationMs = _paragraphDurationMs(group);
-        expect(durationMs, greaterThanOrEqualTo(10000),
-            reason: '段落时长 ${durationMs}ms 过短');
+        expect(
+          durationMs,
+          greaterThanOrEqualTo(10000),
+          reason: '段落时长 ${durationMs}ms 过短',
+        );
       }
     });
 
@@ -146,7 +154,16 @@ void main() {
 
     test('句子时长差异较大时仍能合理分组', () {
       // 混合时长：3s, 8s, 2s, 12s, 4s, 7s, 3s, 9s = 48s, target=20s
-      final sentences = _makeSentences([3000, 8000, 2000, 12000, 4000, 7000, 3000, 9000]);
+      final sentences = _makeSentences([
+        3000,
+        8000,
+        2000,
+        12000,
+        4000,
+        7000,
+        3000,
+        9000,
+      ]);
       final result = groupSentencesIntoParagraphs(
         sentences,
         const Duration(seconds: 20),
@@ -159,7 +176,9 @@ void main() {
     });
 
     test('保持句子顺序不变', () {
-      final sentences = _makeSentences(List.filled(15, 4000)); // 60s, target=20s
+      final sentences = _makeSentences(
+        List.filled(15, 4000),
+      ); // 60s, target=20s
       final result = groupSentencesIntoParagraphs(
         sentences,
         const Duration(seconds: 20),
@@ -363,7 +382,9 @@ void main() {
 
     test('硬切后某 chunk 句子总时长 > target → 块内继续 DP', () {
       // 一段 12 句 × 10s 紧密相连（120s），target=30s，块内应 DP 切 4 段
-      final dense = [for (var i = 0; i < 12; i++) _s(i, i * 10000, i * 10000 + 10000)];
+      final dense = [
+        for (var i = 0; i < 12; i++) _s(i, i * 10000, i * 10000 + 10000),
+      ];
       // 硬切：插入第二个 chunk（与 dense 间隔 60s 大空白）
       final sep = _s(12, 180000, 182000); // gap(11→12) = 60s ≥ 15s ✂
       final sentences = [...dense, sep];
@@ -440,7 +461,8 @@ void main() {
       expect(result.length, greaterThanOrEqualTo(2));
       // 每段墙时应都接近 target 30s（不超过 target 太多）
       for (final p in result) {
-        final wallMs = p.last.endTime.inMilliseconds - p.first.startTime.inMilliseconds;
+        final wallMs =
+            p.last.endTime.inMilliseconds - p.first.startTime.inMilliseconds;
         expect(wallMs, lessThan(40000), reason: '段落墙时 ${wallMs}ms 远超 target');
       }
     });
@@ -502,9 +524,13 @@ void main() {
       expect(result.length, inInclusiveRange(2, 3));
       // 每段墙时不应远超 target
       for (final p in result) {
-        final wallMs = p.last.endTime.inMilliseconds - p.first.startTime.inMilliseconds;
-        expect(wallMs, lessThanOrEqualTo(40000),
-            reason: '段落墙时 ${wallMs}ms 远超 target');
+        final wallMs =
+            p.last.endTime.inMilliseconds - p.first.startTime.inMilliseconds;
+        expect(
+          wallMs,
+          lessThanOrEqualTo(40000),
+          reason: '段落墙时 ${wallMs}ms 远超 target',
+        );
       }
     });
 

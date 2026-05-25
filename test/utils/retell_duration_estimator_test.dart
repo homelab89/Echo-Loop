@@ -3,11 +3,11 @@ import 'package:echo_loop/utils/retell_duration_estimator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Sentence _s(int i, int startSec, int endSec) => Sentence(
-      index: i,
-      text: 'sentence $i',
-      startTime: Duration(seconds: startSec),
-      endTime: Duration(seconds: endSec),
-    );
+  index: i,
+  text: 'sentence $i',
+  startTime: Duration(seconds: startSec),
+  endTime: Duration(seconds: endSec),
+);
 
 void main() {
   // 三句字幕：0-2s, 3-5s, 7-9s（句间空白 1s/2s）
@@ -24,23 +24,29 @@ void main() {
       expect(r, Duration.zero);
     });
 
-    test('不分段 + smart：paragraphDur=9s, pause=clamp(2+9×2,3..60)=20s → total=29s', () {
-      final r = estimateRetellSessionDuration(
-        sentences: sentences,
-        targetSeconds: -1,
-        pauseMultiplier: -1,
-      );
-      expect(r, const Duration(seconds: 29));
-    });
+    test(
+      '不分段 + smart：paragraphDur=9s, pause=clamp(2+9×2,3..60)=20s → total=29s',
+      () {
+        final r = estimateRetellSessionDuration(
+          sentences: sentences,
+          targetSeconds: -1,
+          pauseMultiplier: -1,
+        );
+        expect(r, const Duration(seconds: 29));
+      },
+    );
 
-    test('逐句 + multiplier 1.0：每段 2s, pause=clamp(2×1,≥3)=3s → 3 × (2+3) = 15s', () {
-      final r = estimateRetellSessionDuration(
-        sentences: sentences,
-        targetSeconds: 0,
-        pauseMultiplier: 1.0,
-      );
-      expect(r, const Duration(seconds: 15));
-    });
+    test(
+      '逐句 + multiplier 1.0：每段 2s, pause=clamp(2×1,≥3)=3s → 3 × (2+3) = 15s',
+      () {
+        final r = estimateRetellSessionDuration(
+          sentences: sentences,
+          targetSeconds: 0,
+          pauseMultiplier: 1.0,
+        );
+        expect(r, const Duration(seconds: 15));
+      },
+    );
 
     test('repeatCount=2 时整体翻倍', () {
       final r = estimateRetellSessionDuration(

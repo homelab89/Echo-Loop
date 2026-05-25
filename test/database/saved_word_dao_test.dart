@@ -122,20 +122,24 @@ void main() {
       final earlier = DateTime(2026, 1, 1);
       final later = DateTime(2026, 1, 2);
 
-      await db.into(db.savedWords).insert(
-        SavedWordsCompanion(
-          word: const Value('alpha'),
-          createdAt: Value(earlier),
-          updatedAt: Value(earlier),
-        ),
-      );
-      await db.into(db.savedWords).insert(
-        SavedWordsCompanion(
-          word: const Value('beta'),
-          createdAt: Value(later),
-          updatedAt: Value(later),
-        ),
-      );
+      await db
+          .into(db.savedWords)
+          .insert(
+            SavedWordsCompanion(
+              word: const Value('alpha'),
+              createdAt: Value(earlier),
+              updatedAt: Value(earlier),
+            ),
+          );
+      await db
+          .into(db.savedWords)
+          .insert(
+            SavedWordsCompanion(
+              word: const Value('beta'),
+              createdAt: Value(later),
+              updatedAt: Value(later),
+            ),
+          );
 
       final words = await db.savedWordDao.getAll();
       expect(words.length, 2);
@@ -329,8 +333,7 @@ void main() {
   // ========== 练习统计更新 ==========
 
   group('updatePracticeStats', () {
-    test('更新 practiceCount、totalStudyMs、viewedBack、lastPracticedAt',
-        () async {
+    test('更新 practiceCount、totalStudyMs、viewedBack、lastPracticedAt', () async {
       await db.savedWordDao.saveWord(word: 'apple');
 
       // 初始值
@@ -341,10 +344,7 @@ void main() {
       expect(words.first.lastPracticedAt, isNull);
 
       // 练习一次
-      await db.savedWordDao.updatePracticeStats(
-        word: 'apple',
-        studyMs: 3000,
-      );
+      await db.savedWordDao.updatePracticeStats(word: 'apple', studyMs: 3000);
 
       words = await db.savedWordDao.getAll();
       expect(words.first.practiceCount, 1);
@@ -356,14 +356,8 @@ void main() {
     test('多次调用累加正确', () async {
       await db.savedWordDao.saveWord(word: 'banana');
 
-      await db.savedWordDao.updatePracticeStats(
-        word: 'banana',
-        studyMs: 2000,
-      );
-      await db.savedWordDao.updatePracticeStats(
-        word: 'banana',
-        studyMs: 4000,
-      );
+      await db.savedWordDao.updatePracticeStats(word: 'banana', studyMs: 2000);
+      await db.savedWordDao.updatePracticeStats(word: 'banana', studyMs: 4000);
 
       final words = await db.savedWordDao.getAll();
       expect(words.first.practiceCount, 2);
@@ -373,10 +367,7 @@ void main() {
     test('studyMs 超过 60000 被 clamp', () async {
       await db.savedWordDao.saveWord(word: 'cat');
 
-      await db.savedWordDao.updatePracticeStats(
-        word: 'cat',
-        studyMs: 120000,
-      );
+      await db.savedWordDao.updatePracticeStats(word: 'cat', studyMs: 120000);
 
       final words = await db.savedWordDao.getAll();
       expect(words.first.totalStudyMs, 60000);
@@ -390,10 +381,7 @@ void main() {
       final future = stream.first;
 
       // 更新统计
-      await db.savedWordDao.updatePracticeStats(
-        word: 'dog',
-        studyMs: 5000,
-      );
+      await db.savedWordDao.updatePracticeStats(word: 'dog', studyMs: 5000);
 
       // stream 应发射更新后的数据
       final updated = await future.timeout(const Duration(seconds: 3));

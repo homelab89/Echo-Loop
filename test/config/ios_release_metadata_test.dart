@@ -12,10 +12,12 @@ void main() {
   });
 
   test('iOS 桌面名称支持中英文本地化', () async {
-    final english =
-        await File('ios/Runner/en.lproj/InfoPlist.strings').readAsString();
-    final chinese =
-        await File('ios/Runner/zh-Hans.lproj/InfoPlist.strings').readAsString();
+    final english = await File(
+      'ios/Runner/en.lproj/InfoPlist.strings',
+    ).readAsString();
+    final chinese = await File(
+      'ios/Runner/zh-Hans.lproj/InfoPlist.strings',
+    ).readAsString();
 
     expect(english, contains('"CFBundleName" = "Echo Loop";'));
     expect(chinese, contains('"CFBundleName" = "Echo Loop";'));
@@ -25,9 +27,9 @@ void main() {
     final content = await File('ios/Runner/Info.plist').readAsString();
 
     expect(
-      RegExp(r'<key>LSHandlerRank</key>\s*<string>Alternate</string>')
-          .allMatches(content)
-          .length,
+      RegExp(
+        r'<key>LSHandlerRank</key>\s*<string>Alternate</string>',
+      ).allMatches(content).length,
       2,
     );
     expect(content, contains('<string>SubRip Subtitle</string>'));

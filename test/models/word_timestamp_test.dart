@@ -90,10 +90,7 @@ void main() {
 
     test('fromJson 缺少字段时抛出异常', () {
       final json = <String, dynamic>{'word': 'missing'};
-      expect(
-        () => WordTimestamp.fromJson(json),
-        throwsA(isA<TypeError>()),
-      );
+      expect(() => WordTimestamp.fromJson(json), throwsA(isA<TypeError>()));
     });
 
     test('const 构造函数支持编译时常量', () {

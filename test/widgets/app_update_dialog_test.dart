@@ -28,19 +28,21 @@ void main() {
 
   group('Soft update 对话框', () {
     testWidgets('显示版本号和更新说明', (tester) async {
-      await tester.pumpWidget(buildApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => showAppUpdateDialog(
-              context: context,
-              info: info,
-              isForceUpdate: false,
-              downloadUrl: 'https://example.com/download',
+      await tester.pumpWidget(
+        buildApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showAppUpdateDialog(
+                context: context,
+                info: info,
+                isForceUpdate: false,
+                downloadUrl: 'https://example.com/download',
+              ),
+              child: const Text('Show'),
             ),
-            child: const Text('Show'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Show'));
       await tester.pumpAndSettle();
@@ -54,20 +56,22 @@ void main() {
     testWidgets('点击稍后调用 onDismiss', (tester) async {
       var dismissed = false;
 
-      await tester.pumpWidget(buildApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => showAppUpdateDialog(
-              context: context,
-              info: info,
-              isForceUpdate: false,
-              downloadUrl: 'https://example.com',
-              onDismiss: () => dismissed = true,
+      await tester.pumpWidget(
+        buildApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showAppUpdateDialog(
+                context: context,
+                info: info,
+                isForceUpdate: false,
+                downloadUrl: 'https://example.com',
+                onDismiss: () => dismissed = true,
+              ),
+              child: const Text('Show'),
             ),
-            child: const Text('Show'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Show'));
       await tester.pumpAndSettle();
@@ -80,19 +84,21 @@ void main() {
 
   group('Force update 对话框', () {
     testWidgets('不显示稍后按钮，显示复制链接', (tester) async {
-      await tester.pumpWidget(buildApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => showAppUpdateDialog(
-              context: context,
-              info: info,
-              isForceUpdate: true,
-              downloadUrl: 'https://example.com/download',
+      await tester.pumpWidget(
+        buildApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showAppUpdateDialog(
+                context: context,
+                info: info,
+                isForceUpdate: true,
+                downloadUrl: 'https://example.com/download',
+              ),
+              child: const Text('Show'),
             ),
-            child: const Text('Show'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Show'));
       await tester.pumpAndSettle();
@@ -104,26 +110,27 @@ void main() {
     });
 
     testWidgets('不可通过返回键关闭', (tester) async {
-      await tester.pumpWidget(buildApp(
-        child: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => showAppUpdateDialog(
-              context: context,
-              info: info,
-              isForceUpdate: true,
-              downloadUrl: 'https://example.com',
+      await tester.pumpWidget(
+        buildApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showAppUpdateDialog(
+                context: context,
+                info: info,
+                isForceUpdate: true,
+                downloadUrl: 'https://example.com',
+              ),
+              child: const Text('Show'),
             ),
-            child: const Text('Show'),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Show'));
       await tester.pumpAndSettle();
 
       // 尝试通过返回键关闭
-      final dynamic widgetsBinding =
-          tester.binding;
+      final dynamic widgetsBinding = tester.binding;
       await widgetsBinding.handlePopRoute();
       await tester.pumpAndSettle();
 

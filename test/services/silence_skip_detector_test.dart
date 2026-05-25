@@ -4,11 +4,11 @@ import 'package:echo_loop/services/silence_skip_detector.dart';
 
 /// 构造测试字幕（毫秒粒度）
 Sentence _s(int idx, int startMs, int endMs) => Sentence(
-      index: idx,
-      text: 's$idx',
-      startTime: Duration(milliseconds: startMs),
-      endTime: Duration(milliseconds: endMs),
-    );
+  index: idx,
+  text: 's$idx',
+  startTime: Duration(milliseconds: startMs),
+  endTime: Duration(milliseconds: endMs),
+);
 
 void main() {
   group('SilenceSkipDetector - 中间 gap', () {
@@ -97,7 +97,9 @@ void main() {
 
   group('SilenceSkipDetector - 开头', () {
     test('first.start < threshold/2 不跳过', () {
-      final s = [_s(0, 800, 2000)]; // first=0.8s, threshold=2 → boundary=1, 0<1 不触发
+      final s = [
+        _s(0, 800, 2000),
+      ]; // first=0.8s, threshold=2 → boundary=1, 0<1 不触发
       final r = SilenceSkipDetector.detect(
         position: Duration.zero,
         sentences: s,
@@ -135,7 +137,9 @@ void main() {
     });
 
     test('阈值砍半向上取整：threshold=3 → boundary=2', () {
-      final s = [_s(0, 1500, 3000)]; // first=1.5s, threshold=3 → boundary=2, 1.5<2 不触发
+      final s = [
+        _s(0, 1500, 3000),
+      ]; // first=1.5s, threshold=3 → boundary=2, 1.5<2 不触发
       final r = SilenceSkipDetector.detect(
         position: Duration.zero,
         sentences: s,

@@ -51,10 +51,12 @@ void main() {
     when(
       () => mockPlugin.initialize(
         any(),
-        onDidReceiveNotificationResponse:
-            any(named: 'onDidReceiveNotificationResponse'),
-        onDidReceiveBackgroundNotificationResponse:
-            any(named: 'onDidReceiveBackgroundNotificationResponse'),
+        onDidReceiveNotificationResponse: any(
+          named: 'onDidReceiveNotificationResponse',
+        ),
+        onDidReceiveBackgroundNotificationResponse: any(
+          named: 'onDidReceiveBackgroundNotificationResponse',
+        ),
       ),
     ).thenAnswer((_) async => true);
 
@@ -73,8 +75,9 @@ void main() {
     );
 
     when(() => mockPlugin.cancel(any())).thenAnswer((_) async {});
-    when(() => mockPlugin.pendingNotificationRequests())
-        .thenAnswer((_) async => <PendingNotificationRequest>[]);
+    when(
+      () => mockPlugin.pendingNotificationRequests(),
+    ).thenAnswer((_) async => <PendingNotificationRequest>[]);
     when(
       () => mockPlugin.zonedSchedule(
         any(),
@@ -89,31 +92,37 @@ void main() {
     ).thenAnswer((_) async {});
 
     when(
-      () => mockPlugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>(),
+      () => mockPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >(),
     ).thenReturn(null);
     when(
-      () => mockPlugin.resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin>(),
+      () => mockPlugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >(),
     ).thenReturn(null);
     when(
-      () => mockPlugin.resolvePlatformSpecificImplementation<
-          MacOSFlutterLocalNotificationsPlugin>(),
+      () => mockPlugin
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
+          >(),
     ).thenReturn(null);
 
     // Stub FlutterTimezone
     const channel = MethodChannel('flutter_timezone');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
-      if (call.method == 'getLocalTimezone') return 'America/New_York';
-      return null;
-    });
+          if (call.method == 'getLocalTimezone') return 'America/New_York';
+          return null;
+        });
 
     return ReviewReminderService(
       plugin: mockPlugin,
       bridge: bridge,
       timeCalculator: mockTimeCalc,
-      supportsSystemNotificationOverride: true,  // 强制启用通知支持（CI 在 Ubuntu 上运行）
+      supportsSystemNotificationOverride: true, // 强制启用通知支持（CI 在 Ubuntu 上运行）
     );
   }
 
@@ -167,8 +176,9 @@ void main() {
 
       // 重新 stub（clearInteractions 清除 stub）
       when(() => mockPlugin.cancel(any())).thenAnswer((_) async {});
-    when(() => mockPlugin.pendingNotificationRequests())
-        .thenAnswer((_) async => <PendingNotificationRequest>[]);
+      when(
+        () => mockPlugin.pendingNotificationRequests(),
+      ).thenAnswer((_) async => <PendingNotificationRequest>[]);
       when(
         () => mockPlugin.zonedSchedule(
           any(),
@@ -210,8 +220,9 @@ void main() {
       ]);
       clearInteractions(mockPlugin);
       when(() => mockPlugin.cancel(any())).thenAnswer((_) async {});
-    when(() => mockPlugin.pendingNotificationRequests())
-        .thenAnswer((_) async => <PendingNotificationRequest>[]);
+      when(
+        () => mockPlugin.pendingNotificationRequests(),
+      ).thenAnswer((_) async => <PendingNotificationRequest>[]);
       when(
         () => mockPlugin.zonedSchedule(
           any(),
@@ -285,8 +296,9 @@ void main() {
       ]);
       clearInteractions(mockPlugin);
       when(() => mockPlugin.cancel(any())).thenAnswer((_) async {});
-    when(() => mockPlugin.pendingNotificationRequests())
-        .thenAnswer((_) async => <PendingNotificationRequest>[]);
+      when(
+        () => mockPlugin.pendingNotificationRequests(),
+      ).thenAnswer((_) async => <PendingNotificationRequest>[]);
 
       await service.syncPerAudioReminders([]);
 
@@ -299,7 +311,12 @@ void main() {
       // 模拟系统中已有一个 per-audio 范围内的 pending 通知（上次启动遗留）
       when(() => mockPlugin.pendingNotificationRequests()).thenAnswer(
         (_) async => [
-          const PendingNotificationRequest(5000, 'Echo Loop', 'old', 'old_payload'),
+          const PendingNotificationRequest(
+            5000,
+            'Echo Loop',
+            'old',
+            'old_payload',
+          ),
         ],
       );
 
@@ -315,7 +332,12 @@ void main() {
       // 模拟系统中有 daily reminder（ID 1001，范围外）
       when(() => mockPlugin.pendingNotificationRequests()).thenAnswer(
         (_) async => [
-          const PendingNotificationRequest(1001, 'Echo Loop', 'daily', 'open_study_tasks'),
+          const PendingNotificationRequest(
+            1001,
+            'Echo Loop',
+            'daily',
+            'open_study_tasks',
+          ),
         ],
       );
 
@@ -333,9 +355,24 @@ void main() {
       // 模拟系统中有 per-audio 通知
       when(() => mockPlugin.pendingNotificationRequests()).thenAnswer(
         (_) async => [
-          const PendingNotificationRequest(3000, 'Echo Loop', 'a', 'open_audio:a'),
-          const PendingNotificationRequest(4000, 'Echo Loop', 'b', 'open_audio:b'),
-          const PendingNotificationRequest(1001, 'Echo Loop', 'daily', 'open_study_tasks'),
+          const PendingNotificationRequest(
+            3000,
+            'Echo Loop',
+            'a',
+            'open_audio:a',
+          ),
+          const PendingNotificationRequest(
+            4000,
+            'Echo Loop',
+            'b',
+            'open_audio:b',
+          ),
+          const PendingNotificationRequest(
+            1001,
+            'Echo Loop',
+            'daily',
+            'open_study_tasks',
+          ),
         ],
       );
 
@@ -364,11 +401,16 @@ void main() {
 
       // 重新 stub
       when(() => mockPlugin.cancel(any())).thenAnswer((_) async {});
-      when(() => mockPlugin.pendingNotificationRequests())
-          .thenAnswer((_) async => <PendingNotificationRequest>[]);
+      when(
+        () => mockPlugin.pendingNotificationRequests(),
+      ).thenAnswer((_) async => <PendingNotificationRequest>[]);
       when(
         () => mockPlugin.zonedSchedule(
-          any(), any(), any(), any(), any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
           androidScheduleMode: any(named: 'androidScheduleMode'),
           payload: any(named: 'payload'),
         ),
@@ -379,11 +421,16 @@ void main() {
       clearInteractions(mockPlugin);
 
       when(() => mockPlugin.cancel(any())).thenAnswer((_) async {});
-      when(() => mockPlugin.pendingNotificationRequests())
-          .thenAnswer((_) async => <PendingNotificationRequest>[]);
+      when(
+        () => mockPlugin.pendingNotificationRequests(),
+      ).thenAnswer((_) async => <PendingNotificationRequest>[]);
       when(
         () => mockPlugin.zonedSchedule(
-          any(), any(), any(), any(), any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
           androidScheduleMode: any(named: 'androidScheduleMode'),
           payload: any(named: 'payload'),
         ),
@@ -394,7 +441,11 @@ void main() {
 
       verify(
         () => mockPlugin.zonedSchedule(
-          any(), any(), any(), any(), any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
           androidScheduleMode: any(named: 'androidScheduleMode'),
           payload: any(named: 'payload'),
         ),
@@ -407,8 +458,9 @@ void main() {
       final service = createService();
 
       // 初始 timeCalc
-      when(() => mockTimeCalc.nextTriggerAt(any()))
-          .thenReturn(DateTime(2026, 3, 22, 20, 0));
+      when(
+        () => mockTimeCalc.nextTriggerAt(any()),
+      ).thenReturn(DateTime(2026, 3, 22, 20, 0));
 
       await service.syncSavedReviewReminder(hasSavedContent: true);
 
@@ -421,7 +473,11 @@ void main() {
       // 15 天 × 2 次 = 30 次 zonedSchedule
       verify(
         () => mockPlugin.zonedSchedule(
-          any(), any(), any(), any(), any(),
+          any(),
+          any(),
+          any(),
+          any(),
+          any(),
           androidScheduleMode: any(named: 'androidScheduleMode'),
           payload: any(named: 'payload'),
         ),
@@ -477,10 +533,7 @@ void main() {
       if (intents.isEmpty) {
         final pending = bridge.takePendingIntent();
         expect(pending, isA<OpenAudioLearningPlan>());
-        expect(
-          (pending! as OpenAudioLearningPlan).audioId,
-          equals('abc-123'),
-        );
+        expect((pending! as OpenAudioLearningPlan).audioId, equals('abc-123'));
       } else {
         expect(intents, hasLength(1));
         expect(intents.first, isA<OpenAudioLearningPlan>());
@@ -541,10 +594,12 @@ void main() {
       final captured = verify(
         () => mockPlugin.initialize(
           captureAny(),
-          onDidReceiveNotificationResponse:
-              any(named: 'onDidReceiveNotificationResponse'),
-          onDidReceiveBackgroundNotificationResponse:
-              any(named: 'onDidReceiveBackgroundNotificationResponse'),
+          onDidReceiveNotificationResponse: any(
+            named: 'onDidReceiveNotificationResponse',
+          ),
+          onDidReceiveBackgroundNotificationResponse: any(
+            named: 'onDidReceiveBackgroundNotificationResponse',
+          ),
         ),
       ).captured;
       expect(captured, isNotEmpty);

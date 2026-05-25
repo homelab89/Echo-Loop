@@ -54,11 +54,7 @@ void main() {
         inputTime: 30,
         outputTime: 20,
       );
-      await dao.upsertAdd(
-        date,
-        inputWords: 50,
-        outputTime: 10,
-      );
+      await dao.upsertAdd(date, inputWords: 50, outputTime: 10);
 
       final record = await dao.getByDate(date);
       expect(record!.studyTimeSeconds, 60);

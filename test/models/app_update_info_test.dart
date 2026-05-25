@@ -23,10 +23,7 @@ void main() {
     });
 
     test('releaseNotes 缺失时降级为空 Map', () {
-      final json = {
-        'latestVersion': '1.1.0',
-        'minimumVersion': '1.0.0',
-      };
+      final json = {'latestVersion': '1.1.0', 'minimumVersion': '1.0.0'};
       final info = AppUpdateInfo.fromJson(json);
 
       expect(info.releaseNotes, isEmpty);

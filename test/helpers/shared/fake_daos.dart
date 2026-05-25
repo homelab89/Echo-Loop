@@ -8,9 +8,11 @@ library;
 
 import 'dart:async';
 
-import 'package:echo_loop/database/app_database.dart' show AudioItem, Bookmark, BookmarksCompanion, SavedWord;
+import 'package:echo_loop/database/app_database.dart'
+    show AudioItem, Bookmark, BookmarksCompanion, SavedWord;
 import 'package:echo_loop/database/daos/audio_item_dao.dart';
-import 'package:echo_loop/database/daos/bookmark_dao.dart' show BookmarkDao, BookmarkWithAudio;
+import 'package:echo_loop/database/daos/bookmark_dao.dart'
+    show BookmarkDao, BookmarkWithAudio;
 import 'package:echo_loop/database/daos/saved_word_dao.dart';
 import 'package:echo_loop/database/daos/stage_completion_dao.dart'
     show StageCompletionDao, RecentCompletion;
@@ -31,7 +33,8 @@ class FakeAudioItemDao implements AudioItemDao {
 /// 无操作 StageCompletionDao — 所有查询返回空/即时完成
 class FakeStageCompletionDao implements StageCompletionDao {
   @override
-  Future<List<RecentCompletion>> getRecentCompletions(DateTime since) async => [];
+  Future<List<RecentCompletion>> getRecentCompletions(DateTime since) async =>
+      [];
 
   @override
   Future<Map<String, Set<String>>> getCompletionKeysByAudio() async => {};
@@ -54,17 +57,19 @@ class FakeBookmarkDao implements BookmarkDao {
   Future<List<Bookmark>> getByAudioId(String audioItemId) {
     final indices = _store[audioItemId] ?? {};
     final bookmarks = indices
-        .map((i) => Bookmark(
-              id: i,
-              audioItemId: audioItemId,
-              sentenceIndex: i,
-              sentenceText: 'test sentence $i',
-              startTime: 0.0,
-              endTime: 1.0,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-              syncStatus: 0,
-            ))
+        .map(
+          (i) => Bookmark(
+            id: i,
+            audioItemId: audioItemId,
+            sentenceIndex: i,
+            sentenceText: 'test sentence $i',
+            startTime: 0.0,
+            endTime: 1.0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            syncStatus: 0,
+          ),
+        )
         .toList();
     return Future.value(bookmarks);
   }
@@ -117,20 +122,22 @@ class FakeBookmarkDao implements BookmarkDao {
     final allBookmarks = <BookmarkWithAudio>[];
     for (final entry in _store.entries) {
       for (final index in entry.value) {
-        allBookmarks.add(BookmarkWithAudio(
-          bookmark: Bookmark(
-            id: index,
-            audioItemId: entry.key,
-            sentenceIndex: index,
-            sentenceText: 'test sentence $index',
-            startTime: 0.0,
-            endTime: 1.0,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            syncStatus: 0,
+        allBookmarks.add(
+          BookmarkWithAudio(
+            bookmark: Bookmark(
+              id: index,
+              audioItemId: entry.key,
+              sentenceIndex: index,
+              sentenceText: 'test sentence $index',
+              startTime: 0.0,
+              endTime: 1.0,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              syncStatus: 0,
+            ),
+            audioName: 'Test Audio',
           ),
-          audioName: 'Test Audio',
-        ));
+        );
       }
     }
     return Stream.value(allBookmarks);

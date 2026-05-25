@@ -29,11 +29,7 @@ void main() {
         _word('very', 400, 500),
         _word('hard', 500, 600),
       ];
-      final chunks = [
-        'I have been',
-        'working',
-        'very hard',
-      ];
+      final chunks = ['I have been', 'working', 'very hard'];
 
       final timings = mapSenseGroupTimings(
         chunks: chunks,
@@ -57,10 +53,7 @@ void main() {
     });
 
     test('单个意群覆盖整句', () {
-      final words = [
-        _word('Hello', 1000, 1200),
-        _word('world', 1200, 1500),
-      ];
+      final words = [_word('Hello', 1000, 1200), _word('world', 1200, 1500)];
       final chunks = ['Hello world'];
 
       final timings = mapSenseGroupTimings(
@@ -85,10 +78,7 @@ void main() {
         _word('think', 300, 500),
         _word('so.', 500, 700),
       ];
-      final chunks = [
-        'Well',
-        'I think so',
-      ];
+      final chunks = ['Well', 'I think so'];
 
       final timings = mapSenseGroupTimings(
         chunks: chunks,
@@ -109,15 +99,9 @@ void main() {
     });
 
     test('匹配失败时回退到 fallback 均分', () {
-      final words = [
-        _word('apple', 0, 300),
-        _word('banana', 300, 600),
-      ];
+      final words = [_word('apple', 0, 300), _word('banana', 300, 600)];
       // 意群文本与 words 完全不同，无法匹配
-      final chunks = [
-        'completely different',
-        'text here',
-      ];
+      final chunks = ['completely different', 'text here'];
 
       final timings = mapSenseGroupTimings(
         chunks: chunks,
@@ -177,10 +161,7 @@ void main() {
         _word('sentence', 400, 500),
         _word('now', 500, 600),
       ];
-      final chunks = [
-        'Second sentence',
-        'now',
-      ];
+      final chunks = ['Second sentence', 'now'];
 
       final timings = mapSenseGroupTimings(
         chunks: chunks,
@@ -204,10 +185,7 @@ void main() {
         _word('Quick', 200, 400),
         _word('FOX', 400, 600),
       ];
-      final chunks = [
-        'the quick',
-        'fox',
-      ];
+      final chunks = ['the quick', 'fox'];
 
       final timings = mapSenseGroupTimings(
         chunks: chunks,

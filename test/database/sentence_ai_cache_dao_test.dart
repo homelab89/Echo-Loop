@@ -106,7 +106,10 @@ void main() {
 
       // 手动将第一条的 lastAccessedAt 设为 31 天前（Drift 用 epoch 秒存储）
       final oldEpoch =
-          DateTime.now().subtract(const Duration(days: 31)).millisecondsSinceEpoch ~/ 1000;
+          DateTime.now()
+              .subtract(const Duration(days: 31))
+              .millisecondsSinceEpoch ~/
+          1000;
       await db.customStatement(
         "UPDATE sentence_ai_cache SET last_accessed_at = $oldEpoch WHERE text_hash = 'old'",
       );
@@ -139,7 +142,10 @@ void main() {
 
       // 将 lastAccessedAt 设为 10 天前（Drift 用 epoch 秒存储）
       final pastEpoch =
-          DateTime.now().subtract(const Duration(days: 10)).millisecondsSinceEpoch ~/ 1000;
+          DateTime.now()
+              .subtract(const Duration(days: 10))
+              .millisecondsSinceEpoch ~/
+          1000;
       await db.customStatement(
         "UPDATE sentence_ai_cache SET last_accessed_at = $pastEpoch WHERE text_hash = 'abc'",
       );

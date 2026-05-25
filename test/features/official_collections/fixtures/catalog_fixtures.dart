@@ -51,26 +51,39 @@ CatalogSnapshot makeSnapshot({
   DateTime? fetchedAt,
 }) {
   // 对应 service 中 sha256(utf8(jsonBody))；测试里用一个稳定的近似值即可
-  final hash = contentHash ??
-      sha256.convert(utf8.encode(jsonEncode({
-        'serverTime': '2026-04-19T00:00:00.000Z',
-        'collections': collections.map((c) => {
-              'id': c.id,
-              'name': c.name,
-              'description': c.description,
-              'coverUrl': c.coverUrl,
-              'publishedAt': c.publishedAt.toIso8601String(),
-              'audios': c.audios
-                  .map((a) => {
-                        'id': a.id,
-                        'title': a.title,
-                        'durationSec': a.durationSec,
-                        'sortOrder': a.sortOrder,
-                        'sha256': a.sha256,
-                      })
-                  .toList(),
-            }).toList(),
-      }))).toString();
+  final hash =
+      contentHash ??
+      sha256
+          .convert(
+            utf8.encode(
+              jsonEncode({
+                'serverTime': '2026-04-19T00:00:00.000Z',
+                'collections': collections
+                    .map(
+                      (c) => {
+                        'id': c.id,
+                        'name': c.name,
+                        'description': c.description,
+                        'coverUrl': c.coverUrl,
+                        'publishedAt': c.publishedAt.toIso8601String(),
+                        'audios': c.audios
+                            .map(
+                              (a) => {
+                                'id': a.id,
+                                'title': a.title,
+                                'durationSec': a.durationSec,
+                                'sortOrder': a.sortOrder,
+                                'sha256': a.sha256,
+                              },
+                            )
+                            .toList(),
+                      },
+                    )
+                    .toList(),
+              }),
+            ),
+          )
+          .toString();
   return CatalogSnapshot(
     collections: collections,
     contentHash: hash,
@@ -83,22 +96,26 @@ String snapshotToBody(CatalogSnapshot s) {
   return jsonEncode({
     'serverTime': '2026-04-19T00:00:00.000Z',
     'collections': s.collections
-        .map((c) => {
-              'id': c.id,
-              'name': c.name,
-              'description': c.description,
-              'coverUrl': c.coverUrl,
-              'publishedAt': c.publishedAt.toIso8601String(),
-              'audios': c.audios
-                  .map((a) => {
-                        'id': a.id,
-                        'title': a.title,
-                        'durationSec': a.durationSec,
-                        'sortOrder': a.sortOrder,
-                        'sha256': a.sha256,
-                      })
-                  .toList(),
-            })
+        .map(
+          (c) => {
+            'id': c.id,
+            'name': c.name,
+            'description': c.description,
+            'coverUrl': c.coverUrl,
+            'publishedAt': c.publishedAt.toIso8601String(),
+            'audios': c.audios
+                .map(
+                  (a) => {
+                    'id': a.id,
+                    'title': a.title,
+                    'durationSec': a.durationSec,
+                    'sortOrder': a.sortOrder,
+                    'sha256': a.sha256,
+                  },
+                )
+                .toList(),
+          },
+        )
         .toList(),
   });
 }
@@ -113,7 +130,8 @@ Future<String> seedEnrolledCollection(
   String? coverUrl,
   String? description,
   List<({String remoteAudioId, String sha256, int sortOrder, bool downloaded})>
-      audios = const [],
+      audios =
+      const [],
 }) async {
   final localId = 'local-$remoteId';
   final now = DateTime(2026, 4, 19);

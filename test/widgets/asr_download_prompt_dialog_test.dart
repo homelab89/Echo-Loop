@@ -150,7 +150,10 @@ void main() {
 
     testWidgets('默认开启但未下载时点空白关闭后返回 false 且不改状态', (tester) async {
       final notifier = _TestOfflineAsrSettingsNotifier(
-        OfflineAsrSettingsState(backend: AsrBackend.offline, recommendedModel: recommendedModel),
+        OfflineAsrSettingsState(
+          backend: AsrBackend.offline,
+          recommendedModel: recommendedModel,
+        ),
       );
 
       await tester.pumpWidget(createTestWidget(notifier: notifier));
@@ -170,7 +173,10 @@ void main() {
 
     testWidgets('默认开启但未下载时点右上角关闭后返回 false 且不改状态', (tester) async {
       final notifier = _TestOfflineAsrSettingsNotifier(
-        OfflineAsrSettingsState(backend: AsrBackend.offline, recommendedModel: recommendedModel),
+        OfflineAsrSettingsState(
+          backend: AsrBackend.offline,
+          recommendedModel: recommendedModel,
+        ),
       );
 
       await tester.pumpWidget(createTestWidget(notifier: notifier));
@@ -190,7 +196,10 @@ void main() {
 
     testWidgets('默认开启但未下载时点空白关闭后返回 false 且不改状态', (tester) async {
       final notifier = _TestOfflineAsrSettingsNotifier(
-        OfflineAsrSettingsState(backend: AsrBackend.offline, recommendedModel: recommendedModel),
+        OfflineAsrSettingsState(
+          backend: AsrBackend.offline,
+          recommendedModel: recommendedModel,
+        ),
       );
 
       await tester.pumpWidget(createTestWidget(notifier: notifier));
@@ -211,7 +220,10 @@ void main() {
 
     testWidgets('默认开启但未下载时下载成功后返回 true 并后台加载引擎', (tester) async {
       final notifier = _TestOfflineAsrSettingsNotifier(
-        OfflineAsrSettingsState(backend: AsrBackend.offline, recommendedModel: recommendedModel),
+        OfflineAsrSettingsState(
+          backend: AsrBackend.offline,
+          recommendedModel: recommendedModel,
+        ),
       );
 
       await tester.pumpWidget(createTestWidget(notifier: notifier));

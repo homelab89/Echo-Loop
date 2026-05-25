@@ -23,10 +23,7 @@ void main() {
     });
 
     test('fromJson 处理空意群列表', () {
-      final json = {
-        'medium': <dynamic>[],
-        'fine': <dynamic>[],
-      };
+      final json = {'medium': <dynamic>[], 'fine': <dynamic>[]};
       final result = SenseGroupResult.fromJson(json);
 
       expect(result.medium, isEmpty);

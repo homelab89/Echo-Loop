@@ -36,10 +36,12 @@ Widget _buildTile({
 void main() {
   group('MaskedSentenceTile 蒙版连续显示', () {
     testWidgets('hideAll 模式：每个词独立渲染但视觉连续', (tester) async {
-      await tester.pumpWidget(_buildTile(
-        sentence: _sentence('I love you'),
-        displayMode: RetellDisplayMode.hideAll,
-      ));
+      await tester.pumpWidget(
+        _buildTile(
+          sentence: _sentence('I love you'),
+          displayMode: RetellDisplayMode.hideAll,
+        ),
+      );
       await tester.pumpAndSettle();
 
       // 每个词仍独立渲染（保持布局稳定）
@@ -55,10 +57,12 @@ void main() {
     });
 
     testWidgets('showAll 模式：每个词独立显示，无 Stack 溢出', (tester) async {
-      await tester.pumpWidget(_buildTile(
-        sentence: _sentence('I love you'),
-        displayMode: RetellDisplayMode.showAll,
-      ));
+      await tester.pumpWidget(
+        _buildTile(
+          sentence: _sentence('I love you'),
+          displayMode: RetellDisplayMode.showAll,
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('I'), findsOneWidget);
@@ -74,11 +78,13 @@ void main() {
       // "I love you very much" → 关键词索引 {1}（"love"可见）
       // 遮盖: [0], [2], [3], [4]
       // 桥接: [2]→[3], [3]→[4]（2 个桥接）
-      await tester.pumpWidget(_buildTile(
-        sentence: _sentence('I love you very much'),
-        displayMode: RetellDisplayMode.keywordsOnly,
-        keywordIndices: {1},
-      ));
+      await tester.pumpWidget(
+        _buildTile(
+          sentence: _sentence('I love you very much'),
+          displayMode: RetellDisplayMode.keywordsOnly,
+          keywordIndices: {1},
+        ),
+      );
       await tester.pumpAndSettle();
 
       // 所有词独立存在
@@ -95,20 +101,24 @@ void main() {
 
     testWidgets('切换模式时 Wrap 子元素数量不变', (tester) async {
       // 先 hideAll
-      await tester.pumpWidget(_buildTile(
-        sentence: _sentence('A B C D E'),
-        displayMode: RetellDisplayMode.hideAll,
-      ));
+      await tester.pumpWidget(
+        _buildTile(
+          sentence: _sentence('A B C D E'),
+          displayMode: RetellDisplayMode.hideAll,
+        ),
+      );
       await tester.pumpAndSettle();
 
       final wrapHideAll = tester.widget<Wrap>(find.byType(Wrap));
       final hideAllCount = wrapHideAll.children.length;
 
       // 切换到 showAll
-      await tester.pumpWidget(_buildTile(
-        sentence: _sentence('A B C D E'),
-        displayMode: RetellDisplayMode.showAll,
-      ));
+      await tester.pumpWidget(
+        _buildTile(
+          sentence: _sentence('A B C D E'),
+          displayMode: RetellDisplayMode.showAll,
+        ),
+      );
       await tester.pumpAndSettle();
 
       final wrapShowAll = tester.widget<Wrap>(find.byType(Wrap));

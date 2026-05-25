@@ -3,11 +3,11 @@ import 'package:echo_loop/utils/blind_listen_duration_estimator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Sentence _s(int i, int startSec, int endSec) => Sentence(
-      index: i,
-      text: 'sentence $i',
-      startTime: Duration(seconds: startSec),
-      endTime: Duration(seconds: endSec),
-    );
+  index: i,
+  text: 'sentence $i',
+  startTime: Duration(seconds: startSec),
+  endTime: Duration(seconds: endSec),
+);
 
 void main() {
   // 三句字幕：0-2s, 3-5s, 7-9s

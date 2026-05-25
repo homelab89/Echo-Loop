@@ -14,33 +14,34 @@ void main() {
 
   setUp(() {
     fakeDocsDir = Directory.systemTemp.createTempSync('migration_docs_');
-    fakeAppSupportDir =
-        Directory.systemTemp.createTempSync('migration_support_');
+    fakeAppSupportDir = Directory.systemTemp.createTempSync(
+      'migration_support_',
+    );
 
     SharedPreferences.setMockInitialValues({});
 
     // Mock path_provider 返回伪目录
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (MethodCall call) async {
-        if (call.method == 'getApplicationDocumentsDirectory') {
-          return fakeDocsDir.path;
-        }
-        if (call.method == 'getApplicationSupportDirectory') {
-          return fakeAppSupportDir.path;
-        }
-        return null;
-      },
-    );
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (MethodCall call) async {
+            if (call.method == 'getApplicationDocumentsDirectory') {
+              return fakeDocsDir.path;
+            }
+            if (call.method == 'getApplicationSupportDirectory') {
+              return fakeAppSupportDir.path;
+            }
+            return null;
+          },
+        );
   });
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      null,
-    );
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          null,
+        );
     if (fakeDocsDir.existsSync()) fakeDocsDir.deleteSync(recursive: true);
     if (fakeAppSupportDir.existsSync()) {
       fakeAppSupportDir.deleteSync(recursive: true);
@@ -74,8 +75,7 @@ void main() {
 
     test('迁移媒体目录到 Application Support', () async {
       // 在 Documents 创建媒体目录和文件
-      final audiosDir = Directory('${fakeDocsDir.path}/audios')
-        ..createSync();
+      final audiosDir = Directory('${fakeDocsDir.path}/audios')..createSync();
       File('${audiosDir.path}/test.mp3').writeAsStringSync('audio');
       final transcriptsDir = Directory('${fakeDocsDir.path}/transcripts')
         ..createSync();
@@ -92,8 +92,9 @@ void main() {
         'audio',
       );
       expect(
-        File('${fakeAppSupportDir.path}/transcripts/test.srt')
-            .readAsStringSync(),
+        File(
+          '${fakeAppSupportDir.path}/transcripts/test.srt',
+        ).readAsStringSync(),
         'srt',
       );
     });
@@ -118,8 +119,7 @@ void main() {
     test('目标已存在时不覆盖', () async {
       // 两个目录都有同名文件
       File('${fakeDocsDir.path}/echo_loop.db').writeAsStringSync('old');
-      File('${fakeAppSupportDir.path}/echo_loop.db')
-          .writeAsStringSync('new');
+      File('${fakeAppSupportDir.path}/echo_loop.db').writeAsStringSync('new');
 
       await migrateToAppSupportDirectory();
 

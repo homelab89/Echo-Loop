@@ -68,23 +68,27 @@ class TestTagList extends FakeTagList {
 }
 
 class TestListeningPractice extends FakeListeningPractice {
-  TestListeningPractice([ListeningPracticeState initialState = const ListeningPracticeState()])
-    : super(initialState);
+  TestListeningPractice([
+    ListeningPracticeState initialState = const ListeningPracticeState(),
+  ]) : super(initialState);
 }
 
 class TestLearningProgressNotifier extends FakeLearningProgressNotifier {
-  TestLearningProgressNotifier([LearningProgressState initialState = const LearningProgressState()])
-    : super(initialState);
+  TestLearningProgressNotifier([
+    LearningProgressState initialState = const LearningProgressState(),
+  ]) : super(initialState);
 }
 
 class TestLearningSession extends FakeLearningSession {
-  TestLearningSession([LearningSessionState initialState = const LearningSessionState()])
-    : super(initialState);
+  TestLearningSession([
+    LearningSessionState initialState = const LearningSessionState(),
+  ]) : super(initialState);
 }
 
 class TestBlindListenPlayer extends FakeBlindListenPlayer {
-  TestBlindListenPlayer([BlindListenPlayerState initialState = const BlindListenPlayerState()])
-    : super(initialState);
+  TestBlindListenPlayer([
+    BlindListenPlayerState initialState = const BlindListenPlayerState(),
+  ]) : super(initialState);
 }
 
 class TestIntensiveListenPlayer extends FakeIntensiveListenPlayer {
@@ -104,7 +108,8 @@ class TestRetellPlayer extends FakeRetellPlayer {
 
 class TestReviewDifficultPractice extends FakeReviewDifficultPractice {
   TestReviewDifficultPractice([
-    ReviewDifficultPracticeState initialState = const ReviewDifficultPracticeState(),
+    ReviewDifficultPracticeState initialState =
+        const ReviewDifficultPracticeState(),
     List<Sentence> testSentences = const [],
   ]) : super(initialState, testSentences);
 }
@@ -121,16 +126,18 @@ class TestFlashcardNotifier extends FakeFlashcardNotifier {}
 class TestDailyStudyTime extends FakeDailyStudyTime {}
 
 class TestOfflineAsrSettings extends FakeOfflineAsrSettings {
-  TestOfflineAsrSettings([OfflineAsrSettingsState initialState = const OfflineAsrSettingsState(
-    enabled: true,
-    backend: AsrBackend.platform,
-    engineReady: true,
-    recommendedModel: AsrModelInfo(
-      id: 'test-model',
-      displayName: 'Test Model',
-      type: AsrModelType.moonshine,
+  TestOfflineAsrSettings([
+    OfflineAsrSettingsState initialState = const OfflineAsrSettingsState(
+      enabled: true,
+      backend: AsrBackend.platform,
+      engineReady: true,
+      recommendedModel: AsrModelInfo(
+        id: 'test-model',
+        displayName: 'Test Model',
+        type: AsrModelType.moonshine,
+      ),
     ),
-  )]) : super(initialState);
+  ]) : super(initialState);
 }
 
 class TestStudyTimeService extends FakeStudyTimeService {}
@@ -199,7 +206,9 @@ class _DummySharedPreferences implements SharedPreferences {
 
 /// 返回 analyticsServiceProvider 的 override
 Override analyticsOverride() {
-  return analyticsServiceProvider.overrideWithValue(createTestAnalyticsServiceSync());
+  return analyticsServiceProvider.overrideWithValue(
+    createTestAnalyticsServiceSync(),
+  );
 }
 
 // ========== 通知权限 ==========
@@ -224,10 +233,9 @@ Override dictionaryOverride({
   String nativeLanguage = 'zh',
 }) {
   return dictionaryProvider.overrideWith(
-    () => _TestDictionary(DictionaryState(
-      status: status,
-      nativeLanguage: nativeLanguage,
-    )),
+    () => _TestDictionary(
+      DictionaryState(status: status, nativeLanguage: nativeLanguage),
+    ),
   );
 }
 
@@ -306,7 +314,9 @@ class TestTranscriptionTaskManager extends TranscriptionTaskManager {
 class TestSpeechRecordingController extends SpeechRecordingController {
   final SpeechRecordingPhase initialPhase;
 
-  TestSpeechRecordingController({this.initialPhase = SpeechRecordingPhase.idle});
+  TestSpeechRecordingController({
+    this.initialPhase = SpeechRecordingPhase.idle,
+  });
 
   @override
   SpeechRecordingState build() => SpeechRecordingState(phase: initialPhase);
@@ -386,7 +396,10 @@ class TestRetellRecordingController extends RetellRecordingController {
 
   @override
   Future<void> cancelActiveRecording() async {
-    state = state.copyWith(phase: RetellRecordingPhase.idle, clearPromptId: true);
+    state = state.copyWith(
+      phase: RetellRecordingPhase.idle,
+      clearPromptId: true,
+    );
   }
 
   @override
@@ -419,8 +432,12 @@ TranscriptionApiClient createTestTranscriptionApiClient() {
 List<Override> studyTimeOverrides() {
   return [
     studyTimeServiceProvider.overrideWithValue(FakeStudyTimeService()),
-    speechRecordingControllerProvider.overrideWith(TestSpeechRecordingController.new),
-    retellRecordingControllerProvider.overrideWith(TestRetellRecordingController.new),
+    speechRecordingControllerProvider.overrideWith(
+      TestSpeechRecordingController.new,
+    ),
+    retellRecordingControllerProvider.overrideWith(
+      TestRetellRecordingController.new,
+    ),
     offlineAsrOverride(),
   ];
 }
@@ -439,11 +456,13 @@ Override offlineAsrOverride({
     type: AsrModelType.moonshine,
   );
   return offlineAsrSettingsProvider.overrideWith(
-    () => FakeOfflineAsrSettings(OfflineAsrSettingsState(
-      enabled: enabled,
-      backend: backend,
-      engineReady: engineReady,
-      recommendedModel: testModel,
-    )),
+    () => FakeOfflineAsrSettings(
+      OfflineAsrSettingsState(
+        enabled: enabled,
+        backend: backend,
+        engineReady: engineReady,
+        recommendedModel: testModel,
+      ),
+    ),
   );
 }

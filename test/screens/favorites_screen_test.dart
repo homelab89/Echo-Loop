@@ -481,8 +481,7 @@ void main() {
 
       // 验证例句 Text widget 没有 maxLines 限制
       final textWidget = tester.widget<Text>(find.text(longSentence));
-      expect(textWidget.maxLines, isNull,
-          reason: '展开后的例句不应有 maxLines 限制');
+      expect(textWidget.maxLines, isNull, reason: '展开后的例句不应有 maxLines 限制');
     });
   });
 

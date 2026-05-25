@@ -49,8 +49,8 @@ class _DeferredBlindAudioEngine extends TestAudioEngine {
 
   @override
   Future<void> playClipOnce(Sentence sentence, int sessionId) {
-    final completer =
-        _sentenceCompletions[sentence.index] ??= Completer<void>();
+    final completer = _sentenceCompletions[sentence.index] ??=
+        Completer<void>();
     return completer.future;
   }
 
@@ -392,7 +392,9 @@ void main() {
       audioEngine.completeSentence(0);
       await Future<void>.delayed(const Duration(milliseconds: 1));
 
-      final stateAfterOldCallback = container.read(intensiveListenPlayerProvider);
+      final stateAfterOldCallback = container.read(
+        intensiveListenPlayerProvider,
+      );
       expect(stateAfterOldCallback.currentSentenceIndex, 1);
       expect(stateAfterOldCallback.isPlaying, true);
       expect(stateAfterOldCallback.isPauseBetweenPlays, false);
@@ -717,9 +719,7 @@ void main() {
       await notifier.initialize(sentences);
       // 切换到手动模式
       notifier.updateSettings(
-        const IntensiveListenSettings(
-          controlMode: ShadowingControlMode.manual,
-        ),
+        const IntensiveListenSettings(controlMode: ShadowingControlMode.manual),
       );
     });
 

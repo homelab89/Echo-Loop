@@ -33,7 +33,10 @@ void main() {
 
   test('StudyStatsNotifier 聚合已学习词形统计', () async {
     final now = DateTime.now();
-    final service = StudyTimeService(db.dailyStudyRecordDao, db.dailyStageStudyRecordDao);
+    final service = StudyTimeService(
+      db.dailyStudyRecordDao,
+      db.dailyStageStudyRecordDao,
+    );
     await service.addStudyTime(1800, date: now);
     await service.addInputWords(42, date: now);
     await service.addOutputWords(21, date: now);

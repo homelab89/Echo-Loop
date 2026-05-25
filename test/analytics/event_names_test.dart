@@ -125,8 +125,7 @@ void main() {
 
       final pattern = RegExp(r'^[a-z][a-z0-9_]*$');
       for (final name in events) {
-        expect(pattern.hasMatch(name), isTrue,
-            reason: '"$name" 不符合小写下划线命名规范');
+        expect(pattern.hasMatch(name), isTrue, reason: '"$name" 不符合小写下划线命名规范');
       }
     });
 

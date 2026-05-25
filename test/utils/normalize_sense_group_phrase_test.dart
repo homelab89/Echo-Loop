@@ -27,10 +27,7 @@ void main() {
         normalizeSenseGroupPhrase('my project— well,'),
         'my project— well',
       );
-      expect(
-        normalizeSenseGroupPhrase('first, second'),
-        'first, second',
-      );
+      expect(normalizeSenseGroupPhrase('first, second'), 'first, second');
     });
 
     test('多个尾部标点', () {

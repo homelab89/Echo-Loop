@@ -32,10 +32,9 @@ void main() {
         displayText: 'in the morning',
       );
 
-      final all =
-          await (db.select(db.savedSenseGroups)
-                ..where((t) => t.deletedAt.isNull()))
-              .get();
+      final all = await (db.select(
+        db.savedSenseGroups,
+      )..where((t) => t.deletedAt.isNull())).get();
       expect(all.length, 1);
       expect(all.first.phraseText, 'in the morning');
       expect(all.first.displayText, 'in the morning');
@@ -65,10 +64,9 @@ void main() {
         groupEndMs: 6500,
       );
 
-      final all =
-          await (db.select(db.savedSenseGroups)
-                ..where((t) => t.deletedAt.isNull()))
-              .get();
+      final all = await (db.select(
+        db.savedSenseGroups,
+      )..where((t) => t.deletedAt.isNull())).get();
       expect(all.length, 1);
       final item = all.first;
       expect(item.phraseText, 'on the other hand');
@@ -122,10 +120,9 @@ void main() {
       );
 
       // 应只有一条记录，来源信息保持 audio-1（先到先得）
-      final all =
-          await (db.select(db.savedSenseGroups)
-                ..where((t) => t.deletedAt.isNull()))
-              .get();
+      final all = await (db.select(
+        db.savedSenseGroups,
+      )..where((t) => t.deletedAt.isNull())).get();
       expect(all.length, 1);
       expect(all.first.audioItemId, 'audio-1');
       expect(all.first.sentenceIndex, 1);
@@ -138,7 +135,10 @@ void main() {
         displayText: 'As a result',
       );
 
-      expect(await db.savedSenseGroupDao.isSenseGroupSaved('as a result'), true);
+      expect(
+        await db.savedSenseGroupDao.isSenseGroupSaved('as a result'),
+        true,
+      );
 
       await db.savedSenseGroupDao.removeSenseGroup('as a result');
 
@@ -168,10 +168,9 @@ void main() {
       );
       expect(await db.savedSenseGroupDao.isSenseGroupSaved('in fact'), true);
 
-      final all =
-          await (db.select(db.savedSenseGroups)
-                ..where((t) => t.deletedAt.isNull()))
-              .get();
+      final all = await (db.select(
+        db.savedSenseGroups,
+      )..where((t) => t.deletedAt.isNull())).get();
       expect(all.length, 1);
       expect(all.first.deletedAt, isNull);
     });
@@ -182,10 +181,7 @@ void main() {
         displayText: 'By the way',
       );
       expect(await db.savedSenseGroupDao.isSenseGroupSaved('by the way'), true);
-      expect(
-        await db.savedSenseGroupDao.isSenseGroupSaved('not saved'),
-        false,
-      );
+      expect(await db.savedSenseGroupDao.isSenseGroupSaved('not saved'), false);
     });
 
     test('clearContextForAudio 清除所有非 FK 上下文字段', () async {
@@ -214,10 +210,9 @@ void main() {
 
       await db.savedSenseGroupDao.clearContextForAudio('audio-1');
 
-      final all =
-          await (db.select(db.savedSenseGroups)
-                ..where((t) => t.deletedAt.isNull()))
-              .get();
+      final all = await (db.select(
+        db.savedSenseGroups,
+      )..where((t) => t.deletedAt.isNull())).get();
       expect(all.length, 1);
       final item = all.first;
       // phraseText 和 displayText 保留
@@ -265,10 +260,7 @@ void main() {
       );
 
       await db.savedSenseGroupDao.restoreSenseGroup('by the way');
-      expect(
-        await db.savedSenseGroupDao.isSenseGroupSaved('by the way'),
-        true,
-      );
+      expect(await db.savedSenseGroupDao.isSenseGroupSaved('by the way'), true);
     });
 
     test('permanentlyDeleteSenseGroup 物理删除意群', () async {
@@ -280,10 +272,7 @@ void main() {
       await db.savedSenseGroupDao.permanentlyDeleteSenseGroup('in fact');
 
       await db.savedSenseGroupDao.restoreSenseGroup('in fact');
-      expect(
-        await db.savedSenseGroupDao.isSenseGroupSaved('in fact'),
-        false,
-      );
+      expect(await db.savedSenseGroupDao.isSenseGroupSaved('in fact'), false);
     });
 
     test('permanentlyDeleteAllDeleted 清空回收站但不影响活跃意群', () async {
@@ -320,8 +309,7 @@ void main() {
         displayText: 'In conclusion',
       );
 
-      final texts =
-          await db.savedSenseGroupDao.watchSavedPhraseTexts().first;
+      final texts = await db.savedSenseGroupDao.watchSavedPhraseTexts().first;
       expect(texts, {'first of all', 'in conclusion'});
     });
   });
@@ -329,17 +317,16 @@ void main() {
   // ========== 练习统计更新 ==========
 
   group('updatePracticeStats', () {
-    test('更新 practiceCount、totalStudyMs、viewedBack、lastPracticedAt',
-        () async {
+    test('更新 practiceCount、totalStudyMs、viewedBack、lastPracticedAt', () async {
       await db.savedSenseGroupDao.saveSenseGroup(
         phraseText: 'in the morning',
         displayText: 'In the morning',
       );
 
       // 初始值
-      var all = await (db.select(db.savedSenseGroups)
-            ..where((t) => t.deletedAt.isNull()))
-          .get();
+      var all = await (db.select(
+        db.savedSenseGroups,
+      )..where((t) => t.deletedAt.isNull())).get();
       expect(all.first.practiceCount, 0);
       expect(all.first.totalStudyMs, 0);
       expect(all.first.viewedBack, false);
@@ -351,9 +338,9 @@ void main() {
         studyMs: 3000,
       );
 
-      all = await (db.select(db.savedSenseGroups)
-            ..where((t) => t.deletedAt.isNull()))
-          .get();
+      all = await (db.select(
+        db.savedSenseGroups,
+      )..where((t) => t.deletedAt.isNull())).get();
       expect(all.first.practiceCount, 1);
       expect(all.first.totalStudyMs, 3000);
       expect(all.first.viewedBack, true);
@@ -375,9 +362,9 @@ void main() {
         studyMs: 4000,
       );
 
-      final all = await (db.select(db.savedSenseGroups)
-            ..where((t) => t.deletedAt.isNull()))
-          .get();
+      final all = await (db.select(
+        db.savedSenseGroups,
+      )..where((t) => t.deletedAt.isNull())).get();
       expect(all.first.practiceCount, 2);
       expect(all.first.totalStudyMs, 6000);
     });
@@ -393,9 +380,9 @@ void main() {
         studyMs: 120000,
       );
 
-      final all = await (db.select(db.savedSenseGroups)
-            ..where((t) => t.deletedAt.isNull()))
-          .get();
+      final all = await (db.select(
+        db.savedSenseGroups,
+      )..where((t) => t.deletedAt.isNull())).get();
       expect(all.first.totalStudyMs, 60000);
     });
 

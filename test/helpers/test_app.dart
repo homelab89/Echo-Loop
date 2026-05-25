@@ -15,7 +15,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-import 'package:echo_loop/database/app_database.dart' hide AudioItem, Collection;
+import 'package:echo_loop/database/app_database.dart'
+    hide AudioItem, Collection;
 import 'package:echo_loop/database/providers.dart';
 import 'package:echo_loop/features/onboarding_survey/providers/onboarding_survey_provider.dart';
 import 'package:echo_loop/l10n/app_localizations.dart';
@@ -81,10 +82,7 @@ Widget createTestApp(
   ];
 
   // 合并自定义 overrides（覆盖同名 provider）
-  final allOverrides = <Override>[
-    ...defaultOverrides,
-    ...(overrides ?? []),
-  ];
+  final allOverrides = <Override>[...defaultOverrides, ...(overrides ?? [])];
 
   return ProviderScope(
     overrides: allOverrides,
@@ -132,10 +130,7 @@ Widget createTestScreen(
   ];
 
   // 合并自定义 overrides
-  final allOverrides = <Override>[
-    ...defaultOverrides,
-    ...(overrides ?? []),
-  ];
+  final allOverrides = <Override>[...defaultOverrides, ...(overrides ?? [])];
 
   final router = createTestRouter(screen);
 
@@ -263,7 +258,8 @@ Future<void> pumpFullAppWithAudio(
   final seedAudioItem = audioItem ?? createTestAudioItem();
   final seedCollection = collection ?? createTestCollection();
   final seedSentences = sentences ?? createTestSentences();
-  final seedProgress = progress ??
+  final seedProgress =
+      progress ??
       createTestLearningProgress(currentStageStartedAt: DateTime.now());
 
   // 按 (currentStage, currentSubStage) 推导已完成的 sub_stage key 集合：
@@ -289,9 +285,7 @@ Future<void> pumpFullAppWithAudio(
     tester,
     overrides: [
       audioLibraryProvider.overrideWith(
-        () => TestAudioLibrary(
-          AudioLibraryState(audioItems: [seedAudioItem]),
-        ),
+        () => TestAudioLibrary(AudioLibraryState(audioItems: [seedAudioItem])),
       ),
       collectionListProvider.overrideWith(
         () => TestCollectionList(
@@ -318,8 +312,9 @@ Future<void> pumpFullAppWithAudio(
       ),
       audioEngineProvider.overrideWith(
         () => TestAudioEngine(
-          initialState:
-              const AudioEngineState(totalDuration: Duration(seconds: 25)),
+          initialState: const AudioEngineState(
+            totalDuration: Duration(seconds: 25),
+          ),
         ),
       ),
       ...overrides,

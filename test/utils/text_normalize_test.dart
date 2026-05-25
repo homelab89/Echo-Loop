@@ -30,10 +30,7 @@ void main() {
     });
 
     test('综合归一化', () {
-      expect(
-        normalizeForCache('  Hello,  World!  '),
-        'hello, world',
-      );
+      expect(normalizeForCache('  Hello,  World!  '), 'hello, world');
     });
 
     test('空字符串', () {

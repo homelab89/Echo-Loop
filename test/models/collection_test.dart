@@ -126,7 +126,10 @@ void main() {
 
       test('CollectionSource.fromString 解析未知值回退到 local', () {
         expect(CollectionSource.fromString(null), CollectionSource.local);
-        expect(CollectionSource.fromString('official'), CollectionSource.official);
+        expect(
+          CollectionSource.fromString('official'),
+          CollectionSource.official,
+        );
         expect(CollectionSource.fromString('local'), CollectionSource.local);
         expect(CollectionSource.fromString('unknown'), CollectionSource.local);
       });

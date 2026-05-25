@@ -67,9 +67,7 @@ class _DaoFallbackLearningProgressNotifier
   }
 
   @override
-  Future<LearningProgress> getLatestOrEnsureProgress(
-    String audioItemId,
-  ) async {
+  Future<LearningProgress> getLatestOrEnsureProgress(String audioItemId) async {
     final latest = await getLatestByAudioId(audioItemId);
     if (latest != null) return latest;
     return ensureProgress(audioItemId);
@@ -385,7 +383,9 @@ void main() {
         currentStage: LearningStage.firstLearn,
         currentSubStage: SubStageType.intensiveListen,
         freePlayIntensiveListenSentenceIndex: 0,
-        freePlayBreakpointSavedAt: DateTime.now().subtract(const Duration(hours: 1)),
+        freePlayBreakpointSavedAt: DateTime.now().subtract(
+          const Duration(hours: 1),
+        ),
         updatedAt: DateTime(2026, 3, 11, 9),
       );
       final latest = LearningProgress(
@@ -616,12 +616,10 @@ void main() {
     }
 
     // TODO: 旧 ListenAndRepeatPlayer / PlaybackPhase 已删除，需要基于新播放器重写
-    test('跟读正常学习从头开始，忽略遗留断点', skip: '需要基于新播放器重写', () async {
-    });
+    test('跟读正常学习从头开始，忽略遗留断点', skip: '需要基于新播放器重写', () async {});
 
     // TODO: 旧 ListenAndRepeatPlayer / PlaybackPhase 已删除，需要基于新播放器重写
-    test('跟读自由练习恢复已保存句子断点', skip: '需要基于新播放器重写', () async {
-    });
+    test('跟读自由练习恢复已保存句子断点', skip: '需要基于新播放器重写', () async {});
 
     test('难句补练正常学习从头开始，忽略遗留断点', () async {
       final progress = LearningProgress(
@@ -730,11 +728,9 @@ void main() {
     });
 
     // TODO: 旧 ListenAndRepeatPlayer 已删除，需要基于新播放器重写
-    test('冷启动自由练习时也能从 DB 断点恢复跟读/补练/复述', skip: '需要基于新播放器重写', () async {
-    });
+    test('冷启动自由练习时也能从 DB 断点恢复跟读/补练/复述', skip: '需要基于新播放器重写', () async {});
 
     // TODO: 旧 ListenAndRepeatPlayer 已删除，需要基于新播放器重写
-    test('自由练习进入时优先使用数据库最新断点覆盖旧内存', skip: '需要基于新播放器重写', () async {
-    });
+    test('自由练习进入时优先使用数据库最新断点覆盖旧内存', skip: '需要基于新播放器重写', () async {});
   });
 }

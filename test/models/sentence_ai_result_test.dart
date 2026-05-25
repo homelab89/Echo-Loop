@@ -57,23 +57,15 @@ void main() {
     });
 
     test('fromJson 缺少 analysis 外层字段时抛出异常', () {
-      final json = <String, dynamic>{
-        'grammar': '直接放在顶层',
-      };
-      expect(
-        () => SentenceAnalysis.fromJson(json),
-        throwsA(isA<TypeError>()),
-      );
+      final json = <String, dynamic>{'grammar': '直接放在顶层'};
+      expect(() => SentenceAnalysis.fromJson(json), throwsA(isA<TypeError>()));
     });
 
     test('fromJson 缺少 analysis 内部字段时抛出异常', () {
       final json = {
         'analysis': <String, dynamic>{'grammar': '有语法'},
       };
-      expect(
-        () => SentenceAnalysis.fromJson(json),
-        throwsA(isA<TypeError>()),
-      );
+      expect(() => SentenceAnalysis.fromJson(json), throwsA(isA<TypeError>()));
     });
 
     test('const 构造函数正常工作', () {

@@ -9,9 +9,13 @@ void main() {
   late TagDao dao;
 
   setUp(() {
-    db = AppDatabase(NativeDatabase.memory(setup: (db) {
-      db.execute('PRAGMA foreign_keys = ON');
-    }));
+    db = AppDatabase(
+      NativeDatabase.memory(
+        setup: (db) {
+          db.execute('PRAGMA foreign_keys = ON');
+        },
+      ),
+    );
     dao = db.tagDao;
   });
 
@@ -21,24 +25,28 @@ void main() {
 
   /// 辅助：创建标签
   Future<void> insertTag(String id, String name, int color) async {
-    await dao.upsert(TagsCompanion(
-      id: Value(id),
-      name: Value(name),
-      color: Value(color),
-      createdDate: Value(DateTime(2026, 1, 1)),
-      updatedAt: Value(DateTime.now()),
-    ));
+    await dao.upsert(
+      TagsCompanion(
+        id: Value(id),
+        name: Value(name),
+        color: Value(color),
+        createdDate: Value(DateTime(2026, 1, 1)),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   /// 辅助：创建音频
   Future<void> insertAudio(String id) async {
-    await db.audioItemDao.upsert(AudioItemsCompanion(
-      id: Value(id),
-      name: Value('Audio $id'),
-      audioPath: Value('audios/$id.mp3'),
-      addedDate: Value(DateTime(2026, 1, 1)),
-      updatedAt: Value(DateTime.now()),
-    ));
+    await db.audioItemDao.upsert(
+      AudioItemsCompanion(
+        id: Value(id),
+        name: Value('Audio $id'),
+        audioPath: Value('audios/$id.mp3'),
+        addedDate: Value(DateTime(2026, 1, 1)),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   group('CRUD 操作', () {
@@ -69,13 +77,15 @@ void main() {
 
     test('upsert 更新已有标签', () async {
       await insertTag('t1', 'Original', 0xFFF44336);
-      await dao.upsert(TagsCompanion(
-        id: const Value('t1'),
-        name: const Value('Updated'),
-        color: const Value(0xFF4CAF50),
-        createdDate: Value(DateTime(2026, 1, 1)),
-        updatedAt: Value(DateTime.now()),
-      ));
+      await dao.upsert(
+        TagsCompanion(
+          id: const Value('t1'),
+          name: const Value('Updated'),
+          color: const Value(0xFF4CAF50),
+          createdDate: Value(DateTime(2026, 1, 1)),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
 
       final result = await dao.getById('t1');
       expect(result!.name, 'Updated');

@@ -116,9 +116,7 @@ void main() {
     });
 
     test('fromJson 旧数据 timerMode=off 迁移为 controlMode=manual', () {
-      final settings = FlashcardSettings.fromJson({
-        'timerMode': 'off',
-      });
+      final settings = FlashcardSettings.fromJson({'timerMode': 'off'});
       expect(settings.controlMode, ShadowingControlMode.manual);
       expect(settings.isManualMode, true);
       // timerMode 回退为 smart（'off' 不再是合法枚举值）
@@ -136,13 +134,15 @@ void main() {
 
     test('isManualMode getter', () {
       expect(
-        const FlashcardSettings(controlMode: ShadowingControlMode.auto)
-            .isManualMode,
+        const FlashcardSettings(
+          controlMode: ShadowingControlMode.auto,
+        ).isManualMode,
         false,
       );
       expect(
-        const FlashcardSettings(controlMode: ShadowingControlMode.manual)
-            .isManualMode,
+        const FlashcardSettings(
+          controlMode: ShadowingControlMode.manual,
+        ).isManualMode,
         true,
       );
     });
@@ -256,8 +256,7 @@ void main() {
     });
 
     test('练习次数越多间隔越长，同样时间超期比例越低', () {
-      final lastPracticed =
-          DateTime.now().subtract(const Duration(hours: 12));
+      final lastPracticed = DateTime.now().subtract(const Duration(hours: 12));
       // 练 1 次：interval=120min, 720/120=6.0
       final score1 = FlashcardSettings.calculateSmartScore(
         practiceCount: 1,
@@ -275,8 +274,7 @@ void main() {
       // 练 1 次，间隔 120min，过了 7 天 = 10080min → 84 → clamp 10
       final score = FlashcardSettings.calculateSmartScore(
         practiceCount: 1,
-        lastPracticedAt:
-            DateTime.now().subtract(const Duration(days: 7)),
+        lastPracticedAt: DateTime.now().subtract(const Duration(days: 7)),
       );
       expect(score, 10.0);
     });
@@ -295,8 +293,7 @@ void main() {
           lastPracticedAt: e.lastPracticed,
         );
         return (name: e.name, score: score);
-      }).toList()
-        ..sort((a, b) => b.score.compareTo(a.score));
+      }).toList()..sort((a, b) => b.score.compareTo(a.score));
       return scored.map((e) => e.name).toList();
     }
 
@@ -304,7 +301,11 @@ void main() {
       final now = DateTime.now();
       final result = sortBySmartScore([
         (name: 'new', practice: 0, lastPracticed: null),
-        (name: 'overdue', practice: 1, lastPracticed: now.subtract(const Duration(days: 1))),
+        (
+          name: 'overdue',
+          practice: 1,
+          lastPracticed: now.subtract(const Duration(days: 1)),
+        ),
       ]);
       // overdue score=10(clamp), new score=2.0
       expect(result, ['overdue', 'new']);
@@ -323,9 +324,17 @@ void main() {
       final now = DateTime.now();
       final result = sortBySmartScore([
         // 练 10 次，7 天没碰，interval=60*1024=61440min，overdue=10080/61440=0.16
-        (name: 'master', practice: 10, lastPracticed: now.subtract(const Duration(days: 7))),
+        (
+          name: 'master',
+          practice: 10,
+          lastPracticed: now.subtract(const Duration(days: 7)),
+        ),
         // 练 1 次，1 天没碰，interval=120min，overdue=1440/120=12→clamp10
-        (name: 'beginner', practice: 1, lastPracticed: now.subtract(const Duration(days: 1))),
+        (
+          name: 'beginner',
+          practice: 1,
+          lastPracticed: now.subtract(const Duration(days: 1)),
+        ),
         // 新词 score=2.0
         (name: 'new', practice: 0, lastPracticed: null),
       ]);
@@ -335,8 +344,16 @@ void main() {
     test('相同 practiceCount 的词按超期时间排序', () {
       final now = DateTime.now();
       final result = sortBySmartScore([
-        (name: 'recent', practice: 3, lastPracticed: now.subtract(const Duration(hours: 2))),
-        (name: 'old', practice: 3, lastPracticed: now.subtract(const Duration(days: 2))),
+        (
+          name: 'recent',
+          practice: 3,
+          lastPracticed: now.subtract(const Duration(hours: 2)),
+        ),
+        (
+          name: 'old',
+          practice: 3,
+          lastPracticed: now.subtract(const Duration(days: 2)),
+        ),
       ]);
       expect(result, ['old', 'recent']);
     });

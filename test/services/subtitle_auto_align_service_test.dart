@@ -538,7 +538,10 @@ void main() {
       );
 
       final result = computeAutoAlignedSentenceBoundaries(
-        sentences: [sent(0, 2400, startWord: 0, endWord: 0), sent(5500, 5500, startWord: 1, endWord: 1)],
+        sentences: [
+          sent(0, 2400, startWord: 0, endWord: 0),
+          sent(5500, 5500, startWord: 1, endWord: 1),
+        ],
         words: [word(0, 2400), word(5500, 5500)],
         audioData: decoded,
       );
@@ -566,7 +569,10 @@ void main() {
       );
 
       final result = computeAutoAlignedSentenceBoundaries(
-        sentences: [sent(0, 250, startWord: 0, endWord: 0), sent(750, 1000, startWord: 1, endWord: 1)],
+        sentences: [
+          sent(0, 250, startWord: 0, endWord: 0),
+          sent(750, 1000, startWord: 1, endWord: 1),
+        ],
         words: [word(0, 250), word(750, 1000)],
         audioData: decoded,
         strategy: strategy,
@@ -631,7 +637,10 @@ void main() {
       );
 
       final result = computeAutoAlignedSentenceBoundaries(
-        sentences: [sent(0, 300, startWord: 0, endWord: 0), sent(700, 1000, startWord: 1, endWord: 1)],
+        sentences: [
+          sent(0, 300, startWord: 0, endWord: 0),
+          sent(700, 1000, startWord: 1, endWord: 1),
+        ],
         words: [word(0, 300), word(700, 1000)],
         audioData: decoded,
         strategy: strategy,
@@ -729,7 +738,9 @@ class _MockStrategy implements SilenceDetectionStrategy {
     SilenceInterval? best;
     var bestDuration = 0.0;
     for (final r in ranges) {
-      final clampedStart = candidateStart > r.startTime ? candidateStart : r.startTime;
+      final clampedStart = candidateStart > r.startTime
+          ? candidateStart
+          : r.startTime;
       final clampedEnd = candidateEnd < r.endTime ? candidateEnd : r.endTime;
       final dur = clampedEnd - clampedStart;
       if (dur > bestDuration) {

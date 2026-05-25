@@ -19,10 +19,7 @@ class _FakeCatalogService extends OfficialCatalogService {
   CatalogSnapshot? _injectedCached;
 
   _FakeCatalogService()
-      : super.withDio(
-          dio: Dio(),
-          resolveDir: () async => Directory.systemTemp,
-        );
+    : super.withDio(dio: Dio(), resolveDir: () async => Directory.systemTemp);
 
   void seed(CatalogSnapshot snapshot) {
     _injectedCached = snapshot;
@@ -79,7 +76,12 @@ void main() {
         db,
         remoteId: 'r1',
         audios: [
-          (remoteAudioId: 'a1', sha256: 'sha-a1', sortOrder: 0, downloaded: false),
+          (
+            remoteAudioId: 'a1',
+            sha256: 'sha-a1',
+            sortOrder: 0,
+            downloaded: false,
+          ),
         ],
       );
       final juncBefore = await _junctionCount();
@@ -121,7 +123,9 @@ void main() {
   group('outcome=updated → 应用 diff', () {
     test('用例 1：catalog 为空 → 已加入合集 markDeprecated', () async {
       final localId = await seedEnrolledCollection(db, remoteId: 'r1');
-      fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: const []));
+      fakeCatalog.nextOutcome = CatalogUpdated(
+        makeSnapshot(collections: const []),
+      );
 
       final stats = await sync.syncAll();
       expect(stats.collectionsDeprecated, 1);
@@ -135,15 +139,27 @@ void main() {
         db,
         remoteId: 'r1',
         audios: [
-          (remoteAudioId: 'a1', sha256: 'sha-a1', sortOrder: 0, downloaded: false),
+          (
+            remoteAudioId: 'a1',
+            sha256: 'sha-a1',
+            sortOrder: 0,
+            downloaded: false,
+          ),
         ],
       );
-      fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: [
-        makeCatalogCollection(id: 'r1', audios: [
-          makeCatalogAudio(id: 'a1', sortOrder: 0),
-          makeCatalogAudio(id: 'a2', sortOrder: 1),
-        ]),
-      ]));
+      fakeCatalog.nextOutcome = CatalogUpdated(
+        makeSnapshot(
+          collections: [
+            makeCatalogCollection(
+              id: 'r1',
+              audios: [
+                makeCatalogAudio(id: 'a1', sortOrder: 0),
+                makeCatalogAudio(id: 'a2', sortOrder: 1),
+              ],
+            ),
+          ],
+        ),
+      );
 
       final stats = await sync.syncAll();
       expect(stats.audiosAdded, 1);
@@ -157,15 +173,30 @@ void main() {
         db,
         remoteId: 'r1',
         audios: [
-          (remoteAudioId: 'a1', sha256: 'sha-a1', sortOrder: 0, downloaded: false),
-          (remoteAudioId: 'a2', sha256: 'sha-a2', sortOrder: 1, downloaded: false),
+          (
+            remoteAudioId: 'a1',
+            sha256: 'sha-a1',
+            sortOrder: 0,
+            downloaded: false,
+          ),
+          (
+            remoteAudioId: 'a2',
+            sha256: 'sha-a2',
+            sortOrder: 1,
+            downloaded: false,
+          ),
         ],
       );
-      fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: [
-        makeCatalogCollection(id: 'r1', audios: [
-          makeCatalogAudio(id: 'a1', sortOrder: 0),
-        ]),
-      ]));
+      fakeCatalog.nextOutcome = CatalogUpdated(
+        makeSnapshot(
+          collections: [
+            makeCatalogCollection(
+              id: 'r1',
+              audios: [makeCatalogAudio(id: 'a1', sortOrder: 0)],
+            ),
+          ],
+        ),
+      );
 
       final stats = await sync.syncAll();
       expect(stats.audiosRemoved, 1);
@@ -180,15 +211,30 @@ void main() {
         db,
         remoteId: 'r1',
         audios: [
-          (remoteAudioId: 'a1', sha256: 'sha-a1', sortOrder: 0, downloaded: false),
-          (remoteAudioId: 'a2', sha256: 'sha-a2', sortOrder: 1, downloaded: true),
+          (
+            remoteAudioId: 'a1',
+            sha256: 'sha-a1',
+            sortOrder: 0,
+            downloaded: false,
+          ),
+          (
+            remoteAudioId: 'a2',
+            sha256: 'sha-a2',
+            sortOrder: 1,
+            downloaded: true,
+          ),
         ],
       );
-      fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: [
-        makeCatalogCollection(id: 'r1', audios: [
-          makeCatalogAudio(id: 'a1', sortOrder: 0),
-        ]),
-      ]));
+      fakeCatalog.nextOutcome = CatalogUpdated(
+        makeSnapshot(
+          collections: [
+            makeCatalogCollection(
+              id: 'r1',
+              audios: [makeCatalogAudio(id: 'a1', sortOrder: 0)],
+            ),
+          ],
+        ),
+      );
 
       final stats = await sync.syncAll();
       expect(stats.audiosRemoved, 0);
@@ -204,9 +250,11 @@ void main() {
         remoteId: 'r1',
         name: 'Old Name',
       );
-      fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: [
-        makeCatalogCollection(id: 'r1', name: 'New Name'),
-      ]));
+      fakeCatalog.nextOutcome = CatalogUpdated(
+        makeSnapshot(
+          collections: [makeCatalogCollection(id: 'r1', name: 'New Name')],
+        ),
+      );
 
       await sync.syncAll();
       final row = await db.collectionDao.getById(localId);
@@ -218,17 +266,34 @@ void main() {
         db,
         remoteId: 'r1',
         audios: [
-          (remoteAudioId: 'a1', sha256: 'sha-a1', sortOrder: 0, downloaded: false),
-          (remoteAudioId: 'a2', sha256: 'sha-a2', sortOrder: 1, downloaded: true),
+          (
+            remoteAudioId: 'a1',
+            sha256: 'sha-a1',
+            sortOrder: 0,
+            downloaded: false,
+          ),
+          (
+            remoteAudioId: 'a2',
+            sha256: 'sha-a2',
+            sortOrder: 1,
+            downloaded: true,
+          ),
         ],
       );
       // catalog 把两条音频的 title 改了
-      fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: [
-        makeCatalogCollection(id: 'r1', audios: [
-          makeCatalogAudio(id: 'a1', title: 'Renamed A1', sortOrder: 0),
-          makeCatalogAudio(id: 'a2', title: 'Renamed A2', sortOrder: 1),
-        ]),
-      ]));
+      fakeCatalog.nextOutcome = CatalogUpdated(
+        makeSnapshot(
+          collections: [
+            makeCatalogCollection(
+              id: 'r1',
+              audios: [
+                makeCatalogAudio(id: 'a1', title: 'Renamed A1', sortOrder: 0),
+                makeCatalogAudio(id: 'a2', title: 'Renamed A2', sortOrder: 1),
+              ],
+            ),
+          ],
+        ),
+      );
 
       await sync.syncAll();
 
@@ -248,16 +313,18 @@ void main() {
     test('用例 6：合集 deprecate → republish（可逆性）', () async {
       final localId = await seedEnrolledCollection(db, remoteId: 'r1');
       // 手动标 deprecated
-      await (db.update(db.collections)..where((t) => t.id.equals(localId))).write(
+      await (db.update(
+        db.collections,
+      )..where((t) => t.id.equals(localId))).write(
         CollectionsCompanion(
           deprecatedAt: Value(DateTime.now()),
           updatedAt: Value(DateTime.now()),
         ),
       );
       // catalog 中重新出现
-      fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: [
-        makeCatalogCollection(id: 'r1'),
-      ]));
+      fakeCatalog.nextOutcome = CatalogUpdated(
+        makeSnapshot(collections: [makeCatalogCollection(id: 'r1')]),
+      );
 
       final stats = await sync.syncAll();
       expect(stats.collectionsUndeprecated, 1);
@@ -271,23 +338,40 @@ void main() {
         db,
         remoteId: 'r1',
         audios: [
-          (remoteAudioId: 'a1', sha256: 'sha-a1', sortOrder: 0, downloaded: false),
-          (remoteAudioId: 'a2', sha256: 'sha-a2', sortOrder: 1, downloaded: false),
+          (
+            remoteAudioId: 'a1',
+            sha256: 'sha-a1',
+            sortOrder: 0,
+            downloaded: false,
+          ),
+          (
+            remoteAudioId: 'a2',
+            sha256: 'sha-a2',
+            sortOrder: 1,
+            downloaded: false,
+          ),
         ],
       );
       // catalog 翻转 sortOrder
-      fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: [
-        makeCatalogCollection(id: 'r1', audios: [
-          makeCatalogAudio(id: 'a1', sortOrder: 1),
-          makeCatalogAudio(id: 'a2', sortOrder: 0),
-        ]),
-      ]));
+      fakeCatalog.nextOutcome = CatalogUpdated(
+        makeSnapshot(
+          collections: [
+            makeCatalogCollection(
+              id: 'r1',
+              audios: [
+                makeCatalogAudio(id: 'a1', sortOrder: 1),
+                makeCatalogAudio(id: 'a2', sortOrder: 0),
+              ],
+            ),
+          ],
+        ),
+      );
 
       await sync.syncAll();
       // 拿出 junction 的 sortOrder
-      final juncs = await (db.select(db.collectionAudioItems)
-            ..where((t) => t.collectionId.equals(localId)))
-          .get();
+      final juncs = await (db.select(
+        db.collectionAudioItems,
+      )..where((t) => t.collectionId.equals(localId))).get();
       final byAudioId = {for (final j in juncs) j.audioItemId: j.sortOrder};
       expect(byAudioId['local-a1'], 1);
       expect(byAudioId['local-a2'], 0);
@@ -299,10 +383,14 @@ void main() {
       final collsBefore = (await db.select(db.collections).get()).length;
 
       // catalog 含 r1 + r2（r2 未加入）
-      fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: [
-        makeCatalogCollection(id: 'r1'),
-        makeCatalogCollection(id: 'r2', name: 'Brand New'),
-      ]));
+      fakeCatalog.nextOutcome = CatalogUpdated(
+        makeSnapshot(
+          collections: [
+            makeCatalogCollection(id: 'r1'),
+            makeCatalogCollection(id: 'r2', name: 'Brand New'),
+          ],
+        ),
+      );
 
       await sync.syncAll();
       final collsAfter = (await db.select(db.collections).get()).length;
@@ -328,13 +416,13 @@ void main() {
             remoteAudioId: 'r-a1',
             sha256: 'sha-a1',
             sortOrder: 0,
-            downloaded: false
+            downloaded: false,
           ),
           (
             remoteAudioId: 'r-a2',
             sha256: 'sha-a2',
             sortOrder: 1,
-            downloaded: false
+            downloaded: false,
           ),
         ],
       );
@@ -342,14 +430,19 @@ void main() {
       expect(await _junctionCount(), 2);
 
       // catalog 新增 r-a3 / r-a4
-      final snapshot = makeSnapshot(collections: [
-        makeCatalogCollection(id: 'r-collA', audios: [
-          makeCatalogAudio(id: 'r-a1', sortOrder: 0),
-          makeCatalogAudio(id: 'r-a2', sortOrder: 1),
-          makeCatalogAudio(id: 'r-a3', sortOrder: 2),
-          makeCatalogAudio(id: 'r-a4', sortOrder: 3),
-        ]),
-      ]);
+      final snapshot = makeSnapshot(
+        collections: [
+          makeCatalogCollection(
+            id: 'r-collA',
+            audios: [
+              makeCatalogAudio(id: 'r-a1', sortOrder: 0),
+              makeCatalogAudio(id: 'r-a2', sortOrder: 1),
+              makeCatalogAudio(id: 'r-a3', sortOrder: 2),
+              makeCatalogAudio(id: 'r-a4', sortOrder: 3),
+            ],
+          ),
+        ],
+      );
       fakeCatalog.nextOutcome = CatalogUpdated(snapshot);
 
       // 并发触发两次 syncAll（模拟冷启动 3s trigger + initState 兜底重叠）
@@ -363,13 +456,13 @@ void main() {
       expect(await _junctionCount(), 4);
 
       // 新发布音频每个只存一行
-      final a3Rows = await (db.select(db.audioItems)
-            ..where((t) => t.remoteAudioId.equals('r-a3')))
-          .get();
+      final a3Rows = await (db.select(
+        db.audioItems,
+      )..where((t) => t.remoteAudioId.equals('r-a3'))).get();
       expect(a3Rows.length, 1);
-      final a4Rows = await (db.select(db.audioItems)
-            ..where((t) => t.remoteAudioId.equals('r-a4')))
-          .get();
+      final a4Rows = await (db.select(
+        db.audioItems,
+      )..where((t) => t.remoteAudioId.equals('r-a4'))).get();
       expect(a4Rows.length, 1);
     });
 

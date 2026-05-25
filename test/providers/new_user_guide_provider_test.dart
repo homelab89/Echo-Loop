@@ -103,9 +103,7 @@ void main() {
       addTearDown(container.dispose);
 
       final controller = container.read(guideControllerProvider.notifier);
-      final beforeGen = container
-          .read(guideControllerProvider)
-          .resetGeneration;
+      final beforeGen = container.read(guideControllerProvider).resetGeneration;
 
       await controller.resetFlows(['flow_a', 'flow_b']);
 

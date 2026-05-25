@@ -91,7 +91,9 @@ class _TestFlashcardNotifier extends FlashcardNotifier {
 
   @override
   Future<void> reset() async {
-    state = _initialState;
+    // 模拟生产行为：重置回首张、清除完成态，保留词列表
+    final words = state.words;
+    state = FlashcardState(words: words, currentIndex: 0);
   }
 
   /// 直接设置状态（测试用）
@@ -225,6 +227,87 @@ void main() {
     });
   });
 
+  group('FlashcardScreen — 前后切换', () {
+    testWidgets('点击下一张切换到第二张卡片', (tester) async {
+      await tester.pumpWidget(
+        _createTestWidget(
+          initialState: FlashcardState(
+            words: _createWordItems(3),
+            currentIndex: 0,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('1/3'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.arrow_forward_ios));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2/3'), findsOneWidget);
+      expect(find.text('word2'), findsOneWidget);
+    });
+
+    testWidgets('上一张按钮在第一张时禁用', (tester) async {
+      await tester.pumpWidget(
+        _createTestWidget(
+          initialState: FlashcardState(
+            words: _createWordItems(3),
+            currentIndex: 0,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final prevButton = tester.widget<IconButton>(
+        find.widgetWithIcon(IconButton, Icons.arrow_back_ios_new),
+      );
+      expect(prevButton.onPressed, isNull);
+    });
+
+    testWidgets('先前进再后退回到第一张', (tester) async {
+      await tester.pumpWidget(
+        _createTestWidget(
+          initialState: FlashcardState(
+            words: _createWordItems(3),
+            currentIndex: 0,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.arrow_forward_ios));
+      await tester.pumpAndSettle();
+      expect(find.text('2/3'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.arrow_back_ios_new));
+      await tester.pumpAndSettle();
+      expect(find.text('1/3'), findsOneWidget);
+      expect(find.text('word1'), findsOneWidget);
+    });
+
+    testWidgets('最后一张点击下一张 → 显示完成视图', (tester) async {
+      await tester.pumpWidget(
+        _createTestWidget(
+          initialState: FlashcardState(
+            words: _createWordItems(2),
+            currentIndex: 1, // 已在最后一张
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('2/2'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.arrow_forward_ios));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+      expect(find.byType(OutlinedButton), findsOneWidget); // 再来一遍
+      expect(find.byType(FilledButton), findsOneWidget); // 完成
+    });
+  });
+
   group('FlashcardScreen — 完成视图', () {
     testWidgets('isCompleted=true 时显示完成视图', (tester) async {
       final items = _createWordItems(3);
@@ -253,6 +336,41 @@ void main() {
 
       expect(find.byType(OutlinedButton), findsOneWidget);
       expect(find.byType(FilledButton), findsOneWidget);
+    });
+
+    testWidgets('完成视图点击「再来一遍」重置卡片', (tester) async {
+      final items = _createWordItems(2);
+      await tester.pumpWidget(
+        _createTestWidget(
+          initialState: FlashcardState(words: items, isCompleted: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+
+      await tester.tap(find.byType(OutlinedButton));
+      await tester.pumpAndSettle();
+
+      // 重置后回到第一张，完成视图消失
+      expect(find.byIcon(Icons.check_circle_outline), findsNothing);
+    });
+
+    testWidgets('完成视图显示移除数', (tester) async {
+      await tester.pumpWidget(
+        _createTestWidget(
+          initialState: FlashcardState(
+            words: _createWordItems(3),
+            isCompleted: true,
+            removedCount: 2,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+      // 移除统计文本应包含数字 2（具体格式由 l10n 决定）
+      expect(find.textContaining('2'), findsWidgets);
     });
   });
 

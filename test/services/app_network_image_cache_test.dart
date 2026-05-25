@@ -7,7 +7,8 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 /// 仅给测试用的 path_provider 假实现 — Config 构造里调 getTemporaryDirectory
-class _FakePathProvider extends PathProviderPlatform with MockPlatformInterfaceMixin {
+class _FakePathProvider extends PathProviderPlatform
+    with MockPlatformInterfaceMixin {
   final String dir;
   _FakePathProvider(this.dir);
   @override

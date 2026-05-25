@@ -23,12 +23,14 @@ void main() {
       for (final s in LearningStage.values) {
         if (s == LearningStage.completed) {
           // completed 是毕业终态，无 plan，不参与版本化
-          expect(kLatestPlanVersions.containsKey(s), isFalse,
-              reason: 'completed 不应在 map 中');
+          expect(
+            kLatestPlanVersions.containsKey(s),
+            isFalse,
+            reason: 'completed 不应在 map 中',
+          );
           continue;
         }
-        expect(kLatestPlanVersions.containsKey(s), isTrue,
-            reason: '缺 $s');
+        expect(kLatestPlanVersions.containsKey(s), isTrue, reason: '缺 $s');
       }
     });
 
@@ -73,26 +75,24 @@ void main() {
 
     test('review2/4/7/14 v2 = [难句补练, 全文盲听, 段落复述]（顺序新）', () {
       for (final s in _mid) {
-        expect(
-          plan.subStagesFor(s),
-          [
-            SubStageType.reviewDifficultPractice,
-            SubStageType.blindListen,
-            SubStageType.reviewRetellParagraph,
-          ],
-          reason: 'stage=$s',
-        );
+        expect(plan.subStagesFor(s), [
+          SubStageType.reviewDifficultPractice,
+          SubStageType.blindListen,
+          SubStageType.reviewRetellParagraph,
+        ], reason: 'stage=$s');
       }
     });
 
-    test('review28 v2 = [难句补练, 全文盲听, 段落复述]（reviewRetellSummary → Paragraph）',
-        () {
-      expect(plan.subStagesFor(LearningStage.review28), [
-        SubStageType.reviewDifficultPractice,
-        SubStageType.blindListen,
-        SubStageType.reviewRetellParagraph,
-      ]);
-    });
+    test(
+      'review28 v2 = [难句补练, 全文盲听, 段落复述]（reviewRetellSummary → Paragraph）',
+      () {
+        expect(plan.subStagesFor(LearningStage.review28), [
+          SubStageType.reviewDifficultPractice,
+          SubStageType.blindListen,
+          SubStageType.reviewRetellParagraph,
+        ]);
+      },
+    );
 
     test('completed 空', () {
       expect(plan.subStagesFor(LearningStage.completed), isEmpty);
@@ -152,13 +152,19 @@ void main() {
           LearningStage.review28: 1,
         },
       );
-      expect(plan.subStagesFor(LearningStage.review0).contains(
-        SubStageType.reviewRetellParagraph,
-      ), isTrue); // v1
+      expect(
+        plan
+            .subStagesFor(LearningStage.review0)
+            .contains(SubStageType.reviewRetellParagraph),
+        isTrue,
+      ); // v1
       expect(plan.subStagesFor(LearningStage.review1).length, 2); // v2
-      expect(plan.subStagesFor(LearningStage.review28).contains(
-        SubStageType.reviewRetellSummary,
-      ), isTrue); // v1
+      expect(
+        plan
+            .subStagesFor(LearningStage.review28)
+            .contains(SubStageType.reviewRetellSummary),
+        isTrue,
+      ); // v1
     });
 
     test('map 中显式 v2 与缺省一致', () {
@@ -195,10 +201,7 @@ void main() {
         plan.indexOf(LearningStage.firstLearn, SubStageType.listenAndRepeat),
         2,
       );
-      expect(
-        plan.indexOf(LearningStage.firstLearn, SubStageType.retell),
-        3,
-      );
+      expect(plan.indexOf(LearningStage.firstLearn, SubStageType.retell), 3);
     });
 
     test('totalPlannedCount = 4+2+2+3+3+3+3+3+0 = 23', () {

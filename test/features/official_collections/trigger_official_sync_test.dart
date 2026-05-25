@@ -17,7 +17,8 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'fixtures/catalog_fixtures.dart';
 
-class _FakePathProvider extends PathProviderPlatform with MockPlatformInterfaceMixin {
+class _FakePathProvider extends PathProviderPlatform
+    with MockPlatformInterfaceMixin {
   final String tempDir;
   _FakePathProvider(this.tempDir);
   @override
@@ -35,10 +36,7 @@ class _FakeCatalogService extends OfficialCatalogService {
   bool _hasInit = false;
 
   _FakeCatalogService()
-      : super.withDio(
-          dio: Dio(),
-          resolveDir: () async => Directory.systemTemp,
-        );
+    : super.withDio(dio: Dio(), resolveDir: () async => Directory.systemTemp);
 
   @override
   CatalogSnapshot? get cached => _injectedCached;
@@ -77,9 +75,11 @@ void main() {
     initAppDatabase(db);
     fakeCatalog = _FakeCatalogService();
 
-    container = ProviderContainer(overrides: [
-      officialCatalogServiceProvider.overrideWithValue(fakeCatalog),
-    ]);
+    container = ProviderContainer(
+      overrides: [
+        officialCatalogServiceProvider.overrideWithValue(fakeCatalog),
+      ],
+    );
   });
 
   tearDown(() async {
@@ -90,71 +90,94 @@ void main() {
     }
   });
 
-  test('outcome=updated 后 collectionListProvider + audioLibraryProvider 都被刷新',
-      () async {
-    // seed: 1 已加入合集 + 1 个 audio (a1)
-    final localId = await seedEnrolledCollection(
-      db,
-      remoteId: 'r1',
-      audios: [
-        (remoteAudioId: 'a1', sha256: 'sha-a1', sortOrder: 0, downloaded: false),
-      ],
-    );
-
-    // 启动模拟：让两个 provider 加载初始数据
-    await container.read(audioLibraryProvider.notifier).loadLibrary();
-    await container.read(collectionListProvider.notifier).loadCollections();
-    expect(container.read(collectionListProvider).getAudioIds(localId), hasLength(1));
-    expect(container.read(audioLibraryProvider).audioItems, hasLength(1));
-
-    // 后端"加了一条 a2" → catalog updated
-    fakeCatalog.nextOutcome = CatalogUpdated(makeSnapshot(collections: [
-      makeCatalogCollection(id: 'r1', audios: [
-        makeCatalogAudio(id: 'a1', sortOrder: 0),
-        makeCatalogAudio(id: 'a2', sortOrder: 1),
-      ]),
-    ]));
-
-    // 改用 ProviderContainer 模拟 WidgetRef 不便；
-    // 但 helper 内部只用到 ref.read，可以走 _FakeWidgetRef 包装，
-    // 简化方案：直接调底层逻辑序列断言（与 helper 保持完全一致的顺序）
-    final stats = await container
-        .read(officialSyncServiceProvider)
-        .syncAll();
-    expect(stats.outcome, isA<CatalogUpdated>());
-
-    // 模拟 helper 后续：先 loadLibrary 再 loadCollections（顺序敏感）
-    await container.read(audioLibraryProvider.notifier).loadLibrary();
-    await container.read(collectionListProvider.notifier).loadCollections();
-
-    // 关键断言：UI 视角的两份数据一致
-    final ids = container.read(collectionListProvider).getAudioIds(localId);
-    expect(ids, hasLength(2), reason: 'junction 应反映 2 条音频');
-
-    final library = container.read(audioLibraryProvider).audioItems;
-    expect(library.length, 2, reason: 'audioLibrary 应同步拿到新 audio_items 行');
-
-    final notifier = container.read(audioLibraryProvider.notifier);
-    for (final id in ids) {
-      expect(
-        notifier.getItemById(id),
-        isNotNull,
-        reason: 'audioId=$id 必须能在 audioLibrary 查到，否则 UI 漏渲染',
+  test(
+    'outcome=updated 后 collectionListProvider + audioLibraryProvider 都被刷新',
+    () async {
+      // seed: 1 已加入合集 + 1 个 audio (a1)
+      final localId = await seedEnrolledCollection(
+        db,
+        remoteId: 'r1',
+        audios: [
+          (
+            remoteAudioId: 'a1',
+            sha256: 'sha-a1',
+            sortOrder: 0,
+            downloaded: false,
+          ),
+        ],
       );
-    }
-  });
+
+      // 启动模拟：让两个 provider 加载初始数据
+      await container.read(audioLibraryProvider.notifier).loadLibrary();
+      await container.read(collectionListProvider.notifier).loadCollections();
+      expect(
+        container.read(collectionListProvider).getAudioIds(localId),
+        hasLength(1),
+      );
+      expect(container.read(audioLibraryProvider).audioItems, hasLength(1));
+
+      // 后端"加了一条 a2" → catalog updated
+      fakeCatalog.nextOutcome = CatalogUpdated(
+        makeSnapshot(
+          collections: [
+            makeCatalogCollection(
+              id: 'r1',
+              audios: [
+                makeCatalogAudio(id: 'a1', sortOrder: 0),
+                makeCatalogAudio(id: 'a2', sortOrder: 1),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      // 改用 ProviderContainer 模拟 WidgetRef 不便；
+      // 但 helper 内部只用到 ref.read，可以走 _FakeWidgetRef 包装，
+      // 简化方案：直接调底层逻辑序列断言（与 helper 保持完全一致的顺序）
+      final stats = await container.read(officialSyncServiceProvider).syncAll();
+      expect(stats.outcome, isA<CatalogUpdated>());
+
+      // 模拟 helper 后续：先 loadLibrary 再 loadCollections（顺序敏感）
+      await container.read(audioLibraryProvider.notifier).loadLibrary();
+      await container.read(collectionListProvider.notifier).loadCollections();
+
+      // 关键断言：UI 视角的两份数据一致
+      final ids = container.read(collectionListProvider).getAudioIds(localId);
+      expect(ids, hasLength(2), reason: 'junction 应反映 2 条音频');
+
+      final library = container.read(audioLibraryProvider).audioItems;
+      expect(library.length, 2, reason: 'audioLibrary 应同步拿到新 audio_items 行');
+
+      final notifier = container.read(audioLibraryProvider.notifier);
+      for (final id in ids) {
+        expect(
+          notifier.getItemById(id),
+          isNotNull,
+          reason: 'audioId=$id 必须能在 audioLibrary 查到，否则 UI 漏渲染',
+        );
+      }
+    },
+  );
 
   test('outcome=throttled → loadLibrary/loadCollections 不被调（行数零变化）', () async {
     final localId = await seedEnrolledCollection(
       db,
       remoteId: 'r1',
       audios: [
-        (remoteAudioId: 'a1', sha256: 'sha-a1', sortOrder: 0, downloaded: false),
+        (
+          remoteAudioId: 'a1',
+          sha256: 'sha-a1',
+          sortOrder: 0,
+          downloaded: false,
+        ),
       ],
     );
     await container.read(audioLibraryProvider.notifier).loadLibrary();
     await container.read(collectionListProvider.notifier).loadCollections();
-    final libraryBefore = container.read(audioLibraryProvider).audioItems.length;
+    final libraryBefore = container
+        .read(audioLibraryProvider)
+        .audioItems
+        .length;
 
     fakeCatalog.nextOutcome = const CatalogThrottled();
     final stats = await container.read(officialSyncServiceProvider).syncAll();
@@ -163,6 +186,9 @@ void main() {
     // 即使我们故意调了 helper 的后续步骤，也无新增（DB 没变）
     final libraryAfter = container.read(audioLibraryProvider).audioItems.length;
     expect(libraryAfter, libraryBefore);
-    expect(container.read(collectionListProvider).getAudioIds(localId), hasLength(1));
+    expect(
+      container.read(collectionListProvider).getAudioIds(localId),
+      hasLength(1),
+    );
   });
 }
