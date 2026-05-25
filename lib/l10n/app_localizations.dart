@@ -5300,6 +5300,114 @@ abstract class AppLocalizations {
   /// **'It varies'**
   String get onboardingQ2OptionFlexible;
 
+  /// No description provided for @onboardingQ3Prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How did you hear about us?'**
+  String get onboardingQ3Prompt;
+
+  /// No description provided for @onboardingQ3OptionAppStore.
+  ///
+  /// In en, this message translates to:
+  /// **'App Store'**
+  String get onboardingQ3OptionAppStore;
+
+  /// No description provided for @onboardingQ3OptionGooglePlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Play'**
+  String get onboardingQ3OptionGooglePlay;
+
+  /// No description provided for @onboardingQ3OptionYoutube.
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube'**
+  String get onboardingQ3OptionYoutube;
+
+  /// No description provided for @onboardingQ3OptionReddit.
+  ///
+  /// In en, this message translates to:
+  /// **'Reddit'**
+  String get onboardingQ3OptionReddit;
+
+  /// No description provided for @onboardingQ3OptionXTwitter.
+  ///
+  /// In en, this message translates to:
+  /// **'X / Twitter'**
+  String get onboardingQ3OptionXTwitter;
+
+  /// No description provided for @onboardingQ3OptionTiktok.
+  ///
+  /// In en, this message translates to:
+  /// **'TikTok'**
+  String get onboardingQ3OptionTiktok;
+
+  /// No description provided for @onboardingQ3OptionInstagram.
+  ///
+  /// In en, this message translates to:
+  /// **'Instagram'**
+  String get onboardingQ3OptionInstagram;
+
+  /// No description provided for @onboardingQ3OptionXiaohongshu.
+  ///
+  /// In en, this message translates to:
+  /// **'Xiaohongshu'**
+  String get onboardingQ3OptionXiaohongshu;
+
+  /// No description provided for @onboardingQ3OptionWechat.
+  ///
+  /// In en, this message translates to:
+  /// **'WeChat'**
+  String get onboardingQ3OptionWechat;
+
+  /// No description provided for @onboardingQ3OptionDouyin.
+  ///
+  /// In en, this message translates to:
+  /// **'Douyin'**
+  String get onboardingQ3OptionDouyin;
+
+  /// No description provided for @onboardingQ3OptionKuaishou.
+  ///
+  /// In en, this message translates to:
+  /// **'Kuaishou'**
+  String get onboardingQ3OptionKuaishou;
+
+  /// No description provided for @onboardingQ3OptionBilibili.
+  ///
+  /// In en, this message translates to:
+  /// **'Bilibili'**
+  String get onboardingQ3OptionBilibili;
+
+  /// No description provided for @onboardingQ3OptionBaiduSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Baidu search'**
+  String get onboardingQ3OptionBaiduSearch;
+
+  /// No description provided for @onboardingQ3OptionGoogleSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Google search'**
+  String get onboardingQ3OptionGoogleSearch;
+
+  /// No description provided for @onboardingQ3OptionGithub.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub'**
+  String get onboardingQ3OptionGithub;
+
+  /// No description provided for @onboardingQ3OptionFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend or family'**
+  String get onboardingQ3OptionFriend;
+
+  /// No description provided for @onboardingQ3OptionOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get onboardingQ3OptionOther;
+
   /// No description provided for @onboardingPermissionsHint.
   ///
   /// In en, this message translates to:

@@ -22,18 +22,24 @@ class OnboardingAnswers {
   /// Q2 每日学习时长编码（见 [OnboardingDailyMinutes]）；未答时为 null
   final String? dailyMinutes;
 
+  /// Q3 来源渠道编码（见 [OnboardingReferralSource]）；未答时为 null
+  final String? referralSource;
+
   const OnboardingAnswers({
     this.goal,
     this.examType,
     this.goalOtherText,
     this.dailyMinutes,
+    this.referralSource,
   });
 
   /// 全部必填项均已填齐：
-  /// - goal、dailyMinutes 必填
+  /// - goal、dailyMinutes、referralSource 必填
   /// - goal == exam 时 examType 必填
   bool get isComplete {
-    if (goal == null || dailyMinutes == null) return false;
+    if (goal == null || dailyMinutes == null || referralSource == null) {
+      return false;
+    }
     if (goal == OnboardingGoal.exam && examType == null) return false;
     return true;
   }
@@ -45,6 +51,7 @@ class OnboardingAnswers {
     String? examType,
     String? goalOtherText,
     String? dailyMinutes,
+    String? referralSource,
     bool clearExamType = false,
     bool clearGoalOtherText = false,
   }) {
@@ -55,6 +62,7 @@ class OnboardingAnswers {
           ? null
           : (goalOtherText ?? this.goalOtherText),
       dailyMinutes: dailyMinutes ?? this.dailyMinutes,
+      referralSource: referralSource ?? this.referralSource,
     );
   }
 
@@ -65,13 +73,16 @@ class OnboardingAnswers {
           other.goal == goal &&
           other.examType == examType &&
           other.goalOtherText == goalOtherText &&
-          other.dailyMinutes == dailyMinutes;
+          other.dailyMinutes == dailyMinutes &&
+          other.referralSource == referralSource;
 
   @override
-  int get hashCode => Object.hash(goal, examType, goalOtherText, dailyMinutes);
+  int get hashCode =>
+      Object.hash(goal, examType, goalOtherText, dailyMinutes, referralSource);
 
   @override
   String toString() =>
       'OnboardingAnswers(goal: $goal, examType: $examType, '
-      'goalOtherText: $goalOtherText, dailyMinutes: $dailyMinutes)';
+      'goalOtherText: $goalOtherText, dailyMinutes: $dailyMinutes, '
+      'referralSource: $referralSource)';
 }

@@ -112,10 +112,7 @@ void main() {
       notifier.setGoal(OnboardingGoal.other);
       expect(container.read(onboardingAnswersProvider).goalOtherText, isNull);
       notifier.setGoal(OnboardingGoal.work);
-      expect(
-        container.read(onboardingAnswersProvider).goalOtherText,
-        isNull,
-      );
+      expect(container.read(onboardingAnswersProvider).goalOtherText, isNull);
     });
 
     test('submit 写 SP + 翻转完成态', () async {
@@ -129,6 +126,7 @@ void main() {
       notifier.setGoal(OnboardingGoal.exam);
       notifier.setExamType(OnboardingExamType.ielts);
       notifier.setDailyMinutes(OnboardingDailyMinutes.m20);
+      notifier.setReferralSource(OnboardingReferralSource.xiaohongshu);
 
       await notifier.submit();
 
@@ -136,14 +134,13 @@ void main() {
 
       final storage = OnboardingSurveyStorage(prefs);
       expect(storage.isCompleted, isTrue);
-      expect(storage.loadAnswers()?.goal, equals(OnboardingGoal.exam));
+      final loaded = storage.loadAnswers();
+      expect(loaded?.goal, equals(OnboardingGoal.exam));
+      expect(loaded?.examType, equals(OnboardingExamType.ielts));
+      expect(loaded?.dailyMinutes, equals(OnboardingDailyMinutes.m20));
       expect(
-        storage.loadAnswers()?.examType,
-        equals(OnboardingExamType.ielts),
-      );
-      expect(
-        storage.loadAnswers()?.dailyMinutes,
-        equals(OnboardingDailyMinutes.m20),
+        loaded?.referralSource,
+        equals(OnboardingReferralSource.xiaohongshu),
       );
     });
 
@@ -156,7 +153,11 @@ void main() {
       addTearDown(container.dispose);
       final notifier = container.read(onboardingAnswersProvider.notifier);
       notifier.setGoal(OnboardingGoal.daily);
-      // 没设 dailyMinutes
+      // 没设 dailyMinutes / referralSource
+      expect(notifier.submit, throwsStateError);
+
+      notifier.setDailyMinutes(OnboardingDailyMinutes.m10);
+      // 仍缺 referralSource
       expect(notifier.submit, throwsStateError);
     });
   });

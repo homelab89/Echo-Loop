@@ -25,8 +25,9 @@ import '../widgets/survey_choice_tile.dart';
 
 /// 当前所在步骤。
 /// - examType 仅在 goal == exam 时进入。
+/// - referralSource 紧跟在 dailyMinutes 之后，用于运营画像。
 /// - summary 是答完所有题后的方法论介绍页，点击"开始学习"才真正提交并进入主界面。
-enum _SurveyStep { goal, examType, dailyMinutes, summary }
+enum _SurveyStep { goal, examType, dailyMinutes, referralSource, summary }
 
 /// 选完答案到自动跳下一步之间的延迟，留出选中高亮的视觉反馈。
 const _autoAdvanceDelay = Duration(milliseconds: 220);
@@ -95,6 +96,13 @@ class _OnboardingSurveyScreenState
     if (_submitting) return;
     ref.read(onboardingAnswersProvider.notifier).setDailyMinutes(code);
     _trackAnswer(OnboardingQuestionId.dailyMinutes, code);
+    _scheduleAdvance(() => _goToStep(_SurveyStep.referralSource));
+  }
+
+  void _selectReferralSource(String code) {
+    if (_submitting) return;
+    ref.read(onboardingAnswersProvider.notifier).setReferralSource(code);
+    _trackAnswer(OnboardingQuestionId.referralSource, code);
     // 进入方法论介绍页，由用户点击"开始学习"按钮触发实际提交。
     _scheduleAdvance(() => _goToStep(_SurveyStep.summary));
   }
@@ -149,6 +157,7 @@ class _OnboardingSurveyScreenState
       EventParams.goal: answers.goal!,
       if (answers.examType != null) EventParams.examType: answers.examType!,
       EventParams.dailyMinutes: answers.dailyMinutes!,
+      EventParams.referralSource: answers.referralSource!,
       EventParams.elapsedSeconds: elapsed,
     });
     await analytics.setUserProperty(UserProperties.englishGoal, answers.goal);
@@ -161,6 +170,10 @@ class _OnboardingSurveyScreenState
     await analytics.setUserProperty(
       UserProperties.dailyMinutesTarget,
       answers.dailyMinutes,
+    );
+    await analytics.setUserProperty(
+      UserProperties.referralSource,
+      answers.referralSource,
     );
 
     if (!mounted) return;
@@ -218,21 +231,24 @@ class _OnboardingSurveyScreenState
     );
   }
 
-  /// 总步骤数：goal=exam → 3，其它 → 2。summary 页不计入指示点。
+  /// 总步骤数：goal=exam → 4，其它 → 3。summary 页不计入指示点。
   int _totalSteps(OnboardingAnswers answers) {
     if (_step == _SurveyStep.summary) return 0;
-    return answers.goal == OnboardingGoal.exam ? 3 : 2;
+    return answers.goal == OnboardingGoal.exam ? 4 : 3;
   }
 
   /// 当前所处的逻辑步骤索引（0-based），用于点状指示器。
   int _currentIndex(OnboardingAnswers answers) {
+    final isExam = answers.goal == OnboardingGoal.exam;
     switch (_step) {
       case _SurveyStep.goal:
         return 0;
       case _SurveyStep.examType:
         return 1;
       case _SurveyStep.dailyMinutes:
-        return answers.goal == OnboardingGoal.exam ? 2 : 1;
+        return isExam ? 2 : 1;
+      case _SurveyStep.referralSource:
+        return isExam ? 3 : 2;
       case _SurveyStep.summary:
         return 0; // 不展示，配合 _totalSteps=0 隐藏指示点
     }
@@ -286,6 +302,8 @@ class _OnboardingSurveyScreenState
         return _buildExamTypeStep(l10n, answers);
       case _SurveyStep.dailyMinutes:
         return _buildDailyMinutesStep(l10n, answers);
+      case _SurveyStep.referralSource:
+        return _buildReferralSourceStep(l10n, answers);
       case _SurveyStep.summary:
         // summary 走 _buildSummaryLayout，不会进入这里
         return const SizedBox.shrink();
@@ -550,6 +568,105 @@ class _OnboardingSurveyScreenState
         ),
       ],
     );
+  }
+
+  /// 来源渠道选择步骤：中英文用户看到的渠道不同，整体按重要度排序——
+  /// 中文优先小红书 / 短视频 / B 站，英文优先 App Store / Reddit / YouTube。
+  /// "其他"始终垫底。
+  Widget _buildReferralSourceStep(
+    AppLocalizations l10n,
+    OnboardingAnswers answers,
+  ) {
+    final selected = answers.referralSource;
+    final isChinese = Localizations.localeOf(context).languageCode == 'zh';
+
+    // 按重要度排序的渠道编码列表（locale 完整版本）。
+    // 中文：小红书 → 抖音/快手 → B 站 → 微信 → 应用商店 → 百度 → GitHub → 朋友 → 其他
+    // 英文：App Store → Reddit → YouTube → TikTok/IG → X → Google search → GitHub → Friend → Other
+    // 中文：小红书 → 微信 → GitHub → B 站 → 抖音 → 快手 → 百度搜索 → 应用商店 → 朋友推荐 → 其他
+    //  Google Play 不出现在中文列表，国内基本无法使用。
+    // 英文：Reddit → YouTube → Google search → GitHub → TikTok → X / Twitter → Instagram → Friend → App Store → Google Play → Other
+    final codes = isChinese
+        ? const [
+            OnboardingReferralSource.xiaohongshu,
+            OnboardingReferralSource.wechat,
+            OnboardingReferralSource.github,
+            OnboardingReferralSource.bilibili,
+            OnboardingReferralSource.douyin,
+            OnboardingReferralSource.kuaishou,
+            OnboardingReferralSource.baiduSearch,
+            OnboardingReferralSource.appStore,
+            OnboardingReferralSource.friend,
+            OnboardingReferralSource.other,
+          ]
+        : const [
+            OnboardingReferralSource.reddit,
+            OnboardingReferralSource.youtube,
+            OnboardingReferralSource.googleSearch,
+            OnboardingReferralSource.github,
+            OnboardingReferralSource.tiktok,
+            OnboardingReferralSource.xTwitter,
+            OnboardingReferralSource.instagram,
+            OnboardingReferralSource.friend,
+            OnboardingReferralSource.appStore,
+            OnboardingReferralSource.googlePlay,
+            OnboardingReferralSource.other,
+          ];
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Prompt(text: l10n.onboardingQ3Prompt),
+        const SizedBox(height: 24),
+        for (final code in codes)
+          SurveyChoiceTile(
+            label: _referralSourceLabel(l10n, code),
+            selected: selected == code,
+            onTap: () => _selectReferralSource(code),
+          ),
+      ],
+    );
+  }
+
+  /// 渠道编码 → 本地化文案。集中映射，方便后续增删项时只改一处。
+  String _referralSourceLabel(AppLocalizations l10n, String code) {
+    switch (code) {
+      case OnboardingReferralSource.xiaohongshu:
+        return l10n.onboardingQ3OptionXiaohongshu;
+      case OnboardingReferralSource.wechat:
+        return l10n.onboardingQ3OptionWechat;
+      case OnboardingReferralSource.douyin:
+        return l10n.onboardingQ3OptionDouyin;
+      case OnboardingReferralSource.kuaishou:
+        return l10n.onboardingQ3OptionKuaishou;
+      case OnboardingReferralSource.bilibili:
+        return l10n.onboardingQ3OptionBilibili;
+      case OnboardingReferralSource.baiduSearch:
+        return l10n.onboardingQ3OptionBaiduSearch;
+      case OnboardingReferralSource.youtube:
+        return l10n.onboardingQ3OptionYoutube;
+      case OnboardingReferralSource.reddit:
+        return l10n.onboardingQ3OptionReddit;
+      case OnboardingReferralSource.xTwitter:
+        return l10n.onboardingQ3OptionXTwitter;
+      case OnboardingReferralSource.tiktok:
+        return l10n.onboardingQ3OptionTiktok;
+      case OnboardingReferralSource.instagram:
+        return l10n.onboardingQ3OptionInstagram;
+      case OnboardingReferralSource.googleSearch:
+        return l10n.onboardingQ3OptionGoogleSearch;
+      case OnboardingReferralSource.github:
+        return l10n.onboardingQ3OptionGithub;
+      case OnboardingReferralSource.appStore:
+        return l10n.onboardingQ3OptionAppStore;
+      case OnboardingReferralSource.googlePlay:
+        return l10n.onboardingQ3OptionGooglePlay;
+      case OnboardingReferralSource.friend:
+        return l10n.onboardingQ3OptionFriend;
+      default:
+        return l10n.onboardingQ3OptionOther;
+    }
   }
 }
 

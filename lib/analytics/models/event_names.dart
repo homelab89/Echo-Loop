@@ -228,6 +228,11 @@ abstract class UserProperties {
 
   /// 每日学习时长（"5" / "10" / "20" / "30" / "flexible"）
   static const dailyMinutesTarget = 'daily_minutes_target';
+
+  /// 来源渠道（xiaohongshu / wechat / douyin / kuaishou / bilibili /
+  /// baidu_search / youtube / reddit / x_twitter / tiktok / instagram /
+  /// google_search / github / app_store / google_play / friend / other）
+  static const referralSource = 'referral_source';
 }
 
 /// 事件参数名常量
@@ -341,6 +346,9 @@ abstract class EventParams {
 
   /// Q2 每日学习时长
   static const dailyMinutes = 'daily_minutes';
+
+  /// Q3 来源渠道（user property 同名）
+  static const referralSource = 'referral_source';
 
   /// 完成耗时（秒）
   static const elapsedSeconds = 'elapsed_seconds';

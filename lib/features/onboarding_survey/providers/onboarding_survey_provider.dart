@@ -92,6 +92,11 @@ class OnboardingAnswersNotifier extends Notifier<OnboardingAnswers> {
     state = state.copyWith(dailyMinutes: dailyMinutes);
   }
 
+  /// 设置 Q3（来源渠道）。
+  void setReferralSource(String referralSource) {
+    state = state.copyWith(referralSource: referralSource);
+  }
+
   /// 提交答案：写 SP（先答案后完成锚点），再翻转完成状态。
   ///
   /// 调用方必须保证两题都已答（按钮 disabled 已经保证）；否则抛错。

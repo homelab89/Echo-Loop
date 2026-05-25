@@ -2984,6 +2984,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingQ2OptionFlexible => 'It varies';
 
   @override
+  String get onboardingQ3Prompt => 'How did you hear about us?';
+
+  @override
+  String get onboardingQ3OptionAppStore => 'App Store';
+
+  @override
+  String get onboardingQ3OptionGooglePlay => 'Google Play';
+
+  @override
+  String get onboardingQ3OptionYoutube => 'YouTube';
+
+  @override
+  String get onboardingQ3OptionReddit => 'Reddit';
+
+  @override
+  String get onboardingQ3OptionXTwitter => 'X / Twitter';
+
+  @override
+  String get onboardingQ3OptionTiktok => 'TikTok';
+
+  @override
+  String get onboardingQ3OptionInstagram => 'Instagram';
+
+  @override
+  String get onboardingQ3OptionXiaohongshu => 'Xiaohongshu';
+
+  @override
+  String get onboardingQ3OptionWechat => 'WeChat';
+
+  @override
+  String get onboardingQ3OptionDouyin => 'Douyin';
+
+  @override
+  String get onboardingQ3OptionKuaishou => 'Kuaishou';
+
+  @override
+  String get onboardingQ3OptionBilibili => 'Bilibili';
+
+  @override
+  String get onboardingQ3OptionBaiduSearch => 'Baidu search';
+
+  @override
+  String get onboardingQ3OptionGoogleSearch => 'Google search';
+
+  @override
+  String get onboardingQ3OptionGithub => 'GitHub';
+
+  @override
+  String get onboardingQ3OptionFriend => 'Friend or family';
+
+  @override
+  String get onboardingQ3OptionOther => 'Other';
+
+  @override
   String get onboardingPermissionsHint =>
       'To ensure the best experience, we\'ll request these permissions';
 

@@ -22,6 +22,7 @@ abstract final class OnboardingSurveyKeys {
   static const examType = 'onboarding_exam_type';
   static const goalOtherText = 'onboarding_goal_other_text';
   static const dailyMinutes = 'onboarding_daily_minutes';
+  static const referralSource = 'onboarding_referral_source';
   static const completedAtMs = 'onboarding_completed_at_ms';
 }
 
@@ -49,13 +50,22 @@ class OnboardingSurveyStorage {
   /// 校验答案编码必须落在合法集合内，否则视为无效返回 null。
   /// goal == exam 时 examType 必须合法；goalOtherText 仅作兼容字段读取，
   /// 不参与必填校验。
+  ///
+  /// referralSource：本轮新增字段，老用户 SP 中可能不存在；缺失时返回 null
+  /// 答案（视为不可用画像）但保留完成锚点，避免重复弹问卷。
   OnboardingAnswers? loadAnswers() {
     if (!isCompleted) return null;
     final goal = _prefs.getString(OnboardingSurveyKeys.goal);
     final dailyMinutes = _prefs.getString(OnboardingSurveyKeys.dailyMinutes);
-    if (goal == null || dailyMinutes == null) return null;
+    final referralSource = _prefs.getString(
+      OnboardingSurveyKeys.referralSource,
+    );
+    if (goal == null || dailyMinutes == null || referralSource == null) {
+      return null;
+    }
     if (!OnboardingGoal.all.contains(goal)) return null;
     if (!OnboardingDailyMinutes.all.contains(dailyMinutes)) return null;
+    if (!OnboardingReferralSource.all.contains(referralSource)) return null;
 
     String? examType;
     if (goal == OnboardingGoal.exam) {
@@ -72,6 +82,7 @@ class OnboardingSurveyStorage {
       examType: examType,
       goalOtherText: goalOtherText,
       dailyMinutes: dailyMinutes,
+      referralSource: referralSource,
     );
   }
 
@@ -106,6 +117,10 @@ class OnboardingSurveyStorage {
     }
     // 历史 goalOtherText 字段已弃用，新答案统一清掉，防止旧值残留。
     await _prefs.remove(OnboardingSurveyKeys.goalOtherText);
+    await _prefs.setString(
+      OnboardingSurveyKeys.referralSource,
+      answers.referralSource!,
+    );
     await _prefs.setInt(
       OnboardingSurveyKeys.completedAtMs,
       completedAt.millisecondsSinceEpoch,
@@ -118,6 +133,7 @@ class OnboardingSurveyStorage {
     await _prefs.remove(OnboardingSurveyKeys.examType);
     await _prefs.remove(OnboardingSurveyKeys.goalOtherText);
     await _prefs.remove(OnboardingSurveyKeys.dailyMinutes);
+    await _prefs.remove(OnboardingSurveyKeys.referralSource);
     await _prefs.remove(OnboardingSurveyKeys.completedAtMs);
   }
 }

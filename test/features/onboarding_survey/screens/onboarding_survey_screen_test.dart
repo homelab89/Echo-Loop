@@ -98,7 +98,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('普通分支：选目标 → 自动跳时长 → 选时长 → 进入方法论页 → 点开始学习', (tester) async {
+  testWidgets('普通分支：选目标 → 时长 → 渠道 → 方法论页 → 点开始学习', (tester) async {
     final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(_wrap(prefs: prefs));
     await tester.pumpAndSettle();
@@ -113,8 +113,21 @@ void main() {
     expect(find.text('你计划每天练习多久？'), findsOneWidget);
     expect(find.text('约 20 分钟'), findsOneWidget);
 
-    // 选"不固定" → 自动跳到方法论 summary 页
+    // 选"不固定" → 自动跳到渠道页
     await tester.tap(find.text('不固定'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 600));
+
+    expect(find.text('你是从哪里知道我们的？'), findsOneWidget);
+    // 中文用户应看到中文渠道选项
+    expect(find.text('小红书'), findsOneWidget);
+    expect(find.text('微信'), findsOneWidget);
+    expect(find.text('抖音'), findsOneWidget);
+    expect(find.text('快手'), findsOneWidget);
+    // 英文渠道不展示
+    expect(find.text('Reddit'), findsNothing);
+    expect(find.text('Google Play'), findsNothing);
+
+    await tester.tap(find.text('小红书'));
     await tester.pumpAndSettle(const Duration(milliseconds: 600));
 
     // summary 页：headline + 4 要点 + 权限预告 + 开始学习 按钮，仍未提交
@@ -141,9 +154,13 @@ void main() {
     final answers = storage.loadAnswers();
     expect(answers?.goal, equals(OnboardingGoal.work));
     expect(answers?.dailyMinutes, equals(OnboardingDailyMinutes.flexible));
+    expect(
+      answers?.referralSource,
+      equals(OnboardingReferralSource.xiaohongshu),
+    );
   });
 
-  testWidgets('考试分支：选应对考试 → 二级考试类型 → 选时长 → summary → 开始学习', (tester) async {
+  testWidgets('考试分支：目标 → 考试类型 → 时长 → 渠道 → summary → 开始学习', (tester) async {
     final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(_wrap(prefs: prefs));
     await tester.pumpAndSettle();
@@ -162,6 +179,10 @@ void main() {
     await tester.tap(find.text('约 20 分钟'));
     await tester.pumpAndSettle(const Duration(milliseconds: 600));
 
+    expect(find.text('你是从哪里知道我们的？'), findsOneWidget);
+    await tester.tap(find.text('应用商店'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 600));
+
     expect(find.text('开始学习'), findsOneWidget);
     await tester.tap(find.text('开始学习'));
     await tester.pumpAndSettle(const Duration(milliseconds: 400));
@@ -171,9 +192,13 @@ void main() {
     expect(answers?.goal, equals(OnboardingGoal.exam));
     expect(answers?.examType, equals(OnboardingExamType.ielts));
     expect(answers?.dailyMinutes, equals(OnboardingDailyMinutes.m20));
+    expect(
+      answers?.referralSource,
+      equals(OnboardingReferralSource.appStore),
+    );
   });
 
-  testWidgets('其他分支：选其他 → 自动跳时长 → summary → 开始学习', (tester) async {
+  testWidgets('其他分支：选其他 → 时长 → 渠道 → summary → 开始学习', (tester) async {
     final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(_wrap(prefs: prefs));
     await tester.pumpAndSettle();
@@ -188,6 +213,10 @@ void main() {
     await tester.tap(find.text('约 10 分钟'));
     await tester.pumpAndSettle(const Duration(milliseconds: 600));
 
+    // 渠道页选"朋友推荐"
+    await tester.tap(find.text('朋友推荐'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 600));
+
     await tester.tap(find.text('开始学习'));
     await tester.pumpAndSettle(const Duration(milliseconds: 400));
 
@@ -196,9 +225,13 @@ void main() {
     expect(answers?.goal, equals(OnboardingGoal.other));
     expect(answers?.goalOtherText, isNull);
     expect(answers?.dailyMinutes, equals(OnboardingDailyMinutes.m10));
+    expect(
+      answers?.referralSource,
+      equals(OnboardingReferralSource.friend),
+    );
   });
 
-  testWidgets('影视播客分支：选听懂影视播客 → 自动跳时长 → summary → 开始学习', (tester) async {
+  testWidgets('影视播客分支：目标 → 时长 → 渠道 → summary → 开始学习', (tester) async {
     final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(_wrap(prefs: prefs));
     await tester.pumpAndSettle();
@@ -211,6 +244,9 @@ void main() {
     await tester.tap(find.text('约 20 分钟'));
     await tester.pumpAndSettle(const Duration(milliseconds: 600));
 
+    await tester.tap(find.text('B 站'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 600));
+
     await tester.tap(find.text('开始学习'));
     await tester.pumpAndSettle(const Duration(milliseconds: 400));
 
@@ -218,9 +254,13 @@ void main() {
     final answers = OnboardingSurveyStorage(prefs).loadAnswers();
     expect(answers?.goal, equals(OnboardingGoal.content));
     expect(answers?.dailyMinutes, equals(OnboardingDailyMinutes.m20));
+    expect(
+      answers?.referralSource,
+      equals(OnboardingReferralSource.bilibili),
+    );
   });
 
-  testWidgets('summary 页可通过"上一步"返回时长页修改答案', (tester) async {
+  testWidgets('summary 页可通过"上一步"返回渠道页修改答案', (tester) async {
     final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(_wrap(prefs: prefs));
     await tester.pumpAndSettle();
@@ -229,6 +269,8 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 400));
     await tester.tap(find.text('约 10 分钟'));
     await tester.pumpAndSettle(const Duration(milliseconds: 600));
+    await tester.tap(find.text('朋友推荐'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 600));
 
     expect(find.text('开始学习'), findsOneWidget);
     expect(find.text('上一步'), findsOneWidget);
@@ -236,7 +278,7 @@ void main() {
     await tester.tap(find.text('上一步'));
     await tester.pumpAndSettle(const Duration(milliseconds: 400));
 
-    expect(find.text('你计划每天练习多久？'), findsOneWidget);
+    expect(find.text('你是从哪里知道我们的？'), findsOneWidget);
     // 仍未写入完成态
     expect(OnboardingSurveyStorage(prefs).isCompleted, isFalse);
   });
@@ -298,6 +340,8 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 400));
     await tester.tap(find.text('约 20 分钟'));
     await tester.pumpAndSettle(const Duration(milliseconds: 600));
+    await tester.tap(find.text('小红书'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 600));
     await tester.tap(find.text('开始学习'));
     await tester.pumpAndSettle(const Duration(milliseconds: 400));
 
@@ -310,15 +354,116 @@ void main() {
     final answers = analytics.events
         .where((event) => event.name == Events.onboardingSurveyQuestionAnswered)
         .toList();
-    expect(answers.length, 3);
+    expect(answers.length, 4);
 
-    expect(answers[0].params?[EventParams.questionId], OnboardingQuestionId.goal);
+    expect(
+      answers[0].params?[EventParams.questionId],
+      OnboardingQuestionId.goal,
+    );
     expect(answers[0].params?[EventParams.answerCode], OnboardingGoal.exam);
 
-    expect(answers[1].params?[EventParams.questionId], OnboardingQuestionId.examType);
-    expect(answers[1].params?[EventParams.answerCode], OnboardingExamType.ielts);
+    expect(
+      answers[1].params?[EventParams.questionId],
+      OnboardingQuestionId.examType,
+    );
+    expect(
+      answers[1].params?[EventParams.answerCode],
+      OnboardingExamType.ielts,
+    );
 
-    expect(answers[2].params?[EventParams.questionId], OnboardingQuestionId.dailyMinutes);
-    expect(answers[2].params?[EventParams.answerCode], OnboardingDailyMinutes.m20);
+    expect(
+      answers[2].params?[EventParams.questionId],
+      OnboardingQuestionId.dailyMinutes,
+    );
+    expect(
+      answers[2].params?[EventParams.answerCode],
+      OnboardingDailyMinutes.m20,
+    );
+
+    expect(
+      answers[3].params?[EventParams.questionId],
+      OnboardingQuestionId.referralSource,
+    );
+    expect(
+      answers[3].params?[EventParams.answerCode],
+      OnboardingReferralSource.xiaohongshu,
+    );
+
+    // 完成事件应携带 referral_source
+    final completed = analytics.events
+        .firstWhere((event) => event.name == Events.onboardingSurveyCompleted);
+    expect(
+      completed.params?[EventParams.referralSource],
+      OnboardingReferralSource.xiaohongshu,
+    );
+  });
+
+  testWidgets('英文用户：渠道页展示国际渠道，不展示中文渠道', (tester) async {
+    final prefs = await SharedPreferences.getInstance();
+    final router = GoRouter(
+      initialLocation: AppRoutes.onboardingSurvey,
+      routes: [
+        GoRoute(
+          path: AppRoutes.onboardingSurvey,
+          builder: (_, __) => const OnboardingSurveyScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.study,
+          builder: (_, __) => const Scaffold(body: Text('STUDY_PLACEHOLDER')),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          initialOnboardingCompletedProvider.overrideWithValue(false),
+          analyticsOverride(),
+        ],
+        child: MaterialApp.router(
+          routerConfig: router,
+          supportedLocales: const [Locale('zh', 'CN'), Locale('en')],
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 走到渠道页
+    await tester.tap(find.text('Everyday conversation'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 400));
+    await tester.tap(find.text('About 10 min'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 600));
+
+    expect(find.text('How did you hear about us?'), findsOneWidget);
+    expect(find.text('App Store'), findsOneWidget);
+    expect(find.text('Google Play'), findsOneWidget);
+    expect(find.text('Reddit'), findsOneWidget);
+    expect(find.text('YouTube'), findsOneWidget);
+    expect(find.text('TikTok'), findsOneWidget);
+    expect(find.text('Instagram'), findsOneWidget);
+    expect(find.text('X / Twitter'), findsOneWidget);
+    // 中文渠道不应展示
+    expect(find.text('Xiaohongshu'), findsNothing);
+    expect(find.text('WeChat'), findsNothing);
+    expect(find.text('Douyin'), findsNothing);
+
+    await tester.tap(find.text('Reddit'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 600));
+    await tester.tap(find.text('Start learning'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 400));
+
+    final answers = OnboardingSurveyStorage(prefs).loadAnswers();
+    expect(
+      answers?.referralSource,
+      equals(OnboardingReferralSource.reddit),
+    );
   });
 }

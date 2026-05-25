@@ -27,6 +27,7 @@ void main() {
         const OnboardingAnswers(
           goal: OnboardingGoal.work,
           dailyMinutes: OnboardingDailyMinutes.m20,
+          referralSource: OnboardingReferralSource.friend,
         ),
         now: now,
       );
@@ -37,6 +38,10 @@ void main() {
       expect(loaded, isNotNull);
       expect(loaded!.goal, equals(OnboardingGoal.work));
       expect(loaded.dailyMinutes, equals(OnboardingDailyMinutes.m20));
+      expect(
+        loaded.referralSource,
+        equals(OnboardingReferralSource.friend),
+      );
       expect(loaded.examType, isNull);
       expect(loaded.goalOtherText, isNull);
     });
@@ -49,6 +54,7 @@ void main() {
           const OnboardingAnswers(
             goal: OnboardingGoal.exam,
             dailyMinutes: OnboardingDailyMinutes.m10,
+            referralSource: OnboardingReferralSource.appStore,
           ),
         ),
         throwsArgumentError,
@@ -63,11 +69,16 @@ void main() {
           goal: OnboardingGoal.exam,
           examType: OnboardingExamType.ielts,
           dailyMinutes: OnboardingDailyMinutes.m20,
+          referralSource: OnboardingReferralSource.xiaohongshu,
         ),
       );
       final loaded = storage.loadAnswers();
       expect(loaded?.goal, equals(OnboardingGoal.exam));
       expect(loaded?.examType, equals(OnboardingExamType.ielts));
+      expect(
+        loaded?.referralSource,
+        equals(OnboardingReferralSource.xiaohongshu),
+      );
     });
 
     test('exam → 切到非 exam 时 SP 清掉 examType 残留', () async {
@@ -79,6 +90,7 @@ void main() {
           goal: OnboardingGoal.exam,
           examType: OnboardingExamType.cet,
           dailyMinutes: OnboardingDailyMinutes.m10,
+          referralSource: OnboardingReferralSource.appStore,
         ),
       );
       // 再写一次 daily —— examType 应被清除
@@ -86,6 +98,7 @@ void main() {
         const OnboardingAnswers(
           goal: OnboardingGoal.daily,
           dailyMinutes: OnboardingDailyMinutes.m10,
+          referralSource: OnboardingReferralSource.appStore,
         ),
       );
       expect(prefs.getString(OnboardingSurveyKeys.examType), isNull);
@@ -101,6 +114,7 @@ void main() {
           goal: OnboardingGoal.other,
           goalOtherText: '  考公务员  ',
           dailyMinutes: OnboardingDailyMinutes.m10,
+          referralSource: OnboardingReferralSource.other,
         ),
       );
       expect(prefs.getString(OnboardingSurveyKeys.goalOtherText), isNull);
@@ -117,12 +131,14 @@ void main() {
         const OnboardingAnswers(
           goal: OnboardingGoal.content,
           dailyMinutes: OnboardingDailyMinutes.m20,
+          referralSource: OnboardingReferralSource.youtube,
         ),
       );
       final loaded = storage.loadAnswers();
       expect(loaded?.goal, equals(OnboardingGoal.content));
       expect(loaded?.dailyMinutes, equals(OnboardingDailyMinutes.m20));
       expect(loaded?.goalOtherText, isNull);
+      expect(loaded?.referralSource, equals(OnboardingReferralSource.youtube));
     });
 
     test('未完成的答案不能保存', () async {
@@ -138,6 +154,16 @@ void main() {
         ),
         throwsArgumentError,
       );
+      // referralSource 缺失也属于未完成
+      expect(
+        () => storage.saveCompleted(
+          const OnboardingAnswers(
+            goal: OnboardingGoal.daily,
+            dailyMinutes: OnboardingDailyMinutes.m10,
+          ),
+        ),
+        throwsArgumentError,
+      );
     });
 
     test('flexible 时长可以正常保存和读取', () async {
@@ -147,6 +173,7 @@ void main() {
         const OnboardingAnswers(
           goal: OnboardingGoal.daily,
           dailyMinutes: OnboardingDailyMinutes.flexible,
+          referralSource: OnboardingReferralSource.friend,
         ),
       );
       final loaded = storage.loadAnswers();
@@ -158,6 +185,8 @@ void main() {
       SharedPreferences.setMockInitialValues({
         OnboardingSurveyKeys.goal: 'unknown_goal',
         OnboardingSurveyKeys.dailyMinutes: '99',
+        OnboardingSurveyKeys.referralSource:
+            OnboardingReferralSource.appStore,
         OnboardingSurveyKeys.completedAtMs: 1000,
       });
       final prefs = await SharedPreferences.getInstance();
@@ -171,6 +200,32 @@ void main() {
         OnboardingSurveyKeys.goal: OnboardingGoal.exam,
         OnboardingSurveyKeys.examType: 'unknown_exam',
         OnboardingSurveyKeys.dailyMinutes: OnboardingDailyMinutes.m10,
+        OnboardingSurveyKeys.referralSource:
+            OnboardingReferralSource.appStore,
+        OnboardingSurveyKeys.completedAtMs: 1000,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final storage = OnboardingSurveyStorage(prefs);
+      expect(storage.loadAnswers(), isNull);
+    });
+
+    test('referralSource 缺失（老用户升级残留）时 loadAnswers 返回 null', () async {
+      SharedPreferences.setMockInitialValues({
+        OnboardingSurveyKeys.goal: OnboardingGoal.daily,
+        OnboardingSurveyKeys.dailyMinutes: OnboardingDailyMinutes.m10,
+        OnboardingSurveyKeys.completedAtMs: 1000,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final storage = OnboardingSurveyStorage(prefs);
+      expect(storage.isCompleted, isTrue); // 防重复弹
+      expect(storage.loadAnswers(), isNull); // 但画像不可用
+    });
+
+    test('referralSource 非法时 loadAnswers 返回 null', () async {
+      SharedPreferences.setMockInitialValues({
+        OnboardingSurveyKeys.goal: OnboardingGoal.daily,
+        OnboardingSurveyKeys.dailyMinutes: OnboardingDailyMinutes.m10,
+        OnboardingSurveyKeys.referralSource: 'unknown_channel',
         OnboardingSurveyKeys.completedAtMs: 1000,
       });
       final prefs = await SharedPreferences.getInstance();
@@ -196,12 +251,14 @@ void main() {
           goal: OnboardingGoal.exam,
           examType: OnboardingExamType.toefl,
           dailyMinutes: OnboardingDailyMinutes.m10,
+          referralSource: OnboardingReferralSource.reddit,
         ),
       );
       await storage.clear();
       expect(storage.isCompleted, isFalse);
       expect(storage.loadAnswers(), isNull);
       expect(prefs.getString(OnboardingSurveyKeys.examType), isNull);
+      expect(prefs.getString(OnboardingSurveyKeys.referralSource), isNull);
     });
 
     test('readIsCompletedSync 静态方法可在 main() 同步调用', () async {
@@ -214,16 +271,25 @@ void main() {
   });
 
   group('OnboardingAnswers', () {
-    test('isComplete 普通分支只需 goal + dailyMinutes', () {
+    test('isComplete 普通分支需要 goal + dailyMinutes + referralSource', () {
       expect(const OnboardingAnswers().isComplete, isFalse);
       expect(
         const OnboardingAnswers(goal: OnboardingGoal.work).isComplete,
+        isFalse,
+      );
+      // 缺 referralSource 不算完成
+      expect(
+        const OnboardingAnswers(
+          goal: OnboardingGoal.work,
+          dailyMinutes: OnboardingDailyMinutes.m10,
+        ).isComplete,
         isFalse,
       );
       expect(
         const OnboardingAnswers(
           goal: OnboardingGoal.work,
           dailyMinutes: OnboardingDailyMinutes.m10,
+          referralSource: OnboardingReferralSource.friend,
         ).isComplete,
         isTrue,
       );
@@ -234,6 +300,7 @@ void main() {
         const OnboardingAnswers(
           goal: OnboardingGoal.exam,
           dailyMinutes: OnboardingDailyMinutes.m10,
+          referralSource: OnboardingReferralSource.appStore,
         ).isComplete,
         isFalse,
       );
@@ -242,6 +309,7 @@ void main() {
           goal: OnboardingGoal.exam,
           examType: OnboardingExamType.ielts,
           dailyMinutes: OnboardingDailyMinutes.m10,
+          referralSource: OnboardingReferralSource.appStore,
         ).isComplete,
         isTrue,
       );
@@ -252,6 +320,7 @@ void main() {
         const OnboardingAnswers(
           goal: OnboardingGoal.other,
           dailyMinutes: OnboardingDailyMinutes.m10,
+          referralSource: OnboardingReferralSource.other,
         ).isComplete,
         isTrue,
       );
@@ -260,6 +329,7 @@ void main() {
           goal: OnboardingGoal.other,
           goalOtherText: '   ',
           dailyMinutes: OnboardingDailyMinutes.m10,
+          referralSource: OnboardingReferralSource.other,
         ).isComplete,
         isTrue,
       );
@@ -269,9 +339,14 @@ void main() {
       const original = OnboardingAnswers(goal: OnboardingGoal.exam);
       final updated = original.copyWith(
         dailyMinutes: OnboardingDailyMinutes.m20,
+        referralSource: OnboardingReferralSource.appStore,
       );
       expect(updated.goal, equals(OnboardingGoal.exam));
       expect(updated.dailyMinutes, equals(OnboardingDailyMinutes.m20));
+      expect(
+        updated.referralSource,
+        equals(OnboardingReferralSource.appStore),
+      );
     });
 
     test('copyWith.clearExamType 把 examType 置回 null', () {
@@ -291,10 +366,12 @@ void main() {
       const a = OnboardingAnswers(
         goal: OnboardingGoal.work,
         dailyMinutes: OnboardingDailyMinutes.m30,
+        referralSource: OnboardingReferralSource.friend,
       );
       const b = OnboardingAnswers(
         goal: OnboardingGoal.work,
         dailyMinutes: OnboardingDailyMinutes.m30,
+        referralSource: OnboardingReferralSource.friend,
       );
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
