@@ -174,31 +174,14 @@ class PracticeNormalModeView extends StatelessWidget {
               // 倒计时（固定 56 高度占位，避免字幕区跳动）
               SizedBox(height: 56, child: countdown),
               const SizedBox(height: AppSpacing.m),
-              // 取消标记 + 听不懂按钮（并排）
+              // 取消标记 + 听不懂按钮（并排，主次随 isDifficult 翻转）
               SizedBox(
                 height: 48,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (alwaysShowToggleButton || isDifficult) ...[
-                      TextButton(
-                        onPressed: onToggleMark,
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.onSurfaceVariant,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                        ),
-                        child: Text(
-                          isDifficult
-                              ? l10n.practiceRemoveMark
-                              : l10n.practiceAddMark,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
+                      _buildToggleMarkButton(),
                       const SizedBox(width: AppSpacing.m),
                     ],
                     _buildCantUnderstandButton(),
@@ -214,11 +197,64 @@ class PracticeNormalModeView extends StatelessWidget {
     );
   }
 
+  /// 标记切换按钮
+  ///
+  /// 主次随 [isDifficult] 翻转：
+  /// - 未标记（状态 A）：次操作，OutlinedButton 描边样式
+  /// - 已标记（状态 B）：主操作，errorContainer 暖色填充 + 移除 icon，
+  ///   明显提醒用户「这句子还在难句池里」
+  Widget _buildToggleMarkButton() {
+    final cs = theme.colorScheme;
+    const padding = EdgeInsets.symmetric(horizontal: 20, vertical: 12);
+
+    if (isDifficult) {
+      return FilledButton.tonal(
+        onPressed: onToggleMark,
+        style: FilledButton.styleFrom(
+          backgroundColor: cs.errorContainer,
+          foregroundColor: cs.onErrorContainer,
+          shape: const StadiumBorder(),
+          padding: padding,
+          minimumSize: const Size(0, 48),
+          textStyle: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.bookmark_remove_outlined, size: 18),
+            const SizedBox(width: 6),
+            Text(l10n.practiceRemoveMark),
+          ],
+        ),
+      );
+    }
+
+    return OutlinedButton(
+      onPressed: onToggleMark,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: cs.onSurfaceVariant,
+        side: BorderSide(color: cs.outlineVariant),
+        shape: const StadiumBorder(),
+        padding: padding,
+        minimumSize: const Size(0, 48),
+        textStyle: theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      child: Text(l10n.practiceAddMark),
+    );
+  }
+
+  /// 听不太懂按钮（始终为 FilledTonal 蓝色填充）
   Widget _buildCantUnderstandButton() {
     final button = FilledButton.tonal(
       onPressed: onCantUnderstand,
       style: FilledButton.styleFrom(
+        shape: const StadiumBorder(),
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+        minimumSize: const Size(0, 48),
       ),
       child: Text(
         l10n.intensiveListenCantUnderstand,
