@@ -3,9 +3,10 @@
 /// iOS 通过 App Store Lookup API（`itunes.apple.com/lookup`）查询当前
 /// App Store 实际可下载的版本，确保审核期间不会误提示 iOS 用户更新。
 /// 其他平台从远程静态 JSON（`version.json`）获取版本信息。
-/// 使用独立 Dio 实例（不复用 AI API 的 Dio），所有异常静默返回 null。
+/// 使用独立 Dio 实例（不复用 AI API 的 Dio），失败时返回 null 并写日志。
 library;
 
+import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:dio/dio.dart';
@@ -13,9 +14,13 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../config/api_config.dart';
 import '../models/app_update_info.dart';
+import 'app_logger.dart';
 
 /// App Store Lookup API endpoint。
 const _iosLookupBase = 'https://itunes.apple.com/lookup';
+
+/// 日志 tag
+const _logTag = 'AppUpdateChecker';
 
 /// App 版本更新检查器
 ///
@@ -76,20 +81,52 @@ class AppUpdateChecker {
   /// Lookup API 不提供 minimumVersion，回退为 `0.0.0`（不触发强制更新）。
   Future<AppUpdateInfo?> _checkIosLookup() async {
     final bundleId = _bundleId;
-    if (bundleId == null || bundleId.isEmpty) return null;
+    if (bundleId == null || bundleId.isEmpty) {
+      AppLogger.log(_logTag, 'iOS lookup skipped: empty bundleId');
+      return null;
+    }
+    AppLogger.log(_logTag, 'iOS lookup start: bundleId=$bundleId');
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      // iTunes Lookup 返回 Content-Type: text/javascript，Dio 默认 JSON
+      // transformer 不识别该 MIME，会把 body 当作 String 透传。这里强制
+      // ResponseType.plain 后用 jsonDecode 自行解析，避免 String 被错误地
+      // 当成 Map 触发类型转换异常 → 静默 catch → "检查失败"。
+      final response = await _dio.get<String>(
         _iosLookupBase,
         queryParameters: {'bundleId': bundleId},
+        options: Options(responseType: ResponseType.plain),
       );
-      final data = response.data;
-      if (data == null) return null;
-      final results = data['results'];
-      if (results is! List || results.isEmpty) return null;
+      final body = response.data;
+      if (body == null || body.isEmpty) {
+        AppLogger.log(_logTag, 'iOS lookup empty body');
+        return null;
+      }
+      final decoded = jsonDecode(body);
+      if (decoded is! Map<String, dynamic>) {
+        AppLogger.log(
+          _logTag,
+          'iOS lookup unexpected top-level: ${decoded.runtimeType}',
+        );
+        return null;
+      }
+      final results = decoded['results'];
+      if (results is! List || results.isEmpty) {
+        AppLogger.log(_logTag, 'iOS lookup empty results');
+        return null;
+      }
       final entry = results.first;
-      if (entry is! Map) return null;
+      if (entry is! Map) {
+        AppLogger.log(
+          _logTag,
+          'iOS lookup unexpected entry: ${entry.runtimeType}',
+        );
+        return null;
+      }
       final version = entry['version'];
-      if (version is! String || version.isEmpty) return null;
+      if (version is! String || version.isEmpty) {
+        AppLogger.log(_logTag, 'iOS lookup missing/invalid version');
+        return null;
+      }
       final trackUrl = entry['trackViewUrl'];
       final releaseNotes = entry['releaseNotes'];
       final downloadUrl = trackUrl is String && trackUrl.isNotEmpty
@@ -98,24 +135,37 @@ class AppUpdateChecker {
       final notes = releaseNotes is String && releaseNotes.isNotEmpty
           ? {'en': releaseNotes, 'zh': releaseNotes}
           : <String, String>{};
+      AppLogger.log(_logTag, 'iOS lookup done: version=$version');
       return AppUpdateInfo(
         latestVersion: version,
         minimumVersion: '0.0.0',
         releaseNotes: notes,
         downloadUrl: {'ios': downloadUrl, 'fallback': downloadUrl},
       );
-    } catch (_) {
+    } catch (e) {
+      AppLogger.log(_logTag, 'iOS lookup failed: $e');
       return null;
     }
   }
 
   /// 非 iOS 平台：拉取远程 version.json
   Future<AppUpdateInfo?> _checkVersionJson() async {
+    AppLogger.log(_logTag, 'version.json start: url=$_url');
     try {
       final response = await _dio.get<Map<String, dynamic>>(_url);
-      if (response.data == null) return null;
-      return AppUpdateInfo.fromJson(response.data!);
-    } catch (_) {
+      final data = response.data;
+      if (data == null) {
+        AppLogger.log(_logTag, 'version.json empty body');
+        return null;
+      }
+      final info = AppUpdateInfo.fromJson(data);
+      AppLogger.log(
+        _logTag,
+        'version.json done: latest=${info.latestVersion} min=${info.minimumVersion}',
+      );
+      return info;
+    } catch (e) {
+      AppLogger.log(_logTag, 'version.json failed: $e');
       return null;
     }
   }

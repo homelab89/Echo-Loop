@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:echo_loop/services/app_update_checker.dart';
@@ -96,27 +98,33 @@ void main() {
       );
     });
 
-    test('成功解析 Lookup API 响应', () async {
+    /// 桩 iTunes Lookup 响应：iOS 路径强制 ResponseType.plain，data 为字符串
+    void stubLookup(Object data) {
       when(
-        () => mockDio.get<Map<String, dynamic>>(
+        () => mockDio.get<String>(
           any(),
           queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
         ),
       ).thenAnswer(
-        (_) async => Response(
+        (_) async => Response<String>(
           requestOptions: RequestOptions(),
-          data: {
-            'resultCount': 1,
-            'results': [
-              {
-                'version': '1.0.12',
-                'trackViewUrl': 'https://apps.apple.com/app/id6760324074',
-                'releaseNotes': 'Bug fixes and improvements',
-              },
-            ],
-          },
+          data: jsonEncode(data),
         ),
       );
+    }
+
+    test('成功解析 Lookup API 响应', () async {
+      stubLookup({
+        'resultCount': 1,
+        'results': [
+          {
+            'version': '1.0.12',
+            'trackViewUrl': 'https://apps.apple.com/app/id6760324074',
+            'releaseNotes': 'Bug fixes and improvements',
+          },
+        ],
+      });
 
       final result = await iosChecker.check();
 
@@ -139,38 +147,18 @@ void main() {
     });
 
     test('results 为空数组返回 null', () async {
-      when(
-        () => mockDio.get<Map<String, dynamic>>(
-          any(),
-          queryParameters: any(named: 'queryParameters'),
-        ),
-      ).thenAnswer(
-        (_) async => Response(
-          requestOptions: RequestOptions(),
-          data: {'resultCount': 0, 'results': []},
-        ),
-      );
+      stubLookup({'resultCount': 0, 'results': []});
 
       final result = await iosChecker.check();
       expect(result, isNull);
     });
 
     test('缺少 version 字段返回 null', () async {
-      when(
-        () => mockDio.get<Map<String, dynamic>>(
-          any(),
-          queryParameters: any(named: 'queryParameters'),
-        ),
-      ).thenAnswer(
-        (_) async => Response(
-          requestOptions: RequestOptions(),
-          data: {
-            'results': [
-              {'trackViewUrl': 'https://apps.apple.com/x'},
-            ],
-          },
-        ),
-      );
+      stubLookup({
+        'results': [
+          {'trackViewUrl': 'https://apps.apple.com/x'},
+        ],
+      });
 
       final result = await iosChecker.check();
       expect(result, isNull);
@@ -178,9 +166,10 @@ void main() {
 
     test('网络错误返回 null', () async {
       when(
-        () => mockDio.get<Map<String, dynamic>>(
+        () => mockDio.get<String>(
           any(),
           queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
         ),
       ).thenThrow(
         DioException(
@@ -203,29 +192,20 @@ void main() {
       final result = await emptyChecker.check();
       expect(result, isNull);
       verifyNever(
-        () => mockDio.get<Map<String, dynamic>>(
+        () => mockDio.get<String>(
           any(),
           queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
         ),
       );
     });
 
     test('releaseNotes 缺失时降级为空 Map', () async {
-      when(
-        () => mockDio.get<Map<String, dynamic>>(
-          any(),
-          queryParameters: any(named: 'queryParameters'),
-        ),
-      ).thenAnswer(
-        (_) async => Response(
-          requestOptions: RequestOptions(),
-          data: {
-            'results': [
-              {'version': '1.0.12', 'trackViewUrl': 'https://apps.apple.com/x'},
-            ],
-          },
-        ),
-      );
+      stubLookup({
+        'results': [
+          {'version': '1.0.12', 'trackViewUrl': 'https://apps.apple.com/x'},
+        ],
+      });
 
       final result = await iosChecker.check();
       expect(result, isNotNull);
@@ -233,25 +213,77 @@ void main() {
     });
 
     test('trackViewUrl 缺失时使用默认 App Store 链接', () async {
+      stubLookup({
+        'results': [
+          {'version': '1.0.12'},
+        ],
+      });
+
+      final result = await iosChecker.check();
+      expect(result, isNotNull);
+      expect(result!.downloadUrl['ios'], contains('apps.apple.com'));
+    });
+
+    test('Content-Type 为 text/javascript 时也能解析（回归测试）', () async {
+      // 真实环境 iTunes Lookup 返回 text/javascript，Dio 不会自动 JSON 解码
+      // 这里模拟该场景：data 是裸 JSON 字符串而非 Map
       when(
-        () => mockDio.get<Map<String, dynamic>>(
+        () => mockDio.get<String>(
           any(),
           queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
         ),
       ).thenAnswer(
-        (_) async => Response(
+        (_) async => Response<String>(
           requestOptions: RequestOptions(),
-          data: {
-            'results': [
-              {'version': '1.0.12'},
-            ],
-          },
+          data:
+              '{"resultCount":1,"results":[{"version":"1.0.12","trackViewUrl":"https://apps.apple.com/app/id6760324074"}]}',
         ),
       );
 
       final result = await iosChecker.check();
       expect(result, isNotNull);
-      expect(result!.downloadUrl['ios'], contains('apps.apple.com'));
+      expect(result!.latestVersion, '1.0.12');
+    });
+
+    test('响应不是合法 JSON 返回 null', () async {
+      when(
+        () => mockDio.get<String>(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer(
+        (_) async => Response<String>(
+          requestOptions: RequestOptions(),
+          data: 'not json at all',
+        ),
+      );
+
+      final result = await iosChecker.check();
+      expect(result, isNull);
+    });
+
+    test('version 不是 String 类型返回 null', () async {
+      // 防御 Apple 改 schema：例如 version 变成数字
+      stubLookup({
+        'results': [
+          {'version': 1.2, 'trackViewUrl': 'https://apps.apple.com/x'},
+        ],
+      });
+
+      final result = await iosChecker.check();
+      expect(result, isNull);
+    });
+
+    test('results[0] 不是 Map 返回 null', () async {
+      // 防御上游数据脏：results 元素是字符串/数字而非对象
+      stubLookup({
+        'results': ['unexpected-string-entry'],
+      });
+
+      final result = await iosChecker.check();
+      expect(result, isNull);
     });
   });
 }
