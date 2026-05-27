@@ -64,6 +64,9 @@ class _AsyncToggleButtonState extends State<AsyncToggleButton> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    // 纯黑深色主题下：底色压暗后几乎贴黑，需满底色 + 细描边才能看清芯片边界；
+    // 选中态的亮 primary 描边在纯黑上过曝，需柔化。浅色主题保持原样。
+    final isDark = theme.brightness == Brightness.dark;
 
     // 根据状态决定颜色
     final Color backgroundColor;
@@ -72,20 +75,32 @@ class _AsyncToggleButtonState extends State<AsyncToggleButton> {
 
     if (widget.isDisabled) {
       backgroundColor = colorScheme.surfaceContainerHighest.withValues(
-        alpha: 0.3,
+        alpha: isDark ? 0.6 : 0.3,
       );
       foregroundColor = colorScheme.onSurfaceVariant.withValues(alpha: 0.38);
-      border = null;
+      border = isDark
+          ? Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+              width: 1,
+            )
+          : null;
     } else if (widget.isActive || _isLoading) {
       backgroundColor = colorScheme.primaryContainer;
       foregroundColor = colorScheme.primary;
-      border = Border.all(color: colorScheme.primary, width: 1);
+      border = Border.all(
+        color: isDark
+            ? colorScheme.primary.withValues(alpha: 0.5)
+            : colorScheme.primary,
+        width: 1,
+      );
     } else {
       backgroundColor = colorScheme.surfaceContainerHighest.withValues(
-        alpha: 0.5,
+        alpha: isDark ? 1 : 0.5,
       );
       foregroundColor = colorScheme.onSurfaceVariant;
-      border = null;
+      border = isDark
+          ? Border.all(color: colorScheme.outlineVariant, width: 1)
+          : null;
     }
 
     return GestureDetector(
@@ -118,12 +133,14 @@ class _AsyncToggleButtonState extends State<AsyncToggleButton> {
                     : (widget.iconColor ?? foregroundColor),
               ),
             const SizedBox(width: 4),
-            Text(
-              widget.label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: foregroundColor,
+            Flexible(
+              child: Text(
+                widget.label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: foregroundColor,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
