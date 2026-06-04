@@ -12,7 +12,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:echo_loop/analytics/analytics_channel.dart';
@@ -292,6 +291,8 @@ class _NoOpChannel implements AnalyticsChannel {
   Future<void> setUserProperty(String name, String? value) async {}
   @override
   Future<void> registerSuperProperties(Map<String, Object> properties) async {}
+  @override
+  Future<void> unregisterSuperProperty(String name) async {}
 }
 
 /// 缓存的 SharedPreferences 实例（由 [initTestAnalytics] 初始化）
