@@ -102,7 +102,10 @@ jobs:
         run: |
           flutter build ios --release --no-codesign --flavor=prod \
             --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }} \
-            --dart-define=POSTHOG_HOST=${{ vars.POSTHOG_HOST }}
+            --dart-define=POSTHOG_HOST=${{ vars.POSTHOG_HOST }} \
+            --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }} \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ vars.SUPABASE_PUBLISHABLE_KEY }} \
+            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}
 
       - name: Setup Java
         if: matrix.platform == 'android'
@@ -134,4 +137,7 @@ jobs:
           flutter build apk --release --flavor=prod \
             --target-platform android-arm64 \
             --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }} \
-            --dart-define=POSTHOG_HOST=${{ vars.POSTHOG_HOST }}
+            --dart-define=POSTHOG_HOST=${{ vars.POSTHOG_HOST }} \
+            --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }} \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ vars.SUPABASE_PUBLISHABLE_KEY }} \
+            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}

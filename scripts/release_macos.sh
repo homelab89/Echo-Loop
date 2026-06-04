@@ -45,28 +45,22 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# 版本号来源优先级：命令行参数 > 环境变量 > 从 tag 解析
+# 版本名来源优先级：命令行参数 > 环境变量 > pubspec.yaml
 if [[ -z "$BUILD_NAME" ]]; then
   BUILD_NAME="${MACOS_BUILD_NAME:-}"
 fi
+if [[ -z "$BUILD_NAME" ]]; then
+  BUILD_NAME="$(get_build_name)" || fail "Failed to read version from pubspec.yaml"
+  log "BUILD_NAME from pubspec.yaml: $BUILD_NAME"
+fi
+
+# 构建号来源优先级：命令行参数 > 环境变量 > commit count（与 GitHub Actions 一致）
 if [[ -z "$BUILD_NUMBER" ]]; then
   BUILD_NUMBER="${MACOS_BUILD_NUMBER:-}"
 fi
-
-# 如果参数和环境变量都没提供，从当前 commit 的 tag 解析
-if [[ -z "$BUILD_NAME" || -z "$BUILD_NUMBER" ]]; then
-  # 兼容新格式 vX.Y.Z 和旧格式 vX.Y.Z+N
-  TAG="$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+([+][0-9]+)?$' | head -1 || true)"
-  if [[ -z "$TAG" ]]; then
-    fail "No version tag on current commit. Run ci.sh first, or provide --build-name and --build-number."
-  fi
-  log "Using tag: $TAG"
-  eval "$(parse_tag "$TAG")"
-  # 新格式 tag 不带 +N，BUILD_NUMBER 兜底用 commit count
-  if [[ -z "$BUILD_NUMBER" ]]; then
-    BUILD_NUMBER="$(git rev-list --count HEAD)"
-    log "BUILD_NUMBER from commit count: $BUILD_NUMBER"
-  fi
+if [[ -z "$BUILD_NUMBER" ]]; then
+  BUILD_NUMBER="$(git rev-list --count HEAD)"
+  log "BUILD_NUMBER from commit count: $BUILD_NUMBER"
 fi
 
 # 安装包名字只用 versionName。versionCode 已经隐藏在 .app 元数据里，
@@ -83,11 +77,15 @@ log "Cleaning..."
 flutter clean
 
 log "Building release app..."
+# 编译期环境变量统一从 .prod.env 读取（API 地址、Supabase、Google 等）
+ENV_FILE=".prod.env"
+[[ -f "$ENV_FILE" ]] || fail "$ENV_FILE not found. Copy .dev.env.template to $ENV_FILE and fill in values."
 FLUTTER_ARGS=(
   build
   macos
   --release
   "--flavor=prod"
+  "--dart-define-from-file=$ENV_FILE"
   # --build-name 只传版本号，不含构建号
   "--build-name=$BUILD_NAME"
 )

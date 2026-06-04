@@ -150,11 +150,17 @@ jobs:
           API_BASE_URL: ${{ vars.API_BASE_URL }}
           POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
           POSTHOG_API_KEY: ${{ vars.POSTHOG_API_KEY }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
         run: |
           flutter clean
           DART_DEFINES=(
             "--dart-define=API_BASE_URL=${API_BASE_URL}"
             "--dart-define=POSTHOG_HOST=${POSTHOG_HOST}"
+            "--dart-define=SUPABASE_URL=${SUPABASE_URL}"
+            "--dart-define=SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}"
+            "--dart-define=GOOGLE_WEB_CLIENT_ID=${GOOGLE_WEB_CLIENT_ID}"
           )
           if [[ -n "$POSTHOG_API_KEY" ]]; then
             DART_DEFINES+=("--dart-define=POSTHOG_API_KEY=${POSTHOG_API_KEY}")
@@ -291,12 +297,18 @@ jobs:
           API_BASE_URL: ${{ vars.API_BASE_URL }}
           POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
           POSTHOG_API_KEY: ${{ vars.POSTHOG_API_KEY }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
         run: |
           # 避免 Homebrew rsync 抢占（Apple toolchain 需要系统 rsync）
           export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
           DART_DEFINES=(
             "--dart-define=API_BASE_URL=${API_BASE_URL}"
             "--dart-define=POSTHOG_HOST=${POSTHOG_HOST}"
+            "--dart-define=SUPABASE_URL=${SUPABASE_URL}"
+            "--dart-define=SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}"
+            "--dart-define=GOOGLE_WEB_CLIENT_ID=${GOOGLE_WEB_CLIENT_ID}"
           )
           if [[ -n "$POSTHOG_API_KEY" ]]; then
             DART_DEFINES+=("--dart-define=POSTHOG_API_KEY=${POSTHOG_API_KEY}")

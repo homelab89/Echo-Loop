@@ -36,10 +36,7 @@ Options:
   --platform  只构建指定平台（默认全部）
   --help      显示帮助
 
-Environment:
-  API_BASE_URL        API base URL (default: https://www.echo-loop.top)
-  POSTHOG_API_KEY     PostHog API key
-  POSTHOG_HOST        PostHog host URL
+构建期环境变量由各平台脚本从 .prod.env 读取（--dart-define-from-file）。
 EOF
 }
 
@@ -63,11 +60,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# 环境变量
-API_BASE_URL="${API_BASE_URL:-https://www.echo-loop.top}"
-POSTHOG_API_KEY="${POSTHOG_API_KEY:-}"
-POSTHOG_HOST="${POSTHOG_HOST:-https://us.i.posthog.com}"
-
 # 计算构建号
 BUILD_NAME="$(get_build_name)" || fail "Failed to get build name"
 calculate_build_number "$BUILD_NAME"
@@ -86,7 +78,6 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   log "Building $PLATFORM..."
   case "$PLATFORM" in
     ios)
-      export API_BASE_URL POSTHOG_API_KEY POSTHOG_HOST
       export IOS_BUILD_NAME="$BUILD_NAME"
       export IOS_BUILD_NUMBER="${BUILD_NUMBER:-}"
       if scripts/release_ios.sh; then
@@ -96,7 +87,6 @@ for PLATFORM in "${PLATFORMS[@]}"; do
       fi
       ;;
     android)
-      export API_BASE_URL POSTHOG_API_KEY POSTHOG_HOST
       export ANDROID_BUILD_NAME="$BUILD_NAME"
       export ANDROID_BUILD_NUMBER="${BUILD_NUMBER:-}"
       if scripts/release_android.sh; then

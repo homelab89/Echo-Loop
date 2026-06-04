@@ -36,11 +36,9 @@ Options:
   --platform  只发布指定平台（默认 ios + android）
   --help      显示帮助
 
-Environment:
-  API_BASE_URL        API base URL (default: https://www.echo-loop.top)
-  POSTHOG_API_KEY     PostHog API key (required for analytics)
-  POSTHOG_HOST        PostHog host URL (default: https://us.i.posthog.com)
+构建期环境变量由各平台脚本从 .prod.env 读取（--dart-define-from-file）。
 
+Environment:
   iOS upload:
   IOS_TEAM_ID
   APP_STORE_API_KEY_ID
@@ -90,11 +88,6 @@ log "Build name: $BUILD_NAME"
 log "Build number: ${BUILD_NUMBER:-0}"
 log "Platforms: ${PLATFORMS[*]}"
 
-# 环境变量
-API_BASE_URL="${API_BASE_URL:-https://www.echo-loop.top}"
-POSTHOG_API_KEY="${POSTHOG_API_KEY:-}"
-POSTHOG_HOST="${POSTHOG_HOST:-https://us.i.posthog.com}"
-
 # 发布各平台
 FAILED=0
 RELEASE_RESULTS=()
@@ -103,7 +96,6 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   log "Releasing $PLATFORM..."
   case "$PLATFORM" in
     ios)
-      export API_BASE_URL POSTHOG_API_KEY POSTHOG_HOST
       export IOS_BUILD_NAME="$BUILD_NAME"
       export IOS_BUILD_NUMBER="${BUILD_NUMBER:-}"
       if scripts/release_ios.sh --upload; then
@@ -116,7 +108,6 @@ for PLATFORM in "${PLATFORMS[@]}"; do
       fi
       ;;
     android)
-      export API_BASE_URL POSTHOG_API_KEY POSTHOG_HOST
       export ANDROID_BUILD_NAME="$BUILD_NAME"
       export ANDROID_BUILD_NUMBER="${BUILD_NUMBER:-}"
       if scripts/release_android.sh --upload; then

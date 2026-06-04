@@ -30,11 +30,9 @@ Options:
   --build-number    Override build number (default: from git tag or 0).
   -h, --help        Show this help.
 
-Environment variables:
-  API_BASE_URL          API base URL (default: https://www.echo-loop.top)
-  POSTHOG_API_KEY       PostHog API key (required for analytics)
-  POSTHOG_HOST          PostHog host URL (default: https://us.i.posthog.com)
+构建期环境变量从 .prod.env 读取（--dart-define-from-file）。
 
+Environment variables:
   Build (for CI/release scripts):
   ANDROID_BUILD_NAME    Version name override
   ANDROID_BUILD_NUMBER  Build number override
@@ -81,62 +79,25 @@ if [[ -z "${ANDROID_HOME:-}" ]]; then
 fi
 export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools:$PATH"
 
-API_BASE_URL="${API_BASE_URL:-https://www.echo-loop.top}"
-POSTHOG_API_KEY="${POSTHOG_API_KEY:-}"
-POSTHOG_HOST="${POSTHOG_HOST:-https://us.i.posthog.com}"
+# 编译期环境变量统一从 .prod.env 读取（API 地址、Supabase、Google 等）
+ENV_FILE=".prod.env"
 
-# 版本号来源优先级：命令行参数 > 环境变量 > 从 tag/APK 解析
+# 版本名来源优先级：命令行参数 > 环境变量 > pubspec.yaml
 if [[ -z "$BUILD_NAME" ]]; then
   BUILD_NAME="${ANDROID_BUILD_NAME:-}"
 fi
+if [[ -z "$BUILD_NAME" ]]; then
+  BUILD_NAME="$(get_build_name)" || fail "Failed to read version from pubspec.yaml"
+  log "BUILD_NAME from pubspec.yaml: $BUILD_NAME"
+fi
+
+# 构建号来源优先级：命令行参数 > 环境变量 > commit count（与 GitHub Actions 一致）
 if [[ -z "$BUILD_NUMBER" ]]; then
   BUILD_NUMBER="${ANDROID_BUILD_NUMBER:-}"
 fi
-
-# 如果参数和环境变量都没提供，尝试从当前 commit 的 tag 或现有 APK 解析
-if [[ -z "$BUILD_NAME" && -z "$BUILD_NUMBER" ]]; then
-  # 先尝试 tag（兼容新格式 vX.Y.Z 和旧格式 vX.Y.Z+N）
-  TAG="$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+([+][0-9]+)?$' | head -1 || true)"
-  if [[ -n "$TAG" ]]; then
-    log "Using tag: $TAG"
-    eval "$(parse_tag "$TAG")"
-    # 新格式 tag 不带 +N，BUILD_NUMBER 兜底用 commit count
-    if [[ -z "$BUILD_NUMBER" ]]; then
-      BUILD_NUMBER="$(git rev-list --count HEAD)"
-      log "BUILD_NUMBER from commit count: $BUILD_NUMBER"
-    fi
-  elif [[ "$SKIP_BUILD" == true ]]; then
-    # --skip-build 时从现有 APK 文件名推断
-    APK_PATTERN="build/release/Echo-Loop-*-arm64.apk"
-    EXISTING_APKS=()
-    for f in $APK_PATTERN; do
-      [[ -f "$f" ]] && EXISTING_APKS+=("$f")
-    done
-    if [[ ${#EXISTING_APKS[@]} -eq 0 ]]; then
-      fail "No APK found in build/release/. Run without --skip-build first, or provide --build-name and --build-number."
-    fi
-    # 多个 APK 时选最新的
-    if [[ ${#EXISTING_APKS[@]} -gt 1 ]]; then
-      LATEST_APK="$(ls -t "${EXISTING_APKS[@]}" | head -1)"
-      log "Multiple APKs found, using latest: $LATEST_APK"
-      APK_FILE="$(basename "$LATEST_APK")"
-    else
-      APK_FILE="$(basename "${EXISTING_APKS[0]}")"
-    fi
-    # 解析文件名: Echo-Loop-{version}+{number}-arm64.apk
-    if [[ "$APK_FILE" =~ ^Echo-Loop-([0-9]+\.[0-9]+\.[0-9]+)[+]([0-9]+)-arm64\.apk$ ]]; then
-      BUILD_NAME="${BASH_REMATCH[1]}"
-      BUILD_NUMBER="${BASH_REMATCH[2]}"
-      log "Inferred from APK: $BUILD_NAME+$BUILD_NUMBER"
-    else
-      fail "Cannot parse version from APK filename: $APK_FILE"
-    fi
-  else
-    fail "No version tag on current commit. Run ci.sh first, or provide --build-name and --build-number."
-  fi
-elif [[ -z "$BUILD_NAME" || -z "$BUILD_NUMBER" ]]; then
-  # 只提供了一个，需要用户提供另一个
-  fail "Both --build-name and --build-number are required when one is provided via command line."
+if [[ -z "$BUILD_NUMBER" ]]; then
+  BUILD_NUMBER="$(git rev-list --count HEAD)"
+  log "BUILD_NUMBER from commit count: $BUILD_NUMBER"
 fi
 
 # 安装包名字只用 versionName。versionCode 已经隐藏在 APK 元数据里，
@@ -150,7 +111,7 @@ log "Version: $VERSION"
 log "Build number: ${BUILD_NUMBER:-1}"
 log "Architecture: $ARCH"
 log "Flavor: $FLAVOR"
-log "API base URL: $API_BASE_URL"
+log "Env file: $ENV_FILE"
 log "Output: $APK_PATH"
 
 # --- 构建 ---
@@ -159,12 +120,8 @@ if [[ "$SKIP_BUILD" == false ]]; then
   flutter clean
 
   log "Building release APK..."
-  DART_DEFINES=(
-    "--dart-define=API_BASE_URL=${API_BASE_URL}"
-    "--dart-define=POSTHOG_HOST=${POSTHOG_HOST}"
-  )
-  # POSTHOG_API_KEY 为空时不传，让代码使用内置默认值
-  [[ -n "${POSTHOG_API_KEY:-}" ]] && DART_DEFINES+=("--dart-define=POSTHOG_API_KEY=${POSTHOG_API_KEY}")
+  [[ -f "$ENV_FILE" ]] || fail "$ENV_FILE not found. Copy .dev.env.template to $ENV_FILE and fill in values."
+  DART_DEFINES=("--dart-define-from-file=$ENV_FILE")
 
   FLUTTER_ARGS=(
     build

@@ -25,9 +25,6 @@ Environment overrides:
   IOS_TEAM_ID
   IOS_BUILD_NAME
   IOS_BUILD_NUMBER
-  API_BASE_URL
-  POSTHOG_API_KEY
-  POSTHOG_HOST
   APP_STORE_API_KEY_ID
   APP_STORE_API_ISSUER_ID
   APP_STORE_API_KEY_PATH
@@ -106,9 +103,8 @@ if [[ -x "scripts/preflight.sh" ]]; then
 fi
 
 TEAM_ID="${IOS_TEAM_ID:-S8S968QAV3}"
-API_BASE_URL="${API_BASE_URL:-https://www.echo-loop.top}"
-POSTHOG_API_KEY="${POSTHOG_API_KEY:-}"
-POSTHOG_HOST="${POSTHOG_HOST:-https://us.i.posthog.com}"
+# 编译期环境变量统一从 .prod.env 读取（API 地址、Supabase、Google 等）
+ENV_FILE=".prod.env"
 API_KEY_ID="${APP_STORE_API_KEY_ID:-5GB5KL75VZ}"
 API_ISSUER_ID="${APP_STORE_API_ISSUER_ID:-3ec439fe-b66c-4034-b8c2-16e133fc4d6b}"
 API_KEY_PATH="${APP_STORE_API_KEY_PATH:-$ROOT_DIR/ios/AuthKey_${API_KEY_ID}.p8}"
@@ -120,33 +116,27 @@ if [[ -n "$VERSION_LINE" ]]; then
   log "pubspec version: ${VERSION_LINE#*:}"
 fi
 
-# 版本号来源优先级：命令行参数 > 环境变量 > 从 tag 解析
+# 版本名来源优先级：命令行参数 > 环境变量 > pubspec.yaml
 if [[ -z "$BUILD_NAME" ]]; then
   BUILD_NAME="${IOS_BUILD_NAME:-}"
 fi
+if [[ -z "$BUILD_NAME" ]]; then
+  BUILD_NAME="$(get_build_name)" || fail "Failed to read version from pubspec.yaml"
+  log "BUILD_NAME from pubspec.yaml: $BUILD_NAME"
+fi
+
+# 构建号来源优先级：命令行参数 > 环境变量 > commit count（与 GitHub Actions 一致）
 if [[ -z "$BUILD_NUMBER" ]]; then
   BUILD_NUMBER="${IOS_BUILD_NUMBER:-}"
 fi
-
-# 如果参数和环境变量都没提供，从当前 commit 的 tag 解析
-if [[ -z "$BUILD_NAME" || -z "$BUILD_NUMBER" ]]; then
-  # 兼容新格式 vX.Y.Z 和旧格式 vX.Y.Z+N
-  TAG="$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+([+][0-9]+)?$' | head -1 || true)"
-  if [[ -z "$TAG" ]]; then
-    fail "No version tag on current commit. Run ci.sh first, or provide --build-name and --build-number."
-  fi
-  log "Using tag: $TAG"
-  eval "$(parse_tag "$TAG")"
-  # 新格式 tag 不带 +N，BUILD_NUMBER 兜底用 commit count
-  if [[ -z "$BUILD_NUMBER" ]]; then
-    BUILD_NUMBER="$(git rev-list --count HEAD)"
-    log "BUILD_NUMBER from commit count: $BUILD_NUMBER"
-  fi
+if [[ -z "$BUILD_NUMBER" ]]; then
+  BUILD_NUMBER="$(git rev-list --count HEAD)"
+  log "BUILD_NUMBER from commit count: $BUILD_NUMBER"
 fi
 
 log "Using build name: $BUILD_NAME"
 log "Using build number: ${BUILD_NUMBER:-1}"
-log "Using API base URL: $API_BASE_URL"
+log "Using env file: $ENV_FILE"
 
 log "Checking available code signing identities"
 security find-identity -v -p codesigning
@@ -204,21 +194,18 @@ cleanup_key() {
 trap cleanup_key EXIT
 
 log "Building Flutter iOS IPA"
+[[ -f "$ENV_FILE" ]] || fail "$ENV_FILE not found. Copy .dev.env.template to $ENV_FILE and fill in values."
 FLUTTER_BUILD_ARGS=(
   build ipa
   "--release"
   "--flavor=prod"
   "--build-name=$BUILD_NAME"
   "--export-options-plist=$EXPORT_OPTIONS_PATH"
-  "--dart-define=API_BASE_URL=${API_BASE_URL}"
-  "--dart-define=POSTHOG_HOST=${POSTHOG_HOST}"
+  "--dart-define-from-file=$ENV_FILE"
 )
 # 仅当有构建号时才传 --build-number
 if [[ -n "${BUILD_NUMBER:-}" ]]; then
   FLUTTER_BUILD_ARGS+=("--build-number=$BUILD_NUMBER")
-fi
-if [[ -n "${POSTHOG_API_KEY:-}" ]]; then
-  FLUTTER_BUILD_ARGS+=("--dart-define=POSTHOG_API_KEY=${POSTHOG_API_KEY}")
 fi
 flutter "${FLUTTER_BUILD_ARGS[@]}"
 

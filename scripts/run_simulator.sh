@@ -6,7 +6,8 @@ cd "$ROOT_DIR"
 
 BUNDLE_ID="top.echo-loop"
 APP_PATH="build/ios/iphonesimulator/Runner.app"
-API_BASE_URL="${API_BASE_URL:-https://dev.echo-loop.top}"
+# 编译期环境变量统一从 .dev.env 读取（API 地址、Supabase、Google 等）
+ENV_FILE=".dev.env"
 
 DEVICE=""
 NO_BUILD=false
@@ -24,8 +25,7 @@ Options:
   --no-build            Skip build, install existing artifact
   -h, --help            Show this help
 
-Environment:
-  API_BASE_URL          API base URL (default: https://dev.echo-loop.top)
+构建期环境变量从 .dev.env 读取（--dart-define-from-file）。
 EOF
   exit 0
 }
@@ -98,8 +98,9 @@ echo "📱 Target: $DEVICE_NAME ($UDID)"
 
 # --- 构建 ---
 if ! $NO_BUILD; then
-  echo "🔨 Building for simulator (API_BASE_URL=$API_BASE_URL) ..."
-  flutter build ios --simulator --dart-define="API_BASE_URL=$API_BASE_URL"
+  [[ -f "$ENV_FILE" ]] || { echo "Error: $ENV_FILE not found. Copy .dev.env.template to $ENV_FILE and fill in values." >&2; exit 1; }
+  echo "🔨 Building for simulator (env: $ENV_FILE) ..."
+  flutter build ios --simulator --dart-define-from-file="$ENV_FILE"
 else
   if [[ ! -d "$APP_PATH" ]]; then
     echo "Error: $APP_PATH not found. Run without --no-build first." >&2
