@@ -520,9 +520,16 @@ class _SentenceListState extends State<_SentenceList> {
                             Text(sentence.text),
                             const SizedBox(height: 2),
                             Text(
-                              '${_formatTime(sentence.startTime)} - ${_formatTime(sentence.endTime)}',
+                              '${_formatTime(sentence.startTime)} - '
+                              '${_formatTime(sentence.endTime)} · '
+                              '${_formatSeconds(sentence.endTime - sentence.startTime)}',
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                                fontSize:
+                                    (theme.textTheme.labelSmall?.fontSize ??
+                                        11) -
+                                    1,
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: .68),
                                 fontFeatures: const [
                                   FontFeature.tabularFigures(),
                                 ],
@@ -585,9 +592,23 @@ class _SentenceListState extends State<_SentenceList> {
   }
 
   String _formatTime(Duration duration) {
+    final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
+    final milliseconds = duration.inMilliseconds
+        .remainder(1000)
+        .toString()
+        .padLeft(3, '0');
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:$minutes:$seconds.$milliseconds';
+    }
+    return '$minutes:$seconds.$milliseconds';
+  }
+
+  String _formatSeconds(Duration duration) {
+    final clamped = duration.isNegative ? Duration.zero : duration;
+    final seconds = clamped.inMilliseconds / 1000;
+    return '${seconds.toStringAsFixed(1)}s';
   }
 }
 

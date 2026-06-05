@@ -390,6 +390,33 @@ void main() {
   });
 
   group('SubtitleSimpleEditorScreen', () {
+    testWidgets('句子行显示完整起止时间和句长', (tester) async {
+      final audioEngine = _ScreenTestAudioEngine(
+        duration: const Duration(seconds: 10),
+        sentences: [
+          Sentence(
+            index: 0,
+            text: 'Precise sentence.',
+            startTime: const Duration(seconds: 1, milliseconds: 230),
+            endTime: const Duration(seconds: 3, milliseconds: 450),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        createTestScreen(
+          SubtitleSimpleEditorScreen(audioItem: createTestAudioItem()),
+          overrides: [audioEngineProvider.overrideWith(() => audioEngine)],
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('00:01.230 - 00:03.450 · 2.2s'), findsOneWidget);
+
+      audioEngine.disposeController();
+    });
+
     testWidgets('波形下方显示播放、缩放和速度控制', (tester) async {
       final audioEngine = _ScreenTestAudioEngine(
         duration: const Duration(seconds: 10),
