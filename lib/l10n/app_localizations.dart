@@ -4562,6 +4562,18 @@ abstract class AppLocalizations {
   /// **'AI translation, analysis, and sense group splitting use the cloud AI service. Sign in to generate new results. Cached results remain available.'**
   String get senseGroupSignInRequiredMessage;
 
+  /// No description provided for @transcriptionSignInRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to use AI transcription'**
+  String get transcriptionSignInRequiredTitle;
+
+  /// No description provided for @transcriptionSignInRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'AI transcription uses the cloud transcription service. Sign in to transcribe audio with AI.'**
+  String get transcriptionSignInRequiredMessage;
+
   /// No description provided for @senseGroupNotAvailable.
   ///
   /// In en, this message translates to:

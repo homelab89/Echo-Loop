@@ -137,7 +137,7 @@ class TranscriptResult {
 
 /// 转录 API 客户端
 ///
-/// 封装与后端 `/api/v1/user-audio/` 的所有通信。
+/// 封装与后端 `/api/v2/user-audio/` 的所有通信。
 class TranscriptionApiClient {
   final Dio _dio;
 
@@ -171,10 +171,12 @@ class TranscriptionApiClient {
     required String sha256,
     required String mimeType,
     required int fileSize,
+    required String accessToken,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/user-audio/upload-url',
+      '/api/v2/user-audio/upload-url',
       data: {'sha256': sha256, 'mimeType': mimeType, 'fileSize': fileSize},
+      options: _authOptions(accessToken),
     );
     return UploadUrlResponse.fromJson(response.data!);
   }
@@ -218,9 +220,10 @@ class TranscriptionApiClient {
     String? mimeType,
     int? fileSize,
     required String language,
+    required String accessToken,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/api/v1/user-audio/submit-transcription',
+      '/api/v2/user-audio/submit-transcription',
       data: {
         'sha256': sha256,
         if (fileName != null) 'fileName': fileName,
@@ -230,25 +233,39 @@ class TranscriptionApiClient {
         if (fileSize != null) 'fileSize': fileSize,
         'language': language,
       },
+      options: _authOptions(accessToken),
     );
     return SubmitTranscriptionResponse.fromJson(response.data!);
   }
 
   /// 查询转录任务状态
-  Future<JobStatusResponse> getJobStatus(String jobId) async {
+  Future<JobStatusResponse> getJobStatus(
+    String jobId, {
+    required String accessToken,
+  }) async {
     final response = await _dio.get<Map<String, dynamic>>(
-      '/api/v1/user-audio/job-status/$jobId',
+      '/api/v2/user-audio/job-status/$jobId',
+      options: _authOptions(accessToken),
     );
     return JobStatusResponse.fromJson(response.data!);
   }
 
   /// 获取转录结果
-  Future<TranscriptResult> getTranscript(String sha256, String language) async {
+  Future<TranscriptResult> getTranscript(
+    String sha256,
+    String language, {
+    required String accessToken,
+  }) async {
     final response = await _dio.get<Map<String, dynamic>>(
-      '/api/v1/user-audio/transcript',
+      '/api/v2/user-audio/transcript',
       queryParameters: {'sha256': sha256, 'language': language},
+      options: _authOptions(accessToken),
     );
     return TranscriptResult.fromJson(response.data!);
+  }
+
+  Options _authOptions(String accessToken) {
+    return Options(headers: {'Authorization': 'Bearer $accessToken'});
   }
 
   /// 释放资源

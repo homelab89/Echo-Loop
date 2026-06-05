@@ -13,6 +13,8 @@ import 'package:echo_loop/providers/settings_provider.dart';
 import 'package:echo_loop/providers/transcription_task_provider.dart';
 import 'package:echo_loop/services/transcription_api_client.dart';
 import 'package:echo_loop/widgets/manage_subtitles_sheet.dart';
+import 'package:echo_loop/features/auth/providers/auth_providers.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../helpers/mock_providers.dart';
 import '../helpers/test_app.dart';
@@ -62,6 +64,9 @@ void main() {
           ),
           transcriptionApiClientProvider.overrideWith(
             (ref) => createTestTranscriptionApiClient(),
+          ),
+          supabaseSessionProvider.overrideWith(
+            (ref) => Stream<Session?>.value(null),
           ),
         ],
       );
@@ -216,6 +221,32 @@ void main() {
           find.widgetWithText(FilledButton, 'Start Transcription'),
         );
         expect(filledButton.onPressed, isNotNull);
+      });
+
+      testWidgets('未登录点击 AI 转录时显示登录弹窗', (tester) async {
+        final item = createTestAudioItem(transcriptPath: null);
+        await tester.pumpWidget(buildSheet(item));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.widgetWithText(FilledButton, 'Start Transcription'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Sign in to use AI transcription'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'AI transcription uses the cloud transcription service',
+          ),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(find.text('Sign in to use AI transcription'), findsNothing);
       });
     });
 

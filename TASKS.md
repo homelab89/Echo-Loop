@@ -1,7 +1,34 @@
 # Echo Loop 任务清单
 
 > 最后更新：2026-06-05
-> 当前焦点：AI 翻译/解析 v2 认证与登录弹窗（已完成）
+> 当前焦点：AI 转录 v2 认证与登录弹窗（已完成）
+
+## 已完成：AI 转录 v2 认证与登录弹窗
+
+将 AI 转录改为与翻译、解析、意群一致的认证策略：新版本客户端调用 v2 user-audio API 并携带 Supabase access token；旧版 v1 user-audio API 保持不变，避免老版本 App 用户立即无法使用。Flutter 端在点击 AI 转录入口时要求登录，未登录用户展示可关闭的登录弹窗；本地上传字幕不受影响。
+
+### 实现
+- [x] Flutter 转录请求切换到 `/api/v2/user-audio/upload-url`
+- [x] Flutter 转录提交切换到 `/api/v2/user-audio/submit-transcription`
+- [x] Flutter 转录轮询与结果获取切换到 `/api/v2/user-audio/job-status/[jobId]` 和 `/api/v2/user-audio/transcript`
+- [x] 请求 v2 user-audio API 时通过 `Authorization: Bearer <Supabase access token>` 发送认证信息
+- [x] 管理字幕弹窗点击 AI 转录时读取 Supabase session；未登录时展示登录弹窗，支持取消或跳转登录页
+- [x] 意群词级时间戳远端回补改为仅在有 access token 时访问 v2 transcript API；本地 DB 已有词级时间戳仍可未登录读取
+- [x] 后端新增 `/api/v2/user-audio/*`，复制 v1 业务逻辑后在用户端入口增加 Bearer token 校验
+- [x] v1 user-audio API 保持不变，支持旧版 App 继续使用
+- [x] 补充中英文登录提示文案并重新生成本地化代码
+
+### 验证
+- [x] `flutter gen-l10n`
+- [x] `dart format lib/services/transcription_api_client.dart lib/providers/transcription_task_provider.dart lib/utils/sense_group_service.dart lib/widgets/manage_subtitles_sheet.dart lib/widgets/practice/annotation_content_view.dart test/helpers/mock_providers.dart test/providers/transcription_task_provider_test.dart test/services/transcription_api_client_test.dart test/widgets/manage_subtitles_sheet_test.dart`
+- [x] `flutter analyze lib/services/transcription_api_client.dart lib/providers/transcription_task_provider.dart lib/utils/sense_group_service.dart lib/widgets/manage_subtitles_sheet.dart lib/widgets/practice/annotation_content_view.dart test/providers/transcription_task_provider_test.dart test/services/transcription_api_client_test.dart test/widgets/manage_subtitles_sheet_test.dart`：No issues found
+- [x] `flutter test test/services/transcription_api_client_test.dart test/providers/transcription_task_provider_test.dart test/widgets/manage_subtitles_sheet_test.dart`：43 tests passed
+- [x] 后端 `pnpm exec biome format --write apps/app/app/api/v2/user-audio/upload-url/route.ts apps/app/app/api/v2/user-audio/submit-transcription/route.ts apps/app/app/api/v2/user-audio/job-status/[jobId]/route.ts apps/app/app/api/v2/user-audio/transcript/route.ts apps/app/__tests__/user-audio-v2-auth.test.ts`
+- [x] 后端 `pnpm exec vitest run __tests__/user-audio-v2-auth.test.ts`：4 tests passed
+- [x] 后端 `pnpm --filter app typecheck`：通过
+- [x] `scripts/check.sh`：全量 `flutter analyze` 通过（仅仓库既有 warning/info）；全量 `flutter test` 2448 tests passed，11 skip；macOS integration 中 `native_audio_decoder_integration_test.dart` 通过，后续 `asr_engine_test.dart` / `app_test.dart` 失败在本地 App debug connection 启动失败（`The log reader stopped unexpectedly, or never started`），与本次 AI 转录认证改动无关
+
+**完成时间**: 2026-06-05 19:02 +0800
 
 ## 已完成：AI 翻译/解析 v2 认证与登录弹窗
 

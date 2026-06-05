@@ -2473,6 +2473,13 @@ class AppLocalizationsZh extends AppLocalizations {
       'AI 翻译、解析和意群拆分需要使用云端 AI 服务。登录后可以继续生成新结果，已缓存的结果仍可正常查看。';
 
   @override
+  String get transcriptionSignInRequiredTitle => '登录后使用 AI 转录';
+
+  @override
+  String get transcriptionSignInRequiredMessage =>
+      'AI 转录需要使用云端转录服务。登录后可以继续用 AI 生成字幕。';
+
+  @override
   String get senseGroupNotAvailable => '仅 AI 转录的音频支持意群拆分';
 
   @override

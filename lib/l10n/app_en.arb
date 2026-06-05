@@ -1364,6 +1364,8 @@
   "senseGroupLoadFailed": "Sense group splitting failed, please retry",
   "senseGroupSignInRequiredTitle": "Sign in to use AI features",
   "senseGroupSignInRequiredMessage": "AI translation, analysis, and sense group splitting use the cloud AI service. Sign in to generate new results. Cached results remain available.",
+  "transcriptionSignInRequiredTitle": "Sign in to use AI transcription",
+  "transcriptionSignInRequiredMessage": "AI transcription uses the cloud transcription service. Sign in to transcribe audio with AI.",
   "senseGroupNotAvailable": "Only available for AI-transcribed audio",
   "wordTimestampsNotFound": "Word-level timestamps not found. Please restart the app to retry.",
 

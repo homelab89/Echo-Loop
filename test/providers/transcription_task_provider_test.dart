@@ -165,7 +165,11 @@ void main() {
       verifyNever(() => mockFileOps.computeSha256(any()));
 
       // 发起请求应被忽略
-      await notifier.startTranscription(_testAudioItem(), 'en');
+      await notifier.startTranscription(
+        _testAudioItem(),
+        'en',
+        accessToken: 'token',
+      );
       verifyNever(() => mockFileOps.computeSha256(any()));
 
       container.dispose();
@@ -181,7 +185,11 @@ void main() {
       );
 
       notifier.state = {'test-audio-1': const TranscriptionUploading()};
-      await notifier.startTranscription(_testAudioItem(), 'en');
+      await notifier.startTranscription(
+        _testAudioItem(),
+        'en',
+        accessToken: 'token',
+      );
       verifyNever(() => mockFileOps.computeSha256(any()));
 
       container.dispose();
@@ -199,7 +207,11 @@ void main() {
       notifier.state = {
         'test-audio-1': const TranscriptionProcessing(jobId: 'j1'),
       };
-      await notifier.startTranscription(_testAudioItem(), 'en');
+      await notifier.startTranscription(
+        _testAudioItem(),
+        'en',
+        accessToken: 'token',
+      );
       verifyNever(() => mockFileOps.computeSha256(any()));
 
       container.dispose();
@@ -258,6 +270,7 @@ void main() {
           sha256: any(named: 'sha256'),
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async => const UploadUrlResponse(
@@ -276,6 +289,7 @@ void main() {
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
           language: any(named: 'language'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async => SubmitTranscriptionResponse(
@@ -311,7 +325,7 @@ void main() {
         },
       );
 
-      await notifier.startTranscription(audioItem, 'en');
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
 
       // 不应调用 uploadToR2
       verifyNever(
@@ -323,7 +337,10 @@ void main() {
       );
 
       // 不应轮询
-      verifyNever(() => mockApi.getJobStatus(any()));
+      verifyNever(
+        () =>
+            mockApi.getJobStatus(any(), accessToken: any(named: 'accessToken')),
+      );
 
       // 应该保存 SRT
       verify(() => mockFileOps.saveSrt('test-audio-1', any())).called(1);
@@ -356,6 +373,7 @@ void main() {
           sha256: any(named: 'sha256'),
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async => const UploadUrlResponse(
@@ -375,6 +393,7 @@ void main() {
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
           language: any(named: 'language'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async =>
@@ -383,11 +402,20 @@ void main() {
 
       // 轮询第一次返回 succeeded
       when(
-        () => mockApi.getJobStatus('job-123'),
+        () => mockApi.getJobStatus(
+          'job-123',
+          accessToken: any(named: 'accessToken'),
+        ),
       ).thenAnswer((_) async => const JobStatusResponse(status: 'succeeded'));
 
       // 获取转录结果
-      when(() => mockApi.getTranscript('abc123', 'en')).thenAnswer(
+      when(
+        () => mockApi.getTranscript(
+          'abc123',
+          'en',
+          accessToken: any(named: 'accessToken'),
+        ),
+      ).thenAnswer(
         (_) async => TranscriptResult(
           sentences: [
             TranscriptSentence(
@@ -414,7 +442,7 @@ void main() {
         transcriptionTaskManagerProvider.notifier,
       );
 
-      await notifier.startTranscription(audioItem, 'en');
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
 
       // 不应上传
       verifyNever(
@@ -426,7 +454,12 @@ void main() {
       );
 
       // 应该轮询
-      verify(() => mockApi.getJobStatus('job-123')).called(1);
+      verify(
+        () => mockApi.getJobStatus(
+          'job-123',
+          accessToken: any(named: 'accessToken'),
+        ),
+      ).called(1);
 
       // 最终完成
       expect(
@@ -451,6 +484,7 @@ void main() {
           sha256: any(named: 'sha256'),
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async => const UploadUrlResponse(
@@ -468,6 +502,7 @@ void main() {
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
           language: any(named: 'language'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async => SubmitTranscriptionResponse(
@@ -511,7 +546,7 @@ void main() {
         transcriptionTaskManagerProvider.notifier,
       );
 
-      await notifier.startTranscription(audioItem, 'en');
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
 
       verify(
         () => mockAutoAlignService.alignIfPossible(
@@ -538,6 +573,7 @@ void main() {
           sha256: any(named: 'sha256'),
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async => const UploadUrlResponse(
@@ -555,6 +591,7 @@ void main() {
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
           language: any(named: 'language'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async => SubmitTranscriptionResponse(
@@ -610,7 +647,7 @@ void main() {
         transcriptionTaskManagerProvider.notifier,
       );
 
-      await notifier.startTranscription(audioItem, 'en');
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
 
       verifyNever(
         () => mockAutoAlignService.alignIfPossible(
@@ -639,6 +676,7 @@ void main() {
           sha256: any(named: 'sha256'),
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async => const UploadUrlResponse(
@@ -656,6 +694,7 @@ void main() {
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
           language: any(named: 'language'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async => SubmitTranscriptionResponse(
@@ -699,7 +738,7 @@ void main() {
         transcriptionTaskManagerProvider.notifier,
       );
 
-      await notifier.startTranscription(audioItem, 'en');
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
 
       verifyNever(
         () => mockAutoAlignService.alignIfPossible(
@@ -725,6 +764,7 @@ void main() {
           sha256: any(named: 'sha256'),
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer((_) async => const UploadUrlResponse(audioExists: true));
 
@@ -738,6 +778,7 @@ void main() {
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
           language: any(named: 'language'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async => const SubmitTranscriptionResponse(cached: false),
@@ -752,7 +793,7 @@ void main() {
         transcriptionTaskManagerProvider.notifier,
       );
 
-      await notifier.startTranscription(audioItem, 'en');
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
 
       final state = notifier.getTaskState('test-audio-1');
       expect(state, isA<TranscriptionFailed>());
@@ -774,6 +815,7 @@ void main() {
           sha256: any(named: 'sha256'),
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenThrow(
         DioException(
@@ -792,7 +834,7 @@ void main() {
         transcriptionTaskManagerProvider.notifier,
       );
 
-      await notifier.startTranscription(audioItem, 'en');
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
 
       final state = notifier.getTaskState('test-audio-1');
       expect(state, isA<TranscriptionFailed>());
@@ -814,6 +856,7 @@ void main() {
           sha256: any(named: 'sha256'),
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenThrow(
         DioException(
@@ -831,7 +874,7 @@ void main() {
         transcriptionTaskManagerProvider.notifier,
       );
 
-      await notifier.startTranscription(audioItem, 'en');
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
 
       // Cancel 不应设置 Failed，状态停留在最后一次 _updateState
       final state = notifier.getTaskState('test-audio-1');
@@ -853,6 +896,7 @@ void main() {
           sha256: any(named: 'sha256'),
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer((_) async => const UploadUrlResponse(audioExists: true));
 
@@ -865,13 +909,19 @@ void main() {
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
           language: any(named: 'language'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenAnswer(
         (_) async =>
             const SubmitTranscriptionResponse(cached: false, jobId: 'job-fail'),
       );
 
-      when(() => mockApi.getJobStatus('job-fail')).thenAnswer(
+      when(
+        () => mockApi.getJobStatus(
+          'job-fail',
+          accessToken: any(named: 'accessToken'),
+        ),
+      ).thenAnswer(
         (_) async => const JobStatusResponse(
           status: 'failed',
           errorMessage: 'Deepgram error: unsupported format',
@@ -887,7 +937,7 @@ void main() {
         transcriptionTaskManagerProvider.notifier,
       );
 
-      await notifier.startTranscription(audioItem, 'en');
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
 
       final state = notifier.getTaskState('test-audio-1');
       expect(state, isA<TranscriptionFailed>());
@@ -906,6 +956,7 @@ void main() {
           sha256: any(named: 'sha256'),
           mimeType: any(named: 'mimeType'),
           fileSize: any(named: 'fileSize'),
+          accessToken: any(named: 'accessToken'),
         ),
       ).thenThrow(
         DioException(
@@ -923,7 +974,7 @@ void main() {
         transcriptionTaskManagerProvider.notifier,
       );
 
-      await notifier.startTranscription(audioItem, 'en');
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
 
       // 不应调用 computeSha256
       verifyNever(() => mockFileOps.computeSha256(any()));

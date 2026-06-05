@@ -127,7 +127,12 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
   ///
   /// [audioItem] 要转录的音频项。
   /// [language] 转录语言 ('en' 或 'multi')。
-  Future<void> startTranscription(AudioItem audioItem, String language) async {
+  /// [accessToken] Supabase 登录态 token，用于访问受保护的 v2 转录 API。
+  Future<void> startTranscription(
+    AudioItem audioItem,
+    String language, {
+    required String accessToken,
+  }) async {
     final audioId = audioItem.id;
 
     // 防止重复发起
@@ -171,6 +176,7 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
         sha256: sha256,
         mimeType: mimeType,
         fileSize: fileSize,
+        accessToken: accessToken,
       );
 
       if (cancelToken.isCancelled) return;
@@ -206,6 +212,7 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
         mimeType: mimeType,
         fileSize: fileSize,
         language: language,
+        accessToken: accessToken,
       );
 
       if (cancelToken.isCancelled) return;
@@ -235,6 +242,7 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
         submitResp.jobId!,
         sha256,
         language,
+        accessToken,
         cancelToken,
       );
     } on DioException catch (e) {
@@ -286,6 +294,7 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
     String jobId,
     String sha256,
     String language,
+    String accessToken,
     CancelToken cancelToken,
   ) async {
     final api = ref.read(transcriptionApiClientProvider);
@@ -300,10 +309,14 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
       if (cancelToken.isCancelled) return;
 
       try {
-        final status = await api.getJobStatus(jobId);
+        final status = await api.getJobStatus(jobId, accessToken: accessToken);
 
         if (status.isCompleted) {
-          final transcript = await api.getTranscript(sha256, language);
+          final transcript = await api.getTranscript(
+            sha256,
+            language,
+            accessToken: accessToken,
+          );
           if (cancelToken.isCancelled) return;
           await _saveTranscriptAndFinish(
             audioItem,

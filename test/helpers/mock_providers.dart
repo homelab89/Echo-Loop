@@ -318,7 +318,11 @@ class TestTranscriptionTaskManager extends TranscriptionTaskManager {
   Map<String, TranscriptionTaskState> build() => Map.of(_initialState);
 
   @override
-  Future<void> startTranscription(AudioItem audioItem, String language) async {}
+  Future<void> startTranscription(
+    AudioItem audioItem,
+    String language, {
+    required String accessToken,
+  }) async {}
 
   @override
   void cancelTranscription(String audioId) {

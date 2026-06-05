@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:echo_loop/services/transcription_api_client.dart';
+
+class MockDio extends Mock implements Dio {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -141,6 +144,117 @@ void main() {
       final client = TranscriptionApiClient.withDio(dio);
       expect(client, isNotNull);
       client.dispose();
+    });
+
+    test('getUploadUrl 使用 v2 API 并携带 Bearer token', () async {
+      final dio = MockDio();
+      final client = TranscriptionApiClient.withDio(dio);
+      when(
+        () => dio.post<Map<String, dynamic>>(
+          '/api/v2/user-audio/upload-url',
+          data: {'sha256': 'sha', 'mimeType': 'audio/mpeg', 'fileSize': 123},
+          options: any(
+            named: 'options',
+            that: isA<Options>().having(
+              (o) => o.headers?['Authorization'],
+              'Authorization',
+              'Bearer access-token',
+            ),
+          ),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: {'audioExists': true},
+          requestOptions: RequestOptions(),
+        ),
+      );
+
+      final response = await client.getUploadUrl(
+        sha256: 'sha',
+        mimeType: 'audio/mpeg',
+        fileSize: 123,
+        accessToken: 'access-token',
+      );
+
+      expect(response.audioExists, isTrue);
+    });
+
+    test('submitTranscription 使用 v2 API 并携带 Bearer token', () async {
+      final dio = MockDio();
+      final client = TranscriptionApiClient.withDio(dio);
+      when(
+        () => dio.post<Map<String, dynamic>>(
+          '/api/v2/user-audio/submit-transcription',
+          data: {'sha256': 'sha', 'language': 'en'},
+          options: any(
+            named: 'options',
+            that: isA<Options>().having(
+              (o) => o.headers?['Authorization'],
+              'Authorization',
+              'Bearer access-token',
+            ),
+          ),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: {'cached': false, 'jobId': 'job-1'},
+          requestOptions: RequestOptions(),
+        ),
+      );
+
+      final response = await client.submitTranscription(
+        sha256: 'sha',
+        language: 'en',
+        accessToken: 'access-token',
+      );
+
+      expect(response.jobId, 'job-1');
+    });
+
+    test('getJobStatus 和 getTranscript 使用 v2 API 并携带 Bearer token', () async {
+      final dio = MockDio();
+      final client = TranscriptionApiClient.withDio(dio);
+      final authOptions = isA<Options>().having(
+        (o) => o.headers?['Authorization'],
+        'Authorization',
+        'Bearer access-token',
+      );
+      when(
+        () => dio.get<Map<String, dynamic>>(
+          '/api/v2/user-audio/job-status/job-1',
+          options: any(named: 'options', that: authOptions),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: {'status': 'succeeded'},
+          requestOptions: RequestOptions(),
+        ),
+      );
+      when(
+        () => dio.get<Map<String, dynamic>>(
+          '/api/v2/user-audio/transcript',
+          queryParameters: {'sha256': 'sha', 'language': 'en'},
+          options: any(named: 'options', that: authOptions),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: {'sentences': [], 'fullText': ''},
+          requestOptions: RequestOptions(),
+        ),
+      );
+
+      final status = await client.getJobStatus(
+        'job-1',
+        accessToken: 'access-token',
+      );
+      final transcript = await client.getTranscript(
+        'sha',
+        'en',
+        accessToken: 'access-token',
+      );
+
+      expect(status.isCompleted, isTrue);
+      expect(transcript.sentences, isEmpty);
     });
   });
 }

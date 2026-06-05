@@ -171,6 +171,7 @@ class _AnnotationContentViewState extends ConsumerState<AnnotationContentView> {
       audioItemId: audioItemId,
       dao: ref.read(audioItemDaoProvider),
       api: ref.read(transcriptionApiClientProvider),
+      accessToken: ref.read(supabaseSessionProvider).valueOrNull?.accessToken,
     );
     if (mounted && widget.audioItemId == audioItemId) {
       setState(() => _wordTimestamps = words);

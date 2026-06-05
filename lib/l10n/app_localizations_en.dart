@@ -2552,6 +2552,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'AI translation, analysis, and sense group splitting use the cloud AI service. Sign in to generate new results. Cached results remain available.';
 
   @override
+  String get transcriptionSignInRequiredTitle =>
+      'Sign in to use AI transcription';
+
+  @override
+  String get transcriptionSignInRequiredMessage =>
+      'AI transcription uses the cloud transcription service. Sign in to transcribe audio with AI.';
+
+  @override
   String get senseGroupNotAvailable =>
       'Only available for AI-transcribed audio';
 

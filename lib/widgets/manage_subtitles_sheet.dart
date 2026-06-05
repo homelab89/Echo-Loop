@@ -6,8 +6,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:universal_io/io.dart';
 import '../analytics/models/event_names.dart';
+import '../features/auth/providers/auth_providers.dart';
 import '../features/usage/usage_event.dart';
 import '../features/usage/usage_providers.dart';
 import '../models/audio_item.dart';
@@ -18,6 +20,7 @@ import '../providers/listening_practice/listening_practice_provider.dart';
 import '../providers/new_user_guide_provider.dart';
 import '../providers/transcription_task_provider.dart';
 import '../l10n/app_localizations.dart';
+import '../router/app_router.dart';
 import '../services/subtitle_parser.dart';
 import '../theme/app_theme.dart';
 import '../utils/transcript_picker.dart';
@@ -947,6 +950,14 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
     AudioItem audioItem,
   ) async {
     final l10n = AppLocalizations.of(context)!;
+    final accessToken = ref
+        .read(supabaseSessionProvider)
+        .valueOrNull
+        ?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      await _showTranscriptionSignInDialog(context);
+      return;
+    }
 
     // 检查时长限制
     if (audioItem.totalDuration > _maxDurationSeconds) {
@@ -1002,7 +1013,11 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
     // 启动后台转录任务
     ref
         .read(transcriptionTaskManagerProvider.notifier)
-        .startTranscription(audioItem, _selectedLanguage);
+        .startTranscription(
+          audioItem,
+          _selectedLanguage,
+          accessToken: accessToken,
+        );
     ref
         .read(usageTrackerProvider)
         .record(
@@ -1012,6 +1027,39 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
             EventParams.audioName: audioItem.name,
           },
         );
+  }
+
+  /// 展示 AI 转录登录引导弹窗。
+  ///
+  /// AI 转录会上传音频并访问云端转录服务，因此只允许登录用户发起；
+  /// 本地上传字幕和已有本地字幕不受影响。
+  Future<void> _showTranscriptionSignInDialog(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final shouldOpenLogin = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          l10n?.transcriptionSignInRequiredTitle ??
+              'Sign in to use AI transcription',
+        ),
+        content: Text(
+          l10n?.transcriptionSignInRequiredMessage ??
+              'AI transcription uses the cloud transcription service. Sign in to transcribe audio with AI.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n?.cancel ?? 'Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n?.authSignInButton ?? 'Sign In'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || !context.mounted || shouldOpenLogin != true) return;
+    context.push(AppRoutes.login);
   }
 
   /// 处理删除字幕

@@ -23,6 +23,7 @@ class SenseGroupService {
     required String audioItemId,
     required AudioItemDao dao,
     required TranscriptionApiClient api,
+    required String? accessToken,
   }) async {
     final audioItem = await dao.getById(audioItemId);
     if (audioItem == null) return null;
@@ -42,9 +43,14 @@ class SenseGroupService {
     final sha256 = audioItem.audioSha256;
     final language = audioItem.transcriptLanguage;
     if (sha256 == null || language == null) return null;
+    if (accessToken == null || accessToken.isEmpty) return null;
 
     try {
-      final result = await api.getTranscript(sha256, language);
+      final result = await api.getTranscript(
+        sha256,
+        language,
+        accessToken: accessToken,
+      );
       if (result.words != null && result.words!.isNotEmpty) {
         await dao.updateWordTimestamps(
           audioItemId,
