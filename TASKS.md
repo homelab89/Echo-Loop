@@ -1,7 +1,24 @@
 # Echo Loop 任务清单
 
 > 最后更新：2026-06-05
-> 当前焦点：字幕编辑器波形边界手柄与最大缩放（已完成）
+> 当前焦点：字幕编辑器移除主播放按钮（已完成）
+
+## 已完成：字幕编辑器移除主播放按钮
+
+移除字幕编辑页波形控制条里的主播放/暂停按钮，避免与句子列表左侧的单句播放入口重复；保留缩放滑块、倍速菜单和每句播放/停止行为。
+
+### 实现
+- [x] `_WaveformControls` 删除主播放按钮和 `togglePlaybackFromPlayhead` UI 入口
+- [x] 保留句子行播放按钮，仍支持单句播放、切换句子播放和停止
+- [x] 更新字幕编辑器 widget 测试，不再期望波形控制条出现全局播放图标
+
+### 验证
+- [x] `dart format lib/features/subtitle_editor/subtitle_simple_editor_screen.dart test/features/subtitle_editor/subtitle_waveform_view_test.dart`
+- [x] `flutter analyze lib/features/subtitle_editor/subtitle_simple_editor_screen.dart test/features/subtitle_editor/subtitle_waveform_view_test.dart`：No issues found
+- [x] `flutter test test/features/subtitle_editor/subtitle_waveform_view_test.dart`：11 tests passed
+- [x] `scripts/check.sh`：已执行，全量 `flutter analyze` 通过（仅仓库既有 warning/info）；全量 `flutter test` 开始后被用户中断，未返回最终结果
+
+**完成时间**: 2026-06-05 23:29 +0800
 
 ## 已完成：字幕编辑器波形边界手柄与最大缩放
 

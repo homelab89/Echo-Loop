@@ -417,7 +417,7 @@ void main() {
       audioEngine.disposeController();
     });
 
-    testWidgets('波形下方显示播放、缩放和速度控制', (tester) async {
+    testWidgets('波形下方显示缩放和速度控制', (tester) async {
       final audioEngine = _ScreenTestAudioEngine(
         duration: const Duration(seconds: 10),
         sentences: _sentences(),
@@ -432,7 +432,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow), findsNothing);
       expect(
         find.byKey(const ValueKey('subtitle-waveform-zoom-slider')),
         findsOneWidget,

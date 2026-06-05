@@ -117,12 +117,9 @@ class _SubtitleSimpleEditorScreenState
                     onAdjustEnd: () {},
                   ),
                   _WaveformControls(
-                    isPlaying: state.isPlaying,
                     zoomScale: state.waveformZoomScale,
                     maxZoomScale: state.maxWaveformZoomScale,
                     playbackSpeed: state.playbackSpeed,
-                    onTogglePlayback: () =>
-                        unawaited(controller.togglePlaybackFromPlayhead()),
                     onZoomChanged: controller.setWaveformZoomScale,
                     onSpeedChanged: (speed) =>
                         unawaited(controller.setPlaybackSpeed(speed)),
@@ -231,20 +228,16 @@ class _SubtitleSimpleEditorScreenState
 class _WaveformControls extends StatelessWidget {
   static const _speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 
-  final bool isPlaying;
   final double zoomScale;
   final double maxZoomScale;
   final double playbackSpeed;
-  final VoidCallback onTogglePlayback;
   final ValueChanged<double> onZoomChanged;
   final ValueChanged<double> onSpeedChanged;
 
   const _WaveformControls({
-    required this.isPlaying,
     required this.zoomScale,
     required this.maxZoomScale,
     required this.playbackSpeed,
-    required this.onTogglePlayback,
     required this.onZoomChanged,
     required this.onSpeedChanged,
   });
@@ -272,12 +265,6 @@ class _WaveformControls extends StatelessWidget {
         ),
         child: Row(
           children: [
-            IconButton.filledTonal(
-              tooltip: isPlaying ? l10n.stopPlayback : l10n.play,
-              icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-              onPressed: onTogglePlayback,
-            ),
-            const SizedBox(width: AppSpacing.l),
             Icon(
               Icons.zoom_out,
               size: 20,
