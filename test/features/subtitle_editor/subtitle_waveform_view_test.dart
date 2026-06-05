@@ -508,13 +508,15 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('subtitle-sentence-play-0')));
       await tester.pump();
 
-      expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow_rounded), findsWidgets);
+      expect(find.byIcon(Icons.play_circle_outline), findsNothing);
+      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
       expect(audioEngine.lastPlayedSentence?.index, 0);
 
       await tester.tap(find.byKey(const ValueKey('subtitle-sentence-play-1')));
       await tester.pump();
 
-      expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
       expect(audioEngine.lastPlayedSentence?.index, 1);
       expect(audioEngine.stopPlaybackCallCount, 1);
 
@@ -522,7 +524,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.byIcon(Icons.stop_circle_outlined), findsNothing);
+      expect(find.byIcon(Icons.stop_rounded), findsNothing);
       audioEngine.disposeController();
     });
   });

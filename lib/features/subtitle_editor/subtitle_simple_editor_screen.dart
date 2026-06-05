@@ -499,8 +499,8 @@ class _SentenceListState extends State<_SentenceList> {
                         child: Center(
                           child: Icon(
                             isPlaying
-                                ? Icons.stop_circle_outlined
-                                : Icons.play_circle_outline,
+                                ? Icons.stop_rounded
+                                : Icons.play_arrow_rounded,
                             // 播放中用 primary 实色单点强调，区别于「仅选中定位」的行底高亮
                             color: isPlaying ? theme.colorScheme.primary : null,
                           ),

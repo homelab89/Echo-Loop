@@ -1,7 +1,24 @@
 # Echo Loop 任务清单
 
 > 最后更新：2026-06-05
-> 当前焦点：字幕编辑器波形控制区标签优化（已完成）
+> 当前焦点：字幕编辑器句子播放按钮去圆圈化（已完成）
+
+## 已完成：字幕编辑器句子播放按钮去圆圈化
+
+将字幕编辑页句子 item 左侧播放入口从带圆圈的播放/停止图标改为更轻量的无圆圈图标，降低列表里的重复视觉噪音，同时保留整列固定点击区域和播放中主色强调。
+
+### 实现
+- [x] 默认态从 `play_circle_outline` 改为无圆圈的 `play_arrow_rounded`
+- [x] 播放中从 `stop_circle_outlined` 改为无圆圈的 `stop_rounded`
+- [x] 保留左侧固定宽度点击区、tooltip 和播放/停止行为
+- [x] 更新字幕编辑器 widget 测试，覆盖旧圆圈图标移除与播放态切换
+
+### 验证
+- [x] `dart format lib/features/subtitle_editor/subtitle_simple_editor_screen.dart test/features/subtitle_editor/subtitle_waveform_view_test.dart`
+- [x] `flutter analyze lib/features/subtitle_editor/subtitle_simple_editor_screen.dart test/features/subtitle_editor/subtitle_waveform_view_test.dart`：No issues found
+- [x] `flutter test test/features/subtitle_editor/subtitle_waveform_view_test.dart`：12 tests passed
+
+**完成时间**: 2026-06-05 23:57 +0800
 
 ## 已完成：字幕编辑器波形控制区标签优化
 
