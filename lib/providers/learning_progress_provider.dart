@@ -180,7 +180,20 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
     final dao = ref.read(learningProgressDaoProvider);
     final row = await dao.getByAudioId(audioItemId);
     if (row == null) {
-      return state.progressMap[audioItemId];
+      if (state.progressMap.containsKey(audioItemId) ||
+          state.completionsByAudio.containsKey(audioItemId)) {
+        final newMap = Map<String, LearningProgress>.from(state.progressMap);
+        newMap.remove(audioItemId);
+        final newCompletions = Map<String, Set<String>>.from(
+          state.completionsByAudio,
+        );
+        newCompletions.remove(audioItemId);
+        state = state.copyWith(
+          progressMap: newMap,
+          completionsByAudio: newCompletions,
+        );
+      }
+      return null;
     }
 
     final latest = _fromDbRow(row);

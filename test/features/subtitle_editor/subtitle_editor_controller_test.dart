@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:echo_loop/database/app_database.dart' show BookmarksCompanion;
+import 'package:echo_loop/database/enums.dart';
 import 'package:echo_loop/database/providers.dart';
 import 'package:echo_loop/features/subtitle_editor/subtitle_edit_engine.dart';
 import 'package:echo_loop/features/subtitle_editor/subtitle_editor_controller.dart';
@@ -1015,6 +1016,101 @@ void main() {
             .containsKey(audioItem.id),
         isFalse,
         reason: '句子数量变化，学习进度应清空',
+      );
+    });
+
+    test('保存确认只在句子数量变化且已有实际进度或收藏时需要', () async {
+      Future<SubtitleEditorController> loadedNotifier({
+        required TestBookmarkDao bookmarkDao,
+        required TestLearningProgressNotifier progressNotifier,
+      }) async {
+        final engine = _RecordingAudioEngine(
+          duration: const Duration(seconds: 12),
+          sentences: sentences,
+        );
+        addTearDown(engine.disposeController);
+        final c = ProviderContainer(
+          overrides: [
+            audioEngineProvider.overrideWith(() => engine),
+            bookmarkDaoProvider.overrideWithValue(bookmarkDao),
+            audioItemDaoProvider.overrideWithValue(TestAudioItemDao()),
+            audioLibraryProvider.overrideWith(() => TestAudioLibrary()),
+            listeningPracticeProvider.overrideWith(
+              () => TestListeningPractice(),
+            ),
+            learningProgressNotifierProvider.overrideWith(
+              () => progressNotifier,
+            ),
+          ],
+        );
+        addTearDown(c.dispose);
+        c.listen(subtitleEditorControllerProvider(audioItem), (_, _) {});
+        final notifier = c.read(
+          subtitleEditorControllerProvider(audioItem).notifier,
+        );
+        await notifier.load();
+        notifier.deleteSentence(2);
+        return notifier;
+      }
+
+      final emptyNotifier = await loadedNotifier(
+        bookmarkDao: TestBookmarkDao(),
+        progressNotifier: TestLearningProgressNotifier(),
+      );
+      expect(emptyNotifier.sentenceCountChanged, isTrue);
+      expect(await emptyNotifier.hasResettableLearningData(), isFalse);
+
+      final bookmarkOnlyDao = TestBookmarkDao();
+      await bookmarkOnlyDao.addBookmark(
+        BookmarksCompanion.insert(
+          audioItemId: audioItem.id,
+          sentenceIndex: 1,
+          sentenceText: 'Second sentence.',
+          startTime: 4,
+          endTime: 8,
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        ),
+      );
+      final bookmarkNotifier = await loadedNotifier(
+        bookmarkDao: bookmarkOnlyDao,
+        progressNotifier: TestLearningProgressNotifier(),
+      );
+      expect(await bookmarkNotifier.hasResettableLearningData(), isTrue);
+
+      final progressNotifier = await loadedNotifier(
+        bookmarkDao: TestBookmarkDao(),
+        progressNotifier: TestLearningProgressNotifier(
+          LearningProgressState(
+            progressMap: {
+              audioItem.id: LearningProgress(
+                audioItemId: audioItem.id,
+                currentSubStage: SubStageType.intensiveListen,
+                updatedAt: DateTime(2026, 1, 1),
+              ),
+            },
+          ),
+        ),
+      );
+      expect(await progressNotifier.hasResettableLearningData(), isTrue);
+
+      final placeholderNotifier = await loadedNotifier(
+        bookmarkDao: TestBookmarkDao(),
+        progressNotifier: TestLearningProgressNotifier(
+          LearningProgressState(
+            progressMap: {
+              audioItem.id: LearningProgress(
+                audioItemId: audioItem.id,
+                updatedAt: DateTime(2026, 1, 1),
+              ),
+            },
+          ),
+        ),
+      );
+      expect(
+        await placeholderNotifier.hasResettableLearningData(),
+        isFalse,
+        reason: 'ensureProgress 创建的默认起点行不代表用户已有学习进度',
       );
     });
 

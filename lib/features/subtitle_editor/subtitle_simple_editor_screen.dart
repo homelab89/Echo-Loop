@@ -209,9 +209,11 @@ class _SubtitleSimpleEditorScreenState
     SubtitleEditorController controller,
     AppLocalizations l10n,
   ) async {
-    // 仅调整时间戳（句子数量不变）不会清空学习进度和收藏，无需弹窗确认，直接保存；
-    // 仅在句子数量变化（合并/删除）时提示「将清空进度」。
-    if (controller.sentenceCountChanged) {
+    // 仅调整时间戳（句子数量不变）不会清空学习进度和收藏，无需弹窗确认。
+    // 句子数量变化但本音频没有学习进度/收藏时，也直接保存，不打断用户。
+    final needsConfirmation = await controller.hasResettableLearningData();
+    if (!context.mounted) return;
+    if (needsConfirmation) {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(

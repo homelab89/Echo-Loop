@@ -191,7 +191,7 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
                   ),
                 ),
               ),
-              // 标题行 + 删除按钮
+              // 标题行 + 编辑/删除按钮
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
                 child: Row(
@@ -204,18 +204,29 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
                         ),
                       ),
                     ),
-                    // 删除按钮（仅有字幕且非进度模式时显示）
-                    if (audioItem.hasTranscript && !isTaskActive)
+                    // 编辑与删除仅在已有字幕且没有进行中的转录任务时显示。
+                    if (audioItem.hasTranscript && !isTaskActive) ...[
+                      Tooltip(
+                        message: l10n.editSubtitles,
+                        child: IconButton(
+                          onPressed: () =>
+                              _openSubtitleEditor(context, audioItem),
+                          icon: const Icon(Icons.edit_note, size: 20),
+                          color: theme.colorScheme.onSurfaceVariant,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
                       Tooltip(
                         message: l10n.deleteSubtitle,
                         child: IconButton(
                           onPressed: () =>
                               _handleDeleteSubtitle(context, audioItem),
                           icon: const Icon(Icons.delete_outline, size: 20),
-                          color: theme.colorScheme.onSurfaceVariant,
+                          color: theme.colorScheme.error,
                           visualDensity: VisualDensity.compact,
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -306,6 +317,13 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
     key: _keyStartTranscription,
     description: l10n.guidePlanStartTranscriptionDescription,
   );
+
+  /// 关闭管理弹窗后打开字幕编辑器，与音频菜单的编辑入口保持一致。
+  void _openSubtitleEditor(BuildContext context, AudioItem audioItem) {
+    final router = GoRouter.of(context);
+    Navigator.pop(context);
+    router.push(AppRoutes.subtitleEditor(audioItem.id), extra: audioItem);
+  }
 
   /// 构建进度视图（带圆角背景卡片 + 圆形图标容器）
   Widget _buildProgressView(

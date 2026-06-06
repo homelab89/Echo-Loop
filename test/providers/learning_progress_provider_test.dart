@@ -1236,6 +1236,36 @@ void main() {
   });
 
   group('getLatestOrEnsureProgress', () {
+    test('数据库已无进度时清除内存旧进度和完成集合', () async {
+      final stale = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.review1,
+        currentSubStage: SubStageType.blindListen,
+        updatedAt: DateTime(2026, 3, 11, 9, 0),
+      );
+      final container = createContainer(
+        LearningProgressState(
+          progressMap: {'a1': stale},
+          completionsByAudio: {
+            'a1': {'firstLearn:blindListen'},
+          },
+        ),
+      );
+
+      final result = await notifier(container).getLatestByAudioId('a1');
+
+      expect(result, isNull);
+      expect(readProgress(container, 'a1'), isNull);
+      expect(
+        container
+            .read(learningProgressNotifierProvider)
+            .completionsByAudio
+            .containsKey('a1'),
+        isFalse,
+      );
+      verify(() => mockDao.getByAudioId('a1')).called(1);
+    });
+
     test('内存已有旧值时优先返回数据库最新断点并回填 state', () async {
       final stale = LearningProgress(
         audioItemId: 'a1',

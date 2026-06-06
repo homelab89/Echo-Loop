@@ -90,7 +90,7 @@ void main() {
         expect(find.byTooltip('Delete Subtitle'), findsNothing);
       });
 
-      testWidgets('有本地字幕音频：显示删除按钮，不显示编辑入口', (tester) async {
+      testWidgets('有本地字幕音频：显示编辑和红色删除按钮', (tester) async {
         final item = createTestAudioItem().copyWith(
           transcriptSource: TranscriptSource.local,
         );
@@ -100,10 +100,20 @@ void main() {
         await tester.tap(find.text('Open'));
         await tester.pumpAndSettle();
 
-        // 有删除按钮（标题栏右侧图标按钮）
+        // 标题栏右侧依次显示编辑和删除按钮。
+        expect(find.byTooltip('Edit subtitles'), findsOneWidget);
         expect(find.byTooltip('Delete Subtitle'), findsOneWidget);
-        // 编辑字幕入口保留在音频右键菜单中，管理字幕弹窗内不再重复显示。
-        expect(find.text('Edit subtitles'), findsNothing);
+
+        final deleteButton = tester.widget<IconButton>(
+          find.descendant(
+            of: find.byTooltip('Delete Subtitle'),
+            matching: find.byType(IconButton),
+          ),
+        );
+        final theme = Theme.of(
+          tester.element(find.byType(ManageSubtitlesSheet)),
+        );
+        expect(deleteButton.color, theme.colorScheme.error);
       });
 
       testWidgets('有 AI(en) 字幕音频：AI 同语言禁用', (tester) async {

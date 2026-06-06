@@ -211,6 +211,23 @@ class SubtitleEditorController extends StateNotifier<SubtitleEditorState> {
       _baselineSentenceCount != null &&
       state.sentences.length != _baselineSentenceCount;
 
+  /// 当前保存是否会清理已有学习数据。
+  ///
+  /// 句子数量变化会打乱基于句子索引保存的学习进度与收藏句子；但如果该音频本身
+  /// 没有任何进度或收藏，则无需在保存前打断用户确认。
+  Future<bool> hasResettableLearningData() async {
+    if (!sentenceCountChanged) return false;
+    final audioItemId = state.audioItem.id;
+    final bookmarks = await _ref
+        .read(bookmarkDaoProvider)
+        .getBookmarkedIndices(audioItemId);
+    if (bookmarks.isNotEmpty) return true;
+    final progress = await _ref
+        .read(learningProgressNotifierProvider.notifier)
+        .getLatestByAudioId(audioItemId);
+    return progress?.isStarted ?? false;
+  }
+
   /// 每厘米屏幕对应的逻辑像素数（160 逻辑像素/英寸 ÷ 2.54 厘米/英寸）。
   static const double _logicalPixelsPerCm = 160 / 2.54;
 

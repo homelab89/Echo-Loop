@@ -21,6 +21,24 @@
 
 **完成时间**: 2026-06-06 22:35 +0800
 
+## 已完成：管理字幕弹窗增加编辑入口与删除警示色
+
+在管理字幕弹窗标题栏的删除按钮左侧增加编辑字幕按钮，点击后关闭弹窗并进入与音频菜单相同的字幕编辑器；删除按钮改为主题红色警示色。
+
+### 实现
+- [x] 已有字幕且无转录任务进行时，标题栏依次显示编辑与删除按钮
+- [x] 编辑按钮复用 `AppRoutes.subtitleEditor` 路由并传入当前 `AudioItem`
+- [x] 删除按钮颜色改为 `colorScheme.error`
+- [x] 更新管理字幕弹窗 Widget 测试，覆盖编辑入口显示和删除警示色
+
+### 验证
+- [x] `dart format lib/widgets/manage_subtitles_sheet.dart test/widgets/manage_subtitles_sheet_test.dart`
+- [x] `flutter analyze lib/widgets/manage_subtitles_sheet.dart test/widgets/manage_subtitles_sheet_test.dart`：No issues found
+- [x] `flutter test test/widgets/manage_subtitles_sheet_test.dart`：11 passed
+- [x] `scripts/check.sh`：全量 `flutter analyze` 通过（仅仓库既有 101 条 warning/info）；全量 `flutter test` 至少运行 531 项未见失败，但工具会话在最终汇总前结束
+
+**完成时间**: 2026-06-06 22:19 +0800
+
 ## 已完成：修复自由练习点击句子从音频开头播放
 
 自由练习普通播放器点击字幕句子时，应从该句起点播放；此前字幕编辑器引入的无条件 `clearClip()` 会在无 clip 状态下也重载音源，导致选句后的 seek/play 退回音频开头。
