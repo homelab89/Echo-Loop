@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:echo_loop/database/enums.dart';
+import 'package:echo_loop/models/audio_item.dart';
 import 'package:echo_loop/models/learning_progress.dart';
 import 'package:echo_loop/providers/audio_library_provider.dart';
 import 'package:echo_loop/providers/audio_engine/audio_engine_provider.dart';
@@ -32,6 +33,83 @@ class _AudioListTileWrapper extends ConsumerWidget {
 }
 
 void main() {
+  group('AudioListTile 字幕标签', () {
+    Widget buildTile(AudioItem item) {
+      return createTestApp(
+        Center(
+          child: SizedBox(width: 360, child: AudioListTile(audioItem: item)),
+        ),
+        overrides: [
+          audioLibraryProvider.overrideWith(
+            () => TestAudioLibrary(AudioLibraryState(audioItems: [item])),
+          ),
+        ],
+      );
+    }
+
+    testWidgets('有字幕时第三行显示带图标、描边和浅色底的字幕标签', (tester) async {
+      final item = createTestAudioItem(name: 'Audio with transcript');
+
+      await tester.pumpWidget(buildTile(item));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('audio_list_tile_metadata_row')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('audio_list_tile_badge_row')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('audio_list_tile_transcript_badge')),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.subtitles_outlined), findsOneWidget);
+      expect(find.text('Transcript'), findsOneWidget);
+
+      final badge = tester.widget<Container>(
+        find.byKey(const Key('audio_list_tile_transcript_badge')),
+      );
+      switch (badge.decoration) {
+        case BoxDecoration(:final color, :final border):
+          expect(color, isNotNull);
+          expect(border, isNotNull);
+        default:
+          fail('字幕标签应使用 BoxDecoration');
+      }
+
+      final titleY = tester.getTopLeft(find.text('Audio with transcript')).dy;
+      final metadataY = tester
+          .getTopLeft(find.byKey(const Key('audio_list_tile_metadata_row')))
+          .dy;
+      final badgeY = tester
+          .getTopLeft(find.byKey(const Key('audio_list_tile_badge_row')))
+          .dy;
+      expect(metadataY, greaterThan(titleY));
+      expect(badgeY, greaterThan(metadataY));
+    });
+
+    testWidgets('无任何 badge 时只显示标题和元数据两行', (tester) async {
+      final item = createTestAudioItem(
+        name: 'Audio without transcript',
+        transcriptPath: null,
+        transcriptSource: null,
+      );
+
+      await tester.pumpWidget(buildTile(item));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('audio_list_tile_transcript_badge')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('audio_list_tile_badge_row')), findsNothing);
+      expect(find.byIcon(Icons.subtitles_outlined), findsNothing);
+      expect(find.text('Transcript'), findsNothing);
+    });
+  });
+
   group('AudioListTile 置顶菜单', () {
     final baseItem = createTestAudioItem(id: 'star-1', name: 'Star Audio');
 

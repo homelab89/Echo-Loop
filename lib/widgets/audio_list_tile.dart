@@ -226,10 +226,9 @@ class AudioListTile extends ConsumerWidget {
     return names;
   }
 
-  /// 构建副标题 Wrap 区域
+  /// 构建标题下方的元数据与状态标签区域。
   ///
-  /// 元数据用 `·` 分隔符合并为单行文本，减少 icon 噪音。
-  /// 转录进度、学习 badge、合集 chips、标签 chips 仍为独立 widget。
+  /// 第二行固定显示时长和日期；第三行仅在存在字幕、学习状态或其他标签时显示。
   Widget _buildSubtitle(
     BuildContext context,
     AppLocalizations l10n,
@@ -245,13 +244,9 @@ class AudioListTile extends ConsumerWidget {
         transcriptionTask is TranscriptionUploading ||
         transcriptionTask is TranscriptionProcessing;
 
-    // 构建元数据文本片段，用 · 分隔
     final metaParts = <String>[];
     if (audioItem.totalDuration > 0) {
       metaParts.add(_formatDuration(audioItem.totalDuration));
-    }
-    if (audioItem.hasTranscript && !isTranscribing) {
-      metaParts.add(l10n.transcript);
     }
     // 日期 meta：
     // - 用户自建音频：显示「添加于 X」（addedDate 是 import 时间，有意义）
@@ -259,121 +254,181 @@ class AudioListTile extends ConsumerWidget {
     //   originalDate 未录入则跳过
     if (audioItem.remoteAudioId == null) {
       metaParts.add(l10n.addedOn(_formatDate(context, audioItem.addedDate)));
-    } else if (audioItem.originalDate != null) {
-      metaParts.add(
-        l10n.publishedOn(_formatAbsoluteDate(audioItem.originalDate!)),
-      );
+    } else if (audioItem.originalDate case final originalDate?) {
+      metaParts.add(l10n.publishedOn(_formatAbsoluteDate(originalDate)));
     }
 
     final metaStyle = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
+    final hasBadgeRow =
+        audioItem.hasTranscript ||
+        isTranscribing ||
+        (progress?.isStarted ?? false) ||
+        collectionNames.isNotEmpty ||
+        tagData.isNotEmpty;
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 4,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 合并的元数据文本行
-        Text(metaParts.join(' · '), style: metaStyle),
-        // 后台转录进度指示（带 spinner，需独立显示）
-        if (isTranscribing)
-          Row(
-            mainAxisSize: MainAxisSize.min,
+        Text(
+          metaParts.join(' · '),
+          key: const Key('audio_list_tile_metadata_row'),
+          style: metaStyle,
+        ),
+        if (hasBadgeRow) ...[
+          const SizedBox(height: 4),
+          Wrap(
+            key: const Key('audio_list_tile_badge_row'),
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: theme.colorScheme.primary,
+              if (audioItem.hasTranscript && !isTranscribing)
+                _buildTranscriptBadge(theme, l10n.transcript),
+              // 后台转录进度指示（带 spinner，需独立显示）
+              if (isTranscribing)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      l10n.transcriptionProcessing,
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              // 学习进度 badge
+              // 暂停态优先级最高：替换轮次 chip 为「已暂停」灰色 chip。
+              if (progress != null && progress.isStarted)
+                if (progress.isPaused)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      l10n.pausedChipLabel,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 10,
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: progress.isCompleted
+                          ? theme.colorScheme.tertiaryContainer
+                          : theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      progress.isCompleted
+                          ? l10n.learningCompleted
+                          : reviewStageLabel(l10n, progress.currentStage),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: progress.isCompleted
+                            ? theme.colorScheme.onTertiaryContainer
+                            : theme.colorScheme.onPrimaryContainer,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+              // 合集标签 chips（仅全局上下文显示）
+              ...collectionNames.map(
+                (name) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    name,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 10,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 4),
-              Text(
-                l10n.transcriptionProcessing,
-                style: TextStyle(
-                  color: theme.colorScheme.primary,
-                  fontSize: 12,
+              // 标签 chips（彩色）
+              ...tagData.map(
+                (tag) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tag.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    tag.name,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: tag.color,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-        // 学习进度 badge
-        // 暂停态优先级最高：替换轮次 chip 为「已暂停」灰色 chip。
-        if (progress != null && progress.isStarted)
-          if (progress.isPaused)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                l10n.pausedChipLabel,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 10,
-                ),
-              ),
-            )
-          else
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: progress.isCompleted
-                    ? theme.colorScheme.tertiaryContainer
-                    : theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                progress.isCompleted
-                    ? l10n.learningCompleted
-                    : reviewStageLabel(l10n, progress.currentStage),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: progress.isCompleted
-                      ? theme.colorScheme.onTertiaryContainer
-                      : theme.colorScheme.onPrimaryContainer,
-                  fontSize: 10,
-                ),
-              ),
-            ),
-        // 合集标签 chips（仅全局上下文显示）
-        ...collectionNames.map(
-          (name) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              name,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontSize: 10,
-              ),
-            ),
-          ),
-        ),
-        // 标签 chips（彩色）
-        ...tagData.map(
-          (tag) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: tag.color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              tag.name,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: tag.color,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
+        ],
       ],
+    );
+  }
+
+  /// 构建高辨识度的字幕状态标签。
+  Widget _buildTranscriptBadge(ThemeData theme, String label) {
+    final color = theme.colorScheme.primary;
+    return Container(
+      key: const Key('audio_list_tile_transcript_badge'),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color.withValues(alpha: 0.55)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.subtitles_outlined, size: 12, color: color),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              height: 1.1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

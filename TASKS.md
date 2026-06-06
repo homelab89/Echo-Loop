@@ -3,6 +3,24 @@
 > 最后更新：2026-06-06
 > 当前焦点：字幕编辑器词级编辑（任务 1/7 已完成）
 
+## 已完成：音频列表字幕标签与信息分行
+
+将音频列表的信息层级调整为标题、元数据、状态标签三行结构；无状态标签时保持两行，提升字幕音频的扫视辨识度。
+
+### 实现
+- [x] 第二行仅显示时长与添加/发布时间
+- [x] 第三行集中显示描边字幕标签、学习状态、合集和自定义标签
+- [x] 字幕标签使用字幕图标、主题色浅底与描边，不显示含义不明确的 `CC`
+- [x] 无任何 badge 时不渲染第三行，避免额外留白
+
+### 验证
+- [x] `dart format lib/widgets/audio_list_tile.dart test/widgets/audio_list_tile_test.dart`
+- [x] `flutter analyze lib/widgets/audio_list_tile.dart test/widgets/audio_list_tile_test.dart`：No issues found
+- [x] `flutter test test/widgets/audio_list_tile_test.dart`：16 passed
+- [ ] `scripts/check.sh`：全量 `flutter analyze` 通过（仅仓库既有 101 条 warning/info）；全量 `flutter test` 两次均被用户中断，未取得最终汇总
+
+**完成时间**: 2026-06-06 22:35 +0800
+
 ## 已完成：修复自由练习点击句子从音频开头播放
 
 自由练习普通播放器点击字幕句子时，应从该句起点播放；此前字幕编辑器引入的无条件 `clearClip()` 会在无 clip 状态下也重载音源，导致选句后的 seek/play 退回音频开头。
