@@ -3,6 +3,24 @@
 > 最后更新：2026-06-06
 > 当前焦点：字幕编辑器词级编辑（任务 1/7 已完成）
 
+## 已完成：字幕编辑器词级就地编辑 + 词处分句 + 浮层工具栏
+
+点击单词后在该词上方弹出带指向三角的悬浮工具栏（编辑 / 断句），让词级修改与断句直接在 label 上完成。
+
+### 实现
+- [x] 引擎 `SubtitleEditEngine.splitSentence`：按 token 把一句拆成两句（前半保留起点、后半保留终点，bookmark 归前半）
+- [x] controller `editWord`：就地改词文本，维持「词数==句 token 数」不变量（空→删词/删句、单词改名、多词按字符比例切原区间），句界跟随新首/末词避免误 snap
+- [x] controller `splitSentenceAtWord`：从该词左边界分句，该词成为后半首词；首词不允许分句
+- [x] `_SentenceWordLabels` 浮层工具栏：单一常驻 OverlayEntry + LayerLink 锚定，TapRegion 同组避免重锚竞态；就地 TextField 编辑（回车/点外提交）
+- [x] 浮层样式：深色药丸（inverseSurface）+ 指向三角，图标+文案（编辑/断句），基于前景色的 hover/按压高亮
+- [x] bug 修复：选中词不再改字重（加粗变宽会触发 Wrap 重新折行、布局跳动），仅用颜色+底色+描边表达选中
+
+### 验证
+- [x] `dart format` + `flutter analyze`：No issues found
+- [x] `flutter test test/features/subtitle_editor/`：73 passed（含浮层工具栏 widget test、editWord/splitSentenceAtWord 单测）
+
+**完成时间**: 2026-06-06
+
 ## 已完成：字幕编辑器词级编辑（任务 1）——句聚焦拆词 label + 点词播放 + 词边界
 
 把字幕编辑页升级为词级编辑的第一步：选中句的中间文本区从只读整段文本变成单词 label 流，点某个单词 label 即播放该词，并在波形上显示该词及左右各两词的边界（绿起/红止，与句子边界同款样式）；句子起止边界保持常显。整体路线见 `~/.claude/plans/label-...-adaptive-treasure.md`（共 7 个任务，本次只做任务 1）。

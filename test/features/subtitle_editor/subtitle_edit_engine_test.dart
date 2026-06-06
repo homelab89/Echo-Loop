@@ -70,5 +70,45 @@ void main() {
 
       expect(result, same(input));
     });
+
+    test('splitSentence 拆成两句并设置文本/时间，重排 index', () {
+      final result = engine.splitSentence(
+        sentences(),
+        0,
+        firstText: 'Hello',
+        firstEnd: const Duration(seconds: 1),
+        secondText: 'world.',
+        secondStart: const Duration(seconds: 1),
+      );
+
+      expect(result, hasLength(4));
+      expect(result[0].index, 0);
+      expect(result[0].text, 'Hello');
+      expect(result[0].startTime, Duration.zero);
+      expect(result[0].endTime, const Duration(seconds: 1));
+      expect(result[1].index, 1);
+      expect(result[1].text, 'world.');
+      expect(result[1].startTime, const Duration(seconds: 1));
+      expect(result[1].endTime, const Duration(seconds: 2));
+      expect(result[2].index, 2);
+      expect(result[2].text, 'Next sentence.');
+      expect(result[3].index, 3);
+      expect(result[3].text, 'Last one.');
+    });
+
+    test('splitSentence 越界返回原列表', () {
+      final input = sentences();
+      expect(
+        engine.splitSentence(
+          input,
+          5,
+          firstText: 'a',
+          firstEnd: Duration.zero,
+          secondText: 'b',
+          secondStart: Duration.zero,
+        ),
+        same(input),
+      );
+    });
   });
 }

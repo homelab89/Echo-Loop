@@ -670,6 +670,164 @@ void main() {
     });
   });
 
+  group('词级：就地编辑单词 / 分句', () {
+    /// 用单句 'one two three' [0,3s] 物化 3 个等长词，断言时间更可控。
+    void useSingleSentence() {
+      sentences
+        ..clear()
+        ..add(
+          Sentence(
+            index: 0,
+            text: 'one two three',
+            startTime: Duration.zero,
+            endTime: const Duration(seconds: 3),
+          ),
+        );
+      audioItemDao.wordTimestampsStore[audioItem.id] =
+          encodeWordTimestamps(const [
+            WordTimestamp(
+              word: 'one',
+              startTime: Duration.zero,
+              endTime: Duration(seconds: 1),
+              confidence: 1,
+            ),
+            WordTimestamp(
+              word: 'two',
+              startTime: Duration(seconds: 1),
+              endTime: Duration(seconds: 2),
+              confidence: 1,
+            ),
+            WordTimestamp(
+              word: 'three',
+              startTime: Duration(seconds: 2),
+              endTime: Duration(seconds: 3),
+              confidence: 1,
+            ),
+          ]);
+    }
+
+    test('editWord 改名单词：文本更新、词数不变、其余词时间不变', () async {
+      useSingleSentence();
+      final notifier = controller();
+      await notifier.load();
+
+      notifier.editWord(1, 'TWO');
+
+      expect(state().sentences[0].text, 'one TWO three');
+      final words = notifier.wordsOfSelectedSentence;
+      expect(words.map((w) => w.word).toList(), ['one', 'TWO', 'three']);
+      expect(words[1].startTime, const Duration(seconds: 1));
+      expect(words[1].endTime, const Duration(seconds: 2));
+      expect(words[2].startTime, const Duration(seconds: 2));
+      expect(state().isDirty, isTrue);
+    });
+
+    test('editWord 删空中间词：移除该词、其余词时间不变（保留时间空隙）', () async {
+      useSingleSentence();
+      final notifier = controller();
+      await notifier.load();
+
+      notifier.editWord(1, '');
+
+      expect(state().sentences[0].text, 'one three');
+      final words = notifier.wordsOfSelectedSentence;
+      expect(words.map((w) => w.word).toList(), ['one', 'three']);
+      expect(words[0].endTime, const Duration(seconds: 1));
+      expect(words[1].startTime, const Duration(seconds: 2));
+      expect(words[1].endTime, const Duration(seconds: 3));
+    });
+
+    test('editWord 删首词：句起跟随新首词，其余词时间不变', () async {
+      useSingleSentence();
+      final notifier = controller();
+      await notifier.load();
+
+      notifier.editWord(0, '');
+
+      expect(state().sentences[0].text, 'two three');
+      expect(state().sentences[0].startTime, const Duration(seconds: 1));
+      final words = notifier.wordsOfSelectedSentence;
+      expect(words.map((w) => w.word).toList(), ['two', 'three']);
+      expect(words[0].startTime, const Duration(seconds: 1));
+      expect(words[1].endTime, const Duration(seconds: 3));
+    });
+
+    test('editWord 拆多词：按字符比例分配原词区间，合计等于原区间', () async {
+      useSingleSentence();
+      final notifier = controller();
+      await notifier.load();
+
+      // 'two' [1s,2s] → 'two and'（各 3 字符）平分为 [1s,1.5s] + [1.5s,2s]。
+      notifier.editWord(1, 'two and');
+
+      expect(state().sentences[0].text, 'one two and three');
+      final words = notifier.wordsOfSelectedSentence;
+      expect(words.map((w) => w.word).toList(), ['one', 'two', 'and', 'three']);
+      expect(words[1].startTime, const Duration(seconds: 1));
+      expect(words[1].endTime, const Duration(milliseconds: 1500));
+      expect(words[2].startTime, const Duration(milliseconds: 1500));
+      expect(words[2].endTime, const Duration(seconds: 2));
+    });
+
+    test('editWord 删句中唯一词：整句被删（多句场景）', () async {
+      sentences
+        ..clear()
+        ..addAll([
+          Sentence(
+            index: 0,
+            text: 'hi',
+            startTime: Duration.zero,
+            endTime: const Duration(seconds: 2),
+          ),
+          Sentence(
+            index: 1,
+            text: 'there world',
+            startTime: const Duration(seconds: 2),
+            endTime: const Duration(seconds: 6),
+          ),
+        ]);
+      final notifier = controller();
+      await notifier.load();
+      notifier.selectSentence(0);
+
+      notifier.editWord(0, '');
+
+      expect(state().sentences.length, 1);
+      expect(state().sentences[0].text, 'there world');
+    });
+
+    test('splitSentenceAtWord 从该词分句：句数+1、文本与起止正确、词对齐保持', () async {
+      useSingleSentence();
+      final notifier = controller();
+      await notifier.load();
+
+      notifier.splitSentenceAtWord(1);
+
+      expect(state().sentences.length, 2);
+      expect(state().sentences[0].text, 'one');
+      expect(state().sentences[0].startTime, Duration.zero);
+      expect(state().sentences[0].endTime, const Duration(seconds: 1));
+      expect(state().sentences[1].text, 'two three');
+      expect(state().sentences[1].startTime, const Duration(seconds: 1));
+      expect(state().sentences[1].endTime, const Duration(seconds: 3));
+      // 词数不变，时间保留。
+      expect(state().words.length, 3);
+      expect(state().selectedSentenceIndex, 0);
+      expect(state().isDirty, isTrue);
+    });
+
+    test('splitSentenceAtWord(0) 首词不允许分句，no-op', () async {
+      useSingleSentence();
+      final notifier = controller();
+      await notifier.load();
+
+      notifier.splitSentenceAtWord(0);
+
+      expect(state().sentences.length, 1);
+      expect(state().isDirty, isFalse);
+    });
+  });
+
   group('save 是否清空学习进度/收藏', () {
     late Directory tempDir;
     late TestBookmarkDao bookmarkDao;
