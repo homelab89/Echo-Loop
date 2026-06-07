@@ -197,13 +197,15 @@ class _EmailSignInScreenState extends ConsumerState<EmailSignInScreen> {
       }
 
       if (!mounted) return;
-      context.go(AppRoutes.settings);
+      _finishAuthAttempt(AuthAttemptResult.success);
     } on AuthException catch (error) {
       if (!mounted) return;
-      setState(() => _errorMessage = mapAuthExceptionMessage(l10n, error));
+      _showVerificationError(mapAuthExceptionMessage(l10n, error));
+      _finishAuthAttempt(AuthAttemptResult.failure);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = l10n.authUnknownError);
+      _showVerificationError(l10n.authUnknownError);
+      _finishAuthAttempt(AuthAttemptResult.failure);
     } finally {
       if (mounted) {
         setState(() => _isVerifyingOtp = false);
@@ -260,6 +262,21 @@ class _EmailSignInScreenState extends ConsumerState<EmailSignInScreen> {
   /// 点击输入框外部时释放焦点，避免软键盘遮挡后续主操作按钮。
   void _dismissKeyboardOnTapOutside(PointerDownEvent event) {
     FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  void _showVerificationError(String message) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// OTP 校验是邮箱登录的最终尝试，结束后把结果交回主登录页。
+  void _finishAuthAttempt(AuthAttemptResult result) {
+    if (context.canPop()) {
+      context.pop(result);
+      return;
+    }
+    context.go(AppRoutes.settings);
   }
 
   void _handleBack() {

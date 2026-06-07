@@ -1,7 +1,26 @@
 # Echo Loop 任务清单
 
-> 最后更新：2026-06-06
+> 最后更新：2026-06-07
 > 当前焦点：字幕编辑器词级编辑（任务 1/7 已完成）
+
+## 已完成：登录流程结束后返回来源页面
+
+用户从 AI 转录、翻译、解析、意群等受保护功能进入登录流程后，登录成功、失败或取消均返回触发登录前的页面，不再固定切换到“我的”Tab；失败提示会在来源页面继续显示。
+
+### 实现
+- [x] 新增认证尝试结果类型，统一表达成功、失败和取消
+- [x] Apple / Google 登录结束后优先回退原导航栈，失败时保留用户可见提示，取消时静默返回
+- [x] 邮箱 OTP 校验结果回传主登录页，连续退出邮箱页和登录页后返回来源页面
+- [x] 邮箱验证码发送/重发失败仍留在当前页，允许用户重试
+- [x] 独立进入登录页且没有可返回页面时，保留“我的”Tab 兜底
+
+### 验证
+- [x] `flutter analyze lib/features/auth/auth_form_utils.dart lib/features/auth/screens/login_screen.dart lib/features/auth/screens/email_sign_in_screen.dart test/features/auth/auth_flow_screens_test.dart`：No issues found
+- [x] `flutter test test/features/auth/auth_flow_screens_test.dart`：29 passed
+- [x] `flutter test test/router/app_router_test.dart test/widgets/annotation_content_view_auth_test.dart test/widgets/manage_subtitles_sheet_test.dart`：24 passed
+- [x] `scripts/check.sh`：全量 `flutter analyze` 通过（仅仓库既有 101 条 warning/info）；全量 `flutter test` 2562 passed、11 skip；macOS integration 中 `native_audio_decoder_integration_test.dart` 通过，`asr_engine_test.dart` / `app_test.dart` 失败在本地 debug connection 启动失败（`The log reader stopped unexpectedly, or never started`），与本次登录导航改动无关
+
+**完成时间**: 2026-06-07 09:00 +0800
 
 ## 已完成：音频列表字幕标签与信息分行
 

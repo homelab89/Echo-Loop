@@ -196,15 +196,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
 
       if (!mounted) return;
-      context.go(AppRoutes.settings);
+      _finishAuthAttempt(AuthAttemptResult.success);
     } catch (error) {
       if (!mounted) return;
-      if (_isCanceledAppleSignIn(error)) return;
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(content: Text(_authErrorMessage(context, error))),
-        );
+      if (_isCanceledAppleSignIn(error)) {
+        _finishAuthAttempt(AuthAttemptResult.canceled);
+        return;
+      }
+      _showAuthError(error);
+      _finishAuthAttempt(AuthAttemptResult.failure);
     } finally {
       if (mounted) {
         setState(() => _isBusy = false);
@@ -225,19 +225,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
 
       if (!mounted) return;
-      context.go(AppRoutes.settings);
+      _finishAuthAttempt(AuthAttemptResult.success);
     } catch (error) {
       if (!mounted) return;
       if (_isCanceledGoogleSignIn(error)) {
         AppLogger.log('AuthGoogle', 'login canceled by user');
+        _finishAuthAttempt(AuthAttemptResult.canceled);
         return;
       }
       AppLogger.log('AuthGoogle', 'login failed error=$error');
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(content: Text(_authErrorMessage(context, error))),
-        );
+      _showAuthError(error);
+      _finishAuthAttempt(AuthAttemptResult.failure);
     } finally {
       if (mounted) {
         setState(() => _isBusy = false);
@@ -247,6 +245,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _openPolicy(String path) async {
     await launchUrl(Uri.parse('https://www.echo-loop.top$path'));
+  }
+
+  void _showAuthError(Object error) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(content: Text(_authErrorMessage(context, error))),
+      );
+  }
+
+  /// 认证流程由来源页通过 push 打开，因此完成后优先回退原导航栈。
+  ///
+  /// 独立深链进入登录页时没有可回退页面，继续使用“我的”页作为兜底。
+  void _finishAuthAttempt(AuthAttemptResult result) {
+    if (context.canPop()) {
+      context.pop(result);
+      return;
+    }
+    context.go(AppRoutes.settings);
+  }
+
+  Future<void> _openEmailSignIn() async {
+    final result = await context.push<AuthAttemptResult>(AppRoutes.emailSignIn);
+    if (!mounted || result == null) return;
+    _finishAuthAttempt(result);
   }
 
   void _goBack(BuildContext context) {
@@ -318,9 +341,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               color: colorScheme.onSurface,
             ),
             label: l10n.authContinueWithEmail,
-            onPressed: _isBusy
-                ? null
-                : () => context.push(AppRoutes.emailSignIn),
+            onPressed: _isBusy ? null : _openEmailSignIn,
           ),
         ],
       ),

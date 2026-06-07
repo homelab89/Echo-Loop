@@ -4,6 +4,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 
+/// 一次实际登录尝试的结束状态。
+///
+/// 邮箱验证码页通过该结果通知主登录页继续退出认证流程，确保最终回到
+/// 用户触发登录前的页面。
+enum AuthAttemptResult { success, failure, canceled }
+
 /// 邮箱格式轻量校验。
 ///
 /// 这里只做客户端即时反馈，最终结果仍以 Supabase Auth 返回为准。

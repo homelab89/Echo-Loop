@@ -87,6 +87,10 @@ GoRouter _authRouter({
         path: AppRoutes.settings,
         builder: (context, state) => const Scaffold(body: Text('Settings')),
       ),
+      GoRoute(
+        path: AppRoutes.study,
+        builder: (context, state) => const Scaffold(body: Text('Source Page')),
+      ),
     ],
   );
 }
@@ -150,9 +154,10 @@ void main() {
     expect(find.text('Continue with Email Code'), findsOneWidget);
   });
 
-  testWidgets('点击 Apple 登录会调用统一登录动作并进入设置页', (tester) async {
+  testWidgets('Apple 登录成功后返回登录前页面', (tester) async {
     var signInCalled = false;
     final router = _authRouter(
+      initialLocation: AppRoutes.study,
       onAppleSignIn: () async {
         signInCalled = true;
       },
@@ -161,16 +166,30 @@ void main() {
     await tester.pumpWidget(_app(router));
     await tester.pumpAndSettle();
 
+    router.push(AppRoutes.login);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Continue with Apple'));
     await tester.pumpAndSettle();
 
     expect(signInCalled, isTrue);
+    expect(find.text('Source Page'), findsOneWidget);
+  });
+
+  testWidgets('独立进入登录页且无返回栈时成功后进入我的 tab', (tester) async {
+    final router = _authRouter(onAppleSignIn: () async {});
+
+    await tester.pumpWidget(_app(router));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue with Apple'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Settings'), findsOneWidget);
   });
 
-  testWidgets('点击 Google 登录会调用统一登录动作并进入设置页', (tester) async {
+  testWidgets('Google 登录成功后返回登录前页面', (tester) async {
     var signInCalled = false;
     final router = _authRouter(
+      initialLocation: AppRoutes.study,
       isAppleSignInSupported: false,
       isGoogleSignInSupported: true,
       onGoogleSignIn: () async {
@@ -181,15 +200,18 @@ void main() {
     await tester.pumpWidget(_app(router));
     await tester.pumpAndSettle();
 
+    router.push(AppRoutes.login);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Continue with Google'));
     await tester.pumpAndSettle();
 
     expect(signInCalled, isTrue);
-    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Source Page'), findsOneWidget);
   });
 
-  testWidgets('Google 登录不可用异常会提示改用邮箱验证码', (tester) async {
+  testWidgets('Google 登录失败后返回原页面并提示改用邮箱验证码', (tester) async {
     final router = _authRouter(
+      initialLocation: AppRoutes.study,
       isAppleSignInSupported: false,
       isGoogleSignInSupported: true,
       onGoogleSignIn: () async {
@@ -200,9 +222,12 @@ void main() {
     await tester.pumpWidget(_app(router));
     await tester.pumpAndSettle();
 
+    router.push(AppRoutes.login);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Continue with Google'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Source Page'), findsOneWidget);
     expect(
       find.text(
         'Google sign-in is unavailable on this device. Use an email code instead.',
@@ -214,6 +239,7 @@ void main() {
 
   testWidgets('Google 服务版本过低时显示明确设备文案', (tester) async {
     final router = _authRouter(
+      initialLocation: AppRoutes.study,
       isAppleSignInSupported: false,
       isGoogleSignInSupported: true,
       onGoogleSignIn: () async {
@@ -229,9 +255,12 @@ void main() {
     await tester.pumpWidget(_app(router));
     await tester.pumpAndSettle();
 
+    router.push(AppRoutes.login);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Continue with Google'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Source Page'), findsOneWidget);
     expect(
       find.text('Google services are outdated. Please update and try again.'),
       findsOneWidget,
@@ -244,8 +273,9 @@ void main() {
     );
   });
 
-  testWidgets('用户取消 Google 登录不显示错误提示', (tester) async {
+  testWidgets('用户取消 Google 登录后返回原页面且不显示错误', (tester) async {
     final router = _authRouter(
+      initialLocation: AppRoutes.study,
       isAppleSignInSupported: false,
       isGoogleSignInSupported: true,
       onGoogleSignIn: () async {
@@ -258,15 +288,19 @@ void main() {
     await tester.pumpWidget(_app(router));
     await tester.pumpAndSettle();
 
+    router.push(AppRoutes.login);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Continue with Google'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Source Page'), findsOneWidget);
     expect(find.text('Something went wrong. Try again.'), findsNothing);
     expect(find.text('Settings'), findsNothing);
   });
 
-  testWidgets('Apple 登录异常会映射为用户文案', (tester) async {
+  testWidgets('Apple 登录失败后返回原页面并映射为用户文案', (tester) async {
     final router = _authRouter(
+      initialLocation: AppRoutes.study,
       onAppleSignIn: () async {
         throw AuthException('Supabase auth is not configured.');
       },
@@ -275,9 +309,12 @@ void main() {
     await tester.pumpWidget(_app(router));
     await tester.pumpAndSettle();
 
+    router.push(AppRoutes.login);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Continue with Apple'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Source Page'), findsOneWidget);
     expect(find.text('Authentication is not configured yet.'), findsOneWidget);
     expect(find.text('Supabase auth is not configured.'), findsNothing);
   });
@@ -417,11 +454,12 @@ void main() {
     expect(find.text('Use another email'), findsNothing);
   });
 
-  testWidgets('验证码页校验验证码长度并提交成功后进入我的 tab', (tester) async {
+  testWidgets('邮箱验证码校验成功后跨过认证页返回登录前页面', (tester) async {
     String? submittedEmail;
     String? submittedToken;
     final router = _authRouter(
-      initialLocation: AppRoutes.settings,
+      initialLocation: AppRoutes.study,
+      onSendOtp: (_) async {},
       onVerifyOtp: (email, token) async {
         submittedEmail = email;
         submittedToken = token;
@@ -429,8 +467,12 @@ void main() {
     );
 
     await tester.pumpWidget(_app(router));
-    router.push(AppRoutes.checkEmail, extra: 'user@example.com');
+    router.push(AppRoutes.login);
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue with Email Code'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'user@example.com');
+    await _tapVisible(tester, find.text('Send Code'));
 
     await _tapVisible(tester, find.text('Continue'));
     expect(find.text('Enter the 6-digit code'), findsOneWidget);
@@ -444,7 +486,30 @@ void main() {
 
     expect(submittedEmail, 'user@example.com');
     expect(submittedToken, '123456');
-    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Source Page'), findsOneWidget);
+  });
+
+  testWidgets('邮箱验证码校验失败后跨过认证页返回原页面并提示错误', (tester) async {
+    final router = _authRouter(
+      initialLocation: AppRoutes.study,
+      onSendOtp: (_) async {},
+      onVerifyOtp: (_, _) async {
+        throw const AuthException('Invalid verification code');
+      },
+    );
+
+    await tester.pumpWidget(_app(router));
+    router.push(AppRoutes.login);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue with Email Code'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'user@example.com');
+    await _tapVisible(tester, find.text('Send Code'));
+    await tester.enterText(_otpField(), '123456');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Source Page'), findsOneWidget);
+    expect(find.text('Invalid verification code'), findsOneWidget);
   });
 
   testWidgets('OTP 阶段返回直接离开认证页，避免页内退回邮箱态', (tester) async {
