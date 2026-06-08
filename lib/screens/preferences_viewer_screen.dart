@@ -9,18 +9,22 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../providers/learning_settings_provider.dart';
+
 /// 偏好设置查看页面。
-class PreferencesViewerScreen extends StatefulWidget {
+class PreferencesViewerScreen extends ConsumerStatefulWidget {
   const PreferencesViewerScreen({super.key});
 
   @override
-  State<PreferencesViewerScreen> createState() =>
+  ConsumerState<PreferencesViewerScreen> createState() =>
       _PreferencesViewerScreenState();
 }
 
-class _PreferencesViewerScreenState extends State<PreferencesViewerScreen> {
+class _PreferencesViewerScreenState
+    extends ConsumerState<PreferencesViewerScreen> {
   /// 当前 SP 的全部条目（按 key 排序后的快照）。
   List<_PrefEntry> _entries = const [];
 
@@ -108,6 +112,9 @@ class _PreferencesViewerScreenState extends State<PreferencesViewerScreen> {
   Future<void> _deleteKey(String key) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(key);
+    // 回灌运行中的学习设置 Notifier：删除 SP 后内存状态不会自动同步，
+    // 不刷新会导致复述完成首次提示等一次性逻辑无法重测。
+    ref.read(learningSettingsProvider.notifier).reloadFromPrefs();
     if (!mounted) return;
     setState(() {
       _entries = _entries.where((e) => e.key != key).toList();

@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/speech_practice_models.dart';
+import '../../services/audio_playback_service.dart';
 import '../../theme/app_theme.dart';
 import 'playback_controls.dart' show PlaybackControls;
 import 'processing_indicator.dart';
@@ -92,6 +93,12 @@ class RepeatPracticePanel extends StatelessWidget {
   /// badge 播放录音前的准备回调
   final FutureOr<void> Function()? onBeforePlayback;
 
+  /// badge 播放控制器，用于页面触发与用户点击 badge 相同的回放流程。
+  final SpeechRatingBadgeController? ratingBadgeController;
+
+  /// badge 播放服务工厂，测试中可注入无平台依赖替身。
+  final AudioPlaybackService Function()? ratingPlaybackServiceFactory;
+
   // ========== 配置 ==========
 
   /// 评分阈值
@@ -111,6 +118,8 @@ class RepeatPracticePanel extends StatelessWidget {
     required this.onRecordTap,
     this.onFastForward,
     this.onBeforePlayback,
+    this.ratingBadgeController,
+    this.ratingPlaybackServiceFactory,
     this.thresholds = RatingThresholds.listenAndRepeat,
   });
 
@@ -191,6 +200,9 @@ class RepeatPracticePanel extends StatelessWidget {
                                           ? onBeforePlayback
                                           : null,
                                       thresholds: thresholds,
+                                      controller: ratingBadgeController,
+                                      playbackServiceFactory:
+                                          ratingPlaybackServiceFactory,
                                     )
                                   : const SizedBox.shrink(),
                             ),

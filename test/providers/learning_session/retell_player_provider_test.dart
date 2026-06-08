@@ -316,6 +316,7 @@ void main() {
           audioEngineProvider.overrideWith(() => engine),
           learningSessionProvider.overrideWith(TestLearningSession.new),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );
@@ -367,6 +368,7 @@ void main() {
           ),
           learningSessionProvider.overrideWith(TestLearningSession.new),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );
@@ -426,6 +428,7 @@ void main() {
           ),
           learningProgressNotifierProvider.overrideWith(() => progressNotifier),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );
@@ -477,6 +480,7 @@ void main() {
           ),
           learningProgressNotifierProvider.overrideWith(() => progressNotifier),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );
@@ -517,6 +521,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );
@@ -597,6 +602,7 @@ void main() {
               _InMemoryLearningProgressNotifier.new,
             ),
             analyticsOverride(),
+            ...learningSettingsOverrides(),
             ...studyTimeOverrides(),
           ],
         );
@@ -674,6 +680,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );
@@ -727,6 +734,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );
@@ -835,6 +843,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );
@@ -874,6 +883,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );
@@ -914,6 +924,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );
@@ -988,6 +999,7 @@ void main() {
             _InMemoryLearningProgressNotifier.new,
           ),
           analyticsOverride(),
+          ...learningSettingsOverrides(),
           ...studyTimeOverrides(),
         ],
       );

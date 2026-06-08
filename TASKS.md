@@ -1,7 +1,50 @@
 # Echo Loop 任务清单
 
-> 最后更新：2026-06-07
-> 当前焦点：字幕编辑器词级编辑（任务 1/7 已完成）
+> 最后更新：2026-06-08
+> 当前焦点：修复学习统计柱状图亚像素溢出
+
+## 已完成：修复学习统计柱状图亚像素溢出
+
+学习统计头部的本周三色堆叠柱在部分比例下会因浮点高度相加略大于父容器，触发 `RenderFlex overflowed by 0.280 pixels on the bottom`。柱体高度现在按剩余空间逐段分配，最后一段吸收浮点误差，避免 `Column` 子项总高度超过容器高度。
+
+### 实现
+- [x] `_buildStackedBar` 改为先计算其它/输出高度，再用剩余高度计算输入段高度
+- [x] 保留原有三色堆叠视觉、脏数据 clamp 和今日高亮逻辑
+- [x] 补充浮点误差回归测试，断言不产生 Flutter layout exception
+
+### 验证
+- [x] `dart format lib/widgets/study/study_stats_header.dart test/widgets/study_stats_header_test.dart`
+- [x] `flutter analyze lib/widgets/study/study_stats_header.dart test/widgets/study_stats_header_test.dart`：No issues found
+- [x] `flutter test test/widgets/study_stats_header_test.dart`：20 passed
+- [x] `scripts/check.sh`：`flutter analyze` 通过（仅仓库既有 warning/info）；全量 `flutter test` 2584 passed、11 skip；macOS integration 中 `native_audio_decoder_integration_test.dart` 通过，`asr_engine_test.dart` / `app_test.dart` 失败在本地 debug connection 启动失败（`The log reader stopped unexpectedly, or never started`），与本次学习统计布局修复无关
+
+**完成时间**: 2026-06-08 11:50 +0800
+
+## 已完成：复述完成后自动回听录音
+
+复述评估完成并进入显示全部后，可按全局默认或本次任务设置自动播放用户录音，方便对照原文发现发音问题；首次完成任一段复述评估时根据 SharedPreferences 弹出一次全局开关提醒。
+
+### 实现
+- [x] 新增全局设置：复述完成后自动播放录音，默认关闭，并持久化到 SharedPreferences
+- [x] 新增本次复述任务局部开关，默认跟随全局设置，仅当前任务生效
+- [x] 首次全局复述评估完成后弹窗询问是否开启，弹窗只依赖 SP 的已展示标记
+- [x] 弹窗结束后才进入自动回听或段间倒计时；保持关闭和开启使用左右等宽按钮，关闭为红色色调，开启为主色调
+- [x] 自动回听复用评分 badge 的播放状态：回放中显示停止图标，用户点击可停止，并与手动点击 badge 行为一致
+- [x] 手动控制/用户手动点击录音完成评估后，仍按设置自动回听录音；手动控制模式下回听结束不自动启动段间倒计时
+
+### 修复（2026-06-08）
+- [x] Bug：全局开关在设置页直接开启（未经弹窗）后，首段完成仍弹「是否开启」且「保持关闭」不生效。修复：弹窗门控增加「当前已开启则不再询问」；设置页切换全局开关后标记 `retellAutoPlaybackPromptShown`，配置过的用户不再被提示
+- [x] Bug：录音 `processing→idle` 后 badge 尚未重新挂载，单帧 `endOfFrame` 不保证 attach，导致 `controller.play()` 静默 no-op、自动回放被跳过直接进倒计时。修复：`_playAttemptRecordingAutomatically` 改为有界轮询 `isAttached`（≤30 帧）后再播放，每轮校验 token
+- [x] Bug：打开设置面板进入 `isWaitingForUser=true`，随后直接点录音按钮开始录音，录音完成后不自动回放也不启动倒计时（先点播放走听力流程则正常）。根因：手动从等待态开始录音未清除 `isWaitingForUser`，评估完成处理被 `!isWaitingForUser` 门控整体跳过。修复：新增 `RetellPlayer.exitWaitingForUser()`，`_handleRecordTap` 手动开始录音前调用
+
+### 验证
+- [x] `flutter test test/providers/learning_settings_provider_test.dart test/screens/learning_settings_screen_test.dart test/widgets/retell_settings_sheet_test.dart test/screens/retell_player_screen_test.dart`
+- [x] `flutter test test/providers/learning_session/retell_player_provider_test.dart`
+- [x] `flutter test test/widgets/speech_rating_badge_test.dart test/screens/retell_player_screen_test.dart`
+- [x] 修复回归测试：新增「全局已开启但未提示过时首次完成不弹窗且直接自动回听」「设置页切换开关后标记 promptShown」「等待态下手动开始录音完成后仍自动回听并启动倒计时」；全量 `flutter test` 2586 passed、11 skip
+- [x] `scripts/check.sh`：`flutter analyze` 通过（仅仓库既有 warning/info）；全量 `flutter test` 2580 passed、11 skip；macOS integration 中 `native_audio_decoder_integration_test.dart` 通过，`asr_engine_test.dart` / `app_test.dart` 失败在本地 debug connection 启动失败（`The log reader stopped unexpectedly, or never started`），与本次复述自动回听改动无关
+
+**完成时间**: 2026-06-08 11:15 +0800
 
 ## 已完成：登录方式失败后停留在主登录页
 

@@ -12,6 +12,7 @@ import 'package:echo_loop/widgets/common/speech_rating_badge.dart';
 
 class _FakeAudioPlaybackService extends AudioPlaybackService {
   Completer<void>? _playCompleter;
+  int disposeCalls = 0;
 
   @override
   Future<void> play(String filePath) {
@@ -27,6 +28,7 @@ class _FakeAudioPlaybackService extends AudioPlaybackService {
 
   @override
   Future<void> dispose() async {
+    disposeCalls += 1;
     _playCompleter?.complete();
     _playCompleter = null;
   }
@@ -150,5 +152,28 @@ void main() {
     expect(find.text(l10n.listenAndRepeatRecordingOnly), findsOneWidget);
     expect(find.text(l10n.listenAndRepeatRecognitionNoEnglish), findsNothing);
     expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
+  });
+
+  testWidgets('外部注入的播放服务不由 badge dispose', (tester) async {
+    final service = _FakeAudioPlaybackService();
+
+    await tester.pumpWidget(
+      createTestWidget(
+        service: service,
+        attempt: const SpeechPracticeAttempt(
+          promptId: 'test:3',
+          filePath: '/tmp/test.m4a',
+          finalTranscript: 'test transcript',
+          score: 0.9,
+          status: SpeechPracticeAttemptStatus.passed,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+
+    expect(service.disposeCalls, 0);
   });
 }

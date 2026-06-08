@@ -1134,6 +1134,8 @@ class FakeRetellPlayer extends RetellPlayer {
   final RetellPlayerState initialState;
   List<List<Sentence>> testParagraphs;
   Map<int, Set<int>> testKeywords;
+  int postEvaluationPauseCalls = 0;
+  double? lastPostEvaluationScore;
 
   FakeRetellPlayer([
     this.initialState = const RetellPlayerState(),
@@ -1309,6 +1311,18 @@ class FakeRetellPlayer extends RetellPlayer {
   void toggleCountdownFastForward() {
     state = state.copyWith(
       isCountdownFastForward: !state.isCountdownFastForward,
+    );
+  }
+
+  @override
+  void startPostEvaluationPause({double? score}) {
+    postEvaluationPauseCalls += 1;
+    lastPostEvaluationScore = score;
+    state = state.copyWith(
+      isRetellCountdown: true,
+      pauseDuration: const Duration(seconds: 3),
+      pauseRemaining: const Duration(seconds: 3),
+      isWaitingForUser: false,
     );
   }
 

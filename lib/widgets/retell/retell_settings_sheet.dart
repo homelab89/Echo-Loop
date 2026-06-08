@@ -37,128 +37,103 @@ class _RetellSettingsSheet extends ConsumerWidget {
     final settings = state.settings;
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.l,
-          AppSpacing.s,
-          AppSpacing.l,
-          AppSpacing.l,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 拖拽指示条
-            Center(
-              child: Container(
-                width: 32,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: AppSpacing.m),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.4,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.l,
+            AppSpacing.s,
+            AppSpacing.l,
+            AppSpacing.l,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 拖拽指示条
+              Center(
+                child: Container(
+                  width: 32,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.m),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.4,
+                    ),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
 
-            // 标题
-            Text(
-              l10n.retellSettingsTitle,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-
-            // 本次生效提示
-            Text(
-              l10n.settingsSessionOnly,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withValues(
-                  alpha: 0.6,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.l),
-
-            // ── 控制模式 ──
-            _buildControlModeSection(l10n, theme, settings, ref),
-
-            // 重复次数和段间停顿仅在自动模式下显示
-            if (!settings.isManualMode) ...[
-              const SizedBox(height: AppSpacing.l),
-
-              // ── 重复次数 ──
-              _buildRepeatCountRow(l10n, theme, settings, ref),
-              const SizedBox(height: AppSpacing.l),
-
-              // ── 段间停顿 ──
+              // 标题
               Text(
-                l10n.retellPauseMode,
-                style: theme.textTheme.titleSmall?.copyWith(
+                l10n.retellSettingsTitle,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: AppSpacing.s),
-              _buildPauseModeSelector(l10n, settings, ref),
-              const SizedBox(height: AppSpacing.m),
-              _buildPauseModeDetail(l10n, theme, settings, ref),
-            ],
-            const SizedBox(height: AppSpacing.l),
+              const SizedBox(height: AppSpacing.xs),
 
-            // ── 播放速度 ──
-            _buildPlaybackSpeedSection(l10n, theme, settings, ref),
-            const SizedBox(height: AppSpacing.l),
-
-            // ── 可见词生成方式 ──
-            Text(
-              l10n.retellKeywordMethod,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              // 本次生效提示
+              Text(
+                l10n.settingsSessionOnly,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.6,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.s),
-            SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<KeywordMethod>(
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(
-                    value: KeywordMethod.off,
-                    label: Text(l10n.retellKeywordMethodOff),
+              const SizedBox(height: AppSpacing.l),
+
+              // ── 控制模式 ──
+              _buildControlModeSection(l10n, theme, settings, ref),
+
+              // 重复次数和段间停顿仅在自动模式下显示
+              if (!settings.isManualMode) ...[
+                const SizedBox(height: AppSpacing.l),
+
+                // ── 重复次数 ──
+                _buildRepeatCountRow(l10n, theme, settings, ref),
+                const SizedBox(height: AppSpacing.l),
+
+                // ── 段间停顿 ──
+                Text(
+                  l10n.retellPauseMode,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                  ButtonSegment(
-                    value: KeywordMethod.random,
-                    label: Text(l10n.retellKeywordMethodRandom),
-                  ),
-                  // TODO: AI 关键词提取功能尚未实现，暂时隐藏
-                  // ButtonSegment(
-                  //   value: KeywordMethod.ai,
-                  //   label: Tooltip(
-                  //     message: l10n.retellKeywordMethodAiComingSoon,
-                  //     child: Text(l10n.retellKeywordMethodAi),
-                  //   ),
-                  //   enabled: false,
-                  // ),
-                ],
-                selected: {settings.keywordMethod},
-                onSelectionChanged: (selected) {
+                ),
+                const SizedBox(height: AppSpacing.s),
+                _buildPauseModeSelector(l10n, settings, ref),
+                const SizedBox(height: AppSpacing.m),
+                _buildPauseModeDetail(l10n, theme, settings, ref),
+              ],
+              const SizedBox(height: AppSpacing.l),
+
+              // ── 自动播放复述录音 ──
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.record_voice_over),
+                title: Text(l10n.retellAutoPlayRecordingSessionToggle),
+                value: settings.autoPlayRecordingAfterCompletion,
+                onChanged: (value) {
                   ref
                       .read(retellPlayerProvider.notifier)
                       .updateSettings(
-                        settings.copyWith(keywordMethod: selected.first),
+                        settings.copyWith(
+                          autoPlayRecordingAfterCompletion: value,
+                        ),
                       );
                 },
               ),
-            ),
-
-            // 可见词比例（关闭时隐藏）
-            if (settings.keywordMethod != KeywordMethod.off) ...[
               const SizedBox(height: AppSpacing.l),
+
+              // ── 播放速度 ──
+              _buildPlaybackSpeedSection(l10n, theme, settings, ref),
+              const SizedBox(height: AppSpacing.l),
+
+              // ── 可见词生成方式 ──
               Text(
-                l10n.retellKeywordRatio,
+                l10n.retellKeywordMethod,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -166,22 +141,67 @@ class _RetellSettingsSheet extends ConsumerWidget {
               const SizedBox(height: AppSpacing.s),
               SizedBox(
                 width: double.infinity,
-                child: SegmentedButton<KeywordRatio>(
+                child: SegmentedButton<KeywordMethod>(
                   showSelectedIcon: false,
                   segments: [
-                    for (final r in KeywordRatio.values)
-                      ButtonSegment(value: r, label: Text('${r.percent}%')),
+                    ButtonSegment(
+                      value: KeywordMethod.off,
+                      label: Text(l10n.retellKeywordMethodOff),
+                    ),
+                    ButtonSegment(
+                      value: KeywordMethod.random,
+                      label: Text(l10n.retellKeywordMethodRandom),
+                    ),
+                    // TODO: AI 关键词提取功能尚未实现，暂时隐藏
+                    // ButtonSegment(
+                    //   value: KeywordMethod.ai,
+                    //   label: Tooltip(
+                    //     message: l10n.retellKeywordMethodAiComingSoon,
+                    //     child: Text(l10n.retellKeywordMethodAi),
+                    //   ),
+                    //   enabled: false,
+                    // ),
                   ],
-                  selected: {settings.keywordRatio},
-                  onSelectionChanged: (selected) => ref
-                      .read(retellPlayerProvider.notifier)
-                      .updateSettings(
-                        settings.copyWith(keywordRatio: selected.first),
-                      ),
+                  selected: {settings.keywordMethod},
+                  onSelectionChanged: (selected) {
+                    ref
+                        .read(retellPlayerProvider.notifier)
+                        .updateSettings(
+                          settings.copyWith(keywordMethod: selected.first),
+                        );
+                  },
                 ),
               ),
+
+              // 可见词比例（关闭时隐藏）
+              if (settings.keywordMethod != KeywordMethod.off) ...[
+                const SizedBox(height: AppSpacing.l),
+                Text(
+                  l10n.retellKeywordRatio,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<KeywordRatio>(
+                    showSelectedIcon: false,
+                    segments: [
+                      for (final r in KeywordRatio.values)
+                        ButtonSegment(value: r, label: Text('${r.percent}%')),
+                    ],
+                    selected: {settings.keywordRatio},
+                    onSelectionChanged: (selected) => ref
+                        .read(retellPlayerProvider.notifier)
+                        .updateSettings(
+                          settings.copyWith(keywordRatio: selected.first),
+                        ),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

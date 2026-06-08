@@ -2360,6 +2360,36 @@ abstract class AppLocalizations {
   /// **'Retell Settings'**
   String get retellSettingsTitle;
 
+  /// No description provided for @retellAutoPlayRecordingSessionToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-play retell recording'**
+  String get retellAutoPlayRecordingSessionToggle;
+
+  /// No description provided for @retellAutoPlaybackPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-play your recording after retelling?'**
+  String get retellAutoPlaybackPromptTitle;
+
+  /// No description provided for @retellAutoPlaybackPromptMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'When enabled, your recording plays automatically after each retell so you can fix your pronunciation right away. You can change this anytime in settings.'**
+  String get retellAutoPlaybackPromptMessage;
+
+  /// No description provided for @retellAutoPlaybackKeepOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Now'**
+  String get retellAutoPlaybackKeepOff;
+
+  /// No description provided for @retellAutoPlaybackEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get retellAutoPlaybackEnable;
+
   /// No description provided for @retellRepeatCount.
   ///
   /// In en, this message translates to:
@@ -5635,6 +5665,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Auto-show cached translation, analysis and sense groups'**
   String get autoExpandCachedAnnotationSubtitle;
+
+  /// No description provided for @autoPlayRetellRecordingToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-play retell recording'**
+  String get autoPlayRetellRecordingToggle;
+
+  /// No description provided for @autoPlayRetellRecordingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'After retelling, automatically play your recording for pronunciation review'**
+  String get autoPlayRetellRecordingSubtitle;
 
   /// No description provided for @retellSkip.
   ///

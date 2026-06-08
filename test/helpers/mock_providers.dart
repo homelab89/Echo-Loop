@@ -278,11 +278,18 @@ class _TestDictionary extends Dictionary {
 /// 返回学习设置 Provider 系列的 override 列表
 List<Override> learningSettingsOverrides({
   bool autoSkipRetell = false,
+  bool autoPlayRetellRecordingAfterCompletion = false,
+  bool retellAutoPlaybackPromptShown = false,
   SharedPreferences? prefs,
 }) {
   return [
     initialLearningSettingsProvider.overrideWithValue(
-      LearningSettings(autoSkipRetell: autoSkipRetell),
+      LearningSettings(
+        autoSkipRetell: autoSkipRetell,
+        autoPlayRetellRecordingAfterCompletion:
+            autoPlayRetellRecordingAfterCompletion,
+        retellAutoPlaybackPromptShown: retellAutoPlaybackPromptShown,
+      ),
     ),
     if (prefs != null) sharedPreferencesProvider.overrideWithValue(prefs),
   ];
@@ -444,6 +451,9 @@ class TestRetellRecordingController extends RetellRecordingController {
   Future<void> fullReset() async {
     state = const RetellRecordingState();
   }
+
+  /// 直接设置 state（测试辅助方法）
+  void setState(RetellRecordingState newState) => state = newState;
 }
 
 // ========== TranscriptionApiClient ==========

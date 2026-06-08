@@ -12,10 +12,70 @@ import '../../l10n/app_localizations.dart';
 import '../../models/rating_thresholds.dart';
 import '../../models/speech_practice_models.dart';
 import '../../services/audio_playback_service.dart';
+import '../../services/app_logger.dart';
 import 'tappable_wrapper.dart';
 
 // 重导出 RatingThresholds，保持现有 import 兼容
 export '../../models/rating_thresholds.dart';
+
+/// 语音评级 Badge 的播放控制器。
+///
+/// 页面可通过它触发与用户点击 Badge 相同的播放/停止流程，
+/// 例如复述评估完成后的自动回放需要同步 Badge 的停止图标状态。
+class SpeechRatingBadgeController {
+  _SpeechRatingBadgeState? _state;
+
+  /// 当前 Badge 是否正在播放录音。
+  bool get isPlaying => _state?._isPlaying ?? false;
+
+  /// 当前是否已绑定到页面上的 Badge。
+  bool get isAttached => _state != null;
+
+  /// 当前绑定 Badge 的录音文件路径，用于页面级诊断日志。
+  String? get attachedFilePath => _state?.widget.attempt.filePath;
+
+  /// 当前绑定 Badge 的 promptId，用于页面级诊断日志。
+  String? get attachedPromptId => _state?.widget.attempt.promptId;
+
+  Future<void> play() async {
+    final state = _state;
+    if (state == null) {
+      AppLogger.log('SpeechRatingBadge', 'controller.play 跳过: badge 未挂载');
+      return;
+    }
+    await state._playFromController();
+  }
+
+  Future<void> stop() async {
+    final state = _state;
+    if (state == null) {
+      AppLogger.log('SpeechRatingBadge', 'controller.stop 跳过: badge 未挂载');
+      return;
+    }
+    await state._stopPlayback();
+  }
+
+  void _attach(_SpeechRatingBadgeState state) {
+    _state = state;
+    AppLogger.log(
+      'SpeechRatingBadge',
+      'controller attach: prompt=${state.widget.attempt.promptId}, '
+          'path=${state.widget.attempt.filePath ?? "none"}',
+    );
+  }
+
+  void _detach(_SpeechRatingBadgeState state) {
+    if (_state == state) {
+      AppLogger.log(
+        'SpeechRatingBadge',
+        'controller detach: prompt=${state.widget.attempt.promptId}, '
+            'path=${state.widget.attempt.filePath ?? "none"}, '
+            'playing=${state._isPlaying}',
+      );
+      _state = null;
+    }
+  }
+}
 
 /// 语音练习评级 Badge。
 ///
@@ -39,8 +99,12 @@ class SpeechRatingBadge extends StatefulWidget {
 
   /// 音频播放服务工厂。
   ///
-  /// 默认使用真实播放服务，测试中可注入替身。
+  /// 默认使用真实播放服务，测试中可注入替身。若由外部注入服务，
+  /// 服务生命周期由注入方负责，Badge 不会在自身 dispose 时释放它。
   final AudioPlaybackService Function()? playbackServiceFactory;
+
+  /// 外部播放控制器，用于自动回放时复用 Badge 的播放状态和停止图标。
+  final SpeechRatingBadgeController? controller;
 
   const SpeechRatingBadge({
     super.key,
@@ -49,6 +113,7 @@ class SpeechRatingBadge extends StatefulWidget {
     this.onBeforePlayback,
     this.thresholds = RatingThresholds.listenAndRepeat,
     this.playbackServiceFactory,
+    this.controller,
   });
 
   @override
@@ -65,11 +130,16 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
     super.initState();
     _playbackService =
         widget.playbackServiceFactory?.call() ?? AudioPlaybackService();
+    widget.controller?._attach(this);
   }
 
   @override
   void didUpdateWidget(covariant SpeechRatingBadge oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller?._detach(this);
+      widget.controller?._attach(this);
+    }
     final oldPath = oldWidget.attempt.filePath;
     final newPath = widget.attempt.filePath;
     if (oldPath != newPath && _isPlaying) {
@@ -80,7 +150,10 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
   @override
   void dispose() {
     _playbackToken += 1;
-    unawaited(_playbackService.dispose());
+    widget.controller?._detach(this);
+    if (widget.playbackServiceFactory == null) {
+      unawaited(_playbackService.dispose());
+    }
     super.dispose();
   }
 
@@ -156,9 +229,31 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
       return;
     }
 
-    final filePath = widget.attempt.filePath;
-    if (filePath == null || filePath.isEmpty) return;
+    await _playFromController();
+  }
 
+  Future<void> _playFromController() async {
+    if (_isPlaying) {
+      AppLogger.log(
+        'SpeechRatingBadge',
+        '播放跳过: 已在播放 path=${widget.attempt.filePath ?? "none"}',
+      );
+      return;
+    }
+
+    final filePath = widget.attempt.filePath;
+    if (filePath == null || filePath.isEmpty) {
+      AppLogger.log(
+        'SpeechRatingBadge',
+        '播放跳过: 无录音文件 prompt=${widget.attempt.promptId}',
+      );
+      return;
+    }
+
+    AppLogger.log(
+      'SpeechRatingBadge',
+      '准备播放录音: prompt=${widget.attempt.promptId}, path=$filePath',
+    );
     await widget.onBeforePlayback?.call();
     if (!mounted) return;
 
@@ -167,6 +262,10 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
 
     try {
       await _playbackService.play(filePath);
+      AppLogger.log(
+        'SpeechRatingBadge',
+        '录音播放结束: prompt=${widget.attempt.promptId}, path=$filePath',
+      );
     } finally {
       if (mounted && token == _playbackToken) {
         setState(() => _isPlaying = false);
@@ -176,6 +275,11 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
 
   Future<void> _stopPlayback() async {
     _playbackToken += 1;
+    AppLogger.log(
+      'SpeechRatingBadge',
+      '停止录音播放: prompt=${widget.attempt.promptId}, '
+          'path=${widget.attempt.filePath ?? "none"}',
+    );
     await _playbackService.stop();
     if (!mounted) return;
     setState(() => _isPlaying = false);

@@ -150,6 +150,9 @@ class RetellSettings {
   /// 播放速度（0.5x-2.0x，默认 1.0x）
   final double playbackSpeed;
 
+  /// 复述评估完成后是否自动播放本段录音（本次会话生效）。
+  final bool autoPlayRecordingAfterCompletion;
+
   /// 是否为手动控制模式
   bool get isManualMode => controlMode == ShadowingControlMode.manual;
 
@@ -196,6 +199,7 @@ class RetellSettings {
     this.keywordRatio = KeywordRatio.medium,
     this.controlMode = ShadowingControlMode.auto,
     this.playbackSpeed = 1.0,
+    this.autoPlayRecordingAfterCompletion = false,
   });
 
   RetellSettings copyWith({
@@ -207,6 +211,7 @@ class RetellSettings {
     KeywordRatio? keywordRatio,
     ShadowingControlMode? controlMode,
     double? playbackSpeed,
+    bool? autoPlayRecordingAfterCompletion,
   }) {
     return RetellSettings(
       repeatCount: repeatCount ?? this.repeatCount,
@@ -217,6 +222,9 @@ class RetellSettings {
       keywordRatio: keywordRatio ?? this.keywordRatio,
       controlMode: controlMode ?? this.controlMode,
       playbackSpeed: playbackSpeed ?? this.playbackSpeed,
+      autoPlayRecordingAfterCompletion:
+          autoPlayRecordingAfterCompletion ??
+          this.autoPlayRecordingAfterCompletion,
     );
   }
 

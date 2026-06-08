@@ -1262,6 +1262,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retellSettingsTitle => '复述设置';
 
   @override
+  String get retellAutoPlayRecordingSessionToggle => '自动播放复述录音';
+
+  @override
+  String get retellAutoPlaybackPromptTitle => '复述后自动回听？';
+
+  @override
+  String get retellAutoPlaybackPromptMessage =>
+      '开启后，复述后会自动播放录音，方便你及时纠正发音。你也可以随时在设置中修改。';
+
+  @override
+  String get retellAutoPlaybackKeepOff => '暂不开启';
+
+  @override
+  String get retellAutoPlaybackEnable => '开启';
+
+  @override
   String get retellRepeatCount => '每段重复次数';
 
   @override
@@ -3051,6 +3067,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get autoExpandCachedAnnotationSubtitle => '自动展示查看过的翻译、解析和意群';
+
+  @override
+  String get autoPlayRetellRecordingToggle => '自动播放复述录音';
+
+  @override
+  String get autoPlayRetellRecordingSubtitle => '复述结束后自动回听自己的录音，用于对照和纠音';
 
   @override
   String get retellSkip => '跳过';

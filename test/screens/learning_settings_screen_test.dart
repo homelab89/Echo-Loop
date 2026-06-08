@@ -20,9 +20,14 @@ import '../helpers/mock_providers.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<Widget> buildApp({bool autoSkipRetell = false}) async {
+  Future<Widget> buildApp({
+    bool autoSkipRetell = false,
+    bool autoPlayRetellRecording = false,
+  }) async {
     SharedPreferences.setMockInitialValues({
       if (autoSkipRetell) LearningSettingsKeys.autoSkipRetell: true,
+      if (autoPlayRetellRecording)
+        LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion: true,
     });
     final prefs = await SharedPreferences.getInstance();
     return ProviderScope(
@@ -60,6 +65,14 @@ void main() {
     final switchTile = tester.widget<SwitchListTile>(autoSkipFinder);
     expect(switchTile.value, isFalse);
     expect(find.textContaining('Auto-skip'), findsWidgets);
+    final autoPlayFinder = find.byWidgetPredicate(
+      (w) =>
+          w is SwitchListTile &&
+          w.title is Text &&
+          (w.title as Text).data == 'Auto-play retell recordings',
+    );
+    final autoPlayTile = tester.widget<SwitchListTile>(autoPlayFinder);
+    expect(autoPlayTile.value, isFalse);
   });
 
   testWidgets('点击开关 → 翻转 state + 写 SP', (tester) async {
@@ -83,8 +96,40 @@ void main() {
     expect(prefs.getBool(LearningSettingsKeys.autoSkipRetell), isTrue);
   });
 
+  testWidgets('点击自动回听开关 → 翻转 state + 写 SP', (tester) async {
+    await tester.pumpWidget(await buildApp());
+    await tester.pumpAndSettle();
+
+    final autoPlayFinder = find.byWidgetPredicate(
+      (w) =>
+          w is SwitchListTile &&
+          w.title is Text &&
+          (w.title as Text).data == 'Auto-play retell recordings',
+    );
+    await tester.tap(autoPlayFinder);
+    await tester.pumpAndSettle();
+
+    final switchTile = tester.widget<SwitchListTile>(autoPlayFinder);
+    expect(switchTile.value, isTrue);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(
+      prefs.getBool(
+        LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion,
+      ),
+      isTrue,
+    );
+    // Bug 1：设置页显式配置过即标记首次提示已展示，避免复述完成后再弹窗。
+    expect(
+      prefs.getBool(LearningSettingsKeys.retellAutoPlaybackPromptShown),
+      isTrue,
+    );
+  });
+
   testWidgets('初始 ON 时开关显示 ON', (tester) async {
-    await tester.pumpWidget(await buildApp(autoSkipRetell: true));
+    await tester.pumpWidget(
+      await buildApp(autoSkipRetell: true, autoPlayRetellRecording: true),
+    );
     await tester.pumpAndSettle();
 
     // 找到 "Auto-skip Retell" 的 SwitchListTile
@@ -96,5 +141,14 @@ void main() {
     );
     final switchTile = tester.widget<SwitchListTile>(autoSkipFinder);
     expect(switchTile.value, isTrue);
+
+    final autoPlayFinder = find.byWidgetPredicate(
+      (w) =>
+          w is SwitchListTile &&
+          w.title is Text &&
+          (w.title as Text).data == 'Auto-play retell recordings',
+    );
+    final autoPlayTile = tester.widget<SwitchListTile>(autoPlayFinder);
+    expect(autoPlayTile.value, isTrue);
   });
 }

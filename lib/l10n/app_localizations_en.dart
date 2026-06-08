@@ -1298,6 +1298,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retellSettingsTitle => 'Retell Settings';
 
   @override
+  String get retellAutoPlayRecordingSessionToggle =>
+      'Auto-play retell recording';
+
+  @override
+  String get retellAutoPlaybackPromptTitle =>
+      'Auto-play your recording after retelling?';
+
+  @override
+  String get retellAutoPlaybackPromptMessage =>
+      'When enabled, your recording plays automatically after each retell so you can fix your pronunciation right away. You can change this anytime in settings.';
+
+  @override
+  String get retellAutoPlaybackKeepOff => 'Not Now';
+
+  @override
+  String get retellAutoPlaybackEnable => 'Enable';
+
+  @override
   String get retellRepeatCount => 'Repeat per paragraph';
 
   @override
@@ -3172,6 +3190,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get autoExpandCachedAnnotationSubtitle =>
       'Auto-show cached translation, analysis and sense groups';
+
+  @override
+  String get autoPlayRetellRecordingToggle => 'Auto-play retell recording';
+
+  @override
+  String get autoPlayRetellRecordingSubtitle =>
+      'After retelling, automatically play your recording for pronunciation review';
 
   @override
   String get retellSkip => 'Skip';

@@ -60,6 +60,18 @@ class _TestLearningSettingsNotifier extends Notifier<LearningSettings>
     if (state.autoExpandCachedAnnotation == enabled) return;
     state = state.copyWith(autoExpandCachedAnnotation: enabled);
   }
+
+  @override
+  Future<void> setAutoPlayRetellRecordingAfterCompletion(bool enabled) async {
+    if (state.autoPlayRetellRecordingAfterCompletion == enabled) return;
+    state = state.copyWith(autoPlayRetellRecordingAfterCompletion: enabled);
+  }
+
+  @override
+  Future<void> markRetellAutoPlaybackPromptShown() async {
+    if (state.retellAutoPlaybackPromptShown) return;
+    state = state.copyWith(retellAutoPlaybackPromptShown: true);
+  }
 }
 
 void main() {

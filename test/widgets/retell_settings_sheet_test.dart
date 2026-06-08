@@ -1,5 +1,6 @@
 import 'package:echo_loop/providers/audio_engine/audio_engine_provider.dart';
 import 'package:echo_loop/providers/learning_session/retell_player_provider.dart';
+import 'package:echo_loop/models/retell_settings.dart';
 import 'package:echo_loop/widgets/retell/retell_settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -68,5 +69,70 @@ void main() {
     expect(container.read(retellPlayerProvider).settings.playbackSpeed, 1.25);
     expect(audioEngine.recordedSpeed, 1.25);
     expect(find.text('1.25x'), findsOneWidget);
+  });
+
+  testWidgets('本次自动回听开关更新 RetellSettings', (tester) async {
+    await tester.pumpWidget(
+      createTestWidget(audioEngine: _RecordingAudioEngine()),
+    );
+    await openSheet(tester);
+
+    final finder = find.byWidgetPredicate(
+      (w) =>
+          w is SwitchListTile &&
+          w.title is Text &&
+          (w.title as Text).data == 'Auto-play my recording',
+    );
+    expect(finder, findsOneWidget);
+    expect(tester.widget<SwitchListTile>(finder).value, isFalse);
+
+    await tester.tap(finder);
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.text('Auto-play my recording')),
+    );
+    expect(
+      container
+          .read(retellPlayerProvider)
+          .settings
+          .autoPlayRecordingAfterCompletion,
+      isTrue,
+    );
+  });
+
+  testWidgets('本次自动回听开关可从当前 RetellSettings 读取初始 ON', (tester) async {
+    await tester.pumpWidget(
+      createTestApp(
+        Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              onPressed: () => showRetellSettingsSheet(context),
+              child: const Text('Open Settings'),
+            ),
+          ),
+        ),
+        overrides: [
+          retellPlayerProvider.overrideWith(
+            () => TestRetellPlayer(
+              const RetellPlayerState(
+                settings: RetellSettings(
+                  autoPlayRecordingAfterCompletion: true,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    await openSheet(tester);
+
+    final finder = find.byWidgetPredicate(
+      (w) =>
+          w is SwitchListTile &&
+          w.title is Text &&
+          (w.title as Text).data == 'Auto-play my recording',
+    );
+    expect(tester.widget<SwitchListTile>(finder).value, isTrue);
   });
 }

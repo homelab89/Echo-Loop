@@ -30,6 +30,7 @@ import '../../utils/word_counter.dart';
 import '../audio_engine/audio_engine_provider.dart';
 import '../listening_practice/bookmark_manager.dart';
 import '../learned_vocabulary_tracker_provider.dart';
+import '../learning_settings_provider.dart';
 import '../notification_permission_provider.dart';
 import '../retell_recording_controller_provider.dart';
 import '../settings_provider.dart';
@@ -333,9 +334,15 @@ class RetellPlayer extends _$RetellPlayer {
     }
     _resumeStartLocalSentenceIndex = localIndex;
 
-    final initialSettings = autoRatio == null
-        ? const RetellSettings()
-        : const RetellSettings().copyWith(keywordRatio: autoRatio);
+    final learningSettings = ref.read(learningSettingsProvider);
+    final initialSettings =
+        (autoRatio == null
+                ? const RetellSettings()
+                : const RetellSettings().copyWith(keywordRatio: autoRatio))
+            .copyWith(
+              autoPlayRecordingAfterCompletion:
+                  learningSettings.autoPlayRetellRecordingAfterCompletion,
+            );
     state = RetellPlayerState(
       currentParagraphIndex: safeIndex,
       totalParagraphs: paragraphs.length,
@@ -795,6 +802,18 @@ class RetellPlayer extends _$RetellPlayer {
       isWaitingForUser: true,
     );
     AppLogger.log('RetellPlayer', '-> WaitingForUser');
+  }
+
+  /// 退出等待用户状态（用户主动开始复述录音时调用）。
+  ///
+  /// 手动点击录音从等待态（如刚关闭设置面板）进入录音时，必须清除
+  /// [RetellPlayerState.isWaitingForUser]，否则录音评估完成后 screen 层的
+  /// 完成处理（自动回放 / 段间倒计时）会被 `!isWaitingForUser` 门控整体跳过。
+  void exitWaitingForUser() {
+    _waitAfterCurrentParagraph = false;
+    if (!state.isWaitingForUser) return;
+    state = state.copyWith(isWaitingForUser: false);
+    AppLogger.log('RetellPlayer', '<- WaitingForUser (用户开始录音)');
   }
 
   /// 设置显示模式（用户手动切换）

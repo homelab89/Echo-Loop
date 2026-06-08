@@ -1,6 +1,8 @@
 // 复述播放器页面 Widget 测试
 //
 // 验证 SegmentedButton 位置和显示模式切换功能。
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +14,10 @@ import 'package:echo_loop/models/intensive_listen_settings.dart'
     show ShadowingControlMode;
 import 'package:echo_loop/models/sentence.dart';
 import 'package:echo_loop/models/retell_settings.dart';
+import 'package:echo_loop/models/speech_practice_models.dart';
 import 'package:echo_loop/screens/retell_player_screen.dart';
+import 'package:echo_loop/providers/learning_settings_provider.dart';
+import 'package:echo_loop/providers/new_user_guide_provider.dart';
 import 'package:echo_loop/providers/listening_practice/listening_practice_provider.dart';
 import 'package:echo_loop/providers/audio_engine/audio_engine_provider.dart';
 import 'package:echo_loop/providers/learning_progress_provider.dart';
@@ -25,10 +30,12 @@ import 'package:echo_loop/database/providers.dart';
 import 'package:echo_loop/providers/retell_recording_controller_provider.dart';
 import 'package:echo_loop/providers/sentence_ai_provider.dart';
 import 'package:echo_loop/services/sentence_ai_api_client.dart';
+import 'package:echo_loop/services/audio_playback_service.dart';
 import 'package:echo_loop/theme/app_theme.dart';
 import 'package:echo_loop/widgets/common/playback_controls.dart';
 import 'package:echo_loop/widgets/common/recording_button.dart';
 import 'package:echo_loop/widgets/common/masked_sentence_tile.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/mock_providers.dart';
 
@@ -86,6 +93,68 @@ class _TrackingRetellPlayer extends _StaticRetellPlayer {
   }
 }
 
+class _BlockingAudioPlaybackService extends AudioPlaybackService {
+  final List<String> playedFiles = [];
+  int stopCalls = 0;
+  Completer<void>? playCompleter;
+
+  @override
+  Future<void> play(String filePath) {
+    playedFiles.add(filePath);
+    playCompleter = Completer<void>();
+    return playCompleter!.future;
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCalls += 1;
+    final completer = playCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
+    }
+  }
+
+  @override
+  Future<void> dispose() async {
+    final completer = playCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
+    }
+  }
+}
+
+class _RecordingResultRetellController extends TestRetellRecordingController {
+  _RecordingResultRetellController(super.initialState);
+
+  @override
+  Future<void> stopAndEvaluate({required String referenceText}) async {
+    final promptId = state.promptId ?? '';
+    state = state.copyWith(phase: RetellRecordingPhase.processing);
+    state = state.copyWith(
+      phase: RetellRecordingPhase.idle,
+      currentAttempt: SpeechPracticeAttempt(
+        promptId: promptId,
+        filePath: '/tmp/manual-stop-retell.m4a',
+        finalTranscript: 'manual stop retell transcript',
+        status: SpeechPracticeAttemptStatus.passed,
+        score: 0.83,
+      ),
+      clearPromptId: true,
+    );
+  }
+}
+
+class _SeenGuideRegistry extends GuideRegistry {
+  @override
+  Future<bool> isSeen(String flowId) async => true;
+
+  @override
+  Future<void> markSeen(String flowId) async {}
+
+  @override
+  Future<void> reset(String flowId) async {}
+}
+
 void main() {
   /// 创建测试段落
   List<List<Sentence>> createTestParagraphs() {
@@ -104,6 +173,7 @@ void main() {
       Map<int, Set<int>> keywords,
     )?
     playerFactory,
+    List<Override> extraOverrides = const [],
   }) {
     final testParagraphs = paragraphs ?? createTestParagraphs();
     final testKeywords = keywords ?? {};
@@ -137,6 +207,8 @@ void main() {
 
     return ProviderScope(
       overrides: [
+        ...learningSettingsOverrides(),
+        guideRegistryProvider.overrideWithValue(_SeenGuideRegistry()),
         listeningPracticeProvider.overrideWith(
           () => TestListeningPractice(
             ListeningPracticeState(
@@ -169,6 +241,7 @@ void main() {
             apiClient: _MockApiClient(),
           ),
         ),
+        ...extraOverrides,
       ],
       child: MaterialApp.router(
         locale: locale,
@@ -299,7 +372,8 @@ void main() {
           playerFactory: _StaticRetellPlayer.new,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.text('Listen first, then retell'), findsOneWidget);
       expect(find.text('Listening...'), findsNothing);
@@ -319,7 +393,8 @@ void main() {
           playerFactory: _StaticRetellPlayer.new,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
       expect(find.byIcon(Icons.pause_rounded), findsNothing);
@@ -371,6 +446,454 @@ void main() {
 
       expect(find.text('Retell it in your own words'), findsNothing);
       expect(find.text('Recording...'), findsOneWidget);
+    });
+
+    testWidgets('首次评估完成先弹窗，选择保持关闭后才启动倒计时', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final testParagraphs = createTestParagraphs();
+      final player = _StaticRetellPlayer(
+        RetellPlayerState(
+          currentParagraphIndex: 0,
+          totalParagraphs: testParagraphs.length,
+          phase: RetellPhase.retelling,
+          settings: const RetellSettings(keywordMethod: KeywordMethod.random),
+        ),
+        testParagraphs,
+        const {},
+      );
+      final recordingController = TestRetellRecordingController(
+        const RetellRecordingState(phase: RetellRecordingPhase.processing),
+      );
+
+      await tester.pumpWidget(
+        createTestWidget(
+          paragraphs: testParagraphs,
+          playerFactory: (_, __, ___) => player,
+          recordingState: const RetellRecordingState(
+            phase: RetellRecordingPhase.processing,
+          ),
+          extraOverrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            initialLearningSettingsProvider.overrideWithValue(
+              LearningSettings.fromPrefsSync(prefs),
+            ),
+            retellRecordingControllerProvider.overrideWith(
+              () => recordingController,
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      recordingController.setState(
+        const RetellRecordingState(
+          phase: RetellRecordingPhase.idle,
+          currentAttempt: SpeechPracticeAttempt(
+            promptId: 'retell:a1:0',
+            filePath: '/tmp/retell.m4a',
+            status: SpeechPracticeAttemptStatus.passed,
+            score: 0.8,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Review your pronunciation after retelling?'),
+        findsOneWidget,
+      );
+      expect(player.postEvaluationPauseCalls, 0);
+
+      await tester.tap(find.text('Keep Off'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(
+        prefs.getBool(LearningSettingsKeys.retellAutoPlaybackPromptShown),
+        isTrue,
+      );
+      expect(
+        prefs.getBool(
+          LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion,
+        ),
+        isNull,
+      );
+      expect(player.postEvaluationPauseCalls, 1);
+      expect(player.lastPostEvaluationScore, 0.8);
+    });
+
+    testWidgets('全局已开启但未提示过时，首次完成不弹窗且直接自动回听', (tester) async {
+      // Bug 1：用户在设置页开了全局开关（autoPlay=true）但 promptShown 仍为 false，
+      // 首段完成不应再弹「是否开启」提示，且应直接自动回放。
+      SharedPreferences.setMockInitialValues({
+        LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion: true,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final service = _BlockingAudioPlaybackService();
+      final testParagraphs = createTestParagraphs();
+      final player = _StaticRetellPlayer(
+        RetellPlayerState(
+          currentParagraphIndex: 0,
+          totalParagraphs: testParagraphs.length,
+          phase: RetellPhase.retelling,
+          settings: const RetellSettings(
+            keywordMethod: KeywordMethod.random,
+            autoPlayRecordingAfterCompletion: true,
+          ),
+        ),
+        testParagraphs,
+        const {},
+      );
+      final recordingController = TestRetellRecordingController(
+        const RetellRecordingState(phase: RetellRecordingPhase.processing),
+      );
+
+      await tester.pumpWidget(
+        createTestWidget(
+          paragraphs: testParagraphs,
+          playerFactory: (_, __, ___) => player,
+          recordingState: const RetellRecordingState(
+            phase: RetellRecordingPhase.processing,
+          ),
+          extraOverrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            initialLearningSettingsProvider.overrideWithValue(
+              LearningSettings.fromPrefsSync(prefs),
+            ),
+            retellAutoPlaybackServiceProvider.overrideWithValue(service),
+            retellRecordingControllerProvider.overrideWith(
+              () => recordingController,
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      recordingController.setState(
+        const RetellRecordingState(
+          phase: RetellRecordingPhase.idle,
+          currentAttempt: SpeechPracticeAttempt(
+            promptId: 'retell:a1:0',
+            filePath: '/tmp/retell.m4a',
+            finalTranscript: 'retell transcript',
+            status: SpeechPracticeAttemptStatus.passed,
+            score: 0.8,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      // 不应弹出首次提示
+      expect(
+        find.text('Review your pronunciation after retelling?'),
+        findsNothing,
+      );
+      // 直接自动回放，回放结束前不启动倒计时
+      expect(service.playedFiles, ['/tmp/retell.m4a']);
+      expect(player.postEvaluationPauseCalls, 0);
+
+      service.playCompleter?.complete();
+      await tester.pumpAndSettle();
+
+      expect(player.postEvaluationPauseCalls, 1);
+    });
+
+    testWidgets('已开启自动回听时 badge 显示停止态，停止后才启动倒计时', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        LearningSettingsKeys.retellAutoPlaybackPromptShown: true,
+        LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion: true,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final service = _BlockingAudioPlaybackService();
+      final testParagraphs = createTestParagraphs();
+      final player = _StaticRetellPlayer(
+        RetellPlayerState(
+          currentParagraphIndex: 0,
+          totalParagraphs: testParagraphs.length,
+          phase: RetellPhase.retelling,
+          settings: const RetellSettings(
+            keywordMethod: KeywordMethod.random,
+            autoPlayRecordingAfterCompletion: true,
+          ),
+        ),
+        testParagraphs,
+        const {},
+      );
+      final recordingController = TestRetellRecordingController(
+        const RetellRecordingState(phase: RetellRecordingPhase.processing),
+      );
+
+      await tester.pumpWidget(
+        createTestWidget(
+          paragraphs: testParagraphs,
+          playerFactory: (_, __, ___) => player,
+          recordingState: const RetellRecordingState(
+            phase: RetellRecordingPhase.processing,
+          ),
+          extraOverrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            initialLearningSettingsProvider.overrideWithValue(
+              LearningSettings.fromPrefsSync(prefs),
+            ),
+            retellAutoPlaybackServiceProvider.overrideWithValue(service),
+            retellRecordingControllerProvider.overrideWith(
+              () => recordingController,
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      recordingController.setState(
+        const RetellRecordingState(
+          phase: RetellRecordingPhase.idle,
+          currentAttempt: SpeechPracticeAttempt(
+            promptId: 'retell:a1:0',
+            filePath: '/tmp/retell.m4a',
+            finalTranscript: 'retell transcript',
+            status: SpeechPracticeAttemptStatus.passed,
+            score: 0.72,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(service.playedFiles, ['/tmp/retell.m4a']);
+      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.volume_up_outlined), findsNothing);
+      expect(player.postEvaluationPauseCalls, 0);
+
+      await tester.tap(find.byIcon(Icons.stop_rounded));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(service.stopCalls, 1);
+      expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
+      expect(player.postEvaluationPauseCalls, 1);
+      expect(player.lastPostEvaluationScore, 0.72);
+    });
+
+    testWidgets('手动控制模式下评估完成仍会自动回听录音', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        LearningSettingsKeys.retellAutoPlaybackPromptShown: true,
+        LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion: true,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final service = _BlockingAudioPlaybackService();
+      final testParagraphs = createTestParagraphs();
+      final player = _StaticRetellPlayer(
+        RetellPlayerState(
+          currentParagraphIndex: 0,
+          totalParagraphs: testParagraphs.length,
+          phase: RetellPhase.retelling,
+          settings: const RetellSettings(
+            keywordMethod: KeywordMethod.random,
+            controlMode: ShadowingControlMode.manual,
+            autoPlayRecordingAfterCompletion: true,
+          ),
+        ),
+        testParagraphs,
+        const {},
+      );
+      final recordingController = TestRetellRecordingController(
+        const RetellRecordingState(phase: RetellRecordingPhase.processing),
+      );
+
+      await tester.pumpWidget(
+        createTestWidget(
+          paragraphs: testParagraphs,
+          playerFactory: (_, __, ___) => player,
+          recordingState: const RetellRecordingState(
+            phase: RetellRecordingPhase.processing,
+          ),
+          extraOverrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            initialLearningSettingsProvider.overrideWithValue(
+              LearningSettings.fromPrefsSync(prefs),
+            ),
+            retellAutoPlaybackServiceProvider.overrideWithValue(service),
+            retellRecordingControllerProvider.overrideWith(
+              () => recordingController,
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      recordingController.setState(
+        const RetellRecordingState(
+          phase: RetellRecordingPhase.idle,
+          currentAttempt: SpeechPracticeAttempt(
+            promptId: 'retell:a1:0',
+            filePath: '/tmp/manual-retell.m4a',
+            finalTranscript: 'manual retell transcript',
+            status: SpeechPracticeAttemptStatus.passed,
+            score: 0.81,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(service.playedFiles, ['/tmp/manual-retell.m4a']);
+      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+
+      service.playCompleter?.complete();
+      await tester.pumpAndSettle();
+
+      expect(player.postEvaluationPauseCalls, 0);
+    });
+
+    testWidgets('用户点击录音按钮停止后仍会自动回听录音', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        LearningSettingsKeys.retellAutoPlaybackPromptShown: true,
+        LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion: true,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final service = _BlockingAudioPlaybackService();
+      final testParagraphs = createTestParagraphs();
+      final player = _StaticRetellPlayer(
+        RetellPlayerState(
+          currentParagraphIndex: 0,
+          totalParagraphs: testParagraphs.length,
+          phase: RetellPhase.retelling,
+          settings: const RetellSettings(
+            keywordMethod: KeywordMethod.random,
+            autoPlayRecordingAfterCompletion: true,
+          ),
+        ),
+        testParagraphs,
+        const {},
+      );
+      final recordingController = _RecordingResultRetellController(
+        const RetellRecordingState(
+          phase: RetellRecordingPhase.recording,
+          promptId: 'retell:a1:0',
+        ),
+      );
+
+      await tester.pumpWidget(
+        createTestWidget(
+          paragraphs: testParagraphs,
+          playerFactory: (_, __, ___) => player,
+          recordingState: const RetellRecordingState(
+            phase: RetellRecordingPhase.recording,
+            promptId: 'retell:a1:0',
+          ),
+          extraOverrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            initialLearningSettingsProvider.overrideWithValue(
+              LearningSettings.fromPrefsSync(prefs),
+            ),
+            retellAutoPlaybackServiceProvider.overrideWithValue(service),
+            retellRecordingControllerProvider.overrideWith(
+              () => recordingController,
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      await tester.tap(find.byType(RecordingButton));
+      await tester.pump();
+      await tester.pump();
+
+      expect(service.playedFiles, ['/tmp/manual-stop-retell.m4a']);
+      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+      expect(player.postEvaluationPauseCalls, 0);
+
+      service.playCompleter?.complete();
+      await tester.pumpAndSettle();
+
+      expect(player.postEvaluationPauseCalls, 1);
+      expect(player.lastPostEvaluationScore, 0.83);
+    });
+
+    testWidgets('等待态下手动开始录音，完成后仍会自动回听并启动倒计时', (tester) async {
+      // Bug：打开设置面板会进入 isWaitingForUser=true，随后直接点录音按钮开始录音，
+      // 若不退出等待态，评估完成处理会被 !isWaitingForUser 门控整体跳过 →
+      // 不自动回放也不启动倒计时。
+      SharedPreferences.setMockInitialValues({
+        LearningSettingsKeys.retellAutoPlaybackPromptShown: true,
+        LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion: true,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final service = _BlockingAudioPlaybackService();
+      final testParagraphs = createTestParagraphs();
+      final player = _StaticRetellPlayer(
+        RetellPlayerState(
+          currentParagraphIndex: 0,
+          totalParagraphs: testParagraphs.length,
+          phase: RetellPhase.retelling,
+          // 关键：初始处于等待用户态（模拟刚关闭设置面板）
+          isWaitingForUser: true,
+          settings: const RetellSettings(
+            keywordMethod: KeywordMethod.random,
+            autoPlayRecordingAfterCompletion: true,
+          ),
+        ),
+        testParagraphs,
+        const {},
+      );
+      final recordingController = TestRetellRecordingController(
+        const RetellRecordingState(phase: RetellRecordingPhase.idle),
+      );
+
+      await tester.pumpWidget(
+        createTestWidget(
+          paragraphs: testParagraphs,
+          playerFactory: (_, __, ___) => player,
+          recordingState: const RetellRecordingState(
+            phase: RetellRecordingPhase.idle,
+          ),
+          extraOverrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            initialLearningSettingsProvider.overrideWithValue(
+              LearningSettings.fromPrefsSync(prefs),
+            ),
+            retellAutoPlaybackServiceProvider.overrideWithValue(service),
+            retellRecordingControllerProvider.overrideWith(
+              () => recordingController,
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // 等待态下手动点录音 → 应退出等待态并开始录音
+      await tester.tap(find.byType(RecordingButton));
+      await tester.pump();
+
+      // 模拟录音自动完成
+      recordingController.setState(
+        const RetellRecordingState(
+          phase: RetellRecordingPhase.idle,
+          currentAttempt: SpeechPracticeAttempt(
+            promptId: 'retell:a1:0',
+            filePath: '/tmp/waiting-start-retell.m4a',
+            finalTranscript: 'retell transcript',
+            status: SpeechPracticeAttemptStatus.passed,
+            score: 0.77,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      // 自动回放发生，回放结束前不启动倒计时
+      expect(service.playedFiles, ['/tmp/waiting-start-retell.m4a']);
+      expect(player.postEvaluationPauseCalls, 0);
+
+      service.playCompleter?.complete();
+      await tester.pumpAndSettle();
+
+      expect(player.postEvaluationPauseCalls, 1);
+      expect(player.lastPostEvaluationScore, 0.77);
     });
 
     testWidgets('点击句子进入详情前会进入 waiting for user', (tester) async {
