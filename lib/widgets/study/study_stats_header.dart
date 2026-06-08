@@ -546,10 +546,10 @@ class _WeeklyBarChartState extends State<_WeeklyBarChart> {
     required bool isToday,
   }) {
     final alpha = isToday ? 1.0 : 0.5;
-    // 按比例分配高度，用 ClipRect 兜底防溢出
-    final inputH = barHeight * inputRatio;
-    final outputH = barHeight * outputRatio;
-    final otherH = barHeight * otherRatio;
+    // 按可用剩余高度逐段分配，避免浮点比例相加产生亚像素溢出。
+    final otherH = (barHeight * otherRatio).clamp(0.0, barHeight);
+    final outputH = (barHeight * outputRatio).clamp(0.0, barHeight - otherH);
+    final inputH = math.max(0.0, barHeight - otherH - outputH);
 
     return Container(
       height: barHeight,

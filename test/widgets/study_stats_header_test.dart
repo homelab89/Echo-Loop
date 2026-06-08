@@ -294,6 +294,23 @@ void main() {
       // 柱顶显示 30m（totalSeconds 1800/60=30）
       expect(find.text('30m'), findsOneWidget);
     });
+
+    testWidgets('三段堆叠高度包含浮点误差时不触发布局溢出', (tester) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          stats: const StudyStats(
+            weekTotalSeconds: 1800,
+            dailySeconds: [0, 0, 0, 0, 0, 0, 1800],
+            dailyInputSeconds: [0, 0, 0, 0, 0, 0, 299],
+            dailyOutputSeconds: [0, 0, 0, 0, 0, 0, 701],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('30m'), findsOneWidget);
+    });
   });
 
   group('StudyStatsHeader — 听/说弹窗推荐表格', () {
