@@ -14,6 +14,9 @@
 /// | unsupported | canRequest（UI 层不展示 banner） |
 library;
 
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../analytics/analytics_service.dart';
@@ -56,10 +59,12 @@ class NotificationPermissionService {
     required AnalyticsService analytics,
     required NotificationPromptTrigger trigger,
     required NotificationPermissionReporter reporter,
+    bool? isAndroid,
   }) : _prefs = prefs,
        _analytics = analytics,
        _trigger = trigger,
-       _reporter = reporter;
+       _reporter = reporter,
+       _isAndroid = isAndroid ?? (!kIsWeb && Platform.isAndroid);
 
   /// 上次 pre-prompt 展示时间（millisSinceEpoch）。
   static const String _spKeyLastShownAt = 'notification_prompt_last_shown_at';
@@ -81,6 +86,7 @@ class NotificationPermissionService {
   final AnalyticsService _analytics;
   final NotificationPromptTrigger _trigger;
   final NotificationPermissionReporter _reporter;
+  final bool _isAndroid;
 
   /// 注入测试时间的钩子，默认走真实时钟。
   DateTime Function() now = DateTime.now;
@@ -90,12 +96,13 @@ class NotificationPermissionService {
 
   /// 是否满足 pre-prompt 展示条件。
   ///
-  /// 读 SP `authorization_status`：不存在（未曾走过流程）且不在冷却期 → 可弹。
+  /// Android 新安装时系统会把通知显示为 denied，但用户仍可首次申请。
+  /// 因此 Android 以 pre-prompt 行为记录判断是否还能弹；非 Android 仍以
+  /// 系统授权结果 SP 作为已决策标记。
   /// 不读 reporter，与设置页的 OS 状态判断独立。
   Future<bool> canShowPrompt() async {
-    final spExists = _prefs.containsKey(_spKeyAuthorizationStatus);
-    if (spExists) {
-      AppLogger.log(_logTag, 'canShowPrompt: SP exists -> false');
+    if (!_canPromptDespiteAuthorizationStatus()) {
+      AppLogger.log(_logTag, 'canShowPrompt: already_decided -> false');
       return false;
     }
     if (_isInCooldown()) {
@@ -134,13 +141,12 @@ class NotificationPermissionService {
   /// 价值锚点调用入口：每次"用户产生学习成果 / 首次收藏"时调用，
   /// 由本服务决定是否真的弹 pre-prompt。
   ///
-  /// 读 SP `authorization_status`：不存在（未曾走过流程）→ 可弹，
-  /// 已存在（允许/拒绝过）→ 跳过。不依赖 reporter 的 OS 状态。
+  /// 非 Android 读 SP `authorization_status`：不存在（未曾走过流程）→ 可弹。
+  /// Android 新安装默认为 denied，需改用 pre-prompt action 判断是否已处理。
   Future<void> maybeTriggerPrompt() async {
     AppLogger.log(_logTag, 'maybeTriggerPrompt: called from anchor');
 
-    final spExists = _prefs.containsKey(_spKeyAuthorizationStatus);
-    if (spExists) {
+    if (!_canPromptDespiteAuthorizationStatus()) {
       AppLogger.log(_logTag, 'maybeTriggerPrompt: skip (already_decided)');
       _trackSkipped('already_decided');
       return;
@@ -255,6 +261,20 @@ class NotificationPermissionService {
     final elapsedMs = now().millisecondsSinceEpoch - lastShown;
     final cooldownMs = _redismissCooldownDays * 24 * 3600 * 1000;
     return elapsedMs < cooldownMs;
+  }
+
+  bool _canPromptDespiteAuthorizationStatus() {
+    final authorizationGranted =
+        _prefs.getBool(_spKeyAuthorizationStatus) == true;
+    if (authorizationGranted) return false;
+
+    if (!_isAndroid) {
+      return !_prefs.containsKey(_spKeyAuthorizationStatus);
+    }
+
+    // Android 的 denied 不能区分"新安装未请求"和"已拒绝"。只要用户已在
+    // 应用内点过"开启"，就视为已经尝试过系统申请，不再自动打扰。
+    return _prefs.getString(_spKeyLastAction) != _actionGrant;
   }
 
   Future<void> _persistAction(String action) async {

@@ -18,6 +18,7 @@ import '../models/learning_progress.dart';
 import '../services/app_logger.dart';
 import 'learning_plan_provider.dart';
 import 'learning_settings_provider.dart';
+import 'notification_permission_provider.dart';
 import 'time_provider.dart';
 
 part 'learning_progress_provider.g.dart';
@@ -410,6 +411,13 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
             },
           );
       if (stage == LearningStage.firstLearn) {
+        AppLogger.log(
+          'NotifPerm',
+          'LearningProgress firstLearn completed -> maybeTriggerPrompt',
+        );
+        unawaited(
+          ref.read(notificationPermissionServiceProvider).maybeTriggerPrompt(),
+        );
         ref
             .read(usageTrackerProvider)
             .record(

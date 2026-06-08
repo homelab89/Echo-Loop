@@ -45,6 +45,7 @@ void main() {
     required NotificationAuthorization authStatus,
     bool requestResult = true,
     DateTime? now,
+    bool isAndroid = false,
   }) async {
     when(
       () => reporter.getAuthorizationStatus(),
@@ -59,6 +60,7 @@ void main() {
       analytics: analytics,
       trigger: trigger,
       reporter: reporter,
+      isAndroid: isAndroid,
     );
     if (now != null) {
       service.now = () => now;
@@ -168,6 +170,92 @@ void main() {
           EventParams.reason: 'cooldown',
         }),
       ).called(1);
+    });
+
+    test(
+      'Android: authorization_status=false 但未点过应用内弹窗 → trigger fired',
+      () async {
+        await prefs.setBool('notification_authorization_status', false);
+        final service = await buildService(
+          authStatus: NotificationAuthorization.denied,
+          isAndroid: true,
+        );
+
+        await service.maybeTriggerPrompt();
+
+        expect(trigger.triggerCount, 1);
+        verifyNever(
+          () => analytics.track(Events.notificationPromptSkipped, any()),
+        );
+      },
+    );
+
+    test(
+      'Android: authorization_status=false 且已点过开启 → skip(already_decided)',
+      () async {
+        await prefs.setBool('notification_authorization_status', false);
+        await prefs.setString('notification_prompt_last_action', 'grant');
+        await prefs.setInt(
+          'notification_prompt_last_shown_at',
+          DateTime(2026, 5, 1).millisecondsSinceEpoch,
+        );
+        final service = await buildService(
+          authStatus: NotificationAuthorization.denied,
+          isAndroid: true,
+        );
+
+        await service.maybeTriggerPrompt();
+
+        expect(trigger.triggerCount, 0);
+        verify(
+          () => analytics.track(Events.notificationPromptSkipped, {
+            EventParams.reason: 'already_decided',
+          }),
+        ).called(1);
+      },
+    );
+
+    test('Android: dismiss 未过 14 天 → skip(cooldown)', () async {
+      final now = DateTime(2026, 5, 22, 12, 0);
+      await prefs.setBool('notification_authorization_status', false);
+      await prefs.setString('notification_prompt_last_action', 'dismiss');
+      await prefs.setInt(
+        'notification_prompt_last_shown_at',
+        now.subtract(const Duration(days: 7)).millisecondsSinceEpoch,
+      );
+      final service = await buildService(
+        authStatus: NotificationAuthorization.denied,
+        now: now,
+        isAndroid: true,
+      );
+
+      await service.maybeTriggerPrompt();
+
+      expect(trigger.triggerCount, 0);
+      verify(
+        () => analytics.track(Events.notificationPromptSkipped, {
+          EventParams.reason: 'cooldown',
+        }),
+      ).called(1);
+    });
+
+    test('Android: dismiss 超过 14 天 → 重新 trigger fired', () async {
+      final now = DateTime(2026, 5, 22, 12, 0);
+      await prefs.setBool('notification_authorization_status', false);
+      await prefs.setString('notification_prompt_last_action', 'dismiss');
+      await prefs.setInt(
+        'notification_prompt_last_shown_at',
+        now.subtract(const Duration(days: 15)).millisecondsSinceEpoch,
+      );
+      final service = await buildService(
+        authStatus: NotificationAuthorization.denied,
+        now: now,
+        isAndroid: true,
+      );
+
+      await service.maybeTriggerPrompt();
+
+      expect(trigger.triggerCount, 1);
     });
   });
 

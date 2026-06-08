@@ -1,6 +1,6 @@
 /// 通知权限请求时机协调器的 Riverpod 接线。
 ///
-/// - [notificationPromptTriggerProvider]: 用 Notifier<int> 作为一次性事件流，
+/// - [notificationPromptTriggerProvider]: 用 `Notifier<int>` 作为一次性事件流，
 ///   每次 `trigger()` 通过 +1 通知监听者（同值不通知，所以并发触发也只算一次）。
 ///   MainShell 监听后用 [rootNavigatorKey] 弹 dialog。
 /// - [notificationPermissionReporterProvider]: 平台通知权限报告器，
@@ -83,5 +83,6 @@ final notificationPermissionServiceProvider =
         analytics: ref.read(analyticsServiceProvider),
         trigger: ref.read(notificationPromptTriggerProvider.notifier),
         reporter: ref.read(notificationPermissionReporterProvider),
+        isAndroid: !kIsWeb && Platform.isAndroid,
       );
     });

@@ -10,7 +10,9 @@ import 'package:echo_loop/database/providers.dart';
 import 'package:echo_loop/models/learning_progress.dart';
 import 'package:echo_loop/providers/learning_progress_provider.dart';
 import 'package:echo_loop/providers/learning_settings_provider.dart';
+import 'package:echo_loop/providers/notification_permission_provider.dart';
 import 'package:echo_loop/providers/time_provider.dart';
+import 'package:echo_loop/services/notification_permission_service.dart';
 import 'package:mocktail/mocktail.dart';
 import '../helpers/mock_providers.dart';
 
@@ -21,6 +23,9 @@ class MockLearningProgressDao extends Mock implements LearningProgressDao {}
 class MockStageCompletionDao extends Mock implements StageCompletionDao {}
 
 class MockBookmarkDao extends Mock implements BookmarkDao {}
+
+class MockNotificationPermissionService extends Mock
+    implements NotificationPermissionService {}
 
 /// 测试用 Notifier：继承真实逻辑，覆盖 build() 注入初始状态，
 /// 同时保留生产 build() 中安装的 settings → reconcile 监听器。
@@ -140,6 +145,7 @@ void main() {
     NowGetter? nowGetter,
     bool autoSkipRetell = false,
     Set<int>? bookmarks,
+    NotificationPermissionService? notificationPermissionService,
   }) {
     if (bookmarks != null) {
       when(
@@ -156,7 +162,12 @@ void main() {
         bookmarkDaoProvider.overrideWithValue(mockBookmarkDao),
         if (nowGetter != null) nowProvider.overrideWithValue(nowGetter),
         analyticsOverride(),
-        notificationPermissionOverride(),
+        if (notificationPermissionService != null)
+          notificationPermissionServiceProvider.overrideWithValue(
+            notificationPermissionService,
+          )
+        else
+          notificationPermissionOverride(),
         ...learningSettingsOverrides(autoSkipRetell: autoSkipRetell),
         learningSettingsProvider.overrideWith(
           () => _TestLearningSettingsNotifier(
@@ -232,6 +243,58 @@ void main() {
         expect(after.lastStageCompletedAt, isNotNull);
       },
     );
+
+    test('首次学习最后一步完成后触发通知权限 pre-prompt 锚点', () async {
+      final now = DateTime(2026, 3, 1, 10, 0);
+      final progress = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.firstLearn,
+        currentSubStage: SubStageType.retell,
+        currentStageStartedAt: now,
+        updatedAt: now,
+      );
+      final notificationService = MockNotificationPermissionService();
+      when(
+        () => notificationService.maybeTriggerPrompt(),
+      ).thenAnswer((_) async {});
+
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': progress}),
+        nowGetter: () => now,
+        notificationPermissionService: notificationService,
+      );
+
+      await notifier(container).completeCurrentSubStage('a1');
+      await Future<void>.delayed(Duration.zero);
+
+      verify(() => notificationService.maybeTriggerPrompt()).called(1);
+    });
+
+    test('首次学习阶段内推进不触发通知权限 pre-prompt 锚点', () async {
+      final now = DateTime(2026, 3, 1, 10, 0);
+      final progress = LearningProgress(
+        audioItemId: 'a1',
+        currentStage: LearningStage.firstLearn,
+        currentSubStage: SubStageType.blindListen,
+        currentStageStartedAt: now,
+        updatedAt: now,
+      );
+      final notificationService = MockNotificationPermissionService();
+      when(
+        () => notificationService.maybeTriggerPrompt(),
+      ).thenAnswer((_) async {});
+
+      final container = createContainer(
+        LearningProgressState(progressMap: {'a1': progress}),
+        nowGetter: () => now,
+        notificationPermissionService: notificationService,
+      );
+
+      await notifier(container).completeCurrentSubStage('a1');
+      await Future<void>.delayed(Duration.zero);
+
+      verifyNever(() => notificationService.maybeTriggerPrompt());
+    });
 
     test('review1 v2 阶段内推进：reviewDifficultPractice → blindListen', () async {
       final now = DateTime(2026, 3, 5, 10, 0);

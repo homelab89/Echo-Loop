@@ -1,7 +1,26 @@
 # Echo Loop 任务清单
 
 > 最后更新：2026-06-08
-> 当前焦点：修复 AI 转录完成后学习计划页开始学习无响应
+> 当前焦点：修复 Android 首次学习完成后通知权限弹窗不出现
+
+## 已完成：修复 Android 首次学习完成后通知权限弹窗不出现
+
+Android 13/14 新安装时系统设置中通知权限默认显示为关闭，启动同步会把该真实系统状态写入 `notification_authorization_status=false`。此前 pre-prompt 判定把这个 false 直接当作“用户已经处理过系统授权”，导致完成首次学习阶段后应用内通知说明弹窗不出现。现在 Android 上应用内弹窗资格改用 `notification_prompt_last_action` 判断：未点过应用内“开启”时，即使系统状态是 denied，也允许在价值锚点弹出一次；点“开启”后才视为已尝试系统申请。
+
+### 实现
+- [x] Android pre-prompt 判定不再因 `notification_authorization_status=false` 直接跳过
+- [x] 保持 Android 设置页 denied/通知已关闭的真实展示不变
+- [x] 首次学习阶段完成后补充通知权限 pre-prompt 锚点触发
+- [x] 补充回归测试：Android denied 但未点过应用内弹窗时仍触发；已点过开启后不再触发；首次学习最后一步触发通知锚点
+
+### 验证
+- [x] `dart format lib/services/notification_permission_service.dart lib/providers/notification_permission_provider.dart lib/providers/learning_progress_provider.dart test/services/notification_permission_service_test.dart test/providers/learning_progress_provider_test.dart`
+- [x] `flutter analyze lib/services/notification_permission_service.dart lib/providers/notification_permission_provider.dart lib/providers/learning_progress_provider.dart test/services/notification_permission_service_test.dart test/providers/learning_progress_provider_test.dart`：No issues found
+- [x] `flutter test test/services/notification_permission_service_test.dart`：19 passed
+- [x] `flutter test test/providers/learning_progress_provider_test.dart`：84 passed
+- [ ] `scripts/check.sh`：按用户要求中断，未跑全量测试
+
+**完成时间**: 2026-06-08 19:35 +0800
 
 ## 已完成：修复 AI 转录完成后学习计划页开始学习无响应
 
