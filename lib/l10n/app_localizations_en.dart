@@ -65,6 +65,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectAudioFile => 'Select Audio File';
 
   @override
+  String get audioFilePickerCloudDriveHint =>
+      'Before choosing from a cloud drive, install and sign in to that cloud drive app first. A few cloud drive apps may not support direct selection from the file picker.';
+
+  @override
   String get selectTranscript => 'Select Transcript (Optional)';
 
   @override
@@ -3564,7 +3568,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importAudioFromFileDescription =>
-      'Select audio files from this device';
+      'Choose audio files from your phone or cloud drive';
 
   @override
   String get importAudioFromUrl => 'Import from Link';

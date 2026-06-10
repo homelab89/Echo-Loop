@@ -204,6 +204,10 @@ class _AddAudioDialogState extends ConsumerState<AddAudioDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSelectAudioFileButton(l10n, colorScheme),
+        if (widget.embedded) ...[
+          const SizedBox(height: 12),
+          _buildCloudDriveHint(Theme.of(context), l10n),
+        ],
         // 内联错误提示（淡入 + 上滑，6 秒自动消失）
         AnimatedSize(
           duration: const Duration(milliseconds: 220),
@@ -318,6 +322,39 @@ class _AddAudioDialogState extends ConsumerState<AddAudioDialog> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+      ),
+    );
+  }
+
+  Widget _buildCloudDriveHint(ThemeData theme, AppLocalizations l10n) {
+    final colorScheme = theme.colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.38),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 18,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l10n.audioFilePickerCloudDriveHint,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

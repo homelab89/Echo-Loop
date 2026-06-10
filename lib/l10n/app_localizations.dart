@@ -206,6 +206,12 @@ abstract class AppLocalizations {
   /// **'Select Audio File'**
   String get selectAudioFile;
 
+  /// No description provided for @audioFilePickerCloudDriveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Before choosing from a cloud drive, install and sign in to that cloud drive app first. A few cloud drive apps may not support direct selection from the file picker.'**
+  String get audioFilePickerCloudDriveHint;
+
   /// No description provided for @selectTranscript.
   ///
   /// In en, this message translates to:
@@ -6359,7 +6365,7 @@ abstract class AppLocalizations {
   /// No description provided for @importAudioFromFileDescription.
   ///
   /// In en, this message translates to:
-  /// **'Select audio files from this device'**
+  /// **'Choose audio files from your phone or cloud drive'**
   String get importAudioFromFileDescription;
 
   /// No description provided for @importAudioFromUrl.

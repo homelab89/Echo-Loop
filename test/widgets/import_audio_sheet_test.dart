@@ -45,7 +45,14 @@ Widget _buildApp({bool failImport = false}) {
       builder: (context) => Scaffold(
         body: Center(
           child: FilledButton(
-            onPressed: () => showImportAudioSheet(context),
+            onPressed: () async {
+              await showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                showDragHandle: true,
+                builder: (_) => const ImportAudioFlowSheet(),
+              );
+            },
             child: const Text('Open Import'),
           ),
         ),
@@ -81,13 +88,14 @@ void main() {
         .setMockMethodCallHandler(SystemChannels.platform, null);
   });
 
-  testWidgets('导入方式 sheet 提供本地文件和链接入口', (tester) async {
+  testWidgets('桌面端导入方式 sheet 只提供本地文件和链接入口', (tester) async {
     await tester.pumpWidget(_buildApp());
     await tester.tap(find.text('Open Import'));
     await tester.pumpAndSettle();
 
     expect(find.text('Import Audio'), findsOneWidget);
     expect(find.text('Import from File'), findsOneWidget);
+    expect(find.text('Import from Cloud Drive'), findsNothing);
     expect(find.text('Import from Link'), findsOneWidget);
   });
 
@@ -99,6 +107,10 @@ void main() {
     final localOption = find.byKey(const ValueKey('import-option-local-file'));
     final linkOption = find.byKey(const ValueKey('import-option-direct-url'));
     expect(localOption, findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('import-option-cloud-drive')),
+      findsNothing,
+    );
     expect(linkOption, findsOneWidget);
 
     final localMaterial = tester.widget<Material>(
@@ -123,6 +135,20 @@ void main() {
     final localBottom = tester.getBottomLeft(localOption).dy;
     final linkTop = tester.getTopLeft(linkOption).dy;
     expect(linkTop - localBottom, 12);
+  });
+
+  testWidgets('本地文件入口说明提示可选择手机或网盘音频', (tester) async {
+    await tester.pumpWidget(_buildApp());
+    await tester.tap(find.text('Open Import'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Import from Cloud Drive'), findsNothing);
+    expect(
+      find.text('Choose audio files from your phone or cloud drive'),
+      findsOneWidget,
+    );
+    expect(find.text('Import from File'), findsOneWidget);
+    expect(find.text('Import from Link'), findsOneWidget);
   });
 
   testWidgets('链接入口显示 URL 表单且空输入禁用提交', (tester) async {
@@ -163,6 +189,14 @@ void main() {
     );
     expect(
       find.widgetWithText(FilledButton, 'Select Audio File'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Before choosing from a cloud drive'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('may not support direct selection'),
       findsOneWidget,
     );
 

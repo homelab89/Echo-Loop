@@ -65,6 +65,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectAudioFile => '选择音频文件';
 
   @override
+  String get audioFilePickerCloudDriveHint =>
+      '从网盘选择前，请先安装并登录对应网盘。少部分网盘可能不支持从文件选择器中直接选择。';
+
+  @override
   String get selectTranscript => '选择字幕（可选）';
 
   @override
@@ -3422,7 +3426,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importAudioFromFile => '从本地文件导入';
 
   @override
-  String get importAudioFromFileDescription => '选择设备上的音频文件';
+  String get importAudioFromFileDescription => '选择手机或网盘中的音频文件';
 
   @override
   String get importAudioFromUrl => '从链接导入';
