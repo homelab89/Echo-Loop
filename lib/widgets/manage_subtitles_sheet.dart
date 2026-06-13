@@ -485,7 +485,7 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
     _InlineError err,
   ) {
     final colorScheme = theme.colorScheme;
-    final accent = Colors.orange.shade700; // 与 _buildEmptyResultView 同色系
+    final accent = colorScheme.error; // 红色错误风格，提高可见性
 
     final (IconData icon, String title) = switch (err.kind) {
       _UploadErrorKind.unsupportedFormat => (
@@ -514,9 +514,12 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+          color: colorScheme.errorContainer.withValues(alpha: 0.32),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: colorScheme.outlineVariant, width: 1),
+          border: Border.all(
+            color: colorScheme.error.withValues(alpha: 0.55),
+            width: 1,
+          ),
         ),
         child: Row(
           children: [
@@ -530,16 +533,13 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
                       text: title,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    TextSpan(
-                      text: ' · ${err.message}',
-                      style: TextStyle(color: colorScheme.onSurfaceVariant),
-                    ),
+                    TextSpan(text: ' · ${err.message}'),
                   ],
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface,
+                  color: colorScheme.error,
                   height: 1.25,
                 ),
               ),
@@ -547,7 +547,7 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
             IconButton(
               onPressed: _dismissInlineError,
               icon: const Icon(Icons.close, size: 18),
-              color: colorScheme.onSurfaceVariant,
+              color: colorScheme.error,
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(width: 28, height: 28),
