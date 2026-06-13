@@ -99,6 +99,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get waveformZoom => 'Zoom';
 
   @override
+  String waveformLoading(int progress) {
+    return 'Loading waveform $progress%';
+  }
+
+  @override
   String get playbackSpeed => 'Playback Speed';
 
   @override

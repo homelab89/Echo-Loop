@@ -36,6 +36,14 @@
   "bookmarkedOnly": "Bookmarked Only",
   "playbackSettings": "Playback Settings",
   "waveformZoom": "Zoom",
+  "waveformLoading": "Loading waveform {progress}%",
+  "@waveformLoading": {
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      }
+    }
+  },
   "playbackSpeed": "Playback Speed",
   "loopPlayback": "Loop Playback",
   "loopCount": "Loop Count",

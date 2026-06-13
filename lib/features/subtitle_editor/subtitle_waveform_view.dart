@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:just_waveform/just_waveform.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import '../../models/sentence.dart';
 import 'subtitle_edit_engine.dart';
 
@@ -758,7 +760,7 @@ class _WaveformLoading extends StatelessWidget {
             LinearProgressIndicator(value: progress <= 0 ? null : progress),
             const SizedBox(height: 12),
             Text(
-              'Loading waveform $l10nProgress%',
+              AppLocalizations.of(context)!.waveformLoading(l10nProgress),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],

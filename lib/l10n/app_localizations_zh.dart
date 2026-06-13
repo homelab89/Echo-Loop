@@ -99,6 +99,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get waveformZoom => '缩放';
 
   @override
+  String waveformLoading(int progress) {
+    return '正在加载波形 $progress%';
+  }
+
+  @override
   String get playbackSpeed => '播放速度';
 
   @override

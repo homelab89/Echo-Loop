@@ -29,6 +29,7 @@
   "bookmarkedOnly": "仅播放收藏",
   "playbackSettings": "播放设置",
   "waveformZoom": "缩放",
+  "waveformLoading": "正在加载波形 {progress}%",
   "playbackSpeed": "播放速度",
   "loopPlayback": "循环播放",
   "loopCount": "循环次数",

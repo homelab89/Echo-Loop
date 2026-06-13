@@ -272,6 +272,12 @@ abstract class AppLocalizations {
   /// **'Zoom'**
   String get waveformZoom;
 
+  /// No description provided for @waveformLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading waveform {progress}%'**
+  String waveformLoading(int progress);
+
   /// No description provided for @playbackSpeed.
   ///
   /// In en, this message translates to:
