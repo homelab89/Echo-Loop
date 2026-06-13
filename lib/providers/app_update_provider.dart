@@ -17,6 +17,7 @@ import '../models/app_update_info.dart';
 import '../services/app_logger.dart';
 import '../services/app_update_checker.dart';
 import '../utils/version_compare.dart';
+import 'dev_version_override_provider.dart';
 import 'package_info_provider.dart';
 import 'settings_provider.dart';
 
@@ -147,7 +148,11 @@ class AppUpdate extends _$AppUpdate {
     final packageInfo = ref.read(packageInfoProvider);
     // 仅用 versionName 做版本比较；buildNumber 是平台内部升降级机制，
     // 不参与业务版本判断（同一 versionName 唯一对应一次正式发布）。
-    final localVersion = packageInfo.version;
+    // 开发者可通过 devVersionOverrideProvider 覆盖本地版本号，方便测试更新流程。
+    final overrideVersion = ref.read(devVersionOverrideProvider);
+    final localVersion = (overrideVersion != null && overrideVersion.isNotEmpty)
+        ? overrideVersion
+        : packageInfo.version;
     final updateType = determineUpdateType(localVersion, info);
 
     // 非手动检查时，检查是否已忽略此版本

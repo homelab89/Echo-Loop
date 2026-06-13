@@ -49,6 +49,8 @@ void main() {
 
       expect(find.textContaining('2.0.0'), findsOneWidget);
       expect(find.text('New features!'), findsOneWidget);
+      // 更新内容区有 "What's New" 标题
+      expect(find.text("What's New"), findsOneWidget);
       expect(find.text('Later'), findsOneWidget);
       expect(find.text('Update Now'), findsOneWidget);
     });
@@ -107,6 +109,8 @@ void main() {
       expect(find.text('Later'), findsNothing);
       expect(find.text('Copy Download Link'), findsOneWidget);
       expect(find.text('Update Now'), findsOneWidget);
+      // 强制更新也要展示更新内容（what's new）
+      expect(find.text('New features!'), findsOneWidget);
     });
 
     testWidgets('不可通过返回键关闭', (tester) async {

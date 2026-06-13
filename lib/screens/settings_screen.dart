@@ -15,6 +15,7 @@ import '../l10n/app_localizations.dart';
 import '../models/app_update_info.dart';
 import '../providers/app_update_provider.dart';
 import '../providers/backup_provider.dart';
+import '../providers/dev_version_override_provider.dart';
 import '../providers/developer_options_provider.dart';
 import '../providers/offline_asr_settings_provider.dart';
 import '../providers/package_info_provider.dart';
@@ -534,6 +535,82 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  /// 弹出版本号覆盖对话框（开发者选项）
+  ///
+  /// 输入框预填当前生效的版本号（已覆盖则为覆盖值，否则为真实版本号）。
+  /// 确定后写入 [devVersionOverrideProvider]，下次检查更新即按此版本比较；
+  /// 清除则恢复使用真实版本号。
+  Future<void> _showVersionOverrideDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final realVersion = ref.read(packageInfoProvider).version;
+    final current = ref.read(devVersionOverrideProvider);
+    final textController = TextEditingController(text: current ?? realVersion);
+
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('版本号覆盖'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('真实版本号：$realVersion'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: textController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: '模拟版本号',
+                hintText: '如 1.0.0',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '设为低于远程 minimumVersion 触发强制更新，'
+              '低于 latestVersion 触发可选更新。',
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          // 清除覆盖：返回空串作为清除信号
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(''),
+            child: const Text('清除覆盖'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(textController.text),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+
+    textController.dispose();
+    // null = 取消，不改动；'' = 清除；其它 = 设置覆盖
+    if (result == null) return;
+    ref.read(devVersionOverrideProvider.notifier).setOverride(result);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            result.isEmpty
+                ? '已清除版本号覆盖，恢复真实版本 $realVersion'
+                : '已覆盖版本号为 $result，可点"检查更新"测试',
+          ),
+        ),
+      );
+  }
+
   /// 构建开发者选项区域
   Widget _buildDeveloperSection(
     BuildContext context,
@@ -574,6 +651,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             controller,
             settings.timeMachineDateTime,
           ),
+        ),
+        ListTile(
+          leading: _emojiIcon('🏷'),
+          title: const Text('版本号覆盖'),
+          subtitle: const Text('模拟旧版本以测试更新弹窗，重启后自动重置'),
+          trailing: _trailingValue(
+            context,
+            ref.watch(devVersionOverrideProvider) ?? '真实版本',
+          ),
+          onTap: () => _showVersionOverrideDialog(context, ref),
         ),
         ListTile(
           leading: _emojiIcon('🎙'),

@@ -56,36 +56,58 @@ class _AppUpdateDialogContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
+    final theme = Theme.of(context);
 
     // 标题
     final title = isForceUpdate
         ? l10n.forceUpdateTitle
         : l10n.updateAvailable(info.latestVersion);
 
-    // 正文
+    // 正文：release notes（更新内容）。强制更新时在其上方额外加一段不可用提示。
     final releaseNotes =
         info.releaseNotes[locale] ?? info.releaseNotes['en'] ?? '';
-    final message = isForceUpdate ? l10n.forceUpdateMessage : releaseNotes;
 
     return AlertDialog(
       title: Text(title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (message.isNotEmpty) _ReleaseNotesText(text: message),
-          if (isForceUpdate && downloadUrl != null) ...[
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => _copyLink(context, l10n),
-                icon: const Icon(Icons.copy, size: 16),
-                label: Text(l10n.copyDownloadLink),
-              ),
-            ),
-          ],
-        ],
+      // 强制更新时正文偏长，限制宽度并允许滚动，避免内容被裁切
+      content: SizedBox(
+        width: 320,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 强制更新提示：当前版本不可用（次要文字色，弱化于标题与更新内容）
+              if (isForceUpdate)
+                Text(
+                  l10n.forceUpdateMessage,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              // 更新内容（what's new），强制 / 软更新都展示
+              if (releaseNotes.isNotEmpty) ...[
+                if (isForceUpdate) const SizedBox(height: 16),
+                _ReleaseNotesCard(
+                  title: l10n.releaseNotesTitle,
+                  notes: releaseNotes,
+                ),
+              ],
+              // 强制更新逃生通道：复制下载链接
+              if (isForceUpdate && downloadUrl != null) ...[
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => _copyLink(context, l10n),
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: Text(l10n.copyDownloadLink),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
       actions: [
         // soft update: 稍后提醒
@@ -122,6 +144,53 @@ class _AppUpdateDialogContent extends StatelessWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(l10n.linkCopied)));
+  }
+}
+
+/// 更新内容卡片：浅色圆角容器，顶部标题 + 下方逐行列表，
+/// 让 release notes 在视觉上自成一组，与上方的强制更新提示区分。
+class _ReleaseNotesCard extends StatelessWidget {
+  final String title;
+  final String notes;
+
+  const _ReleaseNotesCard({required this.title, required this.notes});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.auto_awesome,
+                size: 16,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _ReleaseNotesText(text: notes),
+        ],
+      ),
+    );
   }
 }
 
