@@ -1552,10 +1552,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get transcriptionErrorTimeout => '请求超时，请重试';
 
   @override
-  String get transcriptionErrorServer => '服务器错误，请稍后重试';
+  String get transcriptionErrorServer => '请检查音频是否正常，稍后再试';
 
   @override
-  String get transcriptionErrorUnknown => '出了点问题';
+  String get transcriptionErrorUnknown => '请检查音频是否正常，稍后再试';
 
   @override
   String get transcriptionEmptyResult => '未检测到语音';

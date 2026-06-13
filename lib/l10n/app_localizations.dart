@@ -2897,13 +2897,13 @@ abstract class AppLocalizations {
   /// No description provided for @transcriptionErrorServer.
   ///
   /// In en, this message translates to:
-  /// **'Server error, please retry later'**
+  /// **'Please check the audio and try again later'**
   String get transcriptionErrorServer;
 
   /// No description provided for @transcriptionErrorUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Something went wrong'**
+  /// **'Please check the audio and try again later'**
   String get transcriptionErrorUnknown;
 
   /// No description provided for @transcriptionEmptyResult.

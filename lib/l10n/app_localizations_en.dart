@@ -1603,10 +1603,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transcriptionErrorTimeout => 'Request timed out, please retry';
 
   @override
-  String get transcriptionErrorServer => 'Server error, please retry later';
+  String get transcriptionErrorServer =>
+      'Please check the audio and try again later';
 
   @override
-  String get transcriptionErrorUnknown => 'Something went wrong';
+  String get transcriptionErrorUnknown =>
+      'Please check the audio and try again later';
 
   @override
   String get transcriptionEmptyResult => 'No speech detected';
