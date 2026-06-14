@@ -3,6 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:echo_loop/theme/app_theme.dart';
 
 void main() {
+  group('AppTheme — 系统默认字体', () {
+    test('亮色和暗色主题的 TextTheme 都不指定字体族', () {
+      expect(_fontFamilies(AppTheme.light()), everyElement(isNull));
+      expect(_fontFamilies(AppTheme.dark()), everyElement(isNull));
+    });
+  });
+
   group('AppTheme.dark — 纯黑 / AMOLED', () {
     final dark = AppTheme.dark();
 
@@ -67,4 +74,25 @@ void main() {
       expect(AppTheme.light().bottomSheetTheme.modalBackgroundColor, isNull);
     });
   });
+}
+
+List<String?> _fontFamilies(ThemeData theme) {
+  final textTheme = theme.textTheme;
+  return [
+    textTheme.displayLarge?.fontFamily,
+    textTheme.displayMedium?.fontFamily,
+    textTheme.displaySmall?.fontFamily,
+    textTheme.headlineLarge?.fontFamily,
+    textTheme.headlineMedium?.fontFamily,
+    textTheme.headlineSmall?.fontFamily,
+    textTheme.titleLarge?.fontFamily,
+    textTheme.titleMedium?.fontFamily,
+    textTheme.titleSmall?.fontFamily,
+    textTheme.bodyLarge?.fontFamily,
+    textTheme.bodyMedium?.fontFamily,
+    textTheme.bodySmall?.fontFamily,
+    textTheme.labelLarge?.fontFamily,
+    textTheme.labelMedium?.fontFamily,
+    textTheme.labelSmall?.fontFamily,
+  ];
 }

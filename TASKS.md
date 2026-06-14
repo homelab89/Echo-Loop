@@ -3,6 +3,18 @@
 > 最后更新：2026-06-14
 > 当前焦点：Android 结束录音闪退（离线 ASR / Silero VAD）——**仍未解决**
 
+## 已完成：Android 使用平台默认字体链
+
+**完成时间**: 2026-06-14 14:17 +0800
+
+移除 Flutter Material 默认 `TextTheme` 注入的 Roboto 字体族，不打包、不指定应用字体，让界面文本按 iOS/Android 各自平台默认字体链渲染。
+
+- [x] `app_theme.dart`：主题构建后清理 `textTheme` / `primaryTextTheme` 中的字体族，保留字号、字重、颜色等 Material 排版 token
+- [x] `app_theme_test.dart`：新增回归测试，防止亮色/暗色主题重新带上显式字体族
+- [x] `flutter analyze lib/theme/app_theme.dart test/theme/app_theme_test.dart`：No issues found
+- [x] `flutter test test/theme/app_theme_test.dart`：12 passed
+- [ ] `scripts/check.sh`：未跑；本次为主题字体局部调整，按规范仅运行直接相关检查
+
 ## 已完成：发现页接入精选播客 catalog
 
 **完成时间**: 2026-06-14 12:39 +0800

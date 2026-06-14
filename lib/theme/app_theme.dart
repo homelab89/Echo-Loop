@@ -74,8 +74,10 @@ class AppTheme {
   static ThemeData _buildTheme(ColorScheme colorScheme, Brightness brightness) {
     final isLight = brightness == Brightness.light;
 
-    return ThemeData(
+    final theme = ThemeData(
       useMaterial3: true,
+      // 保持为空：不打包、不指定应用字体，让 Flutter 使用平台默认字体链。
+      fontFamily: null,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: isLight ? _scaffoldBg : _pureBlack,
 
@@ -270,6 +272,61 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+    );
+
+    // Material 默认 TextTheme 在 Android 上会带 Roboto 字体族。这里仅移除字体族，
+    // 保留字号、字重、颜色等排版 token，让文本继续走平台默认字体链。
+    return theme.copyWith(
+      textTheme: _withoutFontFamily(theme.textTheme),
+      primaryTextTheme: _withoutFontFamily(theme.primaryTextTheme),
+    );
+  }
+
+  static TextTheme _withoutFontFamily(TextTheme textTheme) {
+    return textTheme.copyWith(
+      displayLarge: _textStyleWithoutFontFamily(textTheme.displayLarge),
+      displayMedium: _textStyleWithoutFontFamily(textTheme.displayMedium),
+      displaySmall: _textStyleWithoutFontFamily(textTheme.displaySmall),
+      headlineLarge: _textStyleWithoutFontFamily(textTheme.headlineLarge),
+      headlineMedium: _textStyleWithoutFontFamily(textTheme.headlineMedium),
+      headlineSmall: _textStyleWithoutFontFamily(textTheme.headlineSmall),
+      titleLarge: _textStyleWithoutFontFamily(textTheme.titleLarge),
+      titleMedium: _textStyleWithoutFontFamily(textTheme.titleMedium),
+      titleSmall: _textStyleWithoutFontFamily(textTheme.titleSmall),
+      bodyLarge: _textStyleWithoutFontFamily(textTheme.bodyLarge),
+      bodyMedium: _textStyleWithoutFontFamily(textTheme.bodyMedium),
+      bodySmall: _textStyleWithoutFontFamily(textTheme.bodySmall),
+      labelLarge: _textStyleWithoutFontFamily(textTheme.labelLarge),
+      labelMedium: _textStyleWithoutFontFamily(textTheme.labelMedium),
+      labelSmall: _textStyleWithoutFontFamily(textTheme.labelSmall),
+    );
+  }
+
+  static TextStyle? _textStyleWithoutFontFamily(TextStyle? style) {
+    if (style == null) return null;
+    return TextStyle(
+      inherit: style.inherit,
+      color: style.color,
+      backgroundColor: style.backgroundColor,
+      fontSize: style.fontSize,
+      fontWeight: style.fontWeight,
+      fontStyle: style.fontStyle,
+      letterSpacing: style.letterSpacing,
+      wordSpacing: style.wordSpacing,
+      textBaseline: style.textBaseline,
+      height: style.height,
+      leadingDistribution: style.leadingDistribution,
+      locale: style.locale,
+      foreground: style.foreground,
+      background: style.background,
+      shadows: style.shadows,
+      fontFeatures: style.fontFeatures,
+      fontVariations: style.fontVariations,
+      decoration: style.decoration,
+      decorationColor: style.decorationColor,
+      decorationStyle: style.decorationStyle,
+      decorationThickness: style.decorationThickness,
+      overflow: style.overflow,
     );
   }
 }
