@@ -105,6 +105,14 @@ void main() {
       expect(AppRoutes.bookmarkReview, '/bookmark-review');
       expect(AppRoutes.flashcard, '/flashcard');
     });
+
+    test('发现播客路径正确', () {
+      expect(AppRoutes.discoverPodcasts, '/discover/podcasts');
+      expect(
+        AppRoutes.discoverPodcastPreview('podcast-1'),
+        '/discover/podcasts/podcast-1',
+      );
+    });
   });
 
   group('GoRouter 配置', () {

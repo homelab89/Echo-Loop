@@ -1,7 +1,31 @@
 # Echo Loop 任务清单
 
-> 最后更新：2026-06-13
+> 最后更新：2026-06-14
 > 当前焦点：Android 结束录音闪退（离线 ASR / Silero VAD）——**仍未解决**
+
+## 已完成：发现页接入精选播客 catalog
+
+**完成时间**: 2026-06-14 12:39 +0800
+
+后端 `/api/v1/catalog` 返回的 `podcastCatalogs` 已接入发现合集页。发现页顶部展示精选播客入口，进入二级播客列表后可查看单个播客的 RSS 内容预览；未添加到我的合集时点击 episode 只提示先添加，不触发下载或学习。添加后复用现有 Podcast 订阅与本地合集详情链路。
+
+- [x] `catalog.dart` / `official_catalog_service.dart`：扩展 `CatalogPodcast` 与 `CatalogSnapshot.podcastCatalogs`，缓存读写兼容旧 catalog
+- [x] 新增 `discover_podcasts_provider` / `podcast_preview_provider`：只读读取 catalog，预览页优先用 RSS 获取 episode，网络/Apple/RSS/解析失败映射为友好错误
+- [x] `discover_collections_screen.dart`：发现页顶部增加精选播客入口，仅在后端有播客时展示
+- [x] 新增 `official_podcast_list_screen.dart` / `official_podcast_preview_screen.dart`：播客二级列表、内容预览、未添加 episode 提醒、添加到我的合集 CTA
+- [x] 后续修复：Podcast RSS `description` / `itunes:summary` 清洗 HTML 标签和常见实体，避免预览页显示 `<p>...</p>`
+- [x] 后续修复：精选播客预览页“更多”详情复用现有 Podcast 详情底部弹窗样式，与已订阅合集详情保持一致
+- [x] 后续修复（2026-06-14 13:16 +0800）：发现页“精选播客”入口图标改为 `https://i.postimg.cc/tRPzG4zX/podcast.jpg`，加载失败保留原播客图标兜底
+- [x] `app_router.dart`：新增 `/discover/podcasts` 与 `/discover/podcasts/:podcastId`
+- [x] i18n：中英文新增精选播客入口、预览错误、先添加提示等文案
+- [x] 测试：catalog 解析/缓存兼容、发现页入口、preview service 成功/失败、未添加 episode 提示、播客列表布局回归、路由常量
+- [x] `flutter analyze`（本次相关文件）：No issues found
+- [x] `flutter test test/features/official_collections/official_catalog_service_test.dart test/features/official_collections/discover_collections_screen_test.dart test/features/official_collections/podcast_preview_provider_test.dart test/router/app_router_test.dart`：27 passed
+- [x] `flutter analyze lib/features/podcast/podcast_feed_parser.dart test/features/podcast/podcast_service_test.dart`：No issues found
+- [x] `flutter test test/features/podcast/podcast_service_test.dart`：18 passed
+- [x] `flutter analyze lib/features/podcast/podcast_info_sheet.dart lib/features/official_collections/screens/official_podcast_preview_screen.dart test/features/official_collections/podcast_preview_provider_test.dart test/screens/collection_detail_screen_podcast_test.dart`：No issues found
+- [x] `flutter test test/features/official_collections/podcast_preview_provider_test.dart test/screens/collection_detail_screen_podcast_test.dart`：6 passed
+- [ ] `scripts/check.sh`：未跑；本次为发现页 + Podcast 预览的局部功能接入，按规范仅运行直接相关检查
 
 ## 已完成：修复 CI 中 AI 转录过长测试 fixture
 
