@@ -104,6 +104,9 @@ class RepeatPracticePanel extends StatelessWidget {
   /// 评分阈值
   final RatingThresholds thresholds;
 
+  /// 是否显示评级/录音胶囊。
+  final bool showRatingBadge;
+
   const RepeatPracticePanel({
     super.key,
     this.recordingMode = RecordingButtonMode.idle,
@@ -121,6 +124,7 @@ class RepeatPracticePanel extends StatelessWidget {
     this.ratingBadgeController,
     this.ratingPlaybackServiceFactory,
     this.thresholds = RatingThresholds.listenAndRepeat,
+    this.showRatingBadge = true,
   });
 
   @override
@@ -140,7 +144,8 @@ class RepeatPracticePanel extends StatelessWidget {
 
     final statusText = _buildStatusText(context);
     final hasStatus = statusText != null;
-    final hasBadge = currentAttempt?.hasFinalFeedback ?? false;
+    final currentBadgeAttempt = _badgeAttempt;
+    final hasBadge = currentBadgeAttempt != null;
     final hasFF = onFastForward != null;
     final statusSlotHeight = _usesExpandedStatusSlot
         ? _kErrorStatusSlotHeight
@@ -191,12 +196,12 @@ class RepeatPracticePanel extends StatelessWidget {
                             duration: const Duration(milliseconds: 200),
                             child: IgnorePointer(
                               ignoring: !hasBadge,
-                              child: hasBadge
+                              child: currentBadgeAttempt != null
                                   ? SpeechRatingBadge(
                                       l10n: l10n,
-                                      attempt: currentAttempt!,
+                                      attempt: currentBadgeAttempt,
                                       onBeforePlayback:
-                                          currentAttempt!.hasRecording
+                                          currentBadgeAttempt.hasRecording
                                           ? onBeforePlayback
                                           : null,
                                       thresholds: thresholds,
@@ -258,6 +263,26 @@ class RepeatPracticePanel extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  /// 构建左侧反馈胶囊使用的 attempt。
+  ///
+  /// 关闭复述评级时仍保留录音回放入口，但把 attempt 降级为
+  /// `unavailable + filePath`，让 [SpeechRatingBadge] 显示「录音」胶囊而非评级。
+  SpeechPracticeAttempt? get _badgeAttempt {
+    final attempt = currentAttempt;
+    if (attempt == null) return null;
+    if (showRatingBadge) {
+      return attempt.hasFinalFeedback ? attempt : null;
+    }
+    if (!attempt.hasRecording) return null;
+    return attempt.copyWith(
+      status: SpeechPracticeAttemptStatus.unavailable,
+      clearFinalTranscript: true,
+      clearScore: true,
+      clearTranscriptSegments: true,
+      clearReferenceSegments: true,
     );
   }
 

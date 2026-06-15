@@ -1647,6 +1647,8 @@
   "autoExpandCachedAnnotationSubtitle": "Auto-show cached translation, analysis and sense groups",
   "autoPlayRetellRecordingToggle": "Auto-play retell recording",
   "autoPlayRetellRecordingSubtitle": "After retelling, automatically play your recording for pronunciation review",
+  "retellRatingToggle": "Disable rating during retelling",
+  "retellRatingSubtitle": "When off, only recording playback is kept and scores are not shown",
   "retellSkip": "Skip",
   "retellSkippedSuffix": "Skipped",
   "skipSilenceTitle": "Auto-skip Silence",

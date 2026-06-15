@@ -3275,6 +3275,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'After retelling, automatically play your recording for pronunciation review';
 
   @override
+  String get retellRatingToggle => 'Disable rating during retelling';
+
+  @override
+  String get retellRatingSubtitle =>
+      'When off, only recording playback is kept and scores are not shown';
+
+  @override
   String get retellSkip => 'Skip';
 
   @override

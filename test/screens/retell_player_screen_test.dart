@@ -600,6 +600,80 @@ void main() {
       expect(player.postEvaluationPauseCalls, 1);
     });
 
+    testWidgets('关闭复述评级时显示录音 badge 且段间停顿不传评分', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        LearningSettingsKeys.retellAutoPlaybackPromptShown: true,
+        LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion: true,
+        LearningSettingsKeys.retellRatingEnabled: false,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final service = _BlockingAudioPlaybackService();
+      final testParagraphs = createTestParagraphs();
+      final player = _StaticRetellPlayer(
+        RetellPlayerState(
+          currentParagraphIndex: 0,
+          totalParagraphs: testParagraphs.length,
+          phase: RetellPhase.retelling,
+          settings: const RetellSettings(
+            keywordMethod: KeywordMethod.random,
+            autoPlayRecordingAfterCompletion: true,
+          ),
+        ),
+        testParagraphs,
+        const {},
+      );
+      final recordingController = TestRetellRecordingController(
+        const RetellRecordingState(phase: RetellRecordingPhase.processing),
+      );
+
+      await tester.pumpWidget(
+        createTestWidget(
+          paragraphs: testParagraphs,
+          playerFactory: (_, __, ___) => player,
+          recordingState: const RetellRecordingState(
+            phase: RetellRecordingPhase.processing,
+          ),
+          extraOverrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            initialLearningSettingsProvider.overrideWithValue(
+              LearningSettings.fromPrefsSync(prefs),
+            ),
+            retellAutoPlaybackServiceProvider.overrideWithValue(service),
+            retellRecordingControllerProvider.overrideWith(
+              () => recordingController,
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      recordingController.setState(
+        const RetellRecordingState(
+          phase: RetellRecordingPhase.idle,
+          currentAttempt: SpeechPracticeAttempt(
+            promptId: 'retell:a1:0',
+            filePath: '/tmp/retell.m4a',
+            status: SpeechPracticeAttemptStatus.unavailable,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(service.playedFiles, ['/tmp/retell.m4a']);
+      expect(find.text('Recording'), findsOneWidget);
+      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.volume_up_outlined), findsNothing);
+      expect(player.postEvaluationPauseCalls, 0);
+
+      service.playCompleter?.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
+      expect(player.postEvaluationPauseCalls, 1);
+      expect(player.lastPostEvaluationScore, isNull);
+    });
+
     testWidgets('已开启自动回听时 badge 显示停止态，停止后才启动倒计时', (tester) async {
       SharedPreferences.setMockInitialValues({
         LearningSettingsKeys.retellAutoPlaybackPromptShown: true,

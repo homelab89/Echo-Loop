@@ -1,7 +1,7 @@
 /// LearningSettings Provider 单元测试
 ///
 /// 覆盖：
-/// - 默认值（autoSkipRetell=false，自动回听=false，首次提示=false）
+/// - 默认值（autoSkipRetell=false，自动回听=false，复述评级=true，首次提示=false）
 /// - SP 同步预读注入正确
 /// - setAutoSkipRetell 写 SP + 状态更新
 /// - cleanupLegacyLearningSettingsKeys 清理旧 SP key
@@ -34,19 +34,22 @@ void main() {
       final settings = LearningSettings.fromPrefsSync(prefs);
       expect(settings.autoSkipRetell, isFalse);
       expect(settings.autoPlayRetellRecordingAfterCompletion, isFalse);
+      expect(settings.retellRatingEnabled, isTrue);
       expect(settings.retellAutoPlaybackPromptShown, isFalse);
     });
 
-    test('SP 已写入时同步返回 true', () async {
+    test('SP 已写入时同步返回保存值', () async {
       SharedPreferences.setMockInitialValues({
         LearningSettingsKeys.autoSkipRetell: true,
         LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion: true,
+        LearningSettingsKeys.retellRatingEnabled: false,
         LearningSettingsKeys.retellAutoPlaybackPromptShown: true,
       });
       final prefs = await SharedPreferences.getInstance();
       final settings = LearningSettings.fromPrefsSync(prefs);
       expect(settings.autoSkipRetell, isTrue);
       expect(settings.autoPlayRetellRecordingAfterCompletion, isTrue);
+      expect(settings.retellRatingEnabled, isFalse);
       expect(settings.retellAutoPlaybackPromptShown, isTrue);
     });
   });
@@ -124,6 +127,22 @@ void main() {
         ),
         isTrue,
       );
+    });
+
+    test('setRetellRatingEnabled 写 SP + 翻转 state', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = makeContainer(prefs);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(learningSettingsProvider.notifier);
+      await notifier.setRetellRatingEnabled(false);
+
+      expect(
+        container.read(learningSettingsProvider).retellRatingEnabled,
+        isFalse,
+      );
+      expect(prefs.getBool(LearningSettingsKeys.retellRatingEnabled), isFalse);
     });
 
     test('markRetellAutoPlaybackPromptShown 写 SP + 翻转 state', () async {
@@ -214,10 +233,12 @@ void main() {
       final copied = settings.copyWith(
         autoSkipRetell: false,
         autoPlayRetellRecordingAfterCompletion: true,
+        retellRatingEnabled: false,
         retellAutoPlaybackPromptShown: true,
       );
       expect(copied.autoSkipRetell, isFalse);
       expect(copied.autoPlayRetellRecordingAfterCompletion, isTrue);
+      expect(copied.retellRatingEnabled, isFalse);
       expect(copied.retellAutoPlaybackPromptShown, isTrue);
     });
 
@@ -225,10 +246,12 @@ void main() {
       const a = LearningSettings(
         autoSkipRetell: true,
         autoPlayRetellRecordingAfterCompletion: true,
+        retellRatingEnabled: false,
       );
       const b = LearningSettings(
         autoSkipRetell: true,
         autoPlayRetellRecordingAfterCompletion: true,
+        retellRatingEnabled: false,
       );
       const c = LearningSettings(autoSkipRetell: false);
       expect(a, equals(b));

@@ -138,58 +138,38 @@ class LearningSettingsScreen extends ConsumerWidget {
               },
             ),
           ),
+          const SizedBox(height: AppSpacing.m),
+          Card(
+            child: SwitchListTile(
+              secondary: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.speed_rounded,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
+              ),
+              title: Text(l10n.retellRatingToggle),
+              subtitle: Text(
+                l10n.retellRatingSubtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                ),
+              ),
+              value: settings.retellRatingEnabled,
+              onChanged: (value) async {
+                await ref
+                    .read(learningSettingsProvider.notifier)
+                    .setRetellRatingEnabled(value);
+              },
+            ),
+          ),
         ],
-      ),
-    );
-  }
-}
-
-/// Section 标题
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.m,
-        AppSpacing.s,
-        AppSpacing.m,
-        AppSpacing.s,
-      ),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-}
-
-/// Section 下方灰色说明文字
-class _DescriptionText extends StatelessWidget {
-  final String text;
-  const _DescriptionText({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.m + AppSpacing.xs,
-        AppSpacing.s,
-        AppSpacing.m,
-        0,
-      ),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: Theme.of(
-            context,
-          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.45),
-        ),
       ),
     );
   }

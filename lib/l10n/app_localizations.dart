@@ -5798,6 +5798,18 @@ abstract class AppLocalizations {
   /// **'After retelling, automatically play your recording for pronunciation review'**
   String get autoPlayRetellRecordingSubtitle;
 
+  /// No description provided for @retellRatingToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable rating during retelling'**
+  String get retellRatingToggle;
+
+  /// No description provided for @retellRatingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, only recording playback is kept and scores are not shown'**
+  String get retellRatingSubtitle;
+
   /// No description provided for @retellSkip.
   ///
   /// In en, this message translates to:

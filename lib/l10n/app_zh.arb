@@ -1274,6 +1274,8 @@
   "autoExpandCachedAnnotationSubtitle": "自动展示查看过的翻译、解析和意群",
   "autoPlayRetellRecordingToggle": "自动播放复述录音",
   "autoPlayRetellRecordingSubtitle": "复述结束后自动回听自己的录音，用于对照和纠音",
+  "retellRatingToggle": "复述时关闭评级",
+  "retellRatingSubtitle": "关闭后只保留录音回听，但不再显示评分",
   "retellSkip": "跳过",
   "retellSkippedSuffix": "已跳过",
   "skipSilenceTitle": "自动跳过静音",

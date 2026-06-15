@@ -1,7 +1,7 @@
 /// 学习设置 Provider
 ///
 /// 全局控制学习流程偏好，包括自动跳过复述、缓存讲解展开，以及复述完成
-/// 后是否自动播放本次录音。
+/// 后是否自动播放本次录音、是否计算复述评级。
 ///
 /// 采用手动 Notifier 模式（不走 riverpod_generator），对齐
 /// [lib/features/onboarding_survey/providers/onboarding_survey_provider.dart]。
@@ -35,6 +35,7 @@ abstract final class LearningSettingsKeys {
       'learning_auto_expand_cached_annotation';
   static const autoPlayRetellRecordingAfterCompletion =
       'learning_auto_play_retell_recording_after_completion';
+  static const retellRatingEnabled = 'learning_retell_rating_enabled';
   static const retellAutoPlaybackPromptShown =
       'learning_retell_auto_playback_prompt_shown';
 
@@ -56,6 +57,9 @@ class LearningSettings {
   /// 复述完成后是否自动播放用户录音（默认 false）。
   final bool autoPlayRetellRecordingAfterCompletion;
 
+  /// 是否计算并显示复述评级（默认 true）。
+  final bool retellRatingEnabled;
+
   /// 是否已经展示过复述录音自动回放的首次提示（默认 false）。
   final bool retellAutoPlaybackPromptShown;
 
@@ -63,6 +67,7 @@ class LearningSettings {
     this.autoSkipRetell = false,
     this.autoExpandCachedAnnotation = true,
     this.autoPlayRetellRecordingAfterCompletion = false,
+    this.retellRatingEnabled = true,
     this.retellAutoPlaybackPromptShown = false,
   });
 
@@ -79,6 +84,8 @@ class LearningSettings {
             LearningSettingsKeys.autoPlayRetellRecordingAfterCompletion,
           ) ??
           false,
+      retellRatingEnabled:
+          prefs.getBool(LearningSettingsKeys.retellRatingEnabled) ?? true,
       retellAutoPlaybackPromptShown:
           prefs.getBool(LearningSettingsKeys.retellAutoPlaybackPromptShown) ??
           false,
@@ -89,6 +96,7 @@ class LearningSettings {
     bool? autoSkipRetell,
     bool? autoExpandCachedAnnotation,
     bool? autoPlayRetellRecordingAfterCompletion,
+    bool? retellRatingEnabled,
     bool? retellAutoPlaybackPromptShown,
   }) {
     return LearningSettings(
@@ -98,6 +106,7 @@ class LearningSettings {
       autoPlayRetellRecordingAfterCompletion:
           autoPlayRetellRecordingAfterCompletion ??
           this.autoPlayRetellRecordingAfterCompletion,
+      retellRatingEnabled: retellRatingEnabled ?? this.retellRatingEnabled,
       retellAutoPlaybackPromptShown:
           retellAutoPlaybackPromptShown ?? this.retellAutoPlaybackPromptShown,
     );
@@ -112,6 +121,7 @@ class LearningSettings {
           autoExpandCachedAnnotation == other.autoExpandCachedAnnotation &&
           autoPlayRetellRecordingAfterCompletion ==
               other.autoPlayRetellRecordingAfterCompletion &&
+          retellRatingEnabled == other.retellRatingEnabled &&
           retellAutoPlaybackPromptShown == other.retellAutoPlaybackPromptShown;
 
   @override
@@ -119,6 +129,7 @@ class LearningSettings {
     autoSkipRetell,
     autoExpandCachedAnnotation,
     autoPlayRetellRecordingAfterCompletion,
+    retellRatingEnabled,
     retellAutoPlaybackPromptShown,
   );
 }
@@ -177,6 +188,18 @@ class LearningSettingsNotifier extends Notifier<LearningSettings> {
         'LearningSettings',
         'setAutoPlayRetellRecordingAfterCompletion 写 SP 失败: $e',
       );
+    }
+  }
+
+  /// 切换复述评级计算与显示，写 SP + 更新 state。
+  Future<void> setRetellRatingEnabled(bool enabled) async {
+    if (state.retellRatingEnabled == enabled) return;
+    state = state.copyWith(retellRatingEnabled: enabled);
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.setBool(LearningSettingsKeys.retellRatingEnabled, enabled);
+    } catch (e) {
+      AppLogger.log('LearningSettings', 'setRetellRatingEnabled 写 SP 失败: $e');
     }
   }
 

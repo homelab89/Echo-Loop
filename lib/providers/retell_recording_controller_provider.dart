@@ -33,6 +33,7 @@ import '../services/speech_practice_matcher.dart';
 import '../services/speech_practice_platform.dart';
 import '../services/study_event_recorder.dart';
 import 'offline_asr_settings_provider.dart';
+import 'learning_settings_provider.dart';
 import '../services/text_embedding_platform.dart';
 import '../widgets/common/speech_rating_badge.dart';
 
@@ -277,10 +278,15 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
 
     try {
       final asrSettings = ref.read(offlineAsrSettingsProvider);
+      final retellRatingEnabled = ref
+          .read(learningSettingsProvider)
+          .retellRatingEnabled;
       await _recordingService.startRecording(
         promptId: promptId,
         recognitionEnabled:
-            asrSettings.enabled && asrSettings.backend == AsrBackend.platform,
+            retellRatingEnabled &&
+            asrSettings.enabled &&
+            asrSettings.backend == AsrBackend.platform,
       );
       // 订阅事件流
       _eventSub?.cancel();
@@ -405,6 +411,9 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
   }) async {
     final backend = ref.read(speechPracticeBackendProvider);
     final asrEnabled = ref.read(offlineAsrSettingsProvider).enabled;
+    final retellRatingEnabled = ref
+        .read(learningSettingsProvider)
+        .retellRatingEnabled;
     _cancelAllTimers();
     await _eventSub?.cancel();
     _eventSub = null;
@@ -442,6 +451,23 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
       return;
     }
 
+    // ── 不需要评级时：直接存录音，不进入转录/匹配/评分链路 ──
+    if (!retellRatingEnabled) {
+      AppLogger.log('RetellRec', '● 复述评级关闭，保留录音，跳过转录与评分');
+      await _recordingService.shutdown();
+      state = state.copyWith(
+        phase: RetellRecordingPhase.idle,
+        currentAttempt: SpeechPracticeAttempt(promptId: promptId).copyWith(
+          filePath: filePath,
+          status: SpeechPracticeAttemptStatus.unavailable,
+        ),
+        clearLiveTranscript: true,
+        hasDetectedSpeech: false,
+        silenceDuration: Duration.zero,
+      );
+      return;
+    }
+
     // ── ASR 关闭：直接存录音 ──
     if (!asrEnabled) {
       AppLogger.log('RetellRec', '● ASR 关闭，保留录音，跳过转录');
@@ -451,7 +477,6 @@ class RetellRecordingController extends Notifier<RetellRecordingState> {
         currentAttempt: SpeechPracticeAttempt(promptId: promptId).copyWith(
           filePath: filePath,
           status: SpeechPracticeAttemptStatus.unavailable,
-          score: 0,
         ),
         clearLiveTranscript: true,
         hasDetectedSpeech: false,

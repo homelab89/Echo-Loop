@@ -3,12 +3,11 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:echo_loop/database/enums.dart';
 import 'package:echo_loop/models/speech_practice_models.dart';
+import 'package:echo_loop/providers/learning_settings_provider.dart';
 import 'package:echo_loop/models/study_stage.dart';
 import 'package:echo_loop/providers/offline_asr_settings_provider.dart';
 import 'package:echo_loop/providers/retell_recording_controller_provider.dart';
-import 'package:echo_loop/services/asr/offline_asr_engine.dart';
 import 'package:echo_loop/services/speech_practice_platform.dart';
 import 'package:echo_loop/services/study_event_recorder.dart';
 import 'package:echo_loop/services/study_time_service.dart';
@@ -163,6 +162,9 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         analyticsOverride(),
+        initialLearningSettingsProvider.overrideWithValue(
+          const LearningSettings(),
+        ),
         speechPracticeBackendProvider.overrideWithValue(backend),
         recommendedAsrModelProvider.overrideWithValue(_testAsrModel),
         offlineAsrSettingsProvider.overrideWith(
@@ -197,5 +199,50 @@ void main() {
 
     expect(recorder.recordedDurations, hasLength(1));
     expect(recorder.recordedDurations.single, greaterThanOrEqualTo(900));
+  });
+
+  test('RetellRecordingController 关闭复述评级时只保留录音并跳过转录评分', () async {
+    final backend = _FakeSpeechPracticeBackend();
+    final container = ProviderContainer(
+      overrides: [
+        analyticsOverride(),
+        initialLearningSettingsProvider.overrideWithValue(
+          const LearningSettings(retellRatingEnabled: false),
+        ),
+        speechPracticeBackendProvider.overrideWithValue(backend),
+        recommendedAsrModelProvider.overrideWithValue(_testAsrModel),
+        offlineAsrSettingsProvider.overrideWith(
+          () => _FakeOfflineAsrSettingsNotifier(),
+        ),
+      ],
+    );
+    addTearDown(() async {
+      await backend.dispose();
+      container.dispose();
+    });
+
+    final controller = container.read(
+      retellRecordingControllerProvider.notifier,
+    );
+
+    await controller.startRecording(
+      promptId: 'retell:a1:0',
+      referenceText: 'ask your professor today for authorization again',
+    );
+
+    await controller.stopAndEvaluate(
+      referenceText: 'ask your professor today for authorization again',
+    );
+
+    final attempt = container
+        .read(retellRecordingControllerProvider)
+        .currentAttempt;
+    expect(attempt, isNotNull);
+    expect(attempt!.filePath, isNotEmpty);
+    expect(attempt.status, SpeechPracticeAttemptStatus.unavailable);
+    expect(attempt.score, isNull);
+    expect(attempt.finalTranscript, isNull);
+    expect(attempt.transcriptSegments, isEmpty);
+    expect(attempt.referenceSegments, isEmpty);
   });
 }

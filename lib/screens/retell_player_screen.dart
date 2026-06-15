@@ -532,8 +532,12 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
         return;
       }
 
-      AppLogger.log('RetellScreen', '评估完成处理结束: 启动段间停顿 score=${attempt?.score}');
-      player.startPostEvaluationPause(score: attempt?.score);
+      final retellRatingEnabled = ref
+          .read(learningSettingsProvider)
+          .retellRatingEnabled;
+      final pauseScore = retellRatingEnabled ? attempt?.score : null;
+      AppLogger.log('RetellScreen', '评估完成处理结束: 启动段间停顿 score=$pauseScore');
+      player.startPostEvaluationPause(score: pauseScore);
     } finally {
       if (_isAutoPlaybackCurrent(token)) {
         _isHandlingEvaluationComplete = false;
@@ -1126,6 +1130,9 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
       ),
     );
     final retellRecState = ref.read(retellRecordingControllerProvider);
+    final retellRatingEnabled = ref.watch(
+      learningSettingsProvider.select((s) => s.retellRatingEnabled),
+    );
 
     // 录音按钮模式（RetellRecordingPhase → RecordingButtonMode）
     final recordingMode = switch (retellRecState.phase) {
@@ -1278,6 +1285,7 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
                           .toggleCountdownFastForward()
                     : null,
                 onBeforePlayback: _prepareAttemptPlayback,
+                showRatingBadge: retellRatingEnabled,
                 ratingBadgeController: _ratingBadgeController,
                 ratingPlaybackServiceFactory: () =>
                     ref.read(retellAutoPlaybackServiceProvider),

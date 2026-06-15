@@ -303,7 +303,7 @@ class _SpeechRatingBadgeState extends State<SpeechRatingBadge> {
       feedbackType: TapFeedback.opacity,
       pressedOpacity: 0.6,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(999),
