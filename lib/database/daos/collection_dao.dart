@@ -112,16 +112,37 @@ class CollectionDao extends DatabaseAccessor<AppDatabase>
 
   /// 添加音频到合集
   Future<void> addAudio(String collectionId, String audioItemId) async {
-    // 获取当前最大排序序号
+    await addAudios(collectionId, [audioItemId]);
+  }
+
+  /// 批量添加音频到合集。
+  ///
+  /// 只读取一次当前最大排序序号，再按传入顺序追加，避免大批量 Podcast episode
+  /// 导入时逐条查询和逐条通知数据库。
+  Future<void> addAudios(String collectionId, List<String> audioItemIds) async {
+    if (audioItemIds.isEmpty) return;
+
     final maxOrder = await _getMaxSortOrder(collectionId);
-    await into(collectionAudioItems).insertOnConflictUpdate(
-      CollectionAudioItemsCompanion(
-        collectionId: Value(collectionId),
-        audioItemId: Value(audioItemId),
-        sortOrder: Value(maxOrder + 1),
-        addedAt: Value(DateTime.now()),
-      ),
-    );
+    final now = DateTime.now();
+    final entries = <CollectionAudioItemsCompanion>[];
+    for (var i = 0; i < audioItemIds.length; i++) {
+      entries.add(
+        CollectionAudioItemsCompanion(
+          collectionId: Value(collectionId),
+          audioItemId: Value(audioItemIds[i]),
+          sortOrder: Value(maxOrder + i + 1),
+          addedAt: Value(now),
+        ),
+      );
+    }
+
+    await batch((b) {
+      b.insertAll(
+        collectionAudioItems,
+        entries,
+        mode: InsertMode.insertOrReplace,
+      );
+    });
   }
 
   /// 从合集中移除音频

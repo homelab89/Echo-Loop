@@ -218,14 +218,31 @@ class CollectionList extends _$CollectionList {
   }
 
   Future<void> addAudioToCollection(String collectionId, String audioId) async {
-    final dao = ref.read(collectionDaoProvider);
-    await dao.addAudio(collectionId, audioId);
+    await addAudiosToCollection(collectionId, [audioId]);
+  }
 
-    // 更新缓存
+  /// 批量添加音频到合集。
+  ///
+  /// 供 Podcast RSS 大批量导入 episode 使用，避免每个 episode 都触发一次 DB 写入
+  /// 和 provider 状态更新。
+  Future<void> addAudiosToCollection(
+    String collectionId,
+    List<String> audioIds,
+  ) async {
+    if (audioIds.isEmpty) return;
+    final dao = ref.read(collectionDaoProvider);
+    await dao.addAudios(collectionId, audioIds);
+
     final newMap = Map<String, List<String>>.from(state.audioIdsMap);
     final ids = List<String>.from(newMap[collectionId] ?? []);
-    if (!ids.contains(audioId)) {
-      ids.add(audioId);
+    var changed = false;
+    for (final audioId in audioIds) {
+      if (!ids.contains(audioId)) {
+        ids.add(audioId);
+        changed = true;
+      }
+    }
+    if (changed) {
       newMap[collectionId] = ids;
       state = state.copyWith(audioIdsMap: newMap);
     }
@@ -249,9 +266,19 @@ class CollectionList extends _$CollectionList {
   /// 从所有合集中移除指定音频的引用（当音频从音频库删除时调用）
   /// CASCADE 已自动清理 junction 表，此方法仅更新内存缓存
   Future<void> removeAudioFromAllCollections(String audioId) async {
+    await removeAudiosFromAllCollections({audioId});
+  }
+
+  /// 从所有合集中批量移除指定音频引用。
+  ///
+  /// 数据库 junction 由 `audio_items` 删除时的 FK cascade 清理；这里仅同步内存
+  /// 索引，避免批量删除时逐条触发 provider 状态更新。
+  Future<void> removeAudiosFromAllCollections(Set<String> audioIds) async {
+    if (audioIds.isEmpty) return;
     final newMap = Map<String, List<String>>.from(state.audioIdsMap);
     for (final key in newMap.keys) {
-      newMap[key] = List<String>.from(newMap[key]!)..remove(audioId);
+      newMap[key] = List<String>.from(newMap[key]!)
+        ..removeWhere(audioIds.contains);
     }
     state = state.copyWith(audioIdsMap: newMap);
   }
@@ -349,14 +376,12 @@ class CollectionList extends _$CollectionList {
   ///
   /// 与通用 [deleteCollection] 不同：本地手建合集的音频可能被多个合集共享，删除合集
   /// 不应删音频；而 podcast 单集由该合集独占，退订即应一并清除，避免孤儿条目与文件残留。
-  /// 逐个复用 [AudioLibrary.removeAudioItem] 完成单条目的完整清理（删文件 + CASCADE +
+  /// 通过 [AudioLibrary.removeAudioItems] 批量完成清理（按引用检查删文件 + CASCADE +
   /// 内存状态），最后调用 [deleteCollection] 删合集行。
   Future<void> unsubscribePodcastCollection(String id) async {
-    final audioIds = List<String>.from(state.getAudioIds(id));
+    final audioIds = state.getAudioIds(id).toSet();
     final audioLib = ref.read(audioLibraryProvider.notifier);
-    for (final audioId in audioIds) {
-      await audioLib.removeAudioItem(audioId);
-    }
+    await audioLib.removeAudioItems(audioIds);
     await deleteCollection(id);
   }
 }

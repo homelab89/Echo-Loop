@@ -139,6 +139,40 @@ void main() {
       expect(items.length, 5);
     });
 
+    test('hardDeleteMany 批量删除并触发 junction cascade', () async {
+      final now = DateTime.now();
+      await db.collectionDao.upsert(
+        CollectionsCompanion(
+          id: const Value('col-1'),
+          name: const Value('Collection 1'),
+          createdDate: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+      final entries = List.generate(
+        3,
+        (i) => AudioItemsCompanion(
+          id: Value('audio-$i'),
+          name: Value('Audio $i'),
+          audioPath: Value('audios/$i.mp3'),
+          addedDate: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+      await db.audioItemDao.batchInsert(entries);
+      await db.collectionDao.addAudios('col-1', [
+        'audio-0',
+        'audio-1',
+        'audio-2',
+      ]);
+
+      await db.audioItemDao.hardDeleteMany({'audio-0', 'audio-1'});
+
+      final items = await db.audioItemDao.getAllActive();
+      expect(items.map((e) => e.id), ['audio-2']);
+      expect(await db.collectionDao.getAudioIds('col-1'), ['audio-2']);
+    });
+
     test('watchAllActive 响应数据变化', () async {
       final now = DateTime.now();
       final stream = db.audioItemDao.watchAllActive();
@@ -309,6 +343,44 @@ void main() {
       expect(audioIds.length, 2);
       expect(audioIds, contains('audio-1'));
       expect(audioIds, contains('audio-2'));
+    });
+
+    test('addAudios 批量追加并保持顺序', () async {
+      final now = DateTime.now();
+      await db.collectionDao.upsert(
+        CollectionsCompanion(
+          id: const Value('col-1'),
+          name: const Value('Collection 1'),
+          createdDate: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+      await db.audioItemDao.batchInsert(
+        List.generate(
+          4,
+          (i) => AudioItemsCompanion(
+            id: Value('audio-$i'),
+            name: Value('Audio $i'),
+            audioPath: Value('audios/$i.mp3'),
+            addedDate: Value(now),
+            updatedAt: Value(now),
+          ),
+        ),
+      );
+
+      await db.collectionDao.addAudio('col-1', 'audio-0');
+      await db.collectionDao.addAudios('col-1', [
+        'audio-1',
+        'audio-2',
+        'audio-3',
+      ]);
+
+      expect(await db.collectionDao.getAudioIds('col-1'), [
+        'audio-0',
+        'audio-1',
+        'audio-2',
+        'audio-3',
+      ]);
     });
 
     test('removeAudio 从合集移除音频', () async {

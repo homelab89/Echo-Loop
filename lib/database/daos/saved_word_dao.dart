@@ -92,9 +92,18 @@ class SavedWordDao extends DatabaseAccessor<AppDatabase>
   /// audioItemId 由 FK SET NULL 自动处理，此方法处理非外键字段。
   /// 注意：sentenceStartMs/sentenceEndMs 保留不清除，确保删除字幕后仍可播放。
   Future<void> clearContextForAudio(String audioItemId) {
+    return clearContextForAudios({audioItemId});
+  }
+
+  /// 批量清除多个音频关联的上下文信息。
+  ///
+  /// 必须在删除 `audio_items` 前执行；否则 FK SET NULL 后将无法再按
+  /// audioItemId 定位这些冗余上下文字段。
+  Future<void> clearContextForAudios(Set<String> audioItemIds) {
+    if (audioItemIds.isEmpty) return Future.value();
     return (update(
       savedWords,
-    )..where((t) => t.audioItemId.equals(audioItemId))).write(
+    )..where((t) => t.audioItemId.isIn(audioItemIds))).write(
       const SavedWordsCompanion(
         sentenceIndex: Value(null),
         sentenceText: Value(null),

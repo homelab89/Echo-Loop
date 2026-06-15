@@ -134,9 +134,18 @@ class SavedSenseGroupDao extends DatabaseAccessor<AppDatabase>
   /// 音频删除时调用，将非 FK 字段全部置 NULL。
   /// audioItemId 由 FK SET NULL 自动处理。
   Future<void> clearContextForAudio(String audioItemId) {
+    return clearContextForAudios({audioItemId});
+  }
+
+  /// 批量清除多个音频关联的上下文信息。
+  ///
+  /// 必须在删除 `audio_items` 前执行；否则 FK SET NULL 后将无法再按
+  /// audioItemId 定位这些冗余上下文字段。
+  Future<void> clearContextForAudios(Set<String> audioItemIds) {
+    if (audioItemIds.isEmpty) return Future.value();
     return (update(
       savedSenseGroups,
-    )..where((t) => t.audioItemId.equals(audioItemId))).write(
+    )..where((t) => t.audioItemId.isIn(audioItemIds))).write(
       const SavedSenseGroupsCompanion(
         sentenceIndex: Value(null),
         sentenceText: Value(null),

@@ -170,9 +170,19 @@ class TagList extends _$TagList {
   /// 从所有标签中移除指定音频的引用（当音频从音频库删除时调用）
   /// CASCADE 已自动清理 junction 表，此方法仅更新内存缓存
   Future<void> removeAudioFromAllTags(String audioId) async {
+    await removeAudiosFromAllTags({audioId});
+  }
+
+  /// 从所有标签中批量移除指定音频引用。
+  ///
+  /// 数据库 junction 由 `audio_items` 删除时的 FK cascade 清理；这里仅同步内存
+  /// 索引，避免批量删除时逐条触发 provider 状态更新。
+  Future<void> removeAudiosFromAllTags(Set<String> audioIds) async {
+    if (audioIds.isEmpty) return;
     final newMap = Map<String, List<String>>.from(state.audioIdsMap);
     for (final key in newMap.keys) {
-      newMap[key] = List<String>.from(newMap[key]!)..remove(audioId);
+      newMap[key] = List<String>.from(newMap[key]!)
+        ..removeWhere(audioIds.contains);
     }
     state = state.copyWith(audioIdsMap: newMap);
   }

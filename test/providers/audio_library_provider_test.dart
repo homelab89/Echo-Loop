@@ -1,8 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:echo_loop/database/providers.dart';
 import 'package:echo_loop/models/audio_item.dart';
 import 'package:echo_loop/providers/audio_library_provider.dart';
+import 'package:echo_loop/providers/collection_provider.dart';
+import 'package:echo_loop/providers/learning_progress_provider.dart';
+import 'package:echo_loop/providers/tag_provider.dart';
+import 'package:echo_loop/utils/app_data_dir.dart';
 
+import '../database/dao_test.dart';
 import '../helpers/mock_providers.dart';
 
 void main() {
@@ -88,6 +96,80 @@ void main() {
           .toList();
       // 顺序不变，只有 isPinned 字段变化
       expect(idsAfter, idsBefore);
+    });
+  });
+
+  group('AudioLibrary.removeAudioItems', () {
+    late Directory tempDir;
+    late ProviderContainer container;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('audio_library_delete_');
+      appDataDirectoryOverride = tempDir;
+      final db = createTestDatabase();
+      container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          analyticsOverride(),
+          usageOverride(),
+          collectionListProvider.overrideWith(
+            () => TestCollectionList(const CollectionState()),
+          ),
+          tagListProvider.overrideWith(() => TestTagList(const TagState())),
+          learningProgressNotifierProvider.overrideWith(
+            () => TestLearningProgressNotifier(const LearningProgressState()),
+          ),
+        ],
+      );
+      addTearDown(() async {
+        container.dispose();
+        await db.close();
+      });
+    });
+
+    tearDown(() async {
+      appDataDirectoryOverride = null;
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    AudioItem item(String id, String audioPath) {
+      return createTestAudioItem(id: id, name: id, audioPath: audioPath);
+    }
+
+    test('保留仍被其他 AudioItem 引用的底层音频文件', () async {
+      final file = File('${tempDir.path}/audios/imported/shared.m4a');
+      await file.create(recursive: true);
+      await file.writeAsString('audio');
+      final notifier = container.read(audioLibraryProvider.notifier);
+      await notifier.addAudioItems([
+        item('remove', 'audios/imported/shared.m4a'),
+        item('keep', 'audios/imported/shared.m4a'),
+      ]);
+
+      await notifier.removeAudioItems({'remove'});
+
+      expect(await file.exists(), isTrue);
+      expect(container.read(audioLibraryProvider).audioItems.map((e) => e.id), [
+        'keep',
+      ]);
+    });
+
+    test('待删集合覆盖共享路径所有引用时删除底层音频文件', () async {
+      final file = File('${tempDir.path}/audios/imported/shared.m4a');
+      await file.create(recursive: true);
+      await file.writeAsString('audio');
+      final notifier = container.read(audioLibraryProvider.notifier);
+      await notifier.addAudioItems([
+        item('remove-1', 'audios/imported/shared.m4a'),
+        item('remove-2', 'audios/imported/shared.m4a'),
+      ]);
+
+      await notifier.removeAudioItems({'remove-1', 'remove-2'});
+
+      expect(await file.exists(), isFalse);
+      expect(container.read(audioLibraryProvider).audioItems, isEmpty);
     });
   });
 }

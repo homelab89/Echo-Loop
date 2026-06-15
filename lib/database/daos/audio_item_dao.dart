@@ -63,6 +63,15 @@ class AudioItemDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
+  /// 批量硬删除音频项。
+  ///
+  /// 用于 Podcast 退订等大批量清理场景。调用方需在删除前完成文件清理和非 FK
+  /// 上下文字段清理；本方法只删除 `audio_items` 行，并交给数据库级联清理子表。
+  Future<void> hardDeleteMany(Set<String> ids) {
+    if (ids.isEmpty) return Future.value();
+    return (delete(audioItems)..where((t) => t.id.isIn(ids))).go();
+  }
+
   /// 软删除音频项
   Future<void> softDelete(String id) {
     final now = DateTime.now();
@@ -77,7 +86,7 @@ class AudioItemDao extends DatabaseAccessor<AppDatabase>
 
   /// 硬删除音频项（真正从数据库移除）
   Future<void> hardDelete(String id) {
-    return (delete(audioItems)..where((t) => t.id.equals(id))).go();
+    return hardDeleteMany({id});
   }
 
   /// 获取指定音频的词级时间戳 JSON

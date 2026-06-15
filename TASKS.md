@@ -3,6 +3,21 @@
 > 最后更新：2026-06-15
 > 当前焦点：Android 结束录音闪退（离线 ASR / Silero VAD）——**仍未解决**
 
+## 已完成：Podcast 单集批量导入与退订清理优化
+
+**完成时间**: 2026-06-15 14:33 +0800
+
+Podcast 合集首次订阅和刷新时不再逐条写入 episode 与合集关联，而是先筛出新增 guid 后批量写入 `audio_items` 和 `collection_audio_items`；退订 Podcast 合集时批量删除 episode 条目并一次性同步 provider 状态。文件清理保留安全检查：同一路径仍被其他 active `AudioItem` 引用时不删除底层音频/字幕文件，避免 hash 复用误删资源。
+
+- [x] `AudioItemDao` / `CollectionDao`：新增批量删除 audio items、批量插入合集关联能力
+- [x] `SavedWordDao` / `SavedSenseGroupDao`：新增批量清理音频删除前的非 FK 上下文字段
+- [x] `AudioLibrary` / `CollectionList` / `TagList` / `LearningProgressNotifier`：新增批量状态更新入口，单条 API 保持兼容
+- [x] `PodcastRepository`：`_importEpisodes` 改为批量新增 episode；退订 Podcast 改为批量删除合集内 episode
+- [x] 测试覆盖：批量入库去重、批量 junction 排序、批量删除 cascade、saved word/sense group 上下文清理、共享音频文件路径不误删
+- [x] `flutter analyze lib/database/daos/audio_item_dao.dart lib/database/daos/collection_dao.dart lib/database/daos/saved_word_dao.dart lib/database/daos/saved_sense_group_dao.dart lib/providers/audio_library_provider.dart lib/providers/collection_provider.dart lib/providers/tag_provider.dart lib/providers/learning_progress_provider.dart lib/features/podcast/podcast_repository.dart test/helpers/shared/fake_notifiers.dart test/features/audio_import/audio_import_service_test.dart test/features/podcast/podcast_service_test.dart test/providers/audio_library_provider_test.dart test/database/dao_test.dart test/database/saved_word_dao_test.dart test/database/saved_sense_group_dao_test.dart`：No issues found
+- [x] `flutter test test/features/podcast/podcast_service_test.dart test/providers/collection_provider_test.dart test/providers/audio_library_provider_test.dart test/database/dao_test.dart test/database/saved_word_dao_test.dart test/database/saved_sense_group_dao_test.dart`：117 passed
+- [ ] `scripts/check.sh`：未跑；本次为 Podcast episode 导入/退订链路局部性能修复，按规范仅运行直接相关检查
+
 ## 已完成：AI 转录使用原始音频 SHA 作为缓存 key
 
 **完成时间**: 2026-06-15 13:24 +0800

@@ -242,6 +242,42 @@ void main() {
       expect(word.sentenceEndMs, 2500);
     });
 
+    test('clearContextForAudios 批量清除多个音频上下文', () async {
+      final now = DateTime.now();
+      await db.audioItemDao.batchInsert(
+        List.generate(
+          3,
+          (i) => AudioItemsCompanion(
+            id: Value('audio-$i'),
+            name: Value('Audio $i'),
+            audioPath: Value('$i.mp3'),
+            addedDate: Value(now),
+            updatedAt: Value(now),
+          ),
+        ),
+      );
+      for (var i = 0; i < 3; i++) {
+        await db.savedWordDao.saveWord(
+          word: 'word-$i',
+          audioItemId: 'audio-$i',
+          sentenceIndex: i,
+          sentenceText: 'Sentence $i',
+        );
+      }
+
+      await db.savedWordDao.clearContextForAudios({'audio-0', 'audio-1'});
+
+      final words = await db.savedWordDao.getAll();
+      final cleared = words
+          .where((w) => w.word == 'word-0' || w.word == 'word-1')
+          .toList();
+      expect(cleared.every((w) => w.sentenceIndex == null), isTrue);
+      expect(cleared.every((w) => w.sentenceText == null), isTrue);
+      final untouched = words.firstWhere((w) => w.word == 'word-2');
+      expect(untouched.sentenceIndex, 2);
+      expect(untouched.sentenceText, 'Sentence 2');
+    });
+
     test('getDeletedWords 返回已软删除的单词', () async {
       await db.savedWordDao.saveWord(word: 'apple');
       await db.savedWordDao.saveWord(word: 'banana');

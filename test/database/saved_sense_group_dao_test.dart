@@ -229,6 +229,53 @@ void main() {
       expect(item.audioItemId, 'audio-1');
     });
 
+    test('clearContextForAudios 批量清除多个音频上下文', () async {
+      final now = DateTime.now();
+      await db.audioItemDao.batchInsert(
+        List.generate(
+          3,
+          (i) => AudioItemsCompanion(
+            id: Value('audio-$i'),
+            name: Value('Audio $i'),
+            audioPath: Value('$i.mp3'),
+            addedDate: Value(now),
+            updatedAt: Value(now),
+          ),
+        ),
+      );
+      for (var i = 0; i < 3; i++) {
+        await db.savedSenseGroupDao.saveSenseGroup(
+          phraseText: 'phrase-$i',
+          displayText: 'Phrase $i',
+          audioItemId: 'audio-$i',
+          sentenceIndex: i,
+          sentenceText: 'Sentence $i',
+          sentenceStartMs: i * 1000,
+          sentenceEndMs: i * 1000 + 500,
+          groupStartMs: i * 1000,
+          groupEndMs: i * 1000 + 250,
+        );
+      }
+
+      await db.savedSenseGroupDao.clearContextForAudios({'audio-0', 'audio-1'});
+
+      final all = await (db.select(
+        db.savedSenseGroups,
+      )..where((t) => t.deletedAt.isNull())).get();
+      final cleared = all
+          .where(
+            (g) => g.phraseText == 'phrase-0' || g.phraseText == 'phrase-1',
+          )
+          .toList();
+      expect(cleared.every((g) => g.sentenceIndex == null), isTrue);
+      expect(cleared.every((g) => g.sentenceText == null), isTrue);
+      expect(cleared.every((g) => g.groupStartMs == null), isTrue);
+      final untouched = all.firstWhere((g) => g.phraseText == 'phrase-2');
+      expect(untouched.sentenceIndex, 2);
+      expect(untouched.sentenceText, 'Sentence 2');
+      expect(untouched.groupStartMs, 2000);
+    });
+
     test('getDeletedSenseGroups 返回已软删除的意群', () async {
       await db.savedSenseGroupDao.saveSenseGroup(
         phraseText: 'first of all',

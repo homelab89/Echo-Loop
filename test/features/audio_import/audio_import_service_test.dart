@@ -58,6 +58,11 @@ class _FakeAudioLibrary extends AudioLibrary {
   Future<void> addAudioItem(AudioItem item) async {
     state = state.copyWith(audioItems: [...state.audioItems, item]);
   }
+
+  @override
+  Future<void> addAudioItems(List<AudioItem> items) async {
+    state = state.copyWith(audioItems: [...state.audioItems, ...items]);
+  }
 }
 
 class _FakeCollectionList extends CollectionList {
@@ -66,9 +71,19 @@ class _FakeCollectionList extends CollectionList {
 
   @override
   Future<void> addAudioToCollection(String collectionId, String audioId) async {
+    await addAudiosToCollection(collectionId, [audioId]);
+  }
+
+  @override
+  Future<void> addAudiosToCollection(
+    String collectionId,
+    List<String> audioIds,
+  ) async {
     final next = Map<String, List<String>>.from(state.audioIdsMap);
     final ids = List<String>.from(next[collectionId] ?? const <String>[]);
-    if (!ids.contains(audioId)) ids.add(audioId);
+    for (final audioId in audioIds) {
+      if (!ids.contains(audioId)) ids.add(audioId);
+    }
     next[collectionId] = ids;
     state = state.copyWith(audioIdsMap: next);
   }

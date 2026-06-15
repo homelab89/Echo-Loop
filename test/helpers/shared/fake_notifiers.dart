@@ -34,8 +34,6 @@ export 'package:echo_loop/providers/learning_session/retell_player_provider.dart
     show RetellPlayerState;
 export 'package:echo_loop/providers/learning_session/review_difficult_practice_provider.dart'
     show ReviewDifficultPracticeState;
-export 'package:echo_loop/providers/audio_engine/audio_engine_provider.dart'
-    show AudioEngineState;
 export 'package:echo_loop/providers/offline_asr_settings_provider.dart'
     show OfflineAsrSettingsState, AsrBackend;
 export 'package:echo_loop/services/asr/offline_asr_engine.dart'
@@ -133,9 +131,21 @@ class FakeAudioLibrary extends AudioLibrary {
   }
 
   @override
+  Future<void> addAudioItems(List<AudioItem> items) async {
+    state = state.copyWith(audioItems: [...state.audioItems, ...items]);
+  }
+
+  @override
   Future<void> removeAudioItem(String id) async {
+    await removeAudioItems({id});
+  }
+
+  @override
+  Future<void> removeAudioItems(Set<String> ids) async {
     state = state.copyWith(
-      audioItems: state.audioItems.where((item) => item.id != id).toList(),
+      audioItems: state.audioItems
+          .where((item) => !ids.contains(item.id))
+          .toList(),
     );
   }
 
@@ -165,6 +175,7 @@ class FakeAudioLibrary extends AudioLibrary {
   }
 
   /// 按 ID 查找（测试用）
+  @override
   AudioItem? getItemById(String id) {
     try {
       return state.audioItems.firstWhere((item) => item.id == id);
@@ -202,8 +213,11 @@ class FakeCollectionList extends CollectionList {
 
   @override
   Future<void> deleteCollection(String id) async {
+    final newMap = Map<String, List<String>>.from(state.audioIdsMap)
+      ..remove(id);
     state = state.copyWith(
       rawCollections: state.rawCollections.where((c) => c.id != id).toList(),
+      audioIdsMap: newMap,
     );
   }
 
@@ -232,6 +246,40 @@ class FakeCollectionList extends CollectionList {
   @override
   void setSortType(CollectionSortType type) {
     state = state.copyWith(sortType: type);
+  }
+
+  @override
+  Future<void> addAudioToCollection(String collectionId, String audioId) async {
+    await addAudiosToCollection(collectionId, [audioId]);
+  }
+
+  @override
+  Future<void> addAudiosToCollection(
+    String collectionId,
+    List<String> audioIds,
+  ) async {
+    final newMap = Map<String, List<String>>.from(state.audioIdsMap);
+    final ids = List<String>.from(newMap[collectionId] ?? []);
+    for (final audioId in audioIds) {
+      if (!ids.contains(audioId)) ids.add(audioId);
+    }
+    newMap[collectionId] = ids;
+    state = state.copyWith(audioIdsMap: newMap);
+  }
+
+  @override
+  Future<void> removeAudioFromAllCollections(String audioId) async {
+    await removeAudiosFromAllCollections({audioId});
+  }
+
+  @override
+  Future<void> removeAudiosFromAllCollections(Set<String> audioIds) async {
+    final newMap = Map<String, List<String>>.from(state.audioIdsMap);
+    for (final key in newMap.keys) {
+      newMap[key] = List<String>.from(newMap[key]!)
+        ..removeWhere(audioIds.contains);
+    }
+    state = state.copyWith(audioIdsMap: newMap);
   }
 }
 
@@ -312,9 +360,15 @@ class FakeTagList extends TagList {
 
   @override
   Future<void> removeAudioFromAllTags(String audioId) async {
+    await removeAudiosFromAllTags({audioId});
+  }
+
+  @override
+  Future<void> removeAudiosFromAllTags(Set<String> audioIds) async {
     final newMap = Map<String, List<String>>.from(state.audioIdsMap);
     for (final key in newMap.keys) {
-      newMap[key] = List<String>.from(newMap[key]!)..remove(audioId);
+      newMap[key] = List<String>.from(newMap[key]!)
+        ..removeWhere(audioIds.contains);
     }
     state = state.copyWith(audioIdsMap: newMap);
   }
@@ -587,8 +641,18 @@ class FakeLearningProgressNotifier extends LearningProgressNotifier {
 
   @override
   Future<void> deleteProgress(String audioItemId) async {
+    await deleteProgressMany({audioItemId});
+  }
+
+  @override
+  Future<void> deleteProgressMany(
+    Set<String> audioItemIds, {
+    bool deleteFromDb = true,
+  }) async {
     final newMap = Map<String, LearningProgress>.from(state.progressMap);
-    newMap.remove(audioItemId);
+    for (final audioItemId in audioItemIds) {
+      newMap.remove(audioItemId);
+    }
     state = state.copyWith(progressMap: newMap);
   }
 

@@ -197,6 +197,22 @@ class AudioLibrary extends _$AudioLibrary {
         );
   }
 
+  Future<void> addAudioItems(List<AudioItem> items) async {
+    if (items.isEmpty) return;
+    state = state.copyWith(audioItems: [...state.audioItems, ...items]);
+    await _upsertItems(items);
+    final tracker = ref.read(usageTrackerProvider);
+    for (final item in items) {
+      tracker.record(
+        UsageEvent.audioUpload,
+        analyticsParams: {
+          EventParams.audioId: item.id,
+          EventParams.audioName: item.name,
+        },
+      );
+    }
+  }
+
   Future<void> removeAudioItem(String id) async {
     AudioItem? item;
     try {
@@ -206,15 +222,84 @@ class AudioLibrary extends _$AudioLibrary {
       return;
     }
 
-    // 埋点：删除音频
     ref.read(analyticsServiceProvider).track(Events.audioDelete, {
       EventParams.audioId: id,
       EventParams.audioName: item.name,
     });
 
+    await removeAudioItems({id});
+  }
+
+  /// 批量删除音频条目，并保持单条删除的资源清理语义。
+  ///
+  /// 数据库记录批量删除；音频/字幕文件仍按路径逐个检查引用后删除，避免多个
+  /// AudioItem 复用同一个 hash 文件时误删仍被其他条目使用的资源。
+  Future<void> removeAudioItems(Set<String> ids) async {
+    if (ids.isEmpty) return;
+    final itemsToRemove = state.audioItems
+        .where((item) => ids.contains(item.id))
+        .toList(growable: false);
+    if (itemsToRemove.isEmpty) return;
+
+    final existingItems = state.audioItems;
+    final pathsStillReferenced = await _pathsReferencedOutside(
+      existingItems: existingItems,
+      removedIds: ids,
+    );
+
+    for (final item in itemsToRemove) {
+      await _deleteAudioFilesIfUnreferenced(item, pathsStillReferenced);
+    }
+
+    state = state.copyWith(
+      audioItems: state.audioItems
+          .where((item) => !ids.contains(item.id))
+          .toList(),
+    );
+
+    // 清除收藏单词/意群的非 FK 上下文。必须在 hardDeleteMany 之前调用，因为
+    // hardDeleteMany 的 FK SET NULL 会清空 audioItemId，之后无法定位这些行。
+    final savedWordDao = ref.read(savedWordDaoProvider);
+    await savedWordDao.clearContextForAudios(ids);
+    final savedSenseGroupDao = ref.read(savedSenseGroupDaoProvider);
+    await savedSenseGroupDao.clearContextForAudios(ids);
+
+    final dao = ref.read(audioItemDaoProvider);
+    await dao.hardDeleteMany(ids);
+
+    // hardDeleteMany 已通过 FK 级联删除 learning_progresses / stage_completions，
+    // 这里只需同步内存状态，不再重复发 DB DELETE。
+    await ref
+        .read(learningProgressNotifierProvider.notifier)
+        .deleteProgressMany(ids, deleteFromDb: false);
+    await ref
+        .read(collectionListProvider.notifier)
+        .removeAudiosFromAllCollections(ids);
+    await ref.read(tagListProvider.notifier).removeAudiosFromAllTags(ids);
+  }
+
+  Future<Set<String>> _pathsReferencedOutside({
+    required List<AudioItem> existingItems,
+    required Set<String> removedIds,
+  }) async {
+    final referenced = <String>{};
+    for (final item in existingItems) {
+      if (removedIds.contains(item.id)) continue;
+      final audioPath = await item.getFullAudioPath();
+      if (audioPath != null) referenced.add(audioPath);
+      final transcriptPath = await item.getFullTranscriptPath();
+      if (transcriptPath != null) referenced.add(transcriptPath);
+    }
+    return referenced;
+  }
+
+  Future<void> _deleteAudioFilesIfUnreferenced(
+    AudioItem item,
+    Set<String> pathsStillReferenced,
+  ) async {
     try {
       final audioPath = await item.getFullAudioPath();
-      if (audioPath != null) {
+      if (audioPath != null && !pathsStillReferenced.contains(audioPath)) {
         final audioFile = File(audioPath);
         if (await audioFile.exists()) {
           await audioFile.delete();
@@ -228,7 +313,8 @@ class AudioLibrary extends _$AudioLibrary {
     if (item.hasTranscript) {
       try {
         final transcriptPath = await item.getFullTranscriptPath();
-        if (transcriptPath != null) {
+        if (transcriptPath != null &&
+            !pathsStillReferenced.contains(transcriptPath)) {
           final transcriptFile = File(transcriptPath);
           if (await transcriptFile.exists()) {
             await transcriptFile.delete();
@@ -242,30 +328,6 @@ class AudioLibrary extends _$AudioLibrary {
         AppLogger.log('AudioLib', 'Error deleting transcript file: $e');
       }
     }
-
-    state = state.copyWith(
-      audioItems: state.audioItems.where((item) => item.id != id).toList(),
-    );
-
-    // 清除收藏单词的上下文信息（sentenceText/sentenceIndex 非 FK 字段，需手动置 NULL）
-    // 必须在 hardDelete 之前调用，因为 hardDelete 的 CASCADE 会将 audioItemId SET NULL
-    final savedWordDao = ref.read(savedWordDaoProvider);
-    await savedWordDao.clearContextForAudio(id);
-    final savedSenseGroupDao = ref.read(savedSenseGroupDaoProvider);
-    await savedSenseGroupDao.clearContextForAudio(id);
-
-    // 硬删除（CASCADE 会自动清理 junction、bookmarks、playback_states、learning_progresses）
-    final dao = ref.read(audioItemDaoProvider);
-    await dao.hardDelete(id);
-
-    // 清理学习进度内存状态（硬删除 CASCADE 已清理数据库）
-    ref.read(learningProgressNotifierProvider.notifier).deleteProgress(id);
-
-    // 从所有合集中清理对该音频的引用（更新 Provider 内存状态）
-    ref.read(collectionListProvider.notifier).removeAudioFromAllCollections(id);
-
-    // 从所有标签中清理对该音频的引用（更新 Provider 内存状态）
-    ref.read(tagListProvider.notifier).removeAudioFromAllTags(id);
   }
 
   Future<void> updateAudioItem(AudioItem updatedItem) async {
@@ -396,35 +458,43 @@ class AudioLibrary extends _$AudioLibrary {
 
   /// 将 AudioItem 模型写入 Drift 数据库
   Future<void> _upsertItem(AudioItem item) async {
+    await _upsertItems([item]);
+  }
+
+  /// 批量将 AudioItem 模型写入 Drift 数据库。
+  Future<void> _upsertItems(List<AudioItem> items) async {
+    if (items.isEmpty) return;
     final dao = ref.read(audioItemDaoProvider);
-    await dao.upsert(
-      db.AudioItemsCompanion(
-        id: Value(item.id),
-        name: Value(item.name),
-        audioPath: Value(item.audioPath),
-        transcriptPath: Value(item.transcriptPath),
-        addedDate: Value(item.addedDate),
-        totalDuration: Value(item.totalDuration),
-        sentenceCount: Value(item.sentenceCount),
-        wordCount: Value(item.wordCount),
-        isPinned: Value(item.isPinned),
-        transcriptSource: Value(item.transcriptSource?.index),
-        audioSha256: Value(item.audioSha256),
-        originalAudioSha256: Value(item.originalAudioSha256),
-        transcriptLanguage: Value(item.transcriptLanguage),
-        audioContentStatus: Value(item.contentStatus?.index),
-        remoteAudioId: Value(item.remoteAudioId),
-        originalDate: Value(item.originalDate),
-        importSourceType: Value(item.importSourceType?.storageValue),
-        importSourceUrl: Value(item.importSourceUrl),
-        podcastEpisodeGuid: Value(item.podcastEpisodeGuid),
-        podcastEnclosureUrl: Value(item.podcastEnclosureUrl),
-        podcastEnclosureType: Value(item.podcastEnclosureType),
-        podcastDescription: Value(item.podcastDescription),
-        podcastImageUrl: Value(item.podcastImageUrl),
-        podcastLink: Value(item.podcastLink),
-        updatedAt: Value(DateTime.now()),
-      ),
+    await dao.batchInsert(items.map(_audioItemToCompanion).toList());
+  }
+
+  db.AudioItemsCompanion _audioItemToCompanion(AudioItem item) {
+    return db.AudioItemsCompanion(
+      id: Value(item.id),
+      name: Value(item.name),
+      audioPath: Value(item.audioPath),
+      transcriptPath: Value(item.transcriptPath),
+      addedDate: Value(item.addedDate),
+      totalDuration: Value(item.totalDuration),
+      sentenceCount: Value(item.sentenceCount),
+      wordCount: Value(item.wordCount),
+      isPinned: Value(item.isPinned),
+      transcriptSource: Value(item.transcriptSource?.index),
+      audioSha256: Value(item.audioSha256),
+      originalAudioSha256: Value(item.originalAudioSha256),
+      transcriptLanguage: Value(item.transcriptLanguage),
+      audioContentStatus: Value(item.contentStatus?.index),
+      remoteAudioId: Value(item.remoteAudioId),
+      originalDate: Value(item.originalDate),
+      importSourceType: Value(item.importSourceType?.storageValue),
+      importSourceUrl: Value(item.importSourceUrl),
+      podcastEpisodeGuid: Value(item.podcastEpisodeGuid),
+      podcastEnclosureUrl: Value(item.podcastEnclosureUrl),
+      podcastEnclosureType: Value(item.podcastEnclosureType),
+      podcastDescription: Value(item.podcastDescription),
+      podcastImageUrl: Value(item.podcastImageUrl),
+      podcastLink: Value(item.podcastLink),
+      updatedAt: Value(DateTime.now()),
     );
   }
 }

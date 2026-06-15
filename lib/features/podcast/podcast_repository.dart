@@ -228,6 +228,7 @@ class PodcastRepository {
         .whereType<String>()
         .toSet();
 
+    final newItems = <AudioItem>[];
     for (final episode in episodes) {
       if (existingGuids.contains(episode.guid)) continue;
 
@@ -247,9 +248,15 @@ class PodcastRepository {
         podcastLink: episode.link,
       );
 
-      await audioLib.addAudioItem(item);
-      await collList.addAudioToCollection(collectionId, item.id);
+      newItems.add(item);
     }
+
+    if (newItems.isEmpty) return;
+    await audioLib.addAudioItems(newItems);
+    await collList.addAudiosToCollection(
+      collectionId,
+      newItems.map((item) => item.id).toList(),
+    );
   }
 }
 

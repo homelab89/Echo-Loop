@@ -5,6 +5,7 @@ import 'package:echo_loop/features/podcast/podcast_repository.dart';
 import 'package:echo_loop/features/podcast/podcast_url_resolver.dart';
 import 'package:echo_loop/features/podcast/podcast_feed_parser.dart';
 import 'package:echo_loop/features/podcast/podcast_models.dart';
+import 'package:echo_loop/models/audio_item.dart';
 import 'package:echo_loop/models/collection.dart';
 import 'package:echo_loop/providers/audio_library_provider.dart';
 import 'package:echo_loop/providers/collection_provider.dart';
@@ -74,6 +75,8 @@ class _MockRef extends Mock implements Ref {}
 class _SeededCollectionList extends CollectionList {
   _SeededCollectionList(this._seed);
   final CollectionState _seed;
+  int addAudioCallCount = 0;
+  int addAudiosCallCount = 0;
   @override
   CollectionState build() => _seed;
 
@@ -96,11 +99,42 @@ class _SeededCollectionList extends CollectionList {
 
   @override
   Future<void> addAudioToCollection(String collectionId, String audioId) async {
+    addAudioCallCount++;
+    await addAudiosToCollection(collectionId, [audioId]);
+  }
+
+  @override
+  Future<void> addAudiosToCollection(
+    String collectionId,
+    List<String> audioIds,
+  ) async {
+    addAudiosCallCount++;
     final current = List<String>.from(state.audioIdsMap[collectionId] ?? []);
-    if (!current.contains(audioId)) current.add(audioId);
+    for (final audioId in audioIds) {
+      if (!current.contains(audioId)) current.add(audioId);
+    }
     state = state.copyWith(
       audioIdsMap: {...state.audioIdsMap, collectionId: current},
     );
+  }
+}
+
+class _CountingAudioLibrary extends TestAudioLibrary {
+  int addAudioCallCount = 0;
+  int addAudiosCallCount = 0;
+
+  _CountingAudioLibrary([super.initialState]);
+
+  @override
+  Future<void> addAudioItem(AudioItem item) async {
+    addAudioCallCount++;
+    await super.addAudioItem(item);
+  }
+
+  @override
+  Future<void> addAudioItems(List<AudioItem> items) async {
+    addAudiosCallCount++;
+    await super.addAudioItems(items);
   }
 }
 
@@ -473,6 +507,62 @@ void main() {
             .having((c) => c.podcastFeedUrl, 'podcastFeedUrl', feedUrl),
       );
     });
+
+    test('首次创建时多集节目批量入库并建立合集关联', () async {
+      const feed = '''<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>VOA Learning English</title>
+    <description>Slow-paced English learning programs.</description>
+    <item>
+      <guid>ep-1</guid>
+      <title>Episode 1</title>
+      <enclosure url="https://example.com/1.mp3" type="audio/mpeg" />
+    </item>
+    <item>
+      <guid>ep-2</guid>
+      <title>Episode 2</title>
+      <enclosure url="https://example.com/2.mp3" type="audio/mpeg" />
+    </item>
+  </channel>
+</rss>''';
+      final dio = _CountingDio(body: feed);
+      final audioLibrary = _CountingAudioLibrary();
+      final repoProvider = Provider(
+        (ref) => PodcastRepository(
+          ref,
+          dio: dio,
+          urlResolver: _FixedResolver(feedUrl),
+          feedParser: PodcastFeedParser(),
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          collectionListProvider.overrideWith(
+            () => _SeededCollectionList(const CollectionState()),
+          ),
+          audioLibraryProvider.overrideWith(() => audioLibrary),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final collection = await container
+          .read(repoProvider)
+          .createAndFetch(appleUrl);
+
+      final collectionList =
+          container.read(collectionListProvider.notifier)
+              as _SeededCollectionList;
+      expect(audioLibrary.addAudioCallCount, 0);
+      expect(audioLibrary.addAudiosCallCount, 1);
+      expect(collectionList.addAudioCallCount, 0);
+      expect(collectionList.addAudiosCallCount, 1);
+      expect(container.read(audioLibraryProvider).audioItems, hasLength(2));
+      expect(
+        container.read(collectionListProvider).getAudioIds(collection.id),
+        hasLength(2),
+      );
+    });
   });
 
   group('PodcastRepository.refresh — 刷新策略', () {
@@ -615,6 +705,78 @@ void main() {
               'description',
               collection.description,
             ),
+      );
+    });
+
+    test('刷新时跳过已有 guid，只批量加入新增 episode', () async {
+      const feed = '''<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>VOA Learning English</title>
+    <description>Slow-paced English learning programs.</description>
+    <item>
+      <guid>existing-guid</guid>
+      <title>Existing Episode</title>
+      <enclosure url="https://example.com/existing.mp3" type="audio/mpeg" />
+    </item>
+    <item>
+      <guid>new-guid</guid>
+      <title>New Episode</title>
+      <enclosure url="https://example.com/new.mp3" type="audio/mpeg" />
+    </item>
+  </channel>
+</rss>''';
+      final collection = podcast(lastRefreshedAt: DateTime(2026, 6, 13));
+      final existingItem = AudioItem(
+        id: 'existing-audio',
+        name: 'Existing Episode',
+        addedDate: DateTime(2026, 6, 1),
+        totalDuration: 0,
+        podcastEpisodeGuid: 'existing-guid',
+        podcastEnclosureUrl: 'https://example.com/existing.mp3',
+      );
+      final audioLibrary = _CountingAudioLibrary(
+        AudioLibraryState(audioItems: [existingItem]),
+      );
+      final dio = _CountingDio(body: feed);
+      final repoProvider = Provider(
+        (ref) =>
+            PodcastRepository(ref, dio: dio, feedParser: PodcastFeedParser()),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          collectionListProvider.overrideWith(
+            () => _SeededCollectionList(
+              CollectionState(
+                rawCollections: [collection],
+                audioIdsMap: {
+                  collection.id: [existingItem.id],
+                },
+              ),
+            ),
+          ),
+          audioLibraryProvider.overrideWith(() => audioLibrary),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(repoProvider).refresh(collection.id, force: true);
+
+      final collectionList =
+          container.read(collectionListProvider.notifier)
+              as _SeededCollectionList;
+      final items = container.read(audioLibraryProvider).audioItems;
+      expect(audioLibrary.addAudioCallCount, 0);
+      expect(audioLibrary.addAudiosCallCount, 1);
+      expect(collectionList.addAudioCallCount, 0);
+      expect(collectionList.addAudiosCallCount, 1);
+      expect(items.map((item) => item.podcastEpisodeGuid), [
+        'existing-guid',
+        'new-guid',
+      ]);
+      expect(
+        container.read(collectionListProvider).getAudioIds(collection.id),
+        hasLength(2),
       );
     });
 

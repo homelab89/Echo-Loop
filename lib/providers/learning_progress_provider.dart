@@ -723,17 +723,38 @@ class LearningProgressNotifier extends _$LearningProgressNotifier {
   /// stage_completions 的外键关联的是 AudioItems（音频删除时才触发级联），
   /// 所以"重置进度"场景下必须显式删除，否则子步骤完成态会残留在 UI 上。
   Future<void> deleteProgress(String audioItemId) async {
-    final progressDao = ref.read(learningProgressDaoProvider);
-    final completionDao = ref.read(stageCompletionDaoProvider);
-    await progressDao.deleteByAudioId(audioItemId);
-    await completionDao.deleteByAudioId(audioItemId);
+    await deleteProgressMany({audioItemId});
+  }
+
+  /// 批量删除指定音频的学习进度。
+  ///
+  /// [deleteFromDb] 为 true 时显式删除数据库行，用于"重置进度"这类不删除
+  /// audio_items 的场景；删除音频条目时由 `audio_items` 的 FK 级联清理这两张
+  /// 子表，调用方应传 false 只同步内存状态，避免重复发 DELETE。
+  Future<void> deleteProgressMany(
+    Set<String> audioItemIds, {
+    bool deleteFromDb = true,
+  }) async {
+    if (audioItemIds.isEmpty) return;
+    if (deleteFromDb) {
+      final progressDao = ref.read(learningProgressDaoProvider);
+      final completionDao = ref.read(stageCompletionDaoProvider);
+      for (final audioItemId in audioItemIds) {
+        await progressDao.deleteByAudioId(audioItemId);
+        await completionDao.deleteByAudioId(audioItemId);
+      }
+    }
 
     final newMap = Map<String, LearningProgress>.from(state.progressMap);
-    newMap.remove(audioItemId);
+    for (final audioItemId in audioItemIds) {
+      newMap.remove(audioItemId);
+    }
     final newCompletions = Map<String, Set<String>>.from(
       state.completionsByAudio,
     );
-    newCompletions.remove(audioItemId);
+    for (final audioItemId in audioItemIds) {
+      newCompletions.remove(audioItemId);
+    }
     state = state.copyWith(
       progressMap: newMap,
       completionsByAudio: newCompletions,
