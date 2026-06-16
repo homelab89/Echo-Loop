@@ -5801,7 +5801,7 @@ abstract class AppLocalizations {
   /// No description provided for @retellRatingToggle.
   ///
   /// In en, this message translates to:
-  /// **'Disable rating during retelling'**
+  /// **'Show rating during retelling'**
   String get retellRatingToggle;
 
   /// No description provided for @retellRatingSubtitle.
