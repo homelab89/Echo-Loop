@@ -68,7 +68,18 @@ android {
     }
 
     buildTypes {
-        release {}
+        release {
+            // release 构建启用 R8（Flutter/AGP 默认行为，见 build 产物
+            // minifyProdReleaseWithR8 / mapping.txt）。此处显式接入 app 级
+            // proguard 规则——ffmpeg_kit 等插件的 keep 规则未通过
+            // consumerProguardFiles 传播到宿主，必须在 app/proguard-rules.pro
+            // 中保留，否则 R8 会裁掉仅由 JNI_OnLoad 反射注册的 native 方法，
+            // 导致插件注册整体失败、App 卡在启动 splash。
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
     }
 
     // 与 iOS 的 dev / prod scheme 保持一致：
