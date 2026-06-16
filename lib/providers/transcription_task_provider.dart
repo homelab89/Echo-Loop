@@ -14,6 +14,7 @@ import 'package:universal_io/io.dart';
 import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../database/providers.dart';
+import '../features/audio_import/audio_finalization_service.dart';
 import '../models/audio_item.dart';
 import '../models/word_timestamp.dart';
 import '../providers/audio_library_provider.dart';
@@ -47,6 +48,11 @@ class TranscriptionFileOps {
 @Riverpod(keepAlive: true)
 TranscriptionFileOps transcriptionFileOps(Ref ref) =>
     const TranscriptionFileOps();
+
+/// 转录成功后把原始音频转码为 m4a 的服务 Provider（测试时可覆盖）
+@Riverpod(keepAlive: true)
+AudioFinalizationService transcriptionFinalizationService(Ref ref) =>
+    AudioFinalizationService();
 
 // ─── 转录任务状态 ──────────────────────────────────────────
 
@@ -388,6 +394,42 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
     final srtContent = generateSrtContent(alignedSentences);
     final stats = await getTranscriptStatsFromSrt(srtContent);
 
+    // ── 转码（best-effort）──
+    // 新流程：导入保留原始音频，转录上传原始；拿到字幕后顺带把原始转码为 m4a。
+    // 转码失败静默处理：仍保存字幕、保留原始音频，避免转码 bug 把音频挡在学习外。
+    // 仅对「尚未转码的用户导入」执行：remoteAudioId==null（非官方）且
+    // audioSha256==originalAudioSha256（存的还是原始文件）。老数据/已转码/官方跳过。
+    final needTranscode =
+        audioItem.remoteAudioId == null &&
+        audioItem.audioPath != null &&
+        audioItem.originalAudioSha256 != null &&
+        audioItem.audioSha256 == audioItem.originalAudioSha256;
+    var finalAudioPath = audioItem.audioPath;
+    var finalSha = sha256;
+    var transcoded = false;
+    if (needTranscode) {
+      try {
+        final dataDir = await ref
+            .read(transcriptionFileOpsProvider)
+            .getDataDir();
+        final finalizationService = ref.read(
+          transcriptionFinalizationServiceProvider,
+        );
+        final result = await finalizationService.transcodeExisting(
+          dataDir: dataDir,
+          relativePath: audioItem.audioPath!,
+        );
+        finalAudioPath = result.relativePath;
+        finalSha = result.sha256;
+        transcoded = true;
+      } catch (e) {
+        AppLogger.log(
+          'Transcription',
+          '转码失败(静默,保留原始) id=${audioItem.id} err=$e',
+        );
+      }
+    }
+
     // 字幕内容 + 词级时间戳原子写入 DB（transcript_srt 列成为唯一真相源）
     final wordsJson = (transcript.words != null && transcript.words!.isNotEmpty)
         ? encodeWordTimestamps(transcript.words!)
@@ -408,14 +450,30 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
         .read(audioLibraryProvider.notifier)
         .updateAudioItem(
           audioItem.copyWith(
+            audioPath: finalAudioPath,
             transcriptPath: null,
             transcriptSource: TranscriptSource.ai,
             transcriptLanguage: language,
-            audioSha256: sha256,
+            audioSha256: finalSha,
             sentenceCount: stats.$1,
             wordCount: stats.$2,
           ),
         );
+
+    // DB 更新后再删除旧原始文件，避免中途崩溃导致 audioPath 指向不存在文件。
+    if (transcoded &&
+        finalAudioPath != audioItem.audioPath &&
+        audioItem.audioPath != null) {
+      try {
+        final dataDir = await ref
+            .read(transcriptionFileOpsProvider)
+            .getDataDir();
+        final oldFile = File(p.join(dataDir.path, audioItem.audioPath!));
+        if (await oldFile.exists()) await oldFile.delete();
+      } catch (e) {
+        AppLogger.log('Transcription', '删除原始音频失败(忽略) err=$e');
+      }
+    }
 
     _updateState(audioItem.id, const TranscriptionCompleted());
     _cancelTokens.remove(audioItem.id);

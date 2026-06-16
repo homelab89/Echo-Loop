@@ -26,8 +26,30 @@ final transcriptionFileOpsProvider = Provider<TranscriptionFileOps>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef TranscriptionFileOpsRef = ProviderRef<TranscriptionFileOps>;
+String _$transcriptionFinalizationServiceHash() =>
+    r'1c8c504327eccadbea4c5f5cf5174eac23e63fb2';
+
+/// 转录成功后把原始音频转码为 m4a 的服务 Provider（测试时可覆盖）
+///
+/// Copied from [transcriptionFinalizationService].
+@ProviderFor(transcriptionFinalizationService)
+final transcriptionFinalizationServiceProvider =
+    Provider<AudioFinalizationService>.internal(
+      transcriptionFinalizationService,
+      name: r'transcriptionFinalizationServiceProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$transcriptionFinalizationServiceHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef TranscriptionFinalizationServiceRef =
+    ProviderRef<AudioFinalizationService>;
 String _$transcriptionTaskManagerHash() =>
-    r'98ea937f81eebfba802ae73445975b93ddbf2e98';
+    r'087b1b744353771200c1a28f908c484f85bddc7f';
 
 /// 转录任务管理器
 ///

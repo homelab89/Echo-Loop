@@ -1,5 +1,6 @@
 import 'package:path/path.dart' as p;
 import 'package:universal_io/io.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../utils/audio_fingerprint.dart';
 import 'audio_import_models.dart';
@@ -7,9 +8,10 @@ import 'audio_transcode_service.dart';
 
 /// 音频落盘结果。
 ///
-/// [relativePath] 正式音频相对数据目录的路径；[sha256] 为转码/回退后内容指纹，
-/// 用作稳定文件名；[originalSha256] 为转码前原始音频指纹（供 AI 转录缓存复用）；
-/// [created] 表示是否新写入文件（false 表示命中同指纹已有文件、直接复用）。
+/// [relativePath] 正式音频相对数据目录的路径；[sha256] 为内容指纹，用作稳定
+/// 文件名；[originalSha256] 为转码前原始音频指纹（供 AI 转录缓存复用，导入时
+/// 与 [sha256] 相等）；[created] 表示是否新写入文件（false 表示命中同指纹已有
+/// 文件、直接复用）。
 class FinalizedAudio {
   const FinalizedAudio({
     required this.relativePath,
@@ -24,25 +26,31 @@ class FinalizedAudio {
   final bool created;
 }
 
-/// 临时音频统一转码 + 按内容指纹落盘的共享流程。
+/// 临时音频按内容指纹落盘 + 转录后转码的共享流程。
 ///
-/// 链接下载（[AudioImportService]）和本地导入（添加音频对话框）都走这里，
-/// 保证转码策略、指纹复用、临时文件清理三处一致，避免重复实现产生分叉。
+/// 链接下载（[AudioImportService]）和本地导入（添加音频对话框）都走 [finalize]，
+/// 保证指纹复用、临时文件清理两处一致。导入阶段**不转码**，直接保留原始音频
+/// （导入更快、AI 转录上传原始更高质量）；转码延后到 AI 转录成功后，由
+/// [transcodeExisting] 把原始文件转码为 m4a。
 class AudioFinalizationService {
   AudioFinalizationService({
     AudioTranscodeService? transcodeService,
     Future<String> Function(String absolutePath)? computeSha256,
+    Uuid? uuid,
   }) : _transcodeService = transcodeService ?? AudioTranscodeService(),
-       _computeSha256 = computeSha256 ?? computeAudioSha256;
+       _computeSha256 = computeSha256 ?? computeAudioSha256,
+       _uuid = uuid ?? const Uuid();
 
   final AudioTranscodeService _transcodeService;
   final Future<String> Function(String absolutePath) _computeSha256;
+  final Uuid _uuid;
 
-  /// 转码 [tempRelativePath] 指向的临时音频，按转码后指纹落盘到 [targetSubdir]。
+  /// 按内容指纹把 [tempRelativePath] 指向的临时音频落盘到 [targetSubdir]。
   ///
   /// [dataDir] 应用数据根目录；[tempRelativePath] / [targetSubdir] 均相对它，
-  /// 例如 `tmp/audio_import/xxx.mp3` 与 `audios/imported`。同指纹文件已存在时复用
-  /// 现有文件、删除本次临时产物；无论成功失败都会清理原始临时文件。
+  /// 例如 `tmp/audio_import/xxx.mp3` 与 `audios/imported`。**不转码**，保留原始
+  /// 格式与扩展名。同指纹文件已存在时复用现有文件、删除本次临时产物；无论命中
+  /// 与否都会清理原始临时文件。
   Future<FinalizedAudio> finalize({
     required Directory dataDir,
     required String tempRelativePath,
@@ -51,14 +59,7 @@ class AudioFinalizationService {
     final targetDir = Directory(p.join(dataDir.path, targetSubdir));
     await targetDir.create(recursive: true);
 
-    final originalFile = File(p.join(dataDir.path, tempRelativePath));
-    final originalSha256 = await _fingerprint(originalFile);
-
-    final transcodeResult = await _transcodeService.transcodeToM4a(
-      dataDir: dataDir,
-      relativePath: tempRelativePath,
-    );
-    final sourceFile = File(p.join(dataDir.path, transcodeResult.relativePath));
+    final sourceFile = File(p.join(dataDir.path, tempRelativePath));
     final sha256 = await _fingerprint(sourceFile);
     final finalName = '$sha256${p.extension(sourceFile.path)}';
     final finalFile = File(p.join(targetDir.path, finalName));
@@ -69,15 +70,64 @@ class AudioFinalizationService {
     } else {
       await _deleteIfExists(sourceFile);
     }
-    // 转码成功时原始临时文件通常已被删除/移动，这里兜底清理回退或同名替换残留。
-    await _deleteIfExists(originalFile);
+    // 命中已有文件时 sourceFile 即原始临时文件，已在上面删除；这里兜底再清一次。
+    await _deleteIfExists(sourceFile);
 
     return FinalizedAudio(
       relativePath: p.join(targetSubdir, finalName),
       sha256: sha256,
-      originalSha256: originalSha256,
+      originalSha256: sha256,
       created: created,
     );
+  }
+
+  /// 把已落盘的原始音频 [relativePath] 转码为 m4a，按转码后指纹落盘到同目录。
+  ///
+  /// 转录成功后调用。**不删除原始文件**（由调用方在 DB 更新后删除，避免中途崩溃
+  /// 导致 audioPath 指向不存在文件）。转码失败抛 [AudioImportException]，由调用方
+  /// catch 后静默处理（保留原始、不阻塞转录成功）。同指纹 m4a 已存在时复用。
+  Future<FinalizedAudio> transcodeExisting({
+    required Directory dataDir,
+    required String relativePath,
+  }) async {
+    final source = File(p.join(dataDir.path, relativePath));
+    final targetSubdir = p.dirname(relativePath);
+    final tmpDir = Directory(p.join(dataDir.path, 'tmp', 'audio_import'));
+    await tmpDir.create(recursive: true);
+    final tmpOutput = File(p.join(tmpDir.path, '${_uuid.v4()}.m4a'));
+
+    try {
+      final ok = await _transcodeService.transcodeToFile(
+        source: source,
+        output: tmpOutput,
+      );
+      if (!ok) {
+        throw const AudioImportException(
+          AudioImportFailureCode.storage,
+          'Failed to transcode audio',
+        );
+      }
+
+      final sha256 = await _fingerprint(tmpOutput);
+      final finalName = '$sha256.m4a';
+      final finalFile = File(p.join(dataDir.path, targetSubdir, finalName));
+
+      final created = !await finalFile.exists();
+      if (created) {
+        await _moveToFinal(sourceFile: tmpOutput, finalFile: finalFile);
+      }
+
+      return FinalizedAudio(
+        relativePath: p.join(targetSubdir, finalName),
+        sha256: sha256,
+        originalSha256: sha256,
+        created: created,
+      );
+    } finally {
+      // 兜底清理临时产物：成功 move 后 tmpOutput 已不存在；命中已有文件、
+      // fingerprint/move 抛异常等情形在此删除残留（Android 无 /tmp 自动清理）。
+      await _deleteIfExists(tmpOutput);
+    }
   }
 
   /// 计算指纹，失败统一抛存储类异常，便于上层归一处理。

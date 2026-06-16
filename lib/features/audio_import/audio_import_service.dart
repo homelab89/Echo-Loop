@@ -38,9 +38,9 @@ class AudioImportService {
        _registrationService =
            registrationService ?? AudioRegistrationService(uuid: uuid),
        _finalizationService = AudioFinalizationService(
-         transcodeService:
-             transcodeService ?? AudioTranscodeService(uuid: uuid),
+         transcodeService: transcodeService ?? AudioTranscodeService(),
          computeSha256: computeSha256,
+         uuid: uuid,
        );
 
   final Dio _dio;
