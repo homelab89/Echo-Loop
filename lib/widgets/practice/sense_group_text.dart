@@ -6,16 +6,23 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../models/speech_practice_models.dart';
 import '../../utils/sense_group_timing.dart';
 import '../common/text_context_menu.dart';
 
-/// 意群 badge 背景色（亮色主题，统一颜色避免误导用户）
-const _groupColorLight = Color(0xFFE3F2FD); // 浅蓝
+/// 跟读匹配单词的高亮色（与非意群模式 [SentenceAnnotationCard] 保持一致）
+const _matchedColor = Color(0xFF2E9B51);
 
-/// 意群 badge 背景色（暗色主题）
+/// 提取英文单词（与 [SpeechTranscriptMatcher] 规则一致，保留撇号）
+final _englishWordPattern = RegExp(r"[A-Za-z]+(?:'[A-Za-z]+)?");
+
+/// 意群 badge 空闲态背景色（亮色主题）
 ///
-/// 纯黑主题下用更深、更低饱和的蓝，避免饱和蓝块漂浮在纯黑上显得突兀。
-const _groupColorDark = Color(0xFF13283D); // 深蓝（空闲）
+/// 用中性灰，搭配跟读完成后的绿色匹配字，也避免蓝底误导用户。
+const _groupColorLight = Color(0xFFEDEFF2); // 中性浅灰
+
+/// 意群 badge 空闲态背景色（暗色主题）
+const _groupColorDark = Color(0xFF26262A); // 中性深灰
 
 /// 播放中意群背景色（暗色主题）
 ///
@@ -64,6 +71,11 @@ class SenseGroupText extends StatefulWidget {
   /// 已收藏的意群文本集合（归一化后）
   final Set<String> savedGroupTexts;
 
+  /// 跟读完成后的词级匹配片段（覆盖整句，按顺序）
+  ///
+  /// 为 null 或空时不做单词高亮，意群 badge 用纯文本渲染。
+  final List<SpeechTranscriptSegment>? highlightedSegments;
+
   const SenseGroupText({
     super.key,
     required this.chunks,
@@ -73,6 +85,7 @@ class SenseGroupText extends StatefulWidget {
     required this.onTapGroup,
     this.onTapGroupWithRect,
     this.savedGroupTexts = const {},
+    this.highlightedSegments,
   });
 
   @override
@@ -110,21 +123,85 @@ class _SenseGroupTextState extends State<SenseGroupText> {
       color: colorScheme.onSurface,
     );
 
+    // 按 chunk 顺序预生成高亮 span（单词游标跨 badge 连续消费）
+    final chunkSpans = _buildChunkSpans(baseStyle);
+
     return Wrap(
       spacing: 6,
       runSpacing: 6,
       children: [
         for (var i = 0; i < widget.chunks.length; i++)
-          _buildGroupBadge(i, baseStyle, colorScheme),
+          _buildGroupBadge(i, baseStyle, colorScheme, chunkSpans?[i]),
       ],
     );
   }
 
+  /// 把高亮片段拍平为有序的单词匹配标志列表。
+  ///
+  /// 单词段产出一个标志（其 isMatched），间隔段（空白/标点）不产出。
+  /// 无高亮数据时返回 null。
+  List<bool>? _buildWordFlags() {
+    final segments = widget.highlightedSegments;
+    if (segments == null || segments.isEmpty) {
+      return null;
+    }
+    final flags = <bool>[];
+    for (final segment in segments) {
+      for (final _ in _englishWordPattern.allMatches(segment.text)) {
+        flags.add(segment.isMatched);
+      }
+    }
+    return flags;
+  }
+
+  /// 按 chunk 顺序生成每个意群的富文本 span，单词游标连续消费 [_buildWordFlags]。
+  ///
+  /// 无高亮数据时返回 null（badge 回退为纯文本）。
+  List<List<InlineSpan>>? _buildChunkSpans(TextStyle? baseStyle) {
+    final wordFlags = _buildWordFlags();
+    if (wordFlags == null) {
+      return null;
+    }
+
+    var wordCursor = 0;
+    final result = <List<InlineSpan>>[];
+    for (final chunk in widget.chunks) {
+      final text = chunk.trim();
+      final spans = <InlineSpan>[];
+      // 与普通模式一致：只给纯英文单词上色，单词外字符（空格/标点/连字符）原样保留
+      var last = 0;
+      for (final match in _englishWordPattern.allMatches(text)) {
+        if (match.start > last) {
+          spans.add(TextSpan(text: text.substring(last, match.start)));
+        }
+        // 按单词顺序消费匹配标志，越界按未匹配处理
+        final isMatched =
+            wordCursor < wordFlags.length && wordFlags[wordCursor];
+        wordCursor++;
+        spans.add(
+          TextSpan(
+            text: text.substring(match.start, match.end),
+            style: isMatched ? const TextStyle(color: _matchedColor) : null,
+          ),
+        );
+        last = match.end;
+      }
+      if (last < text.length) {
+        spans.add(TextSpan(text: text.substring(last)));
+      }
+      result.add(spans);
+    }
+    return result;
+  }
+
   /// 构建单个意群 badge
+  ///
+  /// [highlightSpans] 非空时按词级匹配渲染富文本，否则用纯文本。
   Widget _buildGroupBadge(
     int index,
     TextStyle? baseStyle,
     ColorScheme colorScheme,
+    List<InlineSpan>? highlightSpans,
   ) {
     final chunk = widget.chunks[index];
     final isPlaying = widget.playingGroupIndex == index;
@@ -184,7 +261,11 @@ class _SenseGroupTextState extends State<SenseGroupText> {
           borderRadius: BorderRadius.circular(4),
           border: border,
         ),
-        child: Text(chunk.trim(), style: baseStyle),
+        child: highlightSpans != null
+            ? RichText(
+                text: TextSpan(style: baseStyle, children: highlightSpans),
+              )
+            : Text(chunk.trim(), style: baseStyle),
       ),
     );
   }

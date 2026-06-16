@@ -671,6 +671,7 @@ class SentenceAnnotationCardState extends State<SentenceAnnotationCard> {
             onTapGroup: widget.onTapSenseGroup ?? (_) {},
             savedGroupTexts: widget.savedGroupTexts,
             onTapGroupWithRect: widget.onTapGroupWithRect,
+            highlightedSegments: widget.highlightedSegments,
           )
         : GestureDetector(
             onLongPressStart: (details) => TextContextMenu.show(
