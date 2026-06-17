@@ -163,21 +163,32 @@ class LearningProgress {
   int get currentSubStageIndex =>
       currentStage.allSubStages.indexOf(currentSubStage);
 
+  /// 本 audio 首次学习计划的入口（第一个）子步骤。
+  ///
+  /// 由该 audio 的 plan 版本快照派生：v1 = 盲听，v2 = 逐句精听。
+  /// 用于判定「是否已开始」与「入口步骤不可跳过」，自动兼容新旧版本。
+  SubStageType get firstLearnEntrySubStage {
+    final planned = LearningPlan.standard(stagePlanVersions: planVersionsByStage)
+        .subStagesFor(LearningStage.firstLearn);
+    return planned.isNotEmpty ? planned.first : SubStageType.blindListen;
+  }
+
   /// 是否已开始学习
   bool get isStarted =>
       currentStage != LearningStage.firstLearn ||
-      currentSubStage != SubStageType.blindListen;
+      currentSubStage != firstLearnEntrySubStage;
 
   /// 是否已完成全部学习
   bool get isCompleted => currentStage == LearningStage.completed;
 
   /// 当前子步骤是否允许跳过。
   ///
-  /// 首次学习的第一个盲听不可跳过——保证用户至少完整盲听一次原文。
-  /// 其余子步骤（首次学习的精听/跟读/复述、所有复习阶段任务含复习盲听）均可跳过。
+  /// 首次学习的「入口子步骤」不可跳过——保证用户至少完整体验一次核心环节：
+  /// v1 入口是盲听，v2 入口是逐句精听。其余子步骤（含 v2 后置的盲听、跟读、
+  /// 复述、所有复习阶段任务含复习盲听）均可跳过。
   bool get canSkipCurrentSubStage =>
       !(currentStage == LearningStage.firstLearn &&
-          currentSubStage == SubStageType.blindListen);
+          currentSubStage == firstLearnEntrySubStage);
 
   /// 下次复习可用时间（仅复习阶段有意义）
   ///

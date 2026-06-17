@@ -190,14 +190,15 @@ Duration listenAndRepeatPauseCalculator(Duration sentenceDuration) {
 
 /// 根据难度等级返回目标播放遍数
 ///
-/// veryEasy/easy=2, medium=3, hard=4, veryHard=5
+/// 当前所有难度统一返回 3 遍（难句跟读默认三遍）。保留按难度入参的 switch
+/// 结构，便于以后再按难度差异化调整遍数，无需改动调用方。
 int targetPlayCountForDifficulty(int difficultyValue) {
   return switch (difficultyValue) {
-    0 => 2, // veryEasy
-    1 => 2, // easy
+    0 => 3, // veryEasy
+    1 => 3, // easy
     2 => 3, // medium
-    3 => 4, // hard
-    4 => 5, // veryHard
+    3 => 3, // hard
+    4 => 3, // veryHard
     _ => 3, // 默认
   };
 }

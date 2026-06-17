@@ -313,7 +313,7 @@
       "round": { "type": "int" }
     }
   },
-  "blindListenBriefingTip": "Listen without subtitles, try to get the gist",
+  "blindListenBriefingTip": "Challenge yourself: listen without subtitles and grasp the main idea",
   "startPractice": "Start Practice",
   "blindListenAppBarTitle": "Blind Listening",
   "blindListenPassLabel": "Pass {count}",
@@ -441,14 +441,11 @@
     }
   },
   "intensiveListenCompleteTitle": "Intensive Listening Complete",
-  "intensiveListenCompleteMessage": "You've completed intensive listening for all {total} sentences.\n{difficult} sentence(s) marked as difficult.",
-  "@intensiveListenCompleteMessage": {
-    "placeholders": {
-      "total": { "type": "int" },
-      "difficult": { "type": "int" }
-    }
-  },
+  "intensiveListenCompleteHint": "Keep up spaced review to fully master them.",
   "intensiveListenCompleteNext": "Next Step",
+  "statSentences": "Sentences",
+  "statDifficultSentences": "Difficult",
+  "statParagraphs": "Paragraphs",
   "exitIntensiveListenTitle": "Exit Intensive Listening?",
   "exitIntensiveListenMessage": "Your progress will be saved. You can continue from where you left off.",
   "intensiveListenBriefingTitle": "Intensive Listening",
@@ -595,12 +592,6 @@
   "listenAndRepeatRecognitionError": "Recognition error",
   "listenAndRepeatRecordingOnly": "Recording",
   "listenAndRepeatCompleteTitle": "Listen & Repeat Complete",
-  "listenAndRepeatCompleteMessage": "You've completed listen & repeat for all {total} difficult sentences.",
-  "@listenAndRepeatCompleteMessage": {
-    "placeholders": {
-      "total": { "type": "int" }
-    }
-  },
   "listenAndRepeatNoDifficultSentences": "No difficult sentences, no listen & repeat needed",
   "exitListenAndRepeatTitle": "Exit Listen & Repeat?",
   "exitListenAndRepeatMessage": "Your progress will be saved. You can continue from where you left off.",
@@ -717,12 +708,6 @@
   "retellCompleteFreePlay": "Practice Complete",
   "retellCompleteTitle": "Retelling Complete",
   "retellPracticeAgain": "Practice Again",
-  "retellCompleteMessage": "{count} paragraphs retold",
-  "@retellCompleteMessage": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
   "retellExitConfirmTitle": "Exit Retelling?",
   "retellExitConfirmMessage": "Current paragraph progress will be saved.",
   "retellDisplayKeywordsOnly": "Visible Only",
@@ -768,12 +753,6 @@
   },
   "reviewDifficultPracticeBlindListen": "Listening...",
   "reviewDifficultPracticeCompleteTitle": "Difficult Practice Complete",
-  "reviewDifficultPracticeCompleteMessage": "You've practiced all {total} difficult sentences.",
-  "@reviewDifficultPracticeCompleteMessage": {
-    "placeholders": {
-      "total": { "type": "int" }
-    }
-  },
   "reviewDifficultPracticeNone": "No difficult sentences to practice. Auto-completed.",
   "exitReviewDifficultPracticeTitle": "Exit Practice?",
   "exitReviewDifficultPracticeMessage": "Your progress will not be saved for this step.",
@@ -1031,10 +1010,6 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "bookmarkReviewComplete": "Review Complete",
-  "bookmarkReviewCompleteMessage": "You've reviewed all {count} bookmarked sentences.",
-  "@bookmarkReviewCompleteMessage": {
-    "placeholders": { "count": { "type": "int" } }
-  },
   "bookmarkReviewAgain": "Review Again",
   "bookmarkReviewAudioSkipped": "Audio unavailable, skipping this sentence",
   "bookmarkReviewFromAudio": "From: {name}",

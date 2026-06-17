@@ -9,8 +9,7 @@ import '../database/enums.dart';
 
 /// 每个**带 plan 的** [LearningStage] 当前版本（dense baseline）。
 ///
-/// **dense 原则**：包含所有「带 plan」的 stage，即使该阶段当前只有一个版本
-/// （如 `firstLearn`），也显式写出来。这样未来任一带 plan 的 stage 需要新版本：
+/// **dense 原则**：包含所有「带 plan」的 stage。这样未来任一带 plan 的 stage 需要新版本：
 /// 仅修改本 map + [LearningPlan.standard] 派生分支，迁移结构与持久化格式不变。
 ///
 /// **不包含 `LearningStage.completed`**：completed 是「毕业」终态标记，
@@ -23,7 +22,7 @@ import '../database/enums.dart';
 /// - 新建 audio 自动 stamp 新值（review2=3）
 /// 如未来需要让存量 audio 也升级，需写一次性迁移显式修改本字段。
 const Map<LearningStage, int> kLatestPlanVersions = {
-  LearningStage.firstLearn: 1,
+  LearningStage.firstLearn: 2,
   LearningStage.review0: 2,
   LearningStage.review1: 2,
   LearningStage.review2: 2,
@@ -45,7 +44,8 @@ class LearningPlan {
   /// 单个 stage 未在 map 中 → 回退到 `kLatestPlanVersions[stage] ?? 1`（兜底）。
   ///
   /// 各 stage / 版本对应的子步骤：
-  /// - firstLearn v1：`[blindListen, intensiveListen, listenAndRepeat, retell]`
+  /// - firstLearn v1：`[blindListen, intensiveListen, listenAndRepeat, retell]`（旧版，盲听优先）
+  /// - firstLearn v2：`[intensiveListen, listenAndRepeat, blindListen, retell]`（新版，盲听后置可跳过）
   /// - review0 v1：`[reviewDifficultPractice, reviewRetellParagraph]`（旧版）
   /// - review0 v2：`[reviewDifficultPractice, blindListen]`（新版）
   /// - review1 v1：`[blindListen, reviewDifficultPractice, reviewRetellParagraph]`
@@ -65,13 +65,21 @@ class LearningPlan {
       final v = versionFor(stage);
       switch (stage) {
         case LearningStage.firstLearn:
-          // 当前仅 v1；未来加 v2 在此 switch v 分支
-          return const [
-            SubStageType.blindListen,
-            SubStageType.intensiveListen,
-            SubStageType.listenAndRepeat,
-            SubStageType.retell,
-          ];
+          // v1（存量音频）：盲听优先的旧顺序
+          // v2（新建音频）：精听 → 跟读 → 盲听(可跳过) → 复述，让用户更早感受逐句精听的价值
+          return v == 1
+              ? const [
+                  SubStageType.blindListen,
+                  SubStageType.intensiveListen,
+                  SubStageType.listenAndRepeat,
+                  SubStageType.retell,
+                ]
+              : const [
+                  SubStageType.intensiveListen,
+                  SubStageType.listenAndRepeat,
+                  SubStageType.blindListen,
+                  SubStageType.retell,
+                ];
         case LearningStage.review0:
           return v == 1
               ? const [

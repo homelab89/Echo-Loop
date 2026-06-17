@@ -185,13 +185,13 @@
   "review": "复习",
   "stepProgress": "{completed}/{total} 完成",
   "stepBlindListening": "全文盲听",
-  "stepBlindListeningDesc": "先盲听，感受整体难度和大意",
+  "stepBlindListeningDesc": "挑战一下：盲听全文，抓住大意",
   "stepIntensiveListening": "逐句精听",
   "stepIntensiveListeningDesc": "逐句听，理解并标记难句",
   "stepShadowing": "难句跟读",
   "stepShadowingDesc": "针对弱项句子反复跟读",
   "stepRetelling": "段落复述",
-  "stepRetellingDesc": "用英文复述每段大意",
+  "stepRetellingDesc": "挑战一下：用自己的话复述每段大意",
   "reviewRound0": "首轮复习",
   "reviewRound1": "第二轮复习",
   "reviewRound2": "第三轮复习",
@@ -219,7 +219,7 @@
   "blindListenBriefingTitle": "全文盲听",
   "blindListenBriefingSubtitle": "首次学习 - 全文盲听",
   "blindListenBriefingReviewSubtitle": "第{round}轮复习 - 全文盲听",
-  "blindListenBriefingTip": "不看字幕，完整听一遍，感受大意和难度",
+  "blindListenBriefingTip": "挑战盲听全文，尝试抓住大意",
   "startPractice": "开始练习",
   "blindListenAppBarTitle": "全文盲听",
   "blindListenPassLabel": "第 {count} 遍",
@@ -295,8 +295,11 @@
     }
   },
   "intensiveListenCompleteTitle": "精听完成",
-  "intensiveListenCompleteMessage": "你已完成全部 {total} 个句子的精听。\n共标记 {difficult} 个难句。",
+  "intensiveListenCompleteHint": "坚持间隔复习，就能彻底掌握这些难句。",
   "intensiveListenCompleteNext": "下一步",
+  "statSentences": "句子",
+  "statDifficultSentences": "难句",
+  "statParagraphs": "段落",
   "exitIntensiveListenTitle": "退出精听？",
   "exitIntensiveListenMessage": "进度已保存，下次可从断点继续。",
   "intensiveListenBriefingTitle": "逐句精听",
@@ -431,12 +434,6 @@
   "listenAndRepeatRecognitionError": "识别错误",
   "listenAndRepeatRecordingOnly": "录音",
   "listenAndRepeatCompleteTitle": "跟读完成",
-  "listenAndRepeatCompleteMessage": "你已完成全部 {total} 个难句的跟读练习。",
-  "@listenAndRepeatCompleteMessage": {
-    "placeholders": {
-      "total": { "type": "int" }
-    }
-  },
   "listenAndRepeatNoDifficultSentences": "没有难句，无需跟读",
   "exitListenAndRepeatTitle": "退出跟读？",
   "exitListenAndRepeatMessage": "进度已保存，下次可从断点继续。",
@@ -553,12 +550,6 @@
   "retellCompleteFreePlay": "练习完成",
   "retellCompleteTitle": "复述完成",
   "retellPracticeAgain": "再来一遍",
-  "retellCompleteMessage": "共 {count} 段复述完成",
-  "@retellCompleteMessage": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
   "retellExitConfirmTitle": "退出复述？",
   "retellExitConfirmMessage": "当前段落进度将被保存。",
   "retellDisplayKeywordsOnly": "仅可见词",
@@ -604,12 +595,6 @@
   },
   "reviewDifficultPracticeBlindListen": "正在播放…",
   "reviewDifficultPracticeCompleteTitle": "难句补练完成",
-  "reviewDifficultPracticeCompleteMessage": "已完成全部 {total} 个难句的练习。",
-  "@reviewDifficultPracticeCompleteMessage": {
-    "placeholders": {
-      "total": { "type": "int" }
-    }
-  },
   "reviewDifficultPracticeNone": "无需补练的难句，已自动完成",
   "exitReviewDifficultPracticeTitle": "退出补练？",
   "exitReviewDifficultPracticeMessage": "当前步骤的进度不会保存。",
@@ -772,7 +757,6 @@
   "bookmarkReviewStart": "开始复习",
   "bookmarkReviewStartCount": "开始复习 ({count})",
   "bookmarkReviewComplete": "复习完成",
-  "bookmarkReviewCompleteMessage": "已复习全部 {count} 个收藏句子。",
   "bookmarkReviewAgain": "再来一遍",
   "bookmarkReviewAudioSkipped": "音频不可用，跳过该句",
   "bookmarkReviewFromAudio": "来自：{name}",

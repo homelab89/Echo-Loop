@@ -658,7 +658,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get blindListenBriefingTip =>
-      'Listen without subtitles, try to get the gist';
+      'Challenge yourself: listen without subtitles and grasp the main idea';
 
   @override
   String get startPractice => 'Start Practice';
@@ -885,12 +885,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get intensiveListenCompleteTitle => 'Intensive Listening Complete';
 
   @override
-  String intensiveListenCompleteMessage(int total, int difficult) {
-    return 'You\'ve completed intensive listening for all $total sentences.\n$difficult sentence(s) marked as difficult.';
-  }
+  String get intensiveListenCompleteHint =>
+      'Keep up spaced review to fully master them.';
 
   @override
   String get intensiveListenCompleteNext => 'Next Step';
+
+  @override
+  String get statSentences => 'Sentences';
+
+  @override
+  String get statDifficultSentences => 'Difficult';
+
+  @override
+  String get statParagraphs => 'Paragraphs';
 
   @override
   String get exitIntensiveListenTitle => 'Exit Intensive Listening?';
@@ -1129,11 +1137,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listenAndRepeatCompleteTitle => 'Listen & Repeat Complete';
 
   @override
-  String listenAndRepeatCompleteMessage(int total) {
-    return 'You\'ve completed listen & repeat for all $total difficult sentences.';
-  }
-
-  @override
   String get listenAndRepeatNoDifficultSentences =>
       'No difficult sentences, no listen & repeat needed';
 
@@ -1294,11 +1297,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retellPracticeAgain => 'Practice Again';
 
   @override
-  String retellCompleteMessage(int count) {
-    return '$count paragraphs retold';
-  }
-
-  @override
   String get retellExitConfirmTitle => 'Exit Retelling?';
 
   @override
@@ -1400,11 +1398,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reviewDifficultPracticeCompleteTitle =>
       'Difficult Practice Complete';
-
-  @override
-  String reviewDifficultPracticeCompleteMessage(int total) {
-    return 'You\'ve practiced all $total difficult sentences.';
-  }
 
   @override
   String get reviewDifficultPracticeNone =>
@@ -1888,11 +1881,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bookmarkReviewComplete => 'Review Complete';
-
-  @override
-  String bookmarkReviewCompleteMessage(int count) {
-    return 'You\'ve reviewed all $count bookmarked sentences.';
-  }
 
   @override
   String get bookmarkReviewAgain => 'Review Again';

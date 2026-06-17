@@ -534,7 +534,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stepBlindListening => '全文盲听';
 
   @override
-  String get stepBlindListeningDesc => '先盲听，感受整体难度和大意';
+  String get stepBlindListeningDesc => '挑战一下：盲听全文，抓住大意';
 
   @override
   String get stepIntensiveListening => '逐句精听';
@@ -552,7 +552,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stepRetelling => '段落复述';
 
   @override
-  String get stepRetellingDesc => '用英文复述每段大意';
+  String get stepRetellingDesc => '挑战一下：用自己的话复述每段大意';
 
   @override
   String get reviewRound0 => '首轮复习';
@@ -646,7 +646,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get blindListenBriefingTip => '不看字幕，完整听一遍，感受大意和难度';
+  String get blindListenBriefingTip => '挑战盲听全文，尝试抓住大意';
 
   @override
   String get startPractice => '开始练习';
@@ -868,12 +868,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get intensiveListenCompleteTitle => '精听完成';
 
   @override
-  String intensiveListenCompleteMessage(int total, int difficult) {
-    return '你已完成全部 $total 个句子的精听。\n共标记 $difficult 个难句。';
-  }
+  String get intensiveListenCompleteHint => '坚持间隔复习，就能彻底掌握这些难句。';
 
   @override
   String get intensiveListenCompleteNext => '下一步';
+
+  @override
+  String get statSentences => '句子';
+
+  @override
+  String get statDifficultSentences => '难句';
+
+  @override
+  String get statParagraphs => '段落';
 
   @override
   String get exitIntensiveListenTitle => '退出精听？';
@@ -1101,11 +1108,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get listenAndRepeatCompleteTitle => '跟读完成';
 
   @override
-  String listenAndRepeatCompleteMessage(int total) {
-    return '你已完成全部 $total 个难句的跟读练习。';
-  }
-
-  @override
   String get listenAndRepeatNoDifficultSentences => '没有难句，无需跟读';
 
   @override
@@ -1257,11 +1259,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retellPracticeAgain => '再来一遍';
 
   @override
-  String retellCompleteMessage(int count) {
-    return '共 $count 段复述完成';
-  }
-
-  @override
   String get retellExitConfirmTitle => '退出复述？';
 
   @override
@@ -1358,11 +1355,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reviewDifficultPracticeCompleteTitle => '难句补练完成';
-
-  @override
-  String reviewDifficultPracticeCompleteMessage(int total) {
-    return '已完成全部 $total 个难句的练习。';
-  }
 
   @override
   String get reviewDifficultPracticeNone => '无需补练的难句，已自动完成';
@@ -1825,11 +1817,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get bookmarkReviewComplete => '复习完成';
-
-  @override
-  String bookmarkReviewCompleteMessage(int count) {
-    return '已复习全部 $count 个收藏句子。';
-  }
 
   @override
   String get bookmarkReviewAgain => '再来一遍';

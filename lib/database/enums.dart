@@ -141,9 +141,12 @@ enum LearningStage {
   /// 的子步骤（如 review28 summary）仍可作为历史 ✅ 保留显示。
   List<SubStageType> get allSubStages => switch (this) {
     firstLearn => [
-      SubStageType.blindListen,
+      // v1∪v2 同集合，仅顺序不同；此处用 v2 新规范顺序（精听→跟读→盲听→复述）。
+      // 计划页实际渲染顺序由 `LearningPlan.subStagesFor` 驱动，本 getter 仅用于
+      // 展示并集与 `currentSubStageIndex` 等「全量信息」场景。
       SubStageType.intensiveListen,
       SubStageType.listenAndRepeat,
+      SubStageType.blindListen,
       SubStageType.retell,
     ],
     review0 => [

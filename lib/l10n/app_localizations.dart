@@ -1301,7 +1301,7 @@ abstract class AppLocalizations {
   /// No description provided for @blindListenBriefingTip.
   ///
   /// In en, this message translates to:
-  /// **'Listen without subtitles, try to get the gist'**
+  /// **'Challenge yourself: listen without subtitles and grasp the main idea'**
   String get blindListenBriefingTip;
 
   /// No description provided for @startPractice.
@@ -1694,17 +1694,35 @@ abstract class AppLocalizations {
   /// **'Intensive Listening Complete'**
   String get intensiveListenCompleteTitle;
 
-  /// No description provided for @intensiveListenCompleteMessage.
+  /// No description provided for @intensiveListenCompleteHint.
   ///
   /// In en, this message translates to:
-  /// **'You\'ve completed intensive listening for all {total} sentences.\n{difficult} sentence(s) marked as difficult.'**
-  String intensiveListenCompleteMessage(int total, int difficult);
+  /// **'Keep up spaced review to fully master them.'**
+  String get intensiveListenCompleteHint;
 
   /// No description provided for @intensiveListenCompleteNext.
   ///
   /// In en, this message translates to:
   /// **'Next Step'**
   String get intensiveListenCompleteNext;
+
+  /// No description provided for @statSentences.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentences'**
+  String get statSentences;
+
+  /// No description provided for @statDifficultSentences.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficult'**
+  String get statDifficultSentences;
+
+  /// No description provided for @statParagraphs.
+  ///
+  /// In en, this message translates to:
+  /// **'Paragraphs'**
+  String get statParagraphs;
 
   /// No description provided for @exitIntensiveListenTitle.
   ///
@@ -2096,12 +2114,6 @@ abstract class AppLocalizations {
   /// **'Listen & Repeat Complete'**
   String get listenAndRepeatCompleteTitle;
 
-  /// No description provided for @listenAndRepeatCompleteMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'You\'ve completed listen & repeat for all {total} difficult sentences.'**
-  String listenAndRepeatCompleteMessage(int total);
-
   /// No description provided for @listenAndRepeatNoDifficultSentences.
   ///
   /// In en, this message translates to:
@@ -2348,12 +2360,6 @@ abstract class AppLocalizations {
   /// **'Practice Again'**
   String get retellPracticeAgain;
 
-  /// No description provided for @retellCompleteMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} paragraphs retold'**
-  String retellCompleteMessage(int count);
-
   /// No description provided for @retellExitConfirmTitle.
   ///
   /// In en, this message translates to:
@@ -2539,12 +2545,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Difficult Practice Complete'**
   String get reviewDifficultPracticeCompleteTitle;
-
-  /// No description provided for @reviewDifficultPracticeCompleteMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'You\'ve practiced all {total} difficult sentences.'**
-  String reviewDifficultPracticeCompleteMessage(int total);
 
   /// No description provided for @reviewDifficultPracticeNone.
   ///
@@ -3355,12 +3355,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Review Complete'**
   String get bookmarkReviewComplete;
-
-  /// No description provided for @bookmarkReviewCompleteMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'You\'ve reviewed all {count} bookmarked sentences.'**
-  String bookmarkReviewCompleteMessage(int count);
 
   /// No description provided for @bookmarkReviewAgain.
   ///
