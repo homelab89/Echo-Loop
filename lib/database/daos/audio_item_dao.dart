@@ -144,6 +144,27 @@ class AudioItemDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  /// 取所有行（含软删）的音频/字幕文件相对路径集合。
+  ///
+  /// 用于「清空缓存」时构造孤儿文件清扫的白名单：磁盘上不在此集合中的
+  /// 文件即为孤儿。**不过滤 deletedAt**——软删行在硬删前仍持有其文件，
+  /// 不能当作孤儿删除。空字符串/null 路径自动忽略。
+  Future<Set<String>> getAllReferencedRelPaths() async {
+    final rows = await (selectOnly(
+      audioItems,
+    )..addColumns([audioItems.audioPath, audioItems.transcriptPath])).get();
+    final paths = <String>{};
+    for (final row in rows) {
+      final audioPath = row.read(audioItems.audioPath);
+      if (audioPath != null && audioPath.isNotEmpty) paths.add(audioPath);
+      final transcriptPath = row.read(audioItems.transcriptPath);
+      if (transcriptPath != null && transcriptPath.isNotEmpty) {
+        paths.add(transcriptPath);
+      }
+    }
+    return paths;
+  }
+
   /// 原子保存字幕内容：SRT + 词级时间戳，单事务写入两个大字段。
   ///
   /// 供 AI 转录、编辑保存等「字幕内容整体落库」场景使用，避免分两次写入中途崩溃
