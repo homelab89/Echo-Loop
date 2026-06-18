@@ -15,6 +15,21 @@ import '../../theme/app_theme.dart';
 import '../guide_flow.dart';
 import 'masked_sentence_tile.dart';
 
+/// 计算自动跟随当前播放句时 [ItemScrollController.scrollTo] 的锚定 alignment。
+///
+/// 纯函数，便于单元测试。列表统一使用 [ClampingScrollPhysics]，越界滚动会被逐帧
+/// clamp 到自然边界（详见 [_ParagraphSentenceListCardState.build]），因此边界句的
+/// 贴边交给物理处理，这里只需决定锚点：
+/// - **目标可见**：命中 `scrollTo` 的「可见分支」（不改底层 `anchor`），返回 0.5
+///   让中间句居中；靠边时居中会超界、被 clamp 到自然边缘（末句贴底 / 首句贴顶，
+///   无留白、无回弹）。
+/// - **目标不可见**（大跳转，命中 else 分支会把底层 `anchor` 设为传入 alignment）：
+///   返回 0.0，令 `anchor` 维持 0（普通列表语义），目标落到顶部、若为末句则被
+///   clamp 到底部，均无留白。
+double autoFollowAlignment({required bool targetVisible}) {
+  return targetVisible ? 0.5 : 0.0;
+}
+
 /// 段落句子列表卡片
 class ParagraphSentenceListCard extends StatefulWidget {
   final List<Sentence> sentences;
@@ -153,11 +168,14 @@ class _ParagraphSentenceListCardState extends State<ParagraphSentenceListCard> {
         index: targetIndex,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        alignment: 0.5,
+        alignment: autoFollowAlignment(
+          targetVisible: _isTargetVisible(targetIndex),
+        ),
       );
     });
   }
 
+  /// 目标元素是否完全在视口内（含上下边界），是则无需滚动。
   bool _isTargetSentenceFullyVisible(int targetIndex) {
     final positions = _itemPositionsListener.itemPositions.value;
     return positions.any(
@@ -165,6 +183,16 @@ class _ParagraphSentenceListCardState extends State<ParagraphSentenceListCard> {
           position.index == targetIndex &&
           position.itemLeadingEdge >= 0 &&
           position.itemTrailingEdge <= 1,
+    );
+  }
+
+  /// 目标元素是否在当前可见集合中（含部分可见）。
+  ///
+  /// 决定 [scrollTo] 走「可见分支」（不改底层 anchor）还是「跳转分支」，
+  /// 据此选择 alignment，见 [autoFollowAlignment]。
+  bool _isTargetVisible(int targetIndex) {
+    return _itemPositionsListener.itemPositions.value.any(
+      (position) => position.index == targetIndex,
     );
   }
 
@@ -192,6 +220,9 @@ class _ParagraphSentenceListCardState extends State<ParagraphSentenceListCard> {
         child: ScrollablePositionedList.builder(
           itemScrollController: _itemScrollController,
           itemPositionsListener: _itemPositionsListener,
+          // 硬停物理：自动跟随滚到自然边界即停，越界被逐帧 clamp，杜绝到头/尾时
+          // 的自动回弹（详见 [autoFollowAlignment]）。
+          physics: const ClampingScrollPhysics(),
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.s),
           itemCount: widget.sentences.isEmpty
               ? 0
