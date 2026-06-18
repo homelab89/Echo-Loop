@@ -230,8 +230,8 @@ void main() {
         await tester.tap(find.byIcon(Icons.repeat));
         await tester.pumpAndSettle();
 
-        // 应弹出循环设置弹窗（含两组循环开关）
-        expect(find.text('Loop Settings'), findsOneWidget);
+        // 应弹出循环设置弹窗（含两组循环开关，无标题）
+        expect(find.text('Loop Settings'), findsNothing);
         expect(find.text('Whole-text loop'), findsOneWidget);
         expect(find.text('Single-sentence loop'), findsOneWidget);
         await _disposeTree(tester);

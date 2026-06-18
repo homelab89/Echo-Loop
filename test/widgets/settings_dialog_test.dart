@@ -35,11 +35,12 @@ Widget _buildLoopPopupTest({ListeningPracticeState? practiceState}) {
 void main() {
   group('LoopSettingsPopup', () {
     group('渲染', () {
-      testWidgets('显示两组循环主开关', (tester) async {
+      testWidgets('显示两组循环主开关（无标题）', (tester) async {
         await tester.pumpWidget(_buildLoopPopupTest());
         await tester.pumpAndSettle();
 
-        expect(find.text('Loop Settings'), findsOneWidget);
+        // 浮层不再显示「循环设置」标题
+        expect(find.text('Loop Settings'), findsNothing);
         expect(find.text('Whole-text loop'), findsOneWidget);
         expect(find.text('Single-sentence loop'), findsOneWidget);
         expect(find.byType(Switch), findsNWidgets(2));
@@ -65,7 +66,9 @@ void main() {
 
         expect(find.byType(Slider), findsNWidgets(2));
         expect(find.text('Repeat Count'), findsOneWidget);
-        expect(find.text('Interval (seconds)'), findsOneWidget);
+        // 间隔 label 去掉「（秒）」，单位仅在右侧值列以紧凑形式 Ns 体现
+        expect(find.text('Interval'), findsOneWidget);
+        expect(find.text('3s'), findsWidgets);
       });
 
       testWidgets('两组循环同时开启时展开 4 个滑块', (tester) async {

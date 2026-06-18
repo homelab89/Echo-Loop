@@ -157,13 +157,14 @@ void main() {
         await tester.pumpAndSettle();
 
         // 初始未弹出
-        expect(find.text('Loop Settings'), findsNothing);
+        expect(find.text('Whole-text loop'), findsNothing);
 
         await tester.tap(find.byIcon(Icons.repeat));
         await tester.pumpAndSettle();
 
-        // 浮层出现：标题 + 两组循环开关
-        expect(find.text('Loop Settings'), findsOneWidget);
+        // 浮层出现：两组循环开关（无标题）
+        expect(find.text('Loop Settings'), findsNothing);
+        expect(find.text('Whole-text loop'), findsOneWidget);
         expect(find.byType(Switch), findsNWidgets(2));
       });
 
@@ -173,12 +174,12 @@ void main() {
 
         await tester.tap(find.byIcon(Icons.repeat));
         await tester.pumpAndSettle();
-        expect(find.text('Loop Settings'), findsOneWidget);
+        expect(find.text('Whole-text loop'), findsOneWidget);
 
         // 点击浮层外部（左上角遮罩区）关闭
         await tester.tapAt(const Offset(5, 5));
         await tester.pumpAndSettle();
-        expect(find.text('Loop Settings'), findsNothing);
+        expect(find.text('Whole-text loop'), findsNothing);
       });
 
       testWidgets('点击速度按钮显示速度选择菜单', (tester) async {
