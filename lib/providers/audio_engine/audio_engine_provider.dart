@@ -42,6 +42,8 @@ class AudioEngine extends _$AudioEngine {
 
   bool get isPlaying => _audioPlayer.playing;
   Duration get currentPosition => _audioPlayer.position;
+  Duration get absoluteCurrentPosition =>
+      state.clipStart + _audioPlayer.position;
 
   /// 当前 session id。调用方据此判断「引擎是否仍停在自己上次驱动的 session」，
   /// 用于隔离讲解页等外来组件对共享引擎的旁路驱动。
@@ -242,6 +244,28 @@ class AudioEngine extends _$AudioEngine {
     // 播放成功后记录听力时长 + 词数 + 词形
     if (isActiveSession(sessionId)) {
       _recorder?.onSentencePlayed(sentence);
+    }
+  }
+
+  /// 按句播放若干遍。
+  ///
+  /// Free Player 的单句循环/收藏跳播和学习模式共用这个低层基元：每一遍都重新
+  /// setClip 并 seek 到 clip 相对起点，避免 just_audio 在连续切片时沿用旧位置。
+  Future<void> playClipWithLoops(
+    Sentence sentence,
+    int sessionId, {
+    required int loopCount,
+    required Duration interval,
+  }) async {
+    for (int loop = 0; loop < loopCount; loop++) {
+      if (!isActiveSession(sessionId)) return;
+
+      await playClipOnce(sentence, sessionId);
+
+      if (!isActiveSession(sessionId)) return;
+      if (loop < loopCount - 1 && interval > Duration.zero) {
+        await Future.delayed(interval);
+      }
     }
   }
 

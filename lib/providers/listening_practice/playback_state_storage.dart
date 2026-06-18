@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:just_audio/just_audio.dart' as ja;
 import '../../database/app_database.dart' hide AudioItem;
 import '../../database/daos/playback_state_dao.dart';
 import '../../models/audio_item.dart';
@@ -11,7 +10,7 @@ import '../../models/listening_practice_state.dart';
 class PlaybackStateStorage {
   static Future<void> savePlaybackState(
     AudioItem audioItem,
-    ja.AudioPlayer audioPlayer,
+    Duration position,
     ListeningPracticeState state, {
     required PlaybackStateDao dao,
     bool silent = false,
@@ -19,7 +18,7 @@ class PlaybackStateStorage {
     await dao.saveState(
       PlaybackStatesCompanion(
         audioItemId: Value(audioItem.id),
-        positionMs: Value(audioPlayer.position.inMilliseconds),
+        positionMs: Value(position.inMilliseconds),
         playlistMode: Value(state.playlistMode.index),
         savedAt: Value(DateTime.now()),
       ),

@@ -28,12 +28,21 @@ class _SessionAudioEngine extends TestAudioEngine {
   final _playerStateController = StreamController<ja.PlayerState>.broadcast();
 
   Duration position = Duration.zero;
+  Completer<void>? _clipCompleter;
 
   @override
   Duration get currentPosition => position;
 
   @override
   Future<void> seek(Duration pos) async {}
+
+  @override
+  Future<void> playClipOnce(Sentence sentence, int sessionId) async {
+    if (!isActiveSession(sessionId)) return;
+    final completer = Completer<void>();
+    _clipCompleter = completer;
+    await completer.future;
+  }
 
   @override
   int newSession() {
@@ -55,8 +64,13 @@ class _SessionAudioEngine extends TestAudioEngine {
 
   void emitPosition(Duration position) => _positionController.add(position);
 
-  void emitPlayerState(ja.PlayerState playerState) =>
-      _playerStateController.add(playerState);
+  void emitPlayerState(ja.PlayerState playerState) {
+    if (playerState.processingState == ja.ProcessingState.completed) {
+      _clipCompleter?.complete();
+      _clipCompleter = null;
+    }
+    _playerStateController.add(playerState);
+  }
 
   void closeStreams() {
     _positionController.close();
@@ -202,7 +216,7 @@ void main() {
     expect(lp.saveCount, 1);
   });
 
-  test('单句循环：越过句尾经 _resumeAt 重播并触发保存', () async {
+  test('单句循环：clip 完成后重播并触发保存', () async {
     lp.seed(
       sentences: sentences,
       settings: const PlaybackSettings(
@@ -214,8 +228,8 @@ void main() {
     );
     await startAndReset();
 
-    // 播放头越过第 1 句句尾（6s）→ 单句循环 seek 回句首 → _resumeAt → 保存
-    engine.emitPosition(const Duration(seconds: 6));
+    // clip 完成 → 单句循环重播当前句 → 保存
+    engine.emitPlayerState(ja.PlayerState(false, ja.ProcessingState.completed));
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(Duration.zero);

@@ -1735,6 +1735,9 @@ class FakeAudioEngine extends AudioEngine {
   Duration get currentPosition => Duration.zero;
 
   @override
+  Duration get absoluteCurrentPosition => Duration.zero;
+
+  @override
   Stream<Duration> get absolutePositionStream => Stream.value(Duration.zero);
 
   @override
@@ -1776,6 +1779,17 @@ class FakeAudioEngine extends AudioEngine {
 
   @override
   Future<void> clearClip() async {}
+
+  @override
+  Future<void> playClipOnce(Sentence sentence, int sessionId) async {}
+
+  @override
+  Future<void> playClipWithLoops(
+    Sentence sentence,
+    int sessionId, {
+    required int loopCount,
+    required Duration interval,
+  }) async {}
 
   /// 设置总时长（测试辅助方法）
   void setTotalDuration(Duration duration) {

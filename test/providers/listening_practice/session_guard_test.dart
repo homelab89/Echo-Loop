@@ -32,18 +32,33 @@ class _SessionAudioEngine extends TestAudioEngine {
 
   /// 记录最后一次 setClip 的起点
   Duration? lastClipStart;
+  Duration? lastClipEnd;
+  Completer<void>? _clipCompleter;
 
   @override
   Duration get currentPosition => position;
 
   @override
   Future<void> seek(Duration pos) async {
+    position = pos;
     lastSeek = pos;
   }
 
   @override
   Future<void> setClip(Duration start, Duration end) async {
     lastClipStart = start;
+    lastClipEnd = end;
+  }
+
+  @override
+  Future<void> playClipOnce(Sentence sentence, int sessionId) async {
+    if (!isActiveSession(sessionId)) return;
+    await setClip(sentence.startTime, sentence.endTime);
+    await seek(Duration.zero);
+    await play();
+    final completer = Completer<void>();
+    _clipCompleter = completer;
+    await completer.future;
   }
 
   @override
@@ -66,8 +81,13 @@ class _SessionAudioEngine extends TestAudioEngine {
 
   void emitPosition(Duration position) => _positionController.add(position);
 
-  void emitPlayerState(ja.PlayerState playerState) =>
-      _playerStateController.add(playerState);
+  void emitPlayerState(ja.PlayerState playerState) {
+    if (playerState.processingState == ja.ProcessingState.completed) {
+      _clipCompleter?.complete();
+      _clipCompleter = null;
+    }
+    _playerStateController.add(playerState);
+  }
 
   void closeStreams() {
     _positionController.close();
@@ -213,13 +233,14 @@ void main() {
       currentFullIndex: 2,
     );
 
-    // 起播：gapless 永不 setClip，应 seek 到第 2 句句首（6s）并监听其句尾。
+    // 起播：单句循环使用句级 clip，避免依赖 positionStream 越界判断句尾。
     unawaited(container.read(listeningPracticeProvider.notifier).play());
     await Future<void>.delayed(Duration.zero);
-    expect(engine.lastSeek, const Duration(seconds: 6));
-    expect(engine.lastClipStart, isNull); // 不再 setClip
+    expect(engine.lastSeek, Duration.zero);
+    expect(engine.lastClipStart, const Duration(seconds: 6));
+    expect(engine.lastClipEnd, const Duration(seconds: 9));
 
-    // 模拟越过句尾（completed 兜底）→ 单句循环应重播当前句，而非跳到第 0 句。
+    // 模拟 clip 完成 → 单句循环应重播当前句，而非跳到第 0 句。
     engine.lastSeek = null;
     engine.emitPlayerState(ja.PlayerState(false, ja.ProcessingState.completed));
     await Future<void>.delayed(Duration.zero);
@@ -227,10 +248,11 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(container.read(listeningPracticeProvider).currentFullIndex, 2);
-    expect(engine.lastSeek, const Duration(seconds: 6)); // 重播回句首
+    expect(engine.lastSeek, Duration.zero);
+    expect(engine.lastClipStart, const Duration(seconds: 6));
   });
 
-  test('单句循环：越过句尾（位置流）重播当前句', () async {
+  test('单句循环：位置流越过句尾不会驱动重播', () async {
     lp.seed(
       sentences: sentences,
       settings: const PlaybackSettings(
@@ -243,10 +265,11 @@ void main() {
 
     unawaited(container.read(listeningPracticeProvider.notifier).play());
     await Future<void>.delayed(Duration.zero);
-    expect(engine.lastSeek, const Duration(seconds: 3));
+    expect(engine.lastSeek, Duration.zero);
+    expect(engine.lastClipStart, const Duration(seconds: 3));
     engine.isPlaying = true;
 
-    // 播放头越过第 1 句句尾（6s）→ 应 seek 回句首 3s 重播，不进第 2 句。
+    // 句级模式不再用 positionStream 越界推进，避免采样 overshoot 导致竞态。
     engine.lastSeek = null;
     engine.emitPosition(const Duration(seconds: 6));
     await Future<void>.delayed(Duration.zero);
@@ -254,7 +277,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(container.read(listeningPracticeProvider).currentFullIndex, 1);
-    expect(engine.lastSeek, const Duration(seconds: 3));
+    expect(engine.lastSeek, isNull);
   });
 
   test('进度条任意位置拖动：从落点续播，不吸附句首', () async {

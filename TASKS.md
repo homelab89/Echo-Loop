@@ -1,7 +1,19 @@
 # Echo Loop 任务清单
 
-> 最后更新：2026-06-18（Free Player 句子列表初次定位瞬时化）
+> 最后更新：2026-06-18（Free Player 播放架构重构）
 > 当前焦点：Android 结束录音闪退（离线 ASR / Silero VAD）——**仍未解决**
+
+## 已完成：Free Player 播放架构重构（分模式播放，修复单句/整篇循环）
+
+Free Player 的单句循环和整篇循环在全 gapless + positionStream 边界监听模型下容易受采样 overshoot、末句完成事件、收藏非连续句和静音间隙影响，无法稳定复现 v1.0.17 的循环行为。本次改为按播放目标选择模型：普通全文播放继续 gapless，保留整段进度条任意 seek；单句循环和收藏跳播回到句级 clip 驱动，由 clip completed 明确推进，避免用 positionStream 猜句尾。
+
+- [x] `listening_practice_provider.dart`：删除 `_watchBoundaries`/`_watchEndTime`/边界监听推进路径，新增播放任务 generation、句级 clip 播放协程和 gapless 整篇完成处理；单句循环/收藏模式忽略 positionStream 高亮推进，避免双推进。
+- [x] `audio_engine_provider.dart`：恢复共享句级播放基元 `playClipWithLoops`，新增 `absoluteCurrentPosition`，确保 clip 模式保存断点时写入绝对时间而非 clip 相对位置。
+- [x] `playback_state_storage.dart`：保存接口改为接收绝对 `Duration`，消除对 `AudioPlayer.position` 的 clip 相对时间依赖。
+- [x] `free_player_playback_flow_test.dart`：新增复杂字幕场景（不等长句、句间静音、边界相邻、非连续收藏、尾句贴近音频尾部），覆盖普通 gapless、有限/无限单句循环、收藏跳播、seek 后重置计数、手动切句、双循环同开。
+- [x] 验证：`flutter analyze` 改动文件 0 issue；`flutter test test/providers/listening_practice` 全 66 passed；`player_screen_test` / `playback_controls_test` / `settings_dialog_test` / `loop_reset_on_load_test` 相关组合全 passed。
+
+  **完成时间**: 2026-06-18
 
 ## 已完成：修复 CI widget test 失败（句子列表点击与字幕弹窗语言选择）
 
