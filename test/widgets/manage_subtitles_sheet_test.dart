@@ -246,7 +246,12 @@ void main() {
         await tester.tap(find.text('AI Transcription'));
         await tester.pumpAndSettle();
 
-        // 默认语言为 auto（与 en 不同） → 按钮可点击
+        // 切换到 auto（与已转录的 en 不同）→ 按钮可点击
+        await tester.tap(find.text('English'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Auto Detect'));
+        await tester.pumpAndSettle();
+
         final filledButton = tester.widget<FilledButton>(
           find.widgetWithText(FilledButton, 'Start Transcription'),
         );

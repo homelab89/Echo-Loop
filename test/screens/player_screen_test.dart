@@ -340,14 +340,18 @@ void main() {
             ),
           ),
         );
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         // 初始：第 1 句播放（编号区显示 ▶），第 2 句编号区显示 '2'
         expect(find.text('2'), findsOneWidget);
         expect(find.text('1'), findsNothing);
 
         // 点击第 2 句编号区 → selectFullSentence(1) → currentFullIndex=1
-        await tester.tap(find.text('2'));
+        await tester.tap(
+          find.byKey(
+            const ValueKey('$kMaskedSentenceNumberHitAreaKeyPrefix-1'),
+          ),
+        );
         await tester.pump();
 
         // 第 2 句变为播放（▶），第 1 句编号区恢复显示 '1'
@@ -372,10 +376,12 @@ void main() {
             ),
           ),
         );
-        await tester.pump();
+        await tester.pumpAndSettle();
 
-        // 点击第 1 句主体区（tile 中心落在文本区，非左侧编号区）
-        await tester.tap(find.byType(MaskedSentenceTile).first);
+        // 点击第 1 句主体区，避开左侧编号播放热区
+        await tester.tap(
+          find.byKey(const ValueKey('$kMaskedSentenceBodyHitAreaKeyPrefix-0')),
+        );
         await tester.pumpAndSettle();
 
         // 导航到讲解页 stub

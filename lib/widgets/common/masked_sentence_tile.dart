@@ -15,6 +15,16 @@ import '../../theme/app_theme.dart';
 import '../../utils/keyword_extraction.dart';
 import '../guide_flow.dart';
 
+/// 句子编号点击区 key 前缀（供 widget test 精准点击，避免点到文本本身）。
+@visibleForTesting
+const String kMaskedSentenceNumberHitAreaKeyPrefix =
+    'masked-sentence-number-hit-area';
+
+/// 句子主体点击区 key 前缀（供 widget test 精准点击，避免受内部文本布局影响）。
+@visibleForTesting
+const String kMaskedSentenceBodyHitAreaKeyPrefix =
+    'masked-sentence-body-hit-area';
+
 /// Wrap 子元素间距（px）— 模拟自然空格宽度
 const _wordSpacing = 4.0;
 
@@ -92,6 +102,9 @@ class MaskedSentenceTile extends StatelessWidget {
             _wrapWithGuide(
               numberAreaGuideStep,
               _SentenceNumberHitArea(
+                key: ValueKey(
+                  '$kMaskedSentenceNumberHitAreaKeyPrefix-${sentence.index}',
+                ),
                 displayNumber: sentence.index + 1,
                 isPlayingSentence: isPlayingSentence,
                 theme: theme,
@@ -102,6 +115,9 @@ class MaskedSentenceTile extends StatelessWidget {
               child: _wrapWithGuide(
                 bodyAreaGuideStep,
                 _SentenceBodyHitArea(
+                  key: ValueKey(
+                    '$kMaskedSentenceBodyHitAreaKeyPrefix-${sentence.index}',
+                  ),
                   theme: theme,
                   isBookmarked: isBookmarked,
                   onTap: onDetailTap,
@@ -172,6 +188,7 @@ class _SentenceNumberHitArea extends StatelessWidget {
   final ThemeData theme;
 
   const _SentenceNumberHitArea({
+    super.key,
     required this.displayNumber,
     required this.isPlayingSentence,
     required this.theme,
@@ -225,6 +242,7 @@ class _SentenceBodyHitArea extends StatelessWidget {
   final Widget child;
 
   const _SentenceBodyHitArea({
+    super.key,
     required this.theme,
     required this.isBookmarked,
     required this.child,

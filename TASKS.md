@@ -3,6 +3,17 @@
 > 最后更新：2026-06-18（Free Player 句子列表初次定位瞬时化）
 > 当前焦点：Android 结束录音闪退（离线 ASR / Silero VAD）——**仍未解决**
 
+## 已完成：修复 CI widget test 失败（句子列表点击与字幕弹窗语言选择）
+
+GitHub Actions `test` job 失败于 3 个 widget test：Free Player 句子列表两个点击测试点到了不可命中的文本/Tile 中心区域；管理字幕弹窗测试假设默认语言为 auto，但当前默认语言是 en，导致找不到可点击的 `Start Transcription` 按钮。
+
+- [x] `masked_sentence_tile.dart`：给句子编号点击区和主体点击区增加 `@visibleForTesting` key 前缀，测试可精准点击真实交互热区，不依赖内部文本布局。
+- [x] `player_screen_test.dart`：等待初次定位淡入完成后，改用点击区 key 分别测试“编号区播放”和“主体区进讲解页”。
+- [x] `manage_subtitles_sheet_test.dart`：测试中显式从 English 切换到 Auto Detect，再断言 AI(en) 已转录场景下可重新发起 auto 转录。
+- [x] 验证：`flutter analyze` 改动文件 0 issue；`player_screen_test.dart` 15 passed；`manage_subtitles_sheet_test.dart` 12 passed。
+
+  **完成时间**: 2026-06-18
+
 ## 已完成：Free Player 句子列表初次定位「直接显示在中间」（去除多余滚动）
 
 Free Player 句子列表在「首次进入」和「收藏 Tab 切回全文 Tab」时，当前句会从顶部滚到中部——不符合业界标准（初次定位应直接显示在中间，不发生滚动）。根因：`ParagraphSentenceListCard` 的初次定位与播放跟随共用「jumpTo 顶部 → scrollTo 居中」路径，无论动画快慢，用户都会看到目标句从顶部移动到中部。
