@@ -679,9 +679,9 @@ void main() {
         await tester.pumpAndSettle();
 
         await tester.tap(find.textContaining('Bookmarked'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-        await tester.pump();
+        // 等待 TabBarView 切换动画结束，否则滑动区仍在横向位移中，
+        // fling 命中点会落到正在滑出的全文页上而非收藏页滑动区。
+        await tester.pumpAndSettle();
 
         await tester.fling(
           find.byKey(kPlayerSingleSentenceSwipeAreaKey),
