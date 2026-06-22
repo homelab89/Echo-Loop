@@ -15,7 +15,7 @@ void main() {
       await StorageService.saveSettings(
         const ListeningPracticeSettingsStore(
           full: PlaybackSettings(
-            playbackSpeed: 1.25,
+            playbackSpeed: 1.3,
             showTranscript: true,
             singleSentenceMode: false,
             wholeLoopCount: 4,
@@ -30,7 +30,7 @@ void main() {
       );
 
       final loaded = await StorageService.loadSettings();
-      expect(loaded.full.playbackSpeed, 1.25);
+      expect(loaded.full.playbackSpeed, 1.3);
       expect(loaded.full.showTranscript, isTrue);
       expect(loaded.full.singleSentenceMode, isFalse);
       expect(loaded.full.wholeLoopCount, 4);
@@ -68,6 +68,23 @@ void main() {
       expect(loaded.bookmark.loopSentence, isTrue);
       expect(loaded.bookmark.sentenceLoopCount, 1);
       expect(loaded.bookmark.sentenceInterval, const Duration(seconds: 1));
+    });
+
+    test('旧持久化中的非支持倍速读取时回退到 1.0x', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'playback_settings',
+        json.encode({
+          'fullSettings': const PlaybackSettings(playbackSpeed: 1.0).toJson()
+            ..['playbackSpeed'] = 1.25,
+          'bookmarkSettings':
+              const PlaybackSettings(playbackSpeed: 0.8).toJson(),
+        }),
+      );
+
+      final loaded = await StorageService.loadSettings();
+      expect(loaded.full.playbackSpeed, 1.0);
+      expect(loaded.bookmark.playbackSpeed, 0.8);
     });
   });
 }

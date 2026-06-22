@@ -307,10 +307,10 @@ class _SentenceBookmarkHitArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final semanticLabel = isBookmarked
-        ? l10n.intensiveListenMarkedDifficult
-        : l10n.intensiveListenNotDifficult;
+        ? (l10n?.intensiveListenMarkedDifficult ?? 'Marked difficult')
+        : (l10n?.intensiveListenNotDifficult ?? 'Not marked difficult');
     final iconColor = isBookmarked
         ? Colors.amber
         : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.28);
