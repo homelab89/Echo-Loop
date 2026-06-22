@@ -50,6 +50,7 @@ import '../widgets/practice/annotation_content_view.dart';
 import '../widgets/common/bookmark_toggle_row.dart';
 import '../widgets/common/practice_playback_footer.dart';
 import '../widgets/practice/practice_progress_section.dart';
+import '../widgets/practice/practice_play_count_label.dart';
 
 /// 复习难句补练页面
 class ReviewDifficultPracticeScreen extends ConsumerStatefulWidget {
@@ -780,14 +781,16 @@ class _ReviewDifficultPracticeScreenState
   ) {
     if (playerState.isAnnotationMode && playerState.repeatFlowState != null) {
       final flowState = playerState.repeatFlowState!;
-      return l10n.listenAndRepeatPlayCount(
-        flowState.repeatIndex + 1,
-        playerState.targetRepeatCount,
+      return formatPracticePlayCount(
+        l10n,
+        currentCount: flowState.repeatIndex + 1,
+        totalCount: playerState.targetRepeatCount,
       );
     }
-    return l10n.listenAndRepeatPlayCount(
-      playerState.currentPlayCount,
-      playerState.isManualMode
+    return formatPracticePlayCount(
+      l10n,
+      currentCount: playerState.currentPlayCount,
+      totalCount: playerState.isManualMode
           ? 1
           : playerState.settings.blindListenRepeatCount,
     );

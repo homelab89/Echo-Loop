@@ -149,6 +149,16 @@ void main() {
       expect(readState().sentenceIndex, 2);
     });
 
+    test('repeatCount=0 时 totalRepeats 保留为无限', () async {
+      await controller.prepareSession(
+        sentences: createTestSentences(count: 3),
+        config: _testConfig(repeatCount: 0),
+      );
+      await controller.startPlaying();
+
+      expect(readState().totalRepeats, 0);
+    });
+
     test('startIndex 超出范围时 clamp', () async {
       await controller.prepareSession(
         sentences: createTestSentences(count: 3),

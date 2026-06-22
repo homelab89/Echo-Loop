@@ -3,6 +3,18 @@
 > 最后更新：2026-06-22（学习计划页 Free Player 入口显眼度优化 / 收藏 tab 进度条跳零修复）
 > 当前焦点：Android 结束录音闪退（离线 ASR / Silero VAD）——**仍未解决**
 
+## 已完成：所有练习页循环次数支持无限 ∞
+
+此前只有 Free Player 的循环模型支持 `0 = ∞`，学习模式各页仍把重复次数写死为有限值，导致逐句精听、跟读、难句补练、收藏复习、盲听、复述都无法设置无限重复。现统一把所有重复次数语义扩展为 `0 = ∞`，并补齐设置 UI、流程引擎和遍数文案。
+
+- [x] `intensive_listen_settings.dart` / `difficult_practice_settings.dart` / `blind_listen_settings.dart` / `retell_settings.dart`：重复次数统一支持 `0 = ∞`，并补齐对应防御性解析。
+- [x] `intensive_listen_settings_sheet.dart` / `listen_and_repeat_settings_sheet.dart` / `difficult_practice_settings_sheet.dart` / `blind_listen_settings_sheet.dart` / `retell_settings_sheet.dart`：重复次数下拉统一补上 `∞` 选项。
+- [x] `sentence_playback_engine.dart` / `blind_listen_player_provider.dart` / `retell_player_provider.dart` / `blind_practice_flow_state.dart` / `repeat_flow_state.dart`：流程状态与推进逻辑兼容无限重复，不再错误判定“最后一遍”。
+- [x] `practice_play_count_label.dart` 及相关页面：自动模式遍数文案统一支持 `第 n/∞ 遍` / `Round n/∞`。
+- [x] 测试：更新模型、设置面板、跟读 controller、盲听 provider、复述 provider 相关回归，覆盖 `0 = ∞` 解析、UI 展示和无限重复不自动完成。
+
+  **完成时间**: 2026-06-22 15:33:09 +0800
+
 ## 已完成：Free Player 整数倍速文案精确显示
 
 速度菜单和底部速度按钮此前会把整数倍速统一显示成 `1x` / `2x`，与产品预期不一致。现将整数倍速统一保留一位小数，确保默认档位和菜单选项显示为 `1.0x`、`2.0x`。

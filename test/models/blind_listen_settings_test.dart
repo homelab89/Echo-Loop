@@ -71,6 +71,12 @@ void main() {
       expect(updated.playbackSpeed, 1.3);
     });
 
+    test('toJson / fromJson 保留 0=∞', () {
+      const settings = BlindListenSettings(repeatCount: 0);
+      final restored = BlindListenSettings.fromJson(settings.toJson());
+      expect(restored.repeatCount, 0);
+    });
+
     test('入口播放速度选项符合盲听要求（含 0.75/0.85/0.95 难度档位）', () {
       expect(BlindListenSettings.briefingPlaybackSpeedOptions, const [
         0.5,

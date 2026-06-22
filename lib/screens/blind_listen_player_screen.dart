@@ -40,6 +40,7 @@ import '../widgets/common/paragraph_sentence_list_card.dart';
 import '../widgets/dialogs/free_play_complete_dialog.dart';
 import '../widgets/guide_flow.dart';
 import '../widgets/player_hotkey_scope.dart';
+import '../widgets/practice/practice_play_count_label.dart';
 
 /// 盲听播放器页面
 class BlindListenPlayerScreen extends ConsumerStatefulWidget {
@@ -800,9 +801,10 @@ class _BlindListenPlayerScreenState
                 ? player.pause
                 : player.resume,
             isManualMode: playerState.settings.isManualMode,
-            playCountText: l10n.blindListenRepeatInfo(
-              playerState.currentRepeatCount,
-              playerState.settings.repeatCount,
+            playCountText: formatPracticePlayCount(
+              l10n,
+              currentCount: playerState.currentRepeatCount,
+              totalCount: playerState.settings.repeatCount,
             ),
             statusSuffixText: _formatSpeed(playerState.settings.playbackSpeed),
             l10n: l10n,

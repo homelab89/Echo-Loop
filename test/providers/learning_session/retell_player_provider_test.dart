@@ -402,6 +402,37 @@ void main() {
       expect(state.isRetellCountdown, false);
     });
 
+    test('无限重复时完成一遍后继续当前段', () async {
+      final container = ProviderContainer(
+        overrides: [
+          audioEngineProvider.overrideWith(() => SequencedTestAudioEngine()),
+          learningSessionProvider.overrideWith(_PassiveLearningSession.new),
+          analyticsOverride(),
+          ...learningSettingsOverrides(),
+          ...studyTimeOverrides(),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(retellPlayerProvider.notifier);
+      notifier.initialize([
+        [
+          Sentence(
+            index: 0,
+            text: 'Paragraph one',
+            startTime: Duration.zero,
+            endTime: const Duration(seconds: 3),
+          ),
+        ],
+      ]);
+      notifier.updateSettings(const RetellSettings(repeatCount: 0));
+      await notifier.completeRetellingTurn();
+
+      final state = container.read(retellPlayerProvider);
+      expect(state.currentParagraphIndex, 0);
+      expect(state.currentRepeatCount, 2);
+    });
+
     test('startPlaying 会异步保存当前段首句索引', () async {
       final progressNotifier = _RecordingLearningProgressNotifier(
         LearningProgressState(

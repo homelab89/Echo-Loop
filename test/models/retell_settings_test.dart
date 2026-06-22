@@ -37,6 +37,12 @@ void main() {
         2.0,
       ]);
     });
+
+    test('toJson / fromJson 保留 0=∞', () {
+      const settings = RetellSettings(repeatCount: 0);
+      final restored = RetellSettings.fromJson(settings.toJson());
+      expect(restored.repeatCount, 0);
+    });
   });
 
   group('retellDefaultSeconds', () {

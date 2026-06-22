@@ -20,7 +20,7 @@ class RepeatFlowState {
   /// 当前遍次（0-based）
   final int repeatIndex;
 
-  /// 总遍数
+  /// 总遍数。`0` 表示无限重复当前句。
   final int totalRepeats;
 
   /// 遍间倒计时总时长（配置值）
@@ -93,7 +93,9 @@ class RepeatFlowState {
   bool get isFirstSentence => sentenceIndex <= 0;
 
   /// 是否为最后一遍
-  bool get isLastRepeat => repeatIndex >= totalRepeats - 1;
+  bool get isInfiniteRepeat => totalRepeats == 0;
+
+  bool get isLastRepeat => !isInfiniteRepeat && repeatIndex >= totalRepeats - 1;
 
   /// 是否在倒计时中
   bool get isCountingDown => phase is WaitingInterval;

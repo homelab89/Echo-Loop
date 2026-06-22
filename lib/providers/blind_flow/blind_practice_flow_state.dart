@@ -17,7 +17,7 @@ class BlindPracticeFlowState {
   /// 当前遍次（0-based）
   final int repeatIndex;
 
-  /// 当前句总遍数
+  /// 当前句总遍数。`0` 表示无限重复当前句。
   final int totalRepeats;
 
   /// 流程令牌（异步回调校验用）
@@ -54,7 +54,9 @@ class BlindPracticeFlowState {
 
   bool get isLastSentence => sentenceIndex >= totalSentences - 1;
 
-  bool get isLastRepeat => repeatIndex >= totalRepeats - 1;
+  bool get isInfiniteRepeat => totalRepeats == 0;
+
+  bool get isLastRepeat => !isInfiniteRepeat && repeatIndex >= totalRepeats - 1;
 
   bool get isCountingDown => phase is BlindWaitingInterval;
 

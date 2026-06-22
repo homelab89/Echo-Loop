@@ -104,13 +104,19 @@ class _BlindListenSettingsSheet extends ConsumerWidget {
                   ),
                   AppDropdown<int>(
                     value: settings.repeatCount,
-                    items: List.generate(5, (i) {
-                      final count = i + 1;
-                      return DropdownMenuItem(
-                        value: count,
-                        child: Text('$count'),
-                      );
-                    }),
+                    items: [
+                      ...List.generate(10, (i) {
+                        final count = i + 1;
+                        return DropdownMenuItem(
+                          value: count,
+                          child: Text('$count'),
+                        );
+                      }),
+                      DropdownMenuItem(
+                        value: 0,
+                        child: Text(l10n.infiniteRepeat),
+                      ),
+                    ],
                     onChanged: (value) {
                       if (value != null) {
                         ref

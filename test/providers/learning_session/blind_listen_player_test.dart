@@ -378,6 +378,25 @@ void main() {
       expect(engine.lastPlayStart, paragraphs[0][2].startTime);
     });
 
+    test('无限重复不会在段间停顿后自动完成当前段', () async {
+      final engine = _FastTestAudioEngine();
+      final container = _buildContainer(engine: engine);
+      addTearDown(container.dispose);
+      final notifier = container.read(blindListenPlayerProvider.notifier);
+
+      final paragraphs = _buildParagraphs(paragraphCount: 1, sentencesPerParagraph: 1);
+      notifier.initializeParagraphs(
+        paragraphs,
+        const BlindListenSettings(repeatCount: 0),
+      );
+
+      await notifier.startPlaying();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(container.read(blindListenPlayerProvider).stepFinished, isFalse);
+      expect(container.read(blindListenPlayerProvider).currentRepeatCount, greaterThanOrEqualTo(1));
+    });
+
     test('seek 写盘 globalIdx（由 _playCurrentParagraph 内部 async 写）', () async {
       final progressNotifier = _RecordingBlindProgressNotifier(
         LearningProgressState(

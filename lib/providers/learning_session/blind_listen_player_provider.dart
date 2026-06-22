@@ -872,7 +872,8 @@ class BlindListenPlayer extends _$BlindListenPlayer {
 
   /// 段间停顿结束
   Future<void> _onPauseCountdownFinished() async {
-    if (state.currentRepeatCount < state.settings.repeatCount) {
+    if (state.settings.repeatCount == 0 ||
+        state.currentRepeatCount < state.settings.repeatCount) {
       // 当前段还有遍数 → 直接继续播放，不经过 isPauseCountdown=false 中间状态
       state = state.copyWith(currentRepeatCount: state.currentRepeatCount + 1);
       await _playCurrentParagraph();

@@ -46,6 +46,7 @@ import '../widgets/common/practice_playback_footer.dart';
 import '../widgets/common/recording_button.dart' show RecordingButtonMode;
 import '../widgets/common/repeat_practice_panel.dart';
 import '../widgets/practice/practice_progress_section.dart';
+import '../widgets/practice/practice_play_count_label.dart';
 
 /// 跟读播放器页面
 class ListenAndRepeatPlayerScreen extends ConsumerStatefulWidget {
@@ -609,9 +610,10 @@ class _ListenAndRepeatPlayerScreenState
                     }
                   },
                   isManualMode: isManualMode,
-                  playCountText: l10n.listenAndRepeatPlayCount(
-                    ctrlState.repeatIndex + 1,
-                    ctrlState.totalRepeats,
+                  playCountText: formatPracticePlayCount(
+                    l10n,
+                    currentCount: ctrlState.repeatIndex + 1,
+                    totalCount: ctrlState.totalRepeats,
                   ),
                   statusSuffixText: _formatSpeed(
                     ref.watch(listenAndRepeatSettingsProvider).playbackSpeed,

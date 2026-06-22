@@ -40,6 +40,7 @@ import '../widgets/common/practice_playback_footer.dart';
 import '../widgets/guide_flow.dart';
 import '../widgets/player_hotkey_scope.dart';
 import '../widgets/practice/annotation_content_view.dart';
+import '../widgets/practice/practice_play_count_label.dart';
 import '../widgets/practice/practice_normal_mode_view.dart';
 import '../widgets/practice/practice_progress_section.dart';
 import '../providers/new_user_guide_provider.dart';
@@ -786,9 +787,10 @@ class _IntensiveListenPlayerScreenState
                           onNext: _handleNext,
                           onCenter: _handleCenter,
                           isManualMode: playerState.settings.isManualMode,
-                          playCountText: l10n.intensiveListenPlayCount(
-                            playerState.currentPlayCount,
-                            playerState.settings.isManualMode
+                          playCountText: formatPracticePlayCount(
+                            l10n,
+                            currentCount: playerState.currentPlayCount,
+                            totalCount: playerState.settings.isManualMode
                                 ? 1
                                 : playerState.settings.repeatCount,
                           ),

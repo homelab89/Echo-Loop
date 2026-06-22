@@ -124,7 +124,7 @@ enum RetellDisplayMode {
 
 /// 复述设置（会话内临时生效）
 class RetellSettings {
-  /// 每段重复次数（1-5，默认 1）
+  /// 每段重复次数（`0`=∞ 无限，`1-10`=有限次数，默认 1）
   ///
   /// 播放→复述为一遍，达到遍数后推进下一段。
   final int repeatCount;
@@ -228,6 +228,33 @@ class RetellSettings {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+    'repeatCount': repeatCount,
+    'pauseMode': pauseMode.name,
+    'fixedPauseSeconds': fixedPauseSeconds,
+    'pauseMultiplier': pauseMultiplier,
+    'keywordMethod': keywordMethod.name,
+    'keywordRatio': keywordRatio.name,
+    'controlMode': controlMode.name,
+    'playbackSpeed': playbackSpeed,
+    'autoPlayRecordingAfterCompletion': autoPlayRecordingAfterCompletion,
+  };
+
+  factory RetellSettings.fromJson(Map<String, dynamic> json) {
+    return RetellSettings(
+      repeatCount: _parseRepeatCount(json['repeatCount']),
+      pauseMode: _parsePauseMode(json['pauseMode']),
+      fixedPauseSeconds: _parseFixedPause(json['fixedPauseSeconds']),
+      pauseMultiplier: _parseMultiplier(json['pauseMultiplier']),
+      keywordMethod: _parseKeywordMethod(json['keywordMethod']),
+      keywordRatio: _parseKeywordRatio(json['keywordRatio']),
+      controlMode: _parseControlMode(json['controlMode']),
+      playbackSpeed: _parsePlaybackSpeed(json['playbackSpeed']),
+      autoPlayRecordingAfterCompletion:
+          json['autoPlayRecordingAfterCompletion'] == true,
+    );
+  }
+
   /// 根据段落时长计算复述阶段最大录音时长
   ///
   /// 公式：`max(30s, 5s + 5×段落时长)`。
@@ -263,5 +290,58 @@ class RetellSettings {
         return Duration(milliseconds: ms < 3000 ? 3000 : ms);
       }(),
     };
+  }
+
+  static int _parseRepeatCount(dynamic raw) {
+    if (raw is! int) return 1;
+    if (raw == 0) return 0;
+    if (raw < 1) return 1;
+    return raw > 10 ? 10 : raw;
+  }
+
+  static PauseMode _parsePauseMode(dynamic raw) {
+    if (raw is! String) return PauseMode.smart;
+    return PauseMode.values.where((e) => e.name == raw).firstOrNull ??
+        PauseMode.smart;
+  }
+
+  static int _parseFixedPause(dynamic raw) {
+    if (raw is! int) return 30;
+    if (!fixedPauseOptions.contains(raw)) return 30;
+    return raw;
+  }
+
+  static double _parseMultiplier(dynamic raw) {
+    if (raw is! num) return 0.5;
+    final value = raw.toDouble();
+    if (!multiplierOptions.contains(value)) return 0.5;
+    return value;
+  }
+
+  static KeywordMethod _parseKeywordMethod(dynamic raw) {
+    if (raw is! String) return KeywordMethod.random;
+    return KeywordMethod.values.where((e) => e.name == raw).firstOrNull ??
+        KeywordMethod.random;
+  }
+
+  static KeywordRatio _parseKeywordRatio(dynamic raw) {
+    if (raw is! String) return KeywordRatio.medium;
+    return KeywordRatio.values.where((e) => e.name == raw).firstOrNull ??
+        KeywordRatio.medium;
+  }
+
+  static ShadowingControlMode _parseControlMode(dynamic raw) {
+    if (raw is! String) return ShadowingControlMode.auto;
+    return ShadowingControlMode.values
+            .where((e) => e.name == raw)
+            .firstOrNull ??
+        ShadowingControlMode.auto;
+  }
+
+  static double _parsePlaybackSpeed(dynamic raw) {
+    if (raw is! num) return 1.0;
+    final value = raw.toDouble();
+    if (value < 0.5 || value > 2.0) return 1.0;
+    return value;
   }
 }

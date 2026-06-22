@@ -76,6 +76,9 @@ void main() {
       await openSheet(tester);
 
       expect(find.text('每句循环次数'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.arrow_drop_down));
+      await tester.pumpAndSettle();
+      expect(find.text('无限 ∞'), findsWidgets);
     });
 
     testWidgets('显示句间停顿标签', (tester) async {

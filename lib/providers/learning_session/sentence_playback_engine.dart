@@ -77,12 +77,8 @@ class SentencePlaybackEngine {
     final engine = _getEngine();
     _currentSessionId = engine.newSession();
     final sessionId = _currentSessionId;
-
-    for (
-      int playCount = startPlayCount;
-      playCount <= repeatCount;
-      playCount++
-    ) {
+    var playCount = startPlayCount;
+    while (repeatCount == 0 || playCount <= repeatCount) {
       if (!engine.isActiveSession(sessionId)) return;
 
       onPlayCountChanged(playCount);
@@ -95,7 +91,7 @@ class SentencePlaybackEngine {
       _recorder?.onSentencePlayed(sentence);
 
       // 遍间停顿（最后一遍不停顿）
-      if (playCount < repeatCount) {
+      if (repeatCount == 0 || playCount < repeatCount) {
         final pauseDur = pauseCalculator(sentence.duration);
         onPauseStarted(pauseDur);
 
@@ -104,6 +100,7 @@ class SentencePlaybackEngine {
         if (!engine.isActiveSession(sessionId)) return;
         onPauseEnded();
       }
+      playCount += 1;
     }
 
     // 所有遍数播完

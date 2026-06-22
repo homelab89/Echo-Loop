@@ -16,10 +16,10 @@ class DifficultPracticeSettings {
   /// 控制模式（默认 auto），复用跟读页已有枚举
   final ShadowingControlMode controlMode;
 
-  /// 盲听循环次数（1-10，默认 1）
+  /// 盲听循环次数（`0`=∞ 无限，`1-10`=有限次数，默认 1）
   final int blindListenRepeatCount;
 
-  /// 跟读循环次数（1-10，默认 3）
+  /// 跟读循环次数（`0`=∞ 无限，`1-10`=有限次数，默认 3）
   final int shadowReadingRepeatCount;
 
   /// 停顿模式（默认 smart）
@@ -152,6 +152,7 @@ class DifficultPracticeSettings {
 
   static int _clampInt(dynamic raw, int min, int max, {int fallback = 1}) {
     if (raw is! int) return fallback;
+    if (raw == 0) return 0;
     return raw.clamp(min, max);
   }
 

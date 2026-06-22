@@ -254,12 +254,15 @@ class _ListenAndRepeatSettingsSheet extends ConsumerWidget {
         Text(l10n.intensiveListenRepeatCount, style: theme.textTheme.bodyLarge),
         AppDropdown<int>(
           value: settings.repeatCount,
-          items: List.generate(10, (i) => i + 1).map((count) {
-            return DropdownMenuItem(
-              value: count,
-              child: Text(l10n.intensiveListenRepeatCountValue(count)),
-            );
-          }).toList(),
+          items: [
+            ...List.generate(10, (i) => i + 1).map((count) {
+              return DropdownMenuItem(
+                value: count,
+                child: Text(l10n.intensiveListenRepeatCountValue(count)),
+              );
+            }),
+            DropdownMenuItem(value: 0, child: Text(l10n.infiniteRepeat)),
+          ],
           onChanged: (value) {
             if (value != null) {
               ref

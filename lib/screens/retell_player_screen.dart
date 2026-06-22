@@ -46,6 +46,7 @@ import '../widgets/common/paragraph_visibility_controls.dart';
 import '../widgets/retell/retell_settings_sheet.dart';
 import '../widgets/player_hotkey_scope.dart';
 import '../widgets/speech_permission_dialog.dart';
+import '../widgets/practice/practice_play_count_label.dart';
 
 /// 复述录音 badge 回放使用的播放服务。
 ///
@@ -1311,9 +1312,10 @@ class _RetellPlayerScreenState extends ConsumerState<RetellPlayerScreen>
                         : player.resume)
                   : _handleReplay,
               isManualMode: state.settings.isManualMode,
-              playCountText: l10n.retellRepeatInfo(
-                state.currentRepeatCount,
-                state.settings.repeatCount,
+              playCountText: formatPracticePlayCount(
+                l10n,
+                currentCount: state.currentRepeatCount,
+                totalCount: state.settings.repeatCount,
               ),
               statusSuffixText: _formatSpeed(state.settings.playbackSpeed),
               l10n: l10n,

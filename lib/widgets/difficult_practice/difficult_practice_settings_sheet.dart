@@ -311,12 +311,15 @@ class _DifficultPracticeSettingsSheet extends ConsumerWidget {
         Text(label, style: theme.textTheme.bodyLarge),
         AppDropdown<int>(
           value: value,
-          items: List.generate(10, (i) => i + 1).map((count) {
-            return DropdownMenuItem(
-              value: count,
-              child: Text(l10n.intensiveListenRepeatCountValue(count)),
-            );
-          }).toList(),
+          items: [
+            ...List.generate(10, (i) => i + 1).map((count) {
+              return DropdownMenuItem(
+                value: count,
+                child: Text(l10n.intensiveListenRepeatCountValue(count)),
+              );
+            }),
+            DropdownMenuItem(value: 0, child: Text(l10n.infiniteRepeat)),
+          ],
           onChanged: (v) {
             if (v != null) onChanged(v);
           },

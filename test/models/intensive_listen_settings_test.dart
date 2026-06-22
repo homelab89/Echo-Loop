@@ -141,10 +141,10 @@ void main() {
         expect(settings.repeatCount, 1);
       });
 
-      test('repeatCount 超出范围被 clamp', () {
+      test('repeatCount 支持 0=∞ 且超出范围被 clamp', () {
         expect(
           IntensiveListenSettings.fromJson({'repeatCount': 0}).repeatCount,
-          1,
+          0,
         );
         expect(
           IntensiveListenSettings.fromJson({'repeatCount': -5}).repeatCount,

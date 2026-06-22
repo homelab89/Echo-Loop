@@ -11,12 +11,28 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 
+/// 格式化练习页的遍数文案。
+///
+/// [totalCount] 为 `0` 时表示无限重复，统一显示为 `∞`。
+String formatPracticePlayCount(
+  AppLocalizations l10n, {
+  required int currentCount,
+  required int totalCount,
+}) {
+  final totalLabel = totalCount == 0 ? '∞' : '$totalCount';
+  final languageCode = l10n.localeName.toLowerCase();
+  if (languageCode.startsWith('zh')) {
+    return '第 $currentCount/$totalLabel 遍';
+  }
+  return 'Round $currentCount/$totalLabel';
+}
+
 /// 遍数 + 模式标签
 class PracticePlayCountLabel extends StatelessWidget {
   /// 是否为手动模式
   final bool isManualMode;
 
-  /// 预格式化的遍数文本（如 "第 1/3 遍"）
+  /// 预格式化的遍数文本（如 "第 1/3 遍" / "第 2/∞ 遍"）
   final String playCountText;
 
   /// 可选状态后缀（如 "1.3x"），由具体练习页面决定是否展示。

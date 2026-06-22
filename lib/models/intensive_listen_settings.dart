@@ -27,7 +27,7 @@ enum PauseMode {
 
 /// 精听设置（独立于播放状态，持久化存储）
 class IntensiveListenSettings {
-  /// 每句循环次数（1-10，默认 1）
+  /// 每句循环次数（`0`=∞ 无限，`1-10`=有限次数，默认 1）
   final int repeatCount;
 
   /// 停顿模式（默认 smart）
@@ -154,10 +154,12 @@ class IntensiveListenSettings {
     return value;
   }
 
-  /// 解析循环次数：范围 1-10
+  /// 解析循环次数：`0`=∞；`1-10` 合法；`>10` 截到 10；其余非法值回退 1。
   static int _parseRepeatCount(dynamic raw) {
     if (raw is! int) return 1;
-    return raw.clamp(1, 10);
+    if (raw == 0) return 0;
+    if (raw < 1) return 1;
+    return raw > 10 ? 10 : raw;
   }
 
   /// 解析停顿模式：非法值回退 smart

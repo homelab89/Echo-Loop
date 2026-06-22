@@ -73,6 +73,9 @@ void main() {
 
       expect(find.text('Blind listen repeats'), findsOneWidget);
       expect(find.text('Shadow reading repeats'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.arrow_drop_down).first);
+      await tester.pumpAndSettle();
+      expect(find.text('Infinite ∞'), findsWidgets);
     });
 
     testWidgets('显示停顿模式标签和三个选项', (tester) async {

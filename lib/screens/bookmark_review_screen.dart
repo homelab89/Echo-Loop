@@ -44,6 +44,7 @@ import '../widgets/common/practice_playback_footer.dart';
 import '../widgets/common/recording_button.dart' show RecordingButtonMode;
 import '../widgets/common/repeat_practice_panel.dart';
 import '../providers/repeat_flow/repeat_flow_phase.dart';
+import '../widgets/practice/practice_play_count_label.dart';
 
 /// 收藏句子复习页面
 class BookmarkReviewScreen extends ConsumerStatefulWidget {
@@ -546,14 +547,16 @@ class _BookmarkReviewScreenState extends ConsumerState<BookmarkReviewScreen>
   ) {
     if (playerState.isAnnotationMode && playerState.repeatFlowState != null) {
       final flowState = playerState.repeatFlowState!;
-      return l10n.listenAndRepeatPlayCount(
-        flowState.repeatIndex + 1,
-        playerState.targetRepeatCount,
+      return formatPracticePlayCount(
+        l10n,
+        currentCount: flowState.repeatIndex + 1,
+        totalCount: playerState.targetRepeatCount,
       );
     }
-    return l10n.listenAndRepeatPlayCount(
-      playerState.currentPlayCount,
-      playerState.isManualMode
+    return formatPracticePlayCount(
+      l10n,
+      currentCount: playerState.currentPlayCount,
+      totalCount: playerState.isManualMode
           ? 1
           : playerState.settings.blindListenRepeatCount,
     );

@@ -108,6 +108,16 @@ void main() {
         expect(restored.pauseMultiplier, 2.0);
       });
 
+      test('0 作为无限重复保留', () {
+        final restored = DifficultPracticeSettings.fromJson({
+          'blindListenRepeatCount': 0,
+          'shadowReadingRepeatCount': 0,
+        });
+
+        expect(restored.blindListenRepeatCount, 0);
+        expect(restored.shadowReadingRepeatCount, 0);
+      });
+
       test('空 JSON 回退默认', () {
         final restored = DifficultPracticeSettings.fromJson({});
         expect(restored.blindListenRepeatCount, 1);

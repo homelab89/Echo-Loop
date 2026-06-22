@@ -8,7 +8,7 @@ import 'intensive_listen_settings.dart' show PauseMode, ShadowingControlMode;
 
 /// 盲听设置（会话内临时生效）
 class BlindListenSettings {
-  /// 每段重复次数（1-5，默认 1）
+  /// 每段重复次数（`0`=∞ 无限，`1-10`=有限次数，默认 1）
   final int repeatCount;
 
   /// 停顿模式（默认 multiplier）
@@ -114,5 +114,67 @@ class BlindListenSettings {
       controlMode: controlMode ?? this.controlMode,
       playbackSpeed: playbackSpeed ?? this.playbackSpeed,
     );
+  }
+
+  /// 防御性解析：`0`=∞；`1-10` 合法；`>10` 截到 10；其余非法值回退默认。
+  factory BlindListenSettings.fromJson(Map<String, dynamic> json) {
+    return BlindListenSettings(
+      repeatCount: _parseRepeatCount(json['repeatCount']),
+      pauseMode: _parsePauseMode(json['pauseMode']),
+      fixedPauseSeconds: _parseFixedPause(json['fixedPauseSeconds']),
+      pauseMultiplier: _parseMultiplier(json['pauseMultiplier']),
+      controlMode: _parseControlMode(json['controlMode']),
+      playbackSpeed: _parsePlaybackSpeed(json['playbackSpeed']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'repeatCount': repeatCount,
+    'pauseMode': pauseMode.name,
+    'fixedPauseSeconds': fixedPauseSeconds,
+    'pauseMultiplier': pauseMultiplier,
+    'controlMode': controlMode.name,
+    'playbackSpeed': playbackSpeed,
+  };
+
+  static int _parseRepeatCount(dynamic raw) {
+    if (raw is! int) return 1;
+    if (raw == 0) return 0;
+    if (raw < 1) return 1;
+    return raw > 10 ? 10 : raw;
+  }
+
+  static PauseMode _parsePauseMode(dynamic raw) {
+    if (raw is! String) return PauseMode.multiplier;
+    return PauseMode.values.where((e) => e.name == raw).firstOrNull ??
+        PauseMode.multiplier;
+  }
+
+  static int _parseFixedPause(dynamic raw) {
+    if (raw is! int) return 10;
+    if (!fixedPauseOptions.contains(raw)) return 10;
+    return raw;
+  }
+
+  static double _parseMultiplier(dynamic raw) {
+    if (raw is! num) return 0.5;
+    final value = raw.toDouble();
+    if (!multiplierOptions.contains(value)) return 0.5;
+    return value;
+  }
+
+  static ShadowingControlMode _parseControlMode(dynamic raw) {
+    if (raw is! String) return ShadowingControlMode.auto;
+    return ShadowingControlMode.values
+            .where((e) => e.name == raw)
+            .firstOrNull ??
+        ShadowingControlMode.auto;
+  }
+
+  static double _parsePlaybackSpeed(dynamic raw) {
+    if (raw is! num) return 1.0;
+    final value = raw.toDouble();
+    if (value < 0.5 || value > 2.0) return 1.0;
+    return value;
   }
 }
