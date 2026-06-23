@@ -449,6 +449,34 @@ void main() {
     expect(engine.lastClipEnd, const Duration(milliseconds: 7900));
   });
 
+  test('单句循环：sentenceRepeatsDone 镜像到 state 供状态栏展示当前句第几遍', () async {
+    lp.seed(
+      sentences: sentences,
+      settings: const PlaybackSettings(
+        loopSentence: true,
+        sentenceLoopCount: 2,
+        sentenceInterval: Duration.zero,
+      ),
+    );
+
+    await start();
+    await flushBoundary();
+    // 第 0 句第 1 遍播放中 → 已完成 0 → 状态栏显示 1/2。
+    expect(container.read(listeningPracticeProvider).sentenceRepeatsDone, 0);
+
+    await completeClip(); // 第 0 句第 1 遍完成 → 重播第 2 遍
+    expect(
+      container.read(listeningPracticeProvider).sentenceRepeatsDone,
+      1,
+      reason: '第 0 句第 2 遍播放中 → 状态栏显示 2/2',
+    );
+
+    await completeClip(); // 第 0 句第 2 遍完成 → 进入第 1 句，计数归零
+    final s = container.read(listeningPracticeProvider);
+    expect(s.currentFullIndex, 1);
+    expect(s.sentenceRepeatsDone, 0, reason: '新句第 1 遍 → 状态栏显示 1/2');
+  });
+
   test('无限单句循环：多次越界都回到当前句句首', () async {
     lp.seed(
       sentences: sentences,
@@ -716,16 +744,25 @@ void main() {
     await start();
     await flushBoundary();
     expect(engine.playCount, 1, reason: '第 1 遍起播');
-    expect(container.read(listeningPracticeProvider).isPlaying, isTrue);
+    var s = container.read(listeningPracticeProvider);
+    expect(s.isPlaying, isTrue);
+    expect(s.wholeLoopsDone, 0, reason: '第 1 遍播放中，已完成 0 遍 → 状态栏显示 1/3');
 
     await completeWhole(); // 第 1 遍完成 → 回卷起播第 2 遍
     expect(engine.playCount, 2);
     expect(engine.stopCount, 0);
+    expect(
+      container.read(listeningPracticeProvider).wholeLoopsDone,
+      1,
+      reason: '第 2 遍播放中 → 状态栏显示 2/3',
+    );
 
     await completeWhole(); // 第 2 遍完成 → 第 3 遍
     expect(engine.playCount, 3);
     expect(engine.stopCount, 0);
-    expect(container.read(listeningPracticeProvider).isPlaying, isTrue);
+    s = container.read(listeningPracticeProvider);
+    expect(s.isPlaying, isTrue);
+    expect(s.wholeLoopsDone, 2, reason: '第 3 遍播放中 → 状态栏显示 3/3');
 
     await completeWhole(); // 第 3 遍完成 → 停止
     expect(engine.playCount, 3, reason: '不再起播第 4 遍');

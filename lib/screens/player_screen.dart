@@ -758,22 +758,28 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         // 倍速
         const SizedBox(width: 12),
         Text('${playerState.settings.playbackSpeed}x', style: captionStyle),
-        // 整篇循环徽标
+        // 整篇循环徽标：播放中显示「当前遍/总遍」进度，未播放时显示设置值。
         if (playerState.settings.loopWhole) ...[
           const SizedBox(width: 12),
           _buildLoopBadge(
             icon: Icons.repeat,
             count: playerState.settings.wholeLoopCount,
+            current: playerState.isPlaying
+                ? playerState.wholeLoopsDone + 1
+                : null,
             iconColor: iconColor,
             captionStyle: captionStyle,
           ),
         ],
-        // 单句循环徽标
+        // 单句循环徽标：播放中显示当前句「当前遍/总遍」进度，未播放时显示设置值。
         if (playerState.settings.loopSentence) ...[
           const SizedBox(width: 12),
           _buildLoopBadge(
             icon: Icons.repeat_one,
             count: playerState.settings.sentenceLoopCount,
+            current: playerState.isPlaying
+                ? playerState.sentenceRepeatsDone + 1
+                : null,
             iconColor: iconColor,
             captionStyle: captionStyle,
           ),
@@ -809,18 +815,35 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
   }
 
   /// 单个循环状态徽标：图标 + 次数（∞ 或 xN）。
+  /// 循环徽标。
+  ///
+  /// [count] 为设置的循环次数（`0` 表示 ∞）。[current] 非空表示「正在循环」，
+  /// 此时展示进度：有限次显示 `当前/总数`（如 `2/3`，钳制在区间内），
+  /// 无限次显示 `当前/∞`；为空（未播放）时显示设置值 `x$count` 或 `∞`。
   Widget _buildLoopBadge({
     required IconData icon,
     required int count,
     required Color iconColor,
     required TextStyle? captionStyle,
+    int? current,
   }) {
+    final String label;
+    if (current != null) {
+      if (count == 0) {
+        label = '$current/∞';
+      } else {
+        final cur = current.clamp(1, count);
+        label = '$cur/$count';
+      }
+    } else {
+      label = count == 0 ? '∞' : 'x$count';
+    }
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: iconColor),
         const SizedBox(width: 3),
-        Text(count == 0 ? '∞' : 'x$count', style: captionStyle),
+        Text(label, style: captionStyle),
       ],
     );
   }

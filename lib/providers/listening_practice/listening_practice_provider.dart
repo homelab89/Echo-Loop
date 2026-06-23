@@ -44,12 +44,31 @@ class ListeningPractice extends _$ListeningPractice {
   Completer<void>? _loadingCompleter;
 
   /// 当前句已完成播放的次数（含刚结束这次）。进新句时归零。
-  int _sentenceRepeatsDone = 0;
+  ///
+  /// 写入统一经由下面的 setter 镜像到 [ListeningPracticeState.sentenceRepeatsDone]，
+  /// 供状态栏展示「当前句第几遍」。
+  int _sentenceRepeatsDoneBacking = 0;
+  int get _sentenceRepeatsDone => _sentenceRepeatsDoneBacking;
+  set _sentenceRepeatsDone(int value) {
+    _sentenceRepeatsDoneBacking = value;
+    if (state.sentenceRepeatsDone != value) {
+      state = state.copyWith(sentenceRepeatsDone: value);
+    }
+  }
 
   /// 整篇已完成的遍数。换音频/重新起播时归零。
   ///
   /// gapless 整段自然播完即 +1；监听句尾模式下走到末尾并回到第 0 句时 +1。
-  int _wholeLoopsDone = 0;
+  /// 写入统一经由下面的 setter 镜像到 [ListeningPracticeState.wholeLoopsDone]，
+  /// 供状态栏展示「当前第几遍」，避免各写入点散落地同步 UI。
+  int _wholeLoopsDoneBacking = 0;
+  int get _wholeLoopsDone => _wholeLoopsDoneBacking;
+  set _wholeLoopsDone(int value) {
+    _wholeLoopsDoneBacking = value;
+    if (state.wholeLoopsDone != value) {
+      state = state.copyWith(wholeLoopsDone: value);
+    }
+  }
 
   /// 播放任务代际计数器。每次起播/暂停/切句/seek 都递增，所有在途协程跨 await 后
   /// 都必须校验代际，避免旧播放任务在用户操作后继续推进状态。

@@ -24,6 +24,16 @@ class ListeningPracticeState {
   /// 自然播完（completed）后仍为 true，会让图标误显「暂停」。
   final bool isPlaying;
 
+  /// 整篇循环已完成的遍数（controller 内部计数的只读镜像）。
+  ///
+  /// 供状态栏展示「当前第几遍」：播放中当前正在播第 `wholeLoopsDone + 1` 遍。
+  final int wholeLoopsDone;
+
+  /// 当前句单句循环已完成的遍数（controller 内部计数的只读镜像）。
+  ///
+  /// 供状态栏展示「当前句第几遍」：播放中当前正在播第 `sentenceRepeatsDone + 1` 遍。
+  final int sentenceRepeatsDone;
+
   const ListeningPracticeState({
     this.currentAudioItem,
     this.sentences = const [],
@@ -38,6 +48,8 @@ class ListeningPracticeState {
     this.bookmarkedIndices = const {},
     this.isLoading = false,
     this.isPlaying = false,
+    this.wholeLoopsDone = 0,
+    this.sentenceRepeatsDone = 0,
   }) : fullSettings = settings ?? fullSettings,
        bookmarkSettings = settings ?? bookmarkSettings;
 
@@ -76,6 +88,8 @@ class ListeningPracticeState {
     Set<int>? bookmarkedIndices,
     bool? isLoading,
     bool? isPlaying,
+    int? wholeLoopsDone,
+    int? sentenceRepeatsDone,
   }) {
     final nextPlaylistMode = playlistMode ?? this.playlistMode;
     var nextFullSettings = fullSettings ?? this.fullSettings;
@@ -112,6 +126,8 @@ class ListeningPracticeState {
       bookmarkedIndices: bookmarkedIndices ?? this.bookmarkedIndices,
       isLoading: isLoading ?? this.isLoading,
       isPlaying: isPlaying ?? this.isPlaying,
+      wholeLoopsDone: wholeLoopsDone ?? this.wholeLoopsDone,
+      sentenceRepeatsDone: sentenceRepeatsDone ?? this.sentenceRepeatsDone,
     );
   }
 }
