@@ -1,7 +1,16 @@
 # Echo Loop 任务清单
 
-> 最后更新：2026-06-23（Free Player 精听单句模式切句改为 iPhone 相册式跟手滑动）
+> 最后更新：2026-06-23（版本号升级到 1.0.19）
 > 当前焦点：Android 结束录音闪退（离线 ASR / Silero VAD）——**仍未解决**
+
+## 已完成：版本号升级到 1.0.19
+
+按“版本 +1”要求，将 Flutter 应用版本从 `1.0.18` 升级到 `1.0.19`。当前仓库的 Android `versionName` 跟随 Flutter `versionName`，本次只需更新 `pubspec.yaml` 即可同步到标准 Flutter 构建链路；不额外改动业务代码或平台逻辑。
+
+- [x] `pubspec.yaml`：版本号从 `1.0.18` 升级到 `1.0.19`。
+- [x] 验证：检查 Android `build.gradle.kts` 仍使用 `flutter.versionName`，版本升级会随 Flutter 构建配置自动生效。
+
+  **完成时间**: 2026-06-23 12:56:44 +0800
 
 ## 已完成：Free Player 精听单句模式切句改为 iPhone 相册式跟手滑动
 

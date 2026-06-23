@@ -54,6 +54,15 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
   bool _fullPagerSynced = false;
   bool _bookmarkPagerSynced = false;
 
+  /// provider→PageView 程序化对齐（jumpToPage/animateToPage）进行中为 true。
+  ///
+  /// 跨多页的滑动（如整篇循环回卷 50→0）会途经中间页并**逐页**触发 onPageChanged，
+  /// 若被当作用户滑动会反向 `selectFullSentence(autoPlay)` → 重启整篇循环并清零已播
+  /// 遍数（徽标回到 1/N）。该标志让 [_onSentencePageChanged] 在程序化对齐期间忽略
+  /// 回调，只放行真正的用户跟手滑动。
+  bool _fullPagerProgrammatic = false;
+  bool _bookmarkPagerProgrammatic = false;
+
   late TabController _tabController;
   int _previousTabIndex = 0;
   Duration? _seekPreviewPosition;
@@ -446,15 +455,36 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !pageController.hasClients) return;
         if (pageController.page?.round() == targetPosition) return;
-        if (firstSync) {
-          // 首次对齐到当前句（恢复进度），瞬切不滑动。
-          pageController.jumpToPage(targetPosition);
+        // 程序化对齐期间置位标志，使途经中间页触发的 onPageChanged 不被当作用户滑动。
+        void setProgrammatic(bool v) {
+          if (isBookmarkMode) {
+            _bookmarkPagerProgrammatic = v;
+          } else {
+            _fullPagerProgrammatic = v;
+          }
+        }
+
+        setProgrammatic(true);
+        // 仅相邻 ±1 的推进（逐句自动播放/外部推进）滑动过渡；跨多页（整篇循环
+        // 回卷末句→首句、恢复进度等）直接瞬切——否则 animateToPage 会在 280ms 内
+        // 扫过数十页，呈现刺眼的“甩动”。
+        final currentPage = pageController.page?.round();
+        final isAdjacent =
+            !firstSync &&
+            currentPage != null &&
+            (targetPosition - currentPage).abs() == 1;
+        if (isAdjacent) {
+          pageController
+              .animateToPage(
+                targetPosition,
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+              )
+              .whenComplete(() => setProgrammatic(false));
         } else {
-          pageController.animateToPage(
-            targetPosition,
-            duration: const Duration(milliseconds: 280),
-            curve: Curves.easeOutCubic,
-          );
+          // jumpToPage 同步派发回调，调用后立即清零标志。
+          pageController.jumpToPage(targetPosition);
+          setProgrammatic(false);
         }
       });
       if (isBookmarkMode) {
@@ -588,6 +618,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     PlaylistMode mode,
   ) {
     final isBookmarkMode = mode == PlaylistMode.bookmarks;
+    // 程序化对齐（provider→PageView）触发的回调不是用户滑动，忽略——否则整篇循环
+    // 回卷等多页滚动途经的中间页会反向重启播放并清零循环遍数。
+    if (isBookmarkMode ? _bookmarkPagerProgrammatic : _fullPagerProgrammatic) {
+      return;
+    }
     final playable = isBookmarkMode
         ? state.bookmarkedSentences
         : state.sentences;

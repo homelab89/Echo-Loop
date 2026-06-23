@@ -715,6 +715,40 @@ void main() {
         await _disposeTree(tester);
       });
 
+      testWidgets('整篇循环回卷（末句→首句）跨多页对齐不触发选句', (tester) async {
+        // 回归 §7.6 之后的精听整篇循环 bug：回卷时 currentFullIndex 从末句跳回 0，
+        // animateToPage 跨多页途经的中间页 onPageChanged 不得被当作用户滑动反向
+        // selectFullSentence（否则会重启整篇循环、清零已播遍数 → 徽标回到 1/N）。
+        final item = createTestAudioItem();
+        final sentences = createTestSentences(count: 8);
+        final player = _RecordingListeningPractice(
+          ListeningPracticeState(
+            currentAudioItem: item,
+            sentences: sentences,
+            currentFullIndex: 7,
+            isPlaying: true,
+            settings: const PlaybackSettings(singleSentenceMode: true),
+          ),
+        );
+
+        await tester.pumpWidget(
+          createTestScreen(
+            const PlayerScreen(),
+            overrides: _recordingOverrides(player),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 模拟整篇循环回卷：当前句从末句（7）跳回首句（0）。
+        player.emitFullIndex(0);
+        await tester.pumpAndSettle();
+
+        // PageView 跨 7→0 多页对齐，途经中间页均不触发选句。
+        expect(player.state.currentFullIndex, 0);
+        expect(player.selectFullCalls, isEmpty);
+        await _disposeTree(tester);
+      });
+
       testWidgets('收藏 tab 单句模式左右滑动切换收藏句（PageView 翻页）', (tester) async {
         final item = createTestAudioItem();
         final sentences = createTestSentences(count: 3);
