@@ -324,6 +324,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pickAudioFileFailed => 'Failed to select audio file';
 
   @override
+  String get addAudioFailed => 'Failed to add audio';
+
+  @override
   String audioUnsupportedFormat(String ext) {
     return 'Unsupported audio format: $ext. Only MP3, WAV, M4A, AAC, FLAC are supported.';
   }
@@ -499,6 +502,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String removeFromCollectionConfirm(String name) {
     return 'Remove \"$name\" from this collection?';
   }
+
+  @override
+  String get permanentlyDeleteAudio => 'Permanently delete this audio';
+
+  @override
+  String get permanentlyDeleteAudioHint =>
+      'Removes the file and the audio from all collections.';
+
+  @override
+  String audioBelongsToCollections(String names) {
+    return 'Also in: $names';
+  }
+
+  @override
+  String get audioNotInOtherCollections =>
+      'Not used by any other collection — safe to delete.';
 
   @override
   String get emptyCollection => 'No audio in this collection';
@@ -796,7 +815,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deleteAudioConfirm(String name) {
-    return 'Are you sure you want to delete \"$name\"? The audio file will be permanently deleted.';
+    return 'Permanently delete \"$name\"?';
+  }
+
+  @override
+  String deleteAudioConfirmKeepFile(String name) {
+    return 'Are you sure you want to delete \"$name\"? The audio file is shared by other entries and will be kept.';
   }
 
   @override
@@ -1673,6 +1697,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectLanguage => 'Select Language';
+
+  @override
+  String get autoMergeShortSentences => 'Auto-merge short sentences';
+
+  @override
+  String get autoMergeShortSentencesHint =>
+      'Targets 4-7s; turn off to keep shorter sentences';
 
   @override
   String get overwriteExistingSubtitle => 'Overwrite existing subtitle?';
@@ -2697,7 +2728,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get duplicatesSkippedDetail =>
-      'The following audio files already exist in the library and were skipped:';
+      'The following audio files are already in this collection and were skipped:';
 
   @override
   String get removeFile => 'Remove';

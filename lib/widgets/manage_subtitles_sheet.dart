@@ -19,6 +19,7 @@ import '../providers/audio_library_provider.dart';
 import '../providers/learning_progress_provider.dart';
 import '../providers/listening_practice/listening_practice_provider.dart';
 import '../providers/new_user_guide_provider.dart';
+import '../providers/settings_provider.dart';
 import '../providers/transcription_task_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../router/app_router.dart';
@@ -62,6 +63,9 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
   _SubtitleAction _selectedAction = _SubtitleAction.localUpload;
   String _selectedLanguage = 'en';
 
+  /// AI 转录「自动合并短句」开关，初值取自设置（记住上次选择），默认开启。
+  bool _autoMergeShortSentences = true;
+
   /// 是否刚打开弹窗（用于首帧跳过残留终态的渲染）
   bool _initialClear = true;
 
@@ -80,6 +84,9 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
     if (!widget.audioItem.hasTranscript) {
       _selectedAction = _SubtitleAction.aiTranscription;
     }
+    // 取上次记住的「自动合并短句」选择作为默认值
+    _autoMergeShortSentences =
+        ref.read(appSettingsProvider).aiTranscriptionAutoMergeEnabled;
     // 打开弹窗时异步清除之前的失败/空结果状态
     final taskState = ref.read(
       transcriptionTaskManagerProvider,
@@ -742,6 +749,51 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
               ),
             ],
           ),
+          const SizedBox(height: AppSpacing.s),
+          // 「自动合并短句」开关：默认开启；关闭后后端返回未合并基线（句子更短）
+          Row(
+            children: [
+              Icon(
+                Icons.compress_rounded,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: AppSpacing.s),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.autoMergeShortSentences,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.autoMergeShortSentencesHint,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.75,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s),
+              Switch.adaptive(
+                value: _autoMergeShortSentences,
+                onChanged: (value) {
+                  setState(() => _autoMergeShortSentences = value);
+                  ref
+                      .read(appSettingsProvider.notifier)
+                      .setAiTranscriptionAutoMergeEnabled(value);
+                },
+              ),
+            ],
+          ),
           // 仅在该选项已转录时提示，混合语言不支持的提示已移除
           if (_isAiDisabled(audioItem))
             Padding(
@@ -1136,6 +1188,7 @@ class _ManageSubtitlesSheetState extends ConsumerState<ManageSubtitlesSheet> {
           audioItem,
           _selectedLanguage,
           accessToken: accessToken,
+          autoMergeShortSentences: _autoMergeShortSentences,
         );
     ref
         .read(usageTrackerProvider)

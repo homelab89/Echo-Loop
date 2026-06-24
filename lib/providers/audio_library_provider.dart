@@ -233,8 +233,13 @@ class AudioLibrary extends _$AudioLibrary {
 
   /// 批量删除音频条目，并保持单条删除的资源清理语义。
   ///
-  /// 数据库记录批量删除；音频/字幕文件仍按路径逐个检查引用后删除，避免多个
-  /// AudioItem 复用同一个 hash 文件时误删仍被其他条目使用的资源。
+  /// 顺序遵循"DB 先行、最后删文件"约定：先删数据库行、同步内存与级联状态，**全部
+  /// 成功后**才删磁盘文件。若反过来先删文件、后删 DB，中途 DB 删除失败会留下指向
+  /// 缺失文件的幽灵条目（重启后重新载入、点开即失败）；而先删 DB 再删文件即使文件
+  /// 删除失败也只是产生孤儿文件，由孤儿清理兜底，危害更小。
+  ///
+  /// 音频/字幕文件按路径逐个检查引用后删除，避免多个 AudioItem 复用同一个 hash
+  /// 文件时误删仍被其他条目使用的资源。
   Future<void> removeAudioItems(Set<String> ids) async {
     if (ids.isEmpty) return;
     final itemsToRemove = state.audioItems
@@ -242,20 +247,10 @@ class AudioLibrary extends _$AudioLibrary {
         .toList(growable: false);
     if (itemsToRemove.isEmpty) return;
 
-    final existingItems = state.audioItems;
+    // 在任何删除前快照"被保留条目仍引用的路径"，供后续文件删除做引用计数。
     final pathsStillReferenced = await _pathsReferencedOutside(
-      existingItems: existingItems,
+      existingItems: state.audioItems,
       removedIds: ids,
-    );
-
-    for (final item in itemsToRemove) {
-      await _deleteAudioFilesIfUnreferenced(item, pathsStillReferenced);
-    }
-
-    state = state.copyWith(
-      audioItems: state.audioItems
-          .where((item) => !ids.contains(item.id))
-          .toList(),
     );
 
     // 清除收藏单词/意群的非 FK 上下文。必须在 hardDeleteMany 之前调用，因为
@@ -268,6 +263,12 @@ class AudioLibrary extends _$AudioLibrary {
     final dao = ref.read(audioItemDaoProvider);
     await dao.hardDeleteMany(ids);
 
+    state = state.copyWith(
+      audioItems: state.audioItems
+          .where((item) => !ids.contains(item.id))
+          .toList(),
+    );
+
     // hardDeleteMany 已通过 FK 级联删除 learning_progresses / stage_completions，
     // 这里只需同步内存状态，不再重复发 DB DELETE。
     await ref
@@ -277,6 +278,11 @@ class AudioLibrary extends _$AudioLibrary {
         .read(collectionListProvider.notifier)
         .removeAudiosFromAllCollections(ids);
     await ref.read(tagListProvider.notifier).removeAudiosFromAllTags(ids);
+
+    // DB 与内存状态已一致，最后 best-effort 删磁盘文件；失败仅成孤儿，不影响一致性。
+    for (final item in itemsToRemove) {
+      await _deleteAudioFilesIfUnreferenced(item, pathsStillReferenced);
+    }
   }
 
   Future<Set<String>> _pathsReferencedOutside({

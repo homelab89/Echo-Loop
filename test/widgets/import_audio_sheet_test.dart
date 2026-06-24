@@ -13,9 +13,15 @@ import '../helpers/mock_providers.dart';
 import '../helpers/test_app.dart';
 
 class _ImmediateAudioImportController extends AudioImportController {
-  _ImmediateAudioImportController({this.fail = false});
+  _ImmediateAudioImportController({
+    this.fail = false,
+    this.withTranscript = false,
+  });
 
   final bool fail;
+
+  /// 为 true 时返回的音频已带字幕（模拟导入库里已存在、已带字幕的音频）。
+  final bool withTranscript;
 
   @override
   AudioImportState build() => const AudioImportIdle();
@@ -33,13 +39,14 @@ class _ImmediateAudioImportController extends AudioImportController {
       name: 'URL Audio',
       audioPath: 'audios/imported/url.mp3',
       addedDate: DateTime(2026, 1, 1),
+      transcriptSource: withTranscript ? TranscriptSource.local : null,
     );
     state = AudioImportCompleted(item);
     return item;
   }
 }
 
-Widget _buildApp({bool failImport = false}) {
+Widget _buildApp({bool failImport = false, bool withTranscript = false}) {
   return createTestApp(
     Builder(
       builder: (context) => Scaffold(
@@ -66,7 +73,10 @@ Widget _buildApp({bool failImport = false}) {
       audioLibraryProvider.overrideWith(() => TestAudioLibrary()),
       collectionListProvider.overrideWith(() => TestCollectionList()),
       audioImportControllerProvider.overrideWith(
-        () => _ImmediateAudioImportController(fail: failImport),
+        () => _ImmediateAudioImportController(
+          fail: failImport,
+          withTranscript: withTranscript,
+        ),
       ),
     ],
   );
@@ -335,5 +345,25 @@ void main() {
     expect(find.text('Import complete'), findsOneWidget);
     expect(find.text('URL Audio'), findsOneWidget);
     expect(find.text('Add Subtitle'), findsOneWidget);
+  });
+
+  testWidgets('导入已带字幕的音频不提示添加字幕', (tester) async {
+    await tester.pumpWidget(_buildApp(withTranscript: true));
+    await tester.tap(find.text('Open Import'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Import from Link'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'https://example.com/a.mp3');
+    await tester.pump();
+    await tester.tap(find.text('Download and Import'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Import complete'), findsOneWidget);
+    expect(find.text('URL Audio'), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
+    // 已有字幕：不显示添加字幕提示与按钮
+    expect(find.text('Add Subtitle'), findsNothing);
+    expect(find.text('Add a subtitle now for learning?'), findsNothing);
   });
 }

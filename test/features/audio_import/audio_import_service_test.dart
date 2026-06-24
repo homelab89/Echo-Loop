@@ -33,8 +33,12 @@ class _FakeAudioLibrary extends AudioLibrary {
 }
 
 class _FakeCollectionList extends CollectionList {
+  _FakeCollectionList([this.initialState = const CollectionState()]);
+
+  final CollectionState initialState;
+
   @override
-  CollectionState build() => const CollectionState();
+  CollectionState build() => initialState;
 
   @override
   Future<void> addAudioToCollection(String collectionId, String audioId) async {
@@ -185,12 +189,13 @@ void main() {
       expect(item.importSourceUrl, isNull);
     });
 
-    test('相同 hash 仍创建独立 AudioItem，但可共享音频文件', () async {
+    test('无合集时相同原始 hash 视为重复并跳过（按内容全局去重）', () async {
       final existing = AudioItem(
         id: 'a1',
         name: 'existing',
         audioPath: 'audios/sha.m4a',
         audioSha256: 'sha',
+        originalAudioSha256: 'sha',
         addedDate: DateTime(2026, 1, 1),
       );
       final container = ProviderContainer(
@@ -211,19 +216,15 @@ void main() {
           relativePath: 'audios/sha.m4a',
           importSourceType: AudioImportSourceType.local,
           audioSha256: 'sha',
+          originalAudioSha256: 'sha',
         ),
         audioLibrary: container.read(audioLibraryProvider.notifier),
         audioLibraryState: container.read(audioLibraryProvider),
       );
 
-      final added = result as AudioRegistrationAdded;
-      expect(added.item.name, 'new-name');
-      expect(added.item.audioPath, 'audios/sha.m4a');
-      expect(added.item.audioSha256, 'sha');
-      expect(container.read(audioLibraryProvider).audioItems, [
-        existing,
-        added.item,
-      ]);
+      expect(result, isA<AudioRegistrationDuplicate>());
+      // 库中不新建第二个同内容条目。
+      expect(container.read(audioLibraryProvider).audioItems, [existing]);
     });
 
     test('同名但 hash 不同的音频可以共存', () async {
@@ -232,6 +233,7 @@ void main() {
         name: 'lesson',
         audioPath: 'audios/old.m4a',
         audioSha256: 'old-sha',
+        originalAudioSha256: 'old-sha',
         addedDate: DateTime(2026, 1, 1),
       );
       final container = ProviderContainer(
@@ -252,6 +254,7 @@ void main() {
           relativePath: 'audios/new.m4a',
           importSourceType: AudioImportSourceType.local,
           audioSha256: 'new-sha',
+          originalAudioSha256: 'new-sha',
         ),
         audioLibrary: container.read(audioLibraryProvider.notifier),
         audioLibraryState: container.read(audioLibraryProvider),
@@ -264,6 +267,157 @@ void main() {
         existing,
         added.item,
       ]);
+    });
+
+    test('同合集内相同原始 hash 视为重复并跳过', () async {
+      final existing = AudioItem(
+        id: 'a1',
+        name: 'existing',
+        audioPath: 'audios/sha.m4a',
+        audioSha256: 'sha',
+        originalAudioSha256: 'orig-sha',
+        addedDate: DateTime(2026, 1, 1),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          audioLibraryProvider.overrideWith(
+            () => _FakeAudioLibrary(AudioLibraryState(audioItems: [existing])),
+          ),
+          collectionListProvider.overrideWith(
+            () => _FakeCollectionList(
+              const CollectionState(
+                audioIdsMap: {
+                  'c1': ['a1'],
+                },
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final service = AudioRegistrationService(
+        readDurationSeconds: (_) async => 5,
+      );
+
+      final result = await service.registerSandboxedAudio(
+        input: const SandboxedAudioRegistrationInput(
+          name: 'new-name',
+          relativePath: 'audios/sha.m4a',
+          importSourceType: AudioImportSourceType.local,
+          audioSha256: 'orig-sha',
+          originalAudioSha256: 'orig-sha',
+        ),
+        audioLibrary: container.read(audioLibraryProvider.notifier),
+        audioLibraryState: container.read(audioLibraryProvider),
+        collectionList: container.read(collectionListProvider.notifier),
+        collectionState: container.read(collectionListProvider),
+        collectionId: 'c1',
+      );
+
+      expect(result, isA<AudioRegistrationDuplicate>());
+      expect((result as AudioRegistrationDuplicate).name, 'existing');
+      // 未新建条目
+      expect(container.read(audioLibraryProvider).audioItems, [existing]);
+    });
+
+    test('相同原始 hash 但不在目标合集时关联已有条目而非新建', () async {
+      final existing = AudioItem(
+        id: 'a1',
+        name: 'existing',
+        audioPath: 'audios/sha.m4a',
+        audioSha256: 'sha',
+        originalAudioSha256: 'orig-sha',
+        addedDate: DateTime(2026, 1, 1),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          audioLibraryProvider.overrideWith(
+            () => _FakeAudioLibrary(AudioLibraryState(audioItems: [existing])),
+          ),
+          collectionListProvider.overrideWith(_FakeCollectionList.new),
+        ],
+      );
+      addTearDown(container.dispose);
+      final service = AudioRegistrationService(
+        readDurationSeconds: (_) async => 5,
+      );
+
+      final result = await service.registerSandboxedAudio(
+        input: const SandboxedAudioRegistrationInput(
+          name: 'new-name',
+          relativePath: 'audios/sha.m4a',
+          importSourceType: AudioImportSourceType.local,
+          audioSha256: 'orig-sha',
+          originalAudioSha256: 'orig-sha',
+        ),
+        audioLibrary: container.read(audioLibraryProvider.notifier),
+        audioLibraryState: container.read(audioLibraryProvider),
+        collectionList: container.read(collectionListProvider.notifier),
+        collectionState: container.read(collectionListProvider),
+        collectionId: 'c2',
+      );
+
+      final added = result as AudioRegistrationAdded;
+      // 复用已有条目，不新建
+      expect(added.item.id, 'a1');
+      expect(container.read(audioLibraryProvider).audioItems, [existing]);
+      // 已有条目被关联到目标合集
+      expect(
+        container.read(collectionListProvider).getAudioIds('c2'),
+        ['a1'],
+      );
+    });
+
+    test('已 AI 转录（audioSha256 已变）后再导入同一文件仍按原始 hash 去重', () async {
+      // 模拟：导入→AI 转录转码后，条目 audioSha256 变成转码后指纹，
+      // originalAudioSha256 仍是原始指纹。再次导入同一原始文件应识别为重复。
+      final existing = AudioItem(
+        id: 'a1',
+        name: 'existing',
+        audioPath: 'audios/transcoded.m4a',
+        audioSha256: 'transcoded-sha',
+        originalAudioSha256: 'orig-sha',
+        addedDate: DateTime(2026, 1, 1),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          audioLibraryProvider.overrideWith(
+            () => _FakeAudioLibrary(AudioLibraryState(audioItems: [existing])),
+          ),
+          collectionListProvider.overrideWith(
+            () => _FakeCollectionList(
+              const CollectionState(
+                audioIdsMap: {
+                  'c1': ['a1'],
+                },
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final service = AudioRegistrationService(
+        readDurationSeconds: (_) async => 5,
+      );
+
+      // 再次导入：finalize 不转码，audioSha256 == originalAudioSha256 == 原始指纹
+      final result = await service.registerSandboxedAudio(
+        input: const SandboxedAudioRegistrationInput(
+          name: 'new-name',
+          relativePath: 'audios/orig-sha.mp3',
+          importSourceType: AudioImportSourceType.local,
+          audioSha256: 'orig-sha',
+          originalAudioSha256: 'orig-sha',
+        ),
+        audioLibrary: container.read(audioLibraryProvider.notifier),
+        audioLibraryState: container.read(audioLibraryProvider),
+        collectionList: container.read(collectionListProvider.notifier),
+        collectionState: container.read(collectionListProvider),
+        collectionId: 'c1',
+      );
+
+      expect(result, isA<AudioRegistrationDuplicate>());
+      expect(container.read(audioLibraryProvider).audioItems, [existing]);
     });
   });
 
@@ -353,12 +507,13 @@ void main() {
       expect(await _tmpAudioImportFiles(tmpDir), isEmpty);
     });
 
-    test('合集入口遇到相同 hash 音频时创建独立条目并复用文件', () async {
+    test('合集入口遇到不在合集的相同 hash 音频时关联已有条目而非新建', () async {
       final existing = AudioItem(
         id: 'a1',
         name: 'existing lesson',
         audioPath: 'audios/imported/sha-existing.mp3',
         audioSha256: 'sha-existing',
+        originalAudioSha256: 'sha-existing',
         addedDate: DateTime(2026, 1, 1),
       );
       final existingFile = File('${tmpDir.path}/${existing.audioPath}');
@@ -387,12 +542,14 @@ void main() {
         collectionId: 'c1',
       );
 
-      expect(item.id, isNot(existing.id));
-      expect(item.name, 'lesson');
+      // 复用已有条目，不新建
+      expect(item.id, existing.id);
+      expect(item.name, existing.name);
       expect(item.audioPath, existing.audioPath);
-      expect(item.audioSha256, existing.audioSha256);
+      expect(container.read(audioLibraryProvider).audioItems, [existing]);
+      // 已有条目被关联到目标合集
       expect(container.read(collectionListProvider).getAudioIds('c1'), [
-        item.id,
+        existing.id,
       ]);
       expect(
         await File('${tmpDir.path}/audios/imported/sha-existing.mp3').exists(),

@@ -28,7 +28,7 @@ import 'common/secondary_action_button.dart';
 typedef _PickedAudio = ({
   String path,
   String name,
-  String fileName,
+  String displayName,
   String audioSha256,
   String originalAudioSha256,
   bool created,
@@ -385,7 +385,7 @@ class _AddAudioDialogState extends ConsumerState<AddAudioDialog> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              file.fileName,
+              file.displayName,
               style: Theme.of(context).textTheme.bodySmall,
               overflow: TextOverflow.ellipsis,
             ),
@@ -590,7 +590,7 @@ class _AddAudioDialogState extends ConsumerState<AddAudioDialog> {
           picked.add((
             path: saved.path,
             name: path.basenameWithoutExtension(sourceName),
-            fileName: saved.fileName,
+            displayName: sourceName,
             audioSha256: saved.audioSha256,
             originalAudioSha256: saved.originalAudioSha256,
             created: saved.created,
@@ -695,14 +695,14 @@ class _AddAudioDialogState extends ConsumerState<AddAudioDialog> {
 
   /// 批量添加音频
   Future<void> _addAudio() async {
-    if (_pickedFiles.isEmpty) return;
+    // 重入守卫：_isLoading 同步置位前的窗口内若重复点击会重复入库，这里直接拦截。
+    if (_pickedFiles.isEmpty || _isLoading) return;
 
     final l10n = AppLocalizations.of(context)!;
     final collectionId = widget.collectionId ?? _selectedCollectionId;
     final library = ref.read(audioLibraryProvider.notifier);
     final collectionList = ref.read(collectionListProvider.notifier);
     final registrationService = AudioRegistrationService();
-    final dataDir = await getAppDataDirectory();
 
     setState(() {
       _isLoading = true;
@@ -712,38 +712,54 @@ class _AddAudioDialogState extends ConsumerState<AddAudioDialog> {
     final List<AudioItem> results = [];
     final List<String> skippedDuplicates = [];
 
-    for (var i = 0; i < _pickedFiles.length; i++) {
-      final file = _pickedFiles[i];
+    // 全程包裹 try/catch/finally：任一文件入库（读时长/写库）抛异常都不能让面板
+    // 卡在 loading（按钮全禁用、只能杀进程），finally 统一恢复可交互。
+    try {
+      final dataDir = await getAppDataDirectory();
 
-      final result = await registrationService.registerSandboxedAudio(
-        input: SandboxedAudioRegistrationInput(
-          name: file.name,
-          relativePath: file.path,
-          importSourceType: widget.importSourceType,
-          audioSha256: file.audioSha256,
-          originalAudioSha256: file.originalAudioSha256,
-        ),
-        audioLibrary: library,
-        audioLibraryState: ref.read(audioLibraryProvider),
-        collectionList: collectionList,
-        collectionState: ref.read(collectionListProvider),
-        collectionId: collectionId,
-      );
+      for (var i = 0; i < _pickedFiles.length; i++) {
+        final file = _pickedFiles[i];
 
-      switch (result) {
-        case AudioRegistrationAdded(:final item):
-          if (file.created && item.audioPath != file.path) {
-            await _deleteIfExists(File(path.join(dataDir.path, file.path)));
-          }
-          results.add(item);
-        case AudioRegistrationDuplicate(:final name):
-          if (file.created) {
-            await _deleteIfExists(File(path.join(dataDir.path, file.path)));
-          }
-          skippedDuplicates.add(name);
+        final result = await registrationService.registerSandboxedAudio(
+          input: SandboxedAudioRegistrationInput(
+            name: file.name,
+            relativePath: file.path,
+            importSourceType: widget.importSourceType,
+            audioSha256: file.audioSha256,
+            originalAudioSha256: file.originalAudioSha256,
+          ),
+          audioLibrary: library,
+          audioLibraryState: ref.read(audioLibraryProvider),
+          collectionList: collectionList,
+          collectionState: ref.read(collectionListProvider),
+          collectionId: collectionId,
+        );
+
+        switch (result) {
+          case AudioRegistrationAdded(:final item):
+            if (file.created && item.audioPath != file.path) {
+              await _deleteIfExists(File(path.join(dataDir.path, file.path)));
+            }
+            results.add(item);
+          case AudioRegistrationDuplicate(:final name):
+            if (file.created) {
+              await _deleteIfExists(File(path.join(dataDir.path, file.path)));
+            }
+            skippedDuplicates.add(name);
+        }
+
+        if (!mounted) return;
+        setState(() => _processedCount = i + 1);
       }
-
-      setState(() => _processedCount = i + 1);
+    } catch (e) {
+      if (mounted) {
+        _showInlineError(
+          _InlineError(_AudioErrorKind.generic, '${l10n.addAudioFailed}: $e'),
+        );
+      }
+      return;
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
 
     if (!mounted) return;
@@ -752,27 +768,66 @@ class _AddAudioDialogState extends ConsumerState<AddAudioDialog> {
     if (skippedDuplicates.isNotEmpty) {
       await showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l10n.duplicatesSkipped(skippedDuplicates.length)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.duplicatesSkippedDetail),
-              const SizedBox(height: 8),
-              ...skippedDuplicates.map((name) => Text('• $name')),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(l10n.ok),
+        builder: (ctx) {
+          final theme = Theme.of(ctx);
+          final colorScheme = theme.colorScheme;
+          return AlertDialog(
+            icon: Icon(
+              Icons.info_outline,
+              size: 32,
+              color: colorScheme.primary,
             ),
-          ],
-        ),
+            title: Text(l10n.duplicatesSkipped(skippedDuplicates.length)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.duplicatesSkippedDetail,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...skippedDuplicates.map(
+                  (name) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6, right: 8),
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: colorScheme.onSurfaceVariant,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(name, style: theme.textTheme.bodyMedium),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.ok),
+              ),
+            ],
+          );
+        },
       );
     }
 
+    // embedded 全部重复时 onComplete 收到空列表不前进，面板停留本页（_isLoading
+    // 已在 finally 恢复），用户可删除或改选其它文件。
     if (mounted && widget.embedded) {
       widget.onComplete?.call(results);
       return;

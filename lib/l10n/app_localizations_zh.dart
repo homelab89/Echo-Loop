@@ -322,6 +322,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pickAudioFileFailed => '选择音频文件失败';
 
   @override
+  String get addAudioFailed => '添加音频失败';
+
+  @override
   String audioUnsupportedFormat(String ext) {
     return '不支持的音频格式：$ext。仅支持 MP3、WAV、M4A、AAC、FLAC。';
   }
@@ -492,6 +495,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String removeFromCollectionConfirm(String name) {
     return '确定要将「$name」从合集中移除吗？';
   }
+
+  @override
+  String get permanentlyDeleteAudio => '彻底删除该音频';
+
+  @override
+  String get permanentlyDeleteAudioHint => '将删除音频文件，并从所有合集中移除。';
+
+  @override
+  String audioBelongsToCollections(String names) {
+    return '此音频还在以下合集：$names';
+  }
+
+  @override
+  String get audioNotInOtherCollections => '未被其它合集引用，可放心删除。';
 
   @override
   String get emptyCollection => '合集中还没有音频';
@@ -782,7 +799,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String deleteAudioConfirm(String name) {
-    return '确定要删除「$name」吗？音频文件将被永久删除。';
+    return '确定要永久删除「$name」吗？';
+  }
+
+  @override
+  String deleteAudioConfirmKeepFile(String name) {
+    return '确定要删除「$name」吗？';
   }
 
   @override
@@ -1613,6 +1635,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get selectLanguage => '选择语言';
+
+  @override
+  String get autoMergeShortSentences => '自动合并短句';
+
+  @override
+  String get autoMergeShortSentencesHint => '目标 4-7 秒，关闭后保留更短的句子';
 
   @override
   String get overwriteExistingSubtitle => '覆盖现有字幕？';
@@ -2606,7 +2634,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get duplicatesSkippedDetail => '以下音频在库中已存在，已跳过：';
+  String get duplicatesSkippedDetail => '以下音频已在本合集中，已跳过：';
 
   @override
   String get removeFile => '移除';

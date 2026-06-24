@@ -179,13 +179,13 @@ void main() {
       expect(response.audioExists, isTrue);
     });
 
-    test('submitTranscription 使用 v2 API 并携带 Bearer token', () async {
+    test('submitTranscription 使用 v2 API 并携带 Bearer token（默认合并）', () async {
       final dio = MockDio();
       final client = TranscriptionApiClient.withDio(dio);
       when(
         () => dio.post<Map<String, dynamic>>(
           '/api/v2/user-audio/submit-transcription',
-          data: {'sha256': 'sha', 'language': 'en'},
+          data: {'sha256': 'sha', 'language': 'en', 'mergeSentences': true},
           options: any(
             named: 'options',
             that: isA<Options>().having(
@@ -211,6 +211,32 @@ void main() {
       expect(response.jobId, 'job-1');
     });
 
+    test('submitTranscription 关闭合并时 body 带 mergeSentences=false', () async {
+      final dio = MockDio();
+      final client = TranscriptionApiClient.withDio(dio);
+      when(
+        () => dio.post<Map<String, dynamic>>(
+          '/api/v2/user-audio/submit-transcription',
+          data: {'sha256': 'sha', 'language': 'en', 'mergeSentences': false},
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: {'cached': false, 'jobId': 'job-2'},
+          requestOptions: RequestOptions(),
+        ),
+      );
+
+      final response = await client.submitTranscription(
+        sha256: 'sha',
+        language: 'en',
+        accessToken: 'access-token',
+        mergeSentences: false,
+      );
+
+      expect(response.jobId, 'job-2');
+    });
+
     test('getJobStatus 和 getTranscript 使用 v2 API 并携带 Bearer token', () async {
       final dio = MockDio();
       final client = TranscriptionApiClient.withDio(dio);
@@ -233,7 +259,11 @@ void main() {
       when(
         () => dio.get<Map<String, dynamic>>(
           '/api/v2/user-audio/transcript',
-          queryParameters: {'sha256': 'sha', 'language': 'en'},
+          queryParameters: {
+            'sha256': 'sha',
+            'language': 'en',
+            'mergeSentences': true,
+          },
           options: any(named: 'options', that: authOptions),
         ),
       ).thenAnswer(
@@ -254,6 +284,36 @@ void main() {
       );
 
       expect(status.isCompleted, isTrue);
+      expect(transcript.sentences, isEmpty);
+    });
+
+    test('getTranscript 关闭合并时 query 带 mergeSentences=false', () async {
+      final dio = MockDio();
+      final client = TranscriptionApiClient.withDio(dio);
+      when(
+        () => dio.get<Map<String, dynamic>>(
+          '/api/v2/user-audio/transcript',
+          queryParameters: {
+            'sha256': 'sha',
+            'language': 'en',
+            'mergeSentences': false,
+          },
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: {'sentences': [], 'fullText': ''},
+          requestOptions: RequestOptions(),
+        ),
+      );
+
+      final transcript = await client.getTranscript(
+        'sha',
+        'en',
+        accessToken: 'access-token',
+        mergeSentences: false,
+      );
+
       expect(transcript.sentences, isEmpty);
     });
   });

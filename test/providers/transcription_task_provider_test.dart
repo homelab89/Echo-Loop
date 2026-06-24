@@ -1331,6 +1331,70 @@ void main() {
       container.dispose();
     });
 
+    test('转码成功但原始文件被其他条目共享时不删除原始文件', () async {
+      // 同内容导入会复用同一文件：另一条目也指向 originalRel。对当前条目转码后
+      // 不能删旧文件，否则会删掉共享条目仍在用的音频。
+      final dataDir = await Directory.systemTemp.createTemp('tx_shared_');
+      addTearDown(() async {
+        if (await dataDir.exists()) await dataDir.delete(recursive: true);
+      });
+      const originalRel = 'audios/imported/orig-sha.mp3';
+      final originalFile = File('${dataDir.path}/$originalRel');
+      await originalFile.create(recursive: true);
+      await originalFile.writeAsBytes([1, 2, 3]);
+
+      final audioItem = _testAudioItem(
+        audioPath: originalRel,
+        audioSha256: 'orig-sha',
+        originalAudioSha256: 'orig-sha',
+      );
+      // 共享同一文件的另一条目（不参与本次转录）。
+      final sharingItem = _testAudioItem(
+        id: 'test-audio-2',
+        audioPath: originalRel,
+        audioSha256: 'orig-sha',
+        originalAudioSha256: 'orig-sha',
+      );
+
+      when(() => mockFileOps.getDataDir()).thenAnswer((_) async => dataDir);
+      when(() => mockFileOps.getFileSize(any())).thenAnswer((_) async => 1024);
+      stubCachedTranscript();
+
+      final fakeFinalization = _FakeFinalizationService(
+        result: const FinalizedAudio(
+          relativePath: 'audios/imported/new-sha.m4a',
+          sha256: 'new-sha',
+          originalSha256: 'orig-sha',
+          created: true,
+        ),
+      );
+
+      final container = _createContainer(
+        mockApi: mockApi,
+        mockFileOps: mockFileOps,
+        database: database,
+        finalizationService: fakeFinalization,
+        audioItems: [audioItem, sharingItem],
+      );
+      await _seedAudioRows(database, [audioItem, sharingItem]);
+      final notifier = container.read(
+        transcriptionTaskManagerProvider.notifier,
+      );
+
+      await notifier.startTranscription(audioItem, 'en', accessToken: 'token');
+
+      // 当前条目已转码到新路径。
+      final updated = container
+          .read(audioLibraryProvider)
+          .audioItems
+          .singleWhere((item) => item.id == audioItem.id);
+      expect(updated.audioPath, 'audios/imported/new-sha.m4a');
+      // 共享条目仍指向原始文件，且原始文件因仍被引用而保留。
+      expect(await originalFile.exists(), isTrue);
+
+      container.dispose();
+    });
+
     test('转码失败 — 静默保留原始：仍完成、字幕已存、audioPath 不变、原始未删', () async {
       final dataDir = await Directory.systemTemp.createTemp(
         'tx_transcode_err_',

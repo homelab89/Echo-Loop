@@ -15,6 +15,8 @@ const _demoModeKey = 'demo_mode';
 const _subtitleAutoAlignEnabledKey = 'developer_subtitle_auto_align_enabled';
 const _skipSilenceEnabledKey = 'skip_silence_enabled';
 const _silenceThresholdSecondsKey = 'silence_threshold_seconds';
+const _aiTranscriptionAutoMergeEnabledKey =
+    'ai_transcription_auto_merge_enabled';
 
 /// 静音阈值合法范围（秒）
 const silenceThresholdMinSeconds = 1;
@@ -124,6 +126,12 @@ class AppSettingsState {
   /// 字幕间隔 ≥ 该阈值才会被识别为"静音段"并跳过。默认 2 秒。
   final int silenceThresholdSeconds;
 
+  /// AI 转录「自动合并短句」开关（默认开启）。
+  ///
+  /// 开启时后端把过短句子合并到 4-7 秒目标带（字幕更长）；关闭时返回 provider
+  /// 原生未合并分句（句子更短）。作为转录弹窗开关的默认值，记住用户上次选择。
+  final bool aiTranscriptionAutoMergeEnabled;
+
   const AppSettingsState({
     this.themeMode = ThemeMode.system,
     this.locale,
@@ -134,6 +142,7 @@ class AppSettingsState {
     this.subtitleAutoAlignEnabled = true,
     this.skipSilenceEnabled = true,
     this.silenceThresholdSeconds = silenceThresholdDefaultSeconds,
+    this.aiTranscriptionAutoMergeEnabled = true,
   });
 
   AppSettingsState copyWith({
@@ -148,6 +157,7 @@ class AppSettingsState {
     bool? subtitleAutoAlignEnabled,
     bool? skipSilenceEnabled,
     int? silenceThresholdSeconds,
+    bool? aiTranscriptionAutoMergeEnabled,
   }) {
     return AppSettingsState(
       themeMode: themeMode ?? this.themeMode,
@@ -163,6 +173,9 @@ class AppSettingsState {
       skipSilenceEnabled: skipSilenceEnabled ?? this.skipSilenceEnabled,
       silenceThresholdSeconds:
           silenceThresholdSeconds ?? this.silenceThresholdSeconds,
+      aiTranscriptionAutoMergeEnabled:
+          aiTranscriptionAutoMergeEnabled ??
+          this.aiTranscriptionAutoMergeEnabled,
     );
   }
 }
@@ -228,6 +241,8 @@ class AppSettings extends _$AppSettings {
           silenceThresholdMinSeconds,
           silenceThresholdMaxSeconds,
         );
+    final aiTranscriptionAutoMergeEnabled =
+        prefs.getBool(_aiTranscriptionAutoMergeEnabledKey) ?? true;
 
     state = state.copyWith(
       themeMode: themeMode,
@@ -239,6 +254,7 @@ class AppSettings extends _$AppSettings {
       subtitleAutoAlignEnabled: subtitleAutoAlignEnabled,
       skipSilenceEnabled: skipSilenceEnabled,
       silenceThresholdSeconds: silenceThresholdSeconds,
+      aiTranscriptionAutoMergeEnabled: aiTranscriptionAutoMergeEnabled,
     );
   }
 
@@ -384,5 +400,13 @@ class AppSettings extends _$AppSettings {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_silenceThresholdSecondsKey, clamped);
+  }
+
+  /// 设置 AI 转录「自动合并短句」开关（记住用户上次选择，默认开启）。
+  Future<void> setAiTranscriptionAutoMergeEnabled(bool enabled) async {
+    state = state.copyWith(aiTranscriptionAutoMergeEnabled: enabled);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_aiTranscriptionAutoMergeEnabledKey, enabled);
   }
 }

@@ -329,6 +329,7 @@ class TestTranscriptionTaskManager extends TranscriptionTaskManager {
     AudioItem audioItem,
     String language, {
     required String accessToken,
+    bool autoMergeShortSentences = true,
   }) async {}
 
   @override

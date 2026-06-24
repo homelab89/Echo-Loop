@@ -1,7 +1,21 @@
 # Echo Loop 任务清单
 
-> 最后更新：2026-06-24（锁屏播放控件定制：封面图 / 合集名 / 上一句下一句）
+> 最后更新：2026-06-24（AI 转录「自动合并短句」开关）
 > 当前焦点：Android 结束录音闪退（离线 ASR / Silero VAD）——**仍未解决**
+
+## 已完成：AI 转录「自动合并短句」开关（App 侧）
+
+用户反馈 AI 转录字幕句子太长（后端 `mergeShortSentences` 无条件合并到 4-7s）。新增转录弹窗开关「自动合并短句」，默认开启、记住上次选择；关闭后后端返回 provider 原生未合并分句（句子更短）。App 侧只透传开关；分句质量改造在后端（见 fluency-frontend TASKS.md）。
+
+- [x] `lib/providers/settings_provider.dart`：新增 `aiTranscriptionAutoMergeEnabled`（默认 true）+ key `ai_transcription_auto_merge_enabled` + setter，复用现有 SharedPreferences 模式。
+- [x] `lib/widgets/manage_subtitles_sheet.dart`：语言选择下方、仅 AI 模式显示 `SwitchListTile`（初值取设置、onChanged 写回记住）；`startTranscription` 透传 `autoMergeShortSentences`。
+- [x] `lib/services/transcription_api_client.dart`：`submitTranscription` body、`getTranscript` query 增 `mergeSentences`（默认 true）。
+- [x] `lib/providers/transcription_task_provider.dart`：`startTranscription` 增 `autoMergeShortSentences`，透传给 submit / getTranscript / `_pollJobStatus`。
+- [x] l10n：`app_en.arb` / `app_zh.arb` 新增 `autoMergeShortSentences` / `autoMergeShortSentencesHint`。
+- [x] 测试：`transcription_api_client_test.dart`（body/query 带 mergeSentences true/false）、`settings_provider_test.dart`（默认/持久化/加载）、`manage_subtitles_sheet_test.dart`（开关显隐/默认开/可切换）；测试 helper 同步新签名。
+- [x] 验证：`flutter analyze`（改动文件 0 问题）；`flutter test` 全量通过（2986）。
+
+  **完成时间**: 2026-06-24
 
 ## 已完成：锁屏播放控件定制（封面图 / 合集名 / 上一句下一句）
 

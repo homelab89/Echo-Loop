@@ -151,7 +151,9 @@ class _ImportAudioFlowSheetState extends ConsumerState<ImportAudioFlowSheet> {
           key: const ValueKey('completed'),
           items: _importedItems,
           onDone: () => Navigator.pop(context),
-          onAddSubtitle: _importedItems.length == 1
+          onAddSubtitle:
+              (_importedItems.length == 1 &&
+                  !_importedItems.first.hasTranscript)
               ? () => Navigator.pop(
                   context,
                   _ImportAudioCompletionAction.addSubtitle(
@@ -588,7 +590,7 @@ class _CompletedPanel extends StatelessWidget {
             ),
           ],
         ),
-        if (singleItem != null) ...[
+        if (onAddSubtitle != null) ...[
           const SizedBox(height: 16),
           Text(
             l10n.addSubtitlePromptMessage,
@@ -601,7 +603,7 @@ class _CompletedPanel extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: TextButton(onPressed: onDone, child: Text(l10n.done)),
+              child: OutlinedButton(onPressed: onDone, child: Text(l10n.done)),
             ),
             if (onAddSubtitle != null) ...[
               const SizedBox(width: 8),

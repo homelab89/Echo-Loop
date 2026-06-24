@@ -126,10 +126,13 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
   /// [audioItem] 要转录的音频项。
   /// [language] 转录语言 ('en' 或 'multi')。
   /// [accessToken] Supabase 登录态 token，用于访问受保护的 v2 转录 API。
+  /// [autoMergeShortSentences] 是否自动合并短句（默认开启）。关闭时后端返回
+  /// provider 原生未合并分句（句子更短）。
   Future<void> startTranscription(
     AudioItem audioItem,
     String language, {
     required String accessToken,
+    bool autoMergeShortSentences = true,
   }) async {
     final audioId = audioItem.id;
 
@@ -216,6 +219,7 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
         fileSize: fileSize,
         language: language,
         accessToken: accessToken,
+        mergeSentences: autoMergeShortSentences,
       );
 
       if (cancelToken.isCancelled) return;
@@ -248,6 +252,7 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
         language,
         accessToken,
         cancelToken,
+        autoMergeShortSentences,
       );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) return;
@@ -309,6 +314,7 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
     String language,
     String accessToken,
     CancelToken cancelToken,
+    bool autoMergeShortSentences,
   ) async {
     final api = ref.read(transcriptionApiClientProvider);
     const initialInterval = Duration(seconds: 2);
@@ -337,6 +343,7 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
             transcriptionSha256,
             language,
             accessToken: accessToken,
+            mergeSentences: autoMergeShortSentences,
           );
           if (cancelToken.isCancelled) return;
           await _saveTranscriptAndFinish(
@@ -461,17 +468,25 @@ class TranscriptionTaskManager extends _$TranscriptionTaskManager {
         );
 
     // DB 更新后再删除旧原始文件，避免中途崩溃导致 audioPath 指向不存在文件。
+    // 引用检查：同内容导入会复用同一文件（多个条目共享 audioPath）。当前条目已
+    // 更新为转码后路径，若仍有其他条目引用旧文件则不能删，否则会删掉它们的音频。
     if (transcoded &&
         finalAudioPath != audioItem.audioPath &&
         audioItem.audioPath != null) {
-      try {
-        final dataDir = await ref
-            .read(transcriptionFileOpsProvider)
-            .getDataDir();
-        final oldFile = File(p.join(dataDir.path, audioItem.audioPath!));
-        if (await oldFile.exists()) await oldFile.delete();
-      } catch (e) {
-        AppLogger.log('Transcription', '删除原始音频失败(忽略) err=$e');
+      final stillReferenced = ref
+          .read(audioLibraryProvider)
+          .audioItems
+          .any((it) => it.audioPath == audioItem.audioPath);
+      if (!stillReferenced) {
+        try {
+          final dataDir = await ref
+              .read(transcriptionFileOpsProvider)
+              .getDataDir();
+          final oldFile = File(p.join(dataDir.path, audioItem.audioPath!));
+          if (await oldFile.exists()) await oldFile.delete();
+        } catch (e) {
+          AppLogger.log('Transcription', '删除原始音频失败(忽略) err=$e');
+        }
       }
     }
 

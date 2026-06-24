@@ -346,6 +346,52 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('locale'), 'zh');
     });
+
+    test('aiTranscriptionAutoMergeEnabled 默认开启', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      expect(
+        container.read(appSettingsProvider).aiTranscriptionAutoMergeEnabled,
+        isTrue,
+      );
+    });
+
+    test('setAiTranscriptionAutoMergeEnabled(false) 更新状态并持久化', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(appSettingsProvider.notifier);
+      await notifier.setAiTranscriptionAutoMergeEnabled(false);
+
+      expect(
+        container.read(appSettingsProvider).aiTranscriptionAutoMergeEnabled,
+        isFalse,
+      );
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getBool('ai_transcription_auto_merge_enabled'),
+        isFalse,
+      );
+    });
+
+    test('加载已保存的 aiTranscriptionAutoMergeEnabled=false', () async {
+      SharedPreferences.setMockInitialValues({
+        'ai_transcription_auto_merge_enabled': false,
+      });
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(appSettingsProvider);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(appSettingsProvider).aiTranscriptionAutoMergeEnabled,
+        isFalse,
+      );
+    });
   });
 
   group('matchUiLocale', () {

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/audio_item.dart';
 import '../providers/audio_library_provider.dart';
 import '../providers/audio_list_settings_provider.dart';
+import '../providers/collection_provider.dart';
 import '../providers/new_user_guide_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
@@ -19,6 +20,18 @@ import 'edit_collection_membership_sheet.dart';
 import 'edit_tag_membership_sheet.dart';
 import 'guide_flow.dart';
 import 'import_audio_sheet.dart';
+
+/// 判断 [target] 的音频文件是否被库中其他条目共享。
+///
+/// 同内容音频导入时会复用同一磁盘文件（多个条目指向同一 `audioPath`）。删除某个
+/// 条目时，仅当没有其他条目引用同一文件，文件才会被真正删除。返回 `true` 表示仍有
+/// 其他条目共享该文件，删除本条目不会删掉音频文件。`audioPath` 为空（未就绪）时返回
+/// `false`。
+bool isAudioFileSharedByOthers(List<AudioItem> items, AudioItem target) {
+  final path = target.audioPath;
+  if (path == null) return false;
+  return items.any((other) => other.id != target.id && other.audioPath == path);
+}
 
 /// 按排序类型排序音频列表（置顶项固定在前，不参与排序）。
 ///
@@ -205,17 +218,44 @@ class _AudioListViewState extends ConsumerState<AudioListView> {
     );
   }
 
-  /// 确认删除音频
+  /// 确认删除音频。
+  ///
+  /// 分两种上下文：
+  /// - 资源库（collectionId 为空）：删除即彻底删除音频（含文件），无额外选项。
+  /// - 合集详情页：默认仅"从当前合集移除"，并提供"彻底删除该音频"复选框（默认不勾）。
+  ///   若音频还属于其它合集，弹窗列出全部所属合集，提醒彻底删除会从所有合集消失。
   Future<void> _confirmDeleteAudio(
     BuildContext context,
     WidgetRef ref,
     AudioItem item,
   ) async {
+    final collectionId = widget.collectionId;
+    if (collectionId == null) {
+      await _confirmDeleteFromLibrary(context, ref, item);
+    } else {
+      await _confirmDeleteFromCollection(context, ref, item, collectionId);
+    }
+  }
+
+  /// 资源库上下文：彻底删除音频。
+  Future<void> _confirmDeleteFromLibrary(
+    BuildContext context,
+    WidgetRef ref,
+    AudioItem item,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
+    // 同一音频文件可能被多个条目共享（历史遗留重复条目）。仅当本条目是唯一引用该
+    // 文件的条目时，删除才会真正删掉音频文件，此时才提示"永久删除"。
+    final fileSharedByOthers = isAudioFileSharedByOthers(
+      ref.read(audioLibraryProvider).audioItems,
+      item,
+    );
     final confirmed = await showConfirmDialog(
       context: context,
       title: l10n.deleteAudio,
-      message: l10n.deleteAudioConfirm(item.name),
+      message: fileSharedByOthers
+          ? l10n.deleteAudioConfirmKeepFile(item.name)
+          : l10n.deleteAudioConfirm(item.name),
       icon: Icons.warning_amber_rounded,
       isDestructive: true,
       confirmLabel: l10n.delete,
@@ -224,6 +264,201 @@ class _AudioListViewState extends ConsumerState<AudioListView> {
     if (confirmed == true) {
       ref.read(audioLibraryProvider.notifier).removeAudioItem(item.id);
     }
+  }
+
+  /// 合集上下文：默认从当前合集移除，可选彻底删除。
+  Future<void> _confirmDeleteFromCollection(
+    BuildContext context,
+    WidgetRef ref,
+    AudioItem item,
+    String collectionId,
+  ) async {
+    // 收集该音频所属的「其它」合集名称（排除当前合集），用于提示彻底删除的影响范围
+    // 并决定复选框默认值：仅当前合集引用时默认彻底删除，被其它合集引用时默认仅移除。
+    final collectionState = ref.read(collectionListProvider);
+    final memberCollectionIds =
+        collectionState.audioToCollectionsMap[item.id] ?? const [];
+    final otherCollectionNames = <String>[];
+    for (final cId in memberCollectionIds) {
+      if (cId == collectionId) continue;
+      final c = collectionState.rawCollections
+          .where((c) => c.id == cId)
+          .firstOrNull;
+      if (c != null) otherCollectionNames.add(c.name);
+    }
+
+    final choice = await showDialog<_DeleteAudioChoice>(
+      context: context,
+      builder: (_) => _DeleteFromCollectionDialog(
+        audioName: item.name,
+        otherCollectionNames: otherCollectionNames,
+      ),
+    );
+    if (choice == null) return;
+    switch (choice) {
+      case _DeleteAudioChoice.removeFromCollection:
+        await ref
+            .read(collectionListProvider.notifier)
+            .removeAudioFromCollection(collectionId, item.id);
+      case _DeleteAudioChoice.deletePermanently:
+        await ref.read(audioLibraryProvider.notifier).removeAudioItem(item.id);
+    }
+  }
+}
+
+/// 合集详情页删除音频的用户选择。
+enum _DeleteAudioChoice { removeFromCollection, deletePermanently }
+
+/// 合集上下文的删除弹窗：默认"从合集移除"，可勾选"彻底删除该音频"。
+///
+/// 复选框默认值取决于引用情况：被其它合集引用时默认仅移除（false），仅当前合集
+/// 引用时默认彻底删除（true）。弹窗以弱化的小字提示音频还属于哪些合集 / 未被其它
+/// 合集引用，帮助用户判断是否安全彻底删除。
+class _DeleteFromCollectionDialog extends StatefulWidget {
+  const _DeleteFromCollectionDialog({
+    required this.audioName,
+    required this.otherCollectionNames,
+  });
+
+  final String audioName;
+
+  /// 该音频所属的「其它」合集名称（不含当前合集）。
+  final List<String> otherCollectionNames;
+
+  @override
+  State<_DeleteFromCollectionDialog> createState() =>
+      _DeleteFromCollectionDialogState();
+}
+
+class _DeleteFromCollectionDialogState
+    extends State<_DeleteFromCollectionDialog> {
+  late bool _permanently;
+
+  @override
+  void initState() {
+    super.initState();
+    // 仅当前合集引用 → 默认彻底删除；被其它合集引用 → 默认仅移除。
+    _permanently = widget.otherCollectionNames.isEmpty;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final sharedByOthers = widget.otherCollectionNames.isNotEmpty;
+    final hintStyle = theme.textTheme.bodySmall?.copyWith(
+      color: colorScheme.onSurfaceVariant,
+    );
+
+    return AlertDialog(
+      title: Text(l10n.removeFromCollection),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.removeFromCollectionConfirm(widget.audioName)),
+          const SizedBox(height: 10),
+          // 弱化提示：还属于哪些合集 / 未被其它合集引用。
+          Text(
+            sharedByOthers
+                ? l10n.audioBelongsToCollections(
+                    widget.otherCollectionNames.join('、'),
+                  )
+                : l10n.audioNotInOtherCollections,
+            style: hintStyle,
+          ),
+          const SizedBox(height: 12),
+          // 彻底删除选项：紧凑的可点整行，默认值见 initState。
+          _PermanentlyDeleteOption(
+            value: _permanently,
+            onChanged: (v) => setState(() => _permanently = v),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(
+            context,
+            _permanently
+                ? _DeleteAudioChoice.deletePermanently
+                : _DeleteAudioChoice.removeFromCollection,
+          ),
+          style: _permanently
+              ? FilledButton.styleFrom(
+                  backgroundColor: colorScheme.error,
+                  foregroundColor: colorScheme.onError,
+                )
+              : null,
+          child: Text(_permanently ? l10n.delete : l10n.removeFromCollection),
+        ),
+      ],
+    );
+  }
+}
+
+/// 「彻底删除该音频」紧凑选项行。
+///
+/// 整行可点切换，左侧小复选框，右侧标题 + 弱化说明，风格与 app 内其它弹窗一致。
+class _PermanentlyDeleteOption extends StatelessWidget {
+  const _PermanentlyDeleteOption({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final selected = value;
+    final accent = colorScheme.error;
+
+    return Material(
+      color: selected
+          ? accent.withValues(alpha: 0.08)
+          : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () => onChanged(!value),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: Checkbox(
+                  value: value,
+                  onChanged: (v) => onChanged(v ?? false),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  activeColor: accent,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  l10n.permanentlyDeleteAudio,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -112,6 +112,11 @@ class FakeAppSettings extends AppSettings {
       clearTimeMachineDateTime: value == null,
     );
   }
+
+  @override
+  Future<void> setAiTranscriptionAutoMergeEnabled(bool enabled) async {
+    state = state.copyWith(aiTranscriptionAutoMergeEnabled: enabled);
+  }
 }
 
 // ========== FakeAudioLibrary ==========

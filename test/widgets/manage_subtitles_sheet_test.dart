@@ -377,5 +377,42 @@ void main() {
         expect(find.text('Select Language'), findsNothing);
       });
     });
+
+    group('自动合并短句开关', () {
+      testWidgets('AI 选中时显示开关，默认开启，仅本地上传时隐藏', (tester) async {
+        final item = createTestAudioItem(transcriptPath: null);
+        await tester.pumpWidget(buildSheet(item));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+
+        // 无字幕默认 AI → 开关显示且默认开启
+        expect(find.text('Auto-merge short sentences'), findsOneWidget);
+        final sw = tester.widget<Switch>(find.byType(Switch));
+        expect(sw.value, isTrue);
+
+        // 切换到本地上传 → 开关隐藏
+        await tester.tap(find.text('Local Upload'));
+        await tester.pumpAndSettle();
+        expect(find.text('Auto-merge short sentences'), findsNothing);
+      });
+
+      testWidgets('点击开关可切换为关闭', (tester) async {
+        final item = createTestAudioItem(transcriptPath: null);
+        await tester.pumpWidget(buildSheet(item));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+
+        expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+
+        await tester.tap(find.byType(Switch));
+        await tester.pumpAndSettle();
+
+        expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+      });
+    });
   });
 }

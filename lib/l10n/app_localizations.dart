@@ -698,6 +698,12 @@ abstract class AppLocalizations {
   /// **'Failed to select audio file'**
   String get pickAudioFileFailed;
 
+  /// No description provided for @addAudioFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add audio'**
+  String get addAudioFailed;
+
   /// No description provided for @audioUnsupportedFormat.
   ///
   /// In en, this message translates to:
@@ -1009,6 +1015,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove \"{name}\" from this collection?'**
   String removeFromCollectionConfirm(String name);
+
+  /// No description provided for @permanentlyDeleteAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete this audio'**
+  String get permanentlyDeleteAudio;
+
+  /// No description provided for @permanentlyDeleteAudioHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Removes the file and the audio from all collections.'**
+  String get permanentlyDeleteAudioHint;
+
+  /// No description provided for @audioBelongsToCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'Also in: {names}'**
+  String audioBelongsToCollections(String names);
+
+  /// No description provided for @audioNotInOtherCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used by any other collection — safe to delete.'**
+  String get audioNotInOtherCollections;
 
   /// No description provided for @emptyCollection.
   ///
@@ -1535,8 +1565,14 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAudioConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to delete \"{name}\"? The audio file will be permanently deleted.'**
+  /// **'Permanently delete \"{name}\"?'**
   String deleteAudioConfirm(String name);
+
+  /// No description provided for @deleteAudioConfirmKeepFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{name}\"? The audio file is shared by other entries and will be kept.'**
+  String deleteAudioConfirmKeepFile(String name);
 
   /// No description provided for @uploadTranscript.
   ///
@@ -3007,6 +3043,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select Language'**
   String get selectLanguage;
+
+  /// No description provided for @autoMergeShortSentences.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-merge short sentences'**
+  String get autoMergeShortSentences;
+
+  /// No description provided for @autoMergeShortSentencesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Targets 4-7s; turn off to keep shorter sentences'**
+  String get autoMergeShortSentencesHint;
 
   /// No description provided for @overwriteExistingSubtitle.
   ///
@@ -4799,7 +4847,7 @@ abstract class AppLocalizations {
   /// No description provided for @duplicatesSkippedDetail.
   ///
   /// In en, this message translates to:
-  /// **'The following audio files already exist in the library and were skipped:'**
+  /// **'The following audio files are already in this collection and were skipped:'**
   String get duplicatesSkippedDetail;
 
   /// No description provided for @removeFile.

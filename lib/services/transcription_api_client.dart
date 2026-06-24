@@ -218,6 +218,7 @@ class TranscriptionApiClient {
     int? fileSize,
     required String language,
     required String accessToken,
+    bool mergeSentences = true,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v2/user-audio/submit-transcription',
@@ -229,6 +230,8 @@ class TranscriptionApiClient {
         if (mimeType != null) 'mimeType': mimeType,
         if (fileSize != null) 'fileSize': fileSize,
         'language': language,
+        // 关闭「自动合并短句」时传 false，后端返回未合并基线
+        'mergeSentences': mergeSentences,
       },
       options: _authOptions(accessToken),
     );
@@ -252,10 +255,16 @@ class TranscriptionApiClient {
     String sha256,
     String language, {
     required String accessToken,
+    bool mergeSentences = true,
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '/api/v2/user-audio/transcript',
-      queryParameters: {'sha256': sha256, 'language': language},
+      queryParameters: {
+        'sha256': sha256,
+        'language': language,
+        // 关闭「自动合并短句」时传 false，后端返回未合并基线
+        'mergeSentences': mergeSentences,
+      },
       options: _authOptions(accessToken),
     );
     return TranscriptResult.fromJson(response.data!);
