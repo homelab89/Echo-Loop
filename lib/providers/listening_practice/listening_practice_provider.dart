@@ -13,6 +13,7 @@ import '../../models/listening_practice_state.dart';
 import '../../services/app_logger.dart';
 import '../../services/storage_service.dart';
 import '../audio_engine/audio_engine_provider.dart';
+import '../collection_provider.dart';
 import '../notification_permission_provider.dart';
 import 'bookmark_manager.dart';
 import 'playback_reducer.dart';
@@ -128,17 +129,51 @@ class ListeningPractice extends _$ListeningPractice {
   // --- 获取 AudioEngine ---
   AudioEngine get _engine => ref.read(audioEngineProvider.notifier);
 
+  /// 缓存的 AudioEngine 引用，仅用于 [_disposeListeners] 中清空锁屏切句回调。
+  ///
+  /// provider 销毁阶段不能再 `ref.read` 其他 provider（会抛 already disposed）；
+  /// 而 audioEngineProvider 是 keepAlive，notifier 实例在 LP 销毁后仍有效，故在
+  /// setup 时（ref 可读）缓存下来，dispose 时直接用缓存清空回调。
+  AudioEngine? _cachedEngineForSkip;
+
+  /// 解析音频所属合集名（取第一个），用作锁屏标题下方副标题。
+  ///
+  /// 与顶栏副标题同源：按 [collectionListProvider] 的 audioToCollectionsMap
+  /// 反查，按已排序的 collections 顺序取首个命中。无所属合集时返回 null。
+  String? _resolveCollectionName(String audioId) {
+    final cs = ref.read(collectionListProvider);
+    final ids = cs.audioToCollectionsMap[audioId];
+    if (ids == null || ids.isEmpty) return null;
+    final idSet = ids.toSet();
+    for (final c in cs.collections) {
+      if (idSet.contains(c.id)) return c.name;
+    }
+    return null;
+  }
+
   void _setupListeners() {
+    // 在 build/resume 阶段（ref 可读）缓存引擎引用，供 dispose 时清空回调。
+    _cachedEngineForSkip = _engine;
     // defer listener setup to after first build
     Future.microtask(() {
       _positionSub = _engine.absolutePositionStream.listen(_onPositionChanged);
       _playerStateSub = _engine.playerStateStream.listen(_onPlayerStateChanged);
+      // 接管共享引擎时注册锁屏切句 + 播放/暂停回调，使锁屏控件走 controller 同一套
+      // 业务逻辑（出现上一句/下一句按钮、播放/暂停含播完重播与续播语义）。
+      _engine.setSkipHandlers(
+        onPrevious: previousSentence,
+        onNext: nextSentence,
+      );
+      _engine.setTransportHandlers(onPlay: play, onPause: pause);
     });
   }
 
   void _disposeListeners() {
     _positionSub?.cancel();
     _playerStateSub?.cancel();
+    // 用缓存引用清空，避免在 provider 销毁阶段 ref.read 抛 already disposed。
+    _cachedEngineForSkip?.setSkipHandlers(onPrevious: null, onNext: null);
+    _cachedEngineForSkip?.setTransportHandlers(onPlay: null, onPause: null);
   }
 
   /// 暂停 stream 监听（学习模式期间调用，避免 LP 接管共享引擎）。
@@ -147,6 +182,9 @@ class ListeningPractice extends _$ListeningPractice {
     _positionSub = null;
     _playerStateSub?.cancel();
     _playerStateSub = null;
+    // LP 不再驱动引擎时一并撤销锁屏回调，避免学习模式下误触。
+    _engine.setSkipHandlers(onPrevious: null, onNext: null);
+    _engine.setTransportHandlers(onPlay: null, onPause: null);
   }
 
   /// 恢复 stream 监听（退出学习模式时调用）
@@ -249,7 +287,13 @@ class ListeningPractice extends _$ListeningPractice {
       return;
     }
 
-    if (playerState.playing && !state.isPlaying) {
+    // completed 时 just_audio 的 `playing` 仍为 true（见 §7.6），但这并非「系统恢复
+    // 了播放」。自然播完后保留媒体会话（pauseKeepSession，不再 stop/不 bump session），
+    // 这条 completed 事件会到达本监听；若不排除，会把刚置 false 的逻辑播放态又翻回
+    // true（图标误显暂停）。故 completed 一律不驱动逻辑播放态为 true。
+    if (playerState.playing &&
+        !state.isPlaying &&
+        playerState.processingState != ja.ProcessingState.completed) {
       _setLogicalPlaying(true);
       if (_sentenceLoopResumePending && _usesSentenceDrivenPlayback) {
         _activeSentenceDrivenPlayback = true;
@@ -405,11 +449,14 @@ class ListeningPractice extends _$ListeningPractice {
       if (!shouldLoopWhole(s.loopWhole, s.wholeLoopCount, _wholeLoopsDone)) {
         AppLogger.log(
           'Player',
-          '⏹ 整篇循环结束（已播满 $_wholeLoopsDone 遍）→ stop，等待用户重播',
+          '⏹ 整篇循环结束（已播满 $_wholeLoopsDone 遍）→ 暂停保留会话，等待用户重播',
         );
         _awaitingReplayFromStart = true;
         _setLogicalPlaying(false);
-        await _engine.stop();
+        // 不 stop：保留媒体会话与锁屏 Now Playing（暂停态），用户可在锁屏直接重播。
+        // 须 pause 底层播放器使其 playing=false——自然播完后 just_audio 的 playing
+        // 仍为 true，不 pause 会让锁屏图标停在「暂停」（误显播放中）。
+        await _engine.pauseKeepSession();
         return;
       }
 
@@ -518,7 +565,8 @@ class ListeningPractice extends _$ListeningPractice {
         case StopPlayback():
           _awaitingReplayFromStart = true;
           _setLogicalPlaying(false);
-          await _engine.stop();
+          // 同整篇结束：保留媒体会话，锁屏控件停在暂停态供用户重播。
+          await _engine.pauseKeepSession();
           return;
         case ReplayCurrent(:final pauseBefore):
           await _delayInterval(pauseBefore);
@@ -667,7 +715,11 @@ class ListeningPractice extends _$ListeningPractice {
       );
 
       try {
-        await _engine.loadAudio(audioItem, state.settings.playbackSpeed);
+        await _engine.loadAudio(
+          audioItem,
+          state.settings.playbackSpeed,
+          subtitle: _resolveCollectionName(audioItem.id),
+        );
       } catch (e) {
         AppLogger.log('Player', '✗ 音频文件加载失败: $e');
         state = state.copyWith(clearCurrentAudioItem: true);

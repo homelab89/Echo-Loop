@@ -131,7 +131,10 @@ flutter:
 
   assets:
     - assets/demo/
-    - assets/icon/
+    # 只打包运行时真正用到的图标（封面图/登录页经 rootBundle 读取）。
+    # 目录内其余文件（app-icon-1024-rounded 仅构建期生成 launcher icon、
+    # ic_stat_logo 仅作 Android 通知图标源文件）不进包，避免 iOS 等平台白带。
+    - assets/icon/app-icon-1024.png
     - test/fixtures/audio_transcode/
 
   # An image asset can refer to one or more resolution-specific "variants", see

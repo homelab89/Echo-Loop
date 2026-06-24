@@ -49,8 +49,30 @@ class AudioEngine extends _$AudioEngine {
   /// 用于隔离讲解页等外来组件对共享引擎的旁路驱动。
   int get currentSessionId => state.sessionId;
 
+  /// 注册/清空锁屏「上一句/下一句」回调，转发给底层 handler。
+  ///
+  /// 业务层只经 AudioEngine 触达 handler，不直接持有 handler。
+  void setSkipHandlers({
+    Future<void> Function()? onPrevious,
+    Future<void> Function()? onNext,
+  }) {
+    _handler.setSkipHandlers(onPrevious: onPrevious, onNext: onNext);
+  }
+
+  /// 注册/清空锁屏播放、暂停回调，转发给底层 handler。
+  void setTransportHandlers({
+    Future<void> Function()? onPlay,
+    Future<void> Function()? onPause,
+  }) {
+    _handler.setTransportHandlers(onPlay: onPlay, onPause: onPause);
+  }
+
   // --- 音频加载 ---
-  Future<Duration?> loadAudio(AudioItem item, double speed) async {
+  Future<Duration?> loadAudio(
+    AudioItem item,
+    double speed, {
+    String? subtitle,
+  }) async {
     try {
       state = state.copyWith(isLoading: true, errorMessage: null);
 
@@ -70,6 +92,7 @@ class AudioEngine extends _$AudioEngine {
         filePath: fullAudioPath,
         title: item.name,
         speed: speed,
+        subtitle: subtitle,
       );
       var resolvedDuration = duration ?? _handler.player.duration;
       if (resolvedDuration == null) {
@@ -128,11 +151,14 @@ class AudioEngine extends _$AudioEngine {
   }
 
   // --- 基础控制 ---
-  Future<void> play() async => await _handler.play();
+  // 引擎内部一律用 playPlayer/pausePlayer 直接驱动底层播放器；handler 的 play/pause
+  // 留给系统命令（锁屏/耳机/中断）转交业务回调，避免「controller → engine → handler →
+  // controller」回环。
+  Future<void> play() async => await _handler.playPlayer();
 
   Future<void> pause() async {
     state = state.copyWith(sessionId: state.sessionId + 1);
-    await _handler.pause();
+    await _handler.pausePlayer();
   }
 
   /// 暂停但不递增 sessionId。
@@ -142,7 +168,7 @@ class AudioEngine extends _$AudioEngine {
   /// 续播时会被误判为「被外来 session 顶掉」而走重新起播逻辑；本方法保留 session，
   /// 让调用方能从精确位置继续。
   Future<void> pauseKeepSession() async {
-    await _handler.pause();
+    await _handler.pausePlayer();
   }
 
   Future<void> stop() async {
@@ -175,8 +201,7 @@ class AudioEngine extends _$AudioEngine {
     await _handler.seek(relative.isNegative ? Duration.zero : relative);
   }
 
-  Future<void> setSpeed(double speed) async =>
-      await _handler.setSpeed(speed);
+  Future<void> setSpeed(double speed) async => await _handler.setSpeed(speed);
 
   // --- Clip 管理 ---
   Future<void> setClip(Duration start, Duration end) async {
@@ -200,10 +225,7 @@ class AudioEngine extends _$AudioEngine {
           'clip=${sentence.startTime.inMilliseconds}-${sentence.endTime.inMilliseconds}ms',
     );
     state = state.copyWith(clipStart: sentence.startTime, isClipActive: true);
-    await _handler.setClip(
-      start: sentence.startTime,
-      end: sentence.endTime,
-    );
+    await _handler.setClip(start: sentence.startTime, end: sentence.endTime);
 
     if (!isActiveSession(sessionId)) {
       AppLogger.log(
@@ -228,13 +250,13 @@ class AudioEngine extends _$AudioEngine {
       return;
     }
 
-    await _handler.play();
+    await _handler.playPlayer();
     if (!isActiveSession(sessionId)) {
       AppLogger.log(
         'AudioEngine',
         '⚠ playClipOnce: session $sessionId 在 play() 后已过期，主动 pause',
       );
-      await _handler.pause();
+      await _handler.pausePlayer();
       return;
     }
 
@@ -281,10 +303,10 @@ class AudioEngine extends _$AudioEngine {
   Future<void> playToEnd(int sessionId) async {
     if (!isActiveSession(sessionId)) return;
 
-    await _handler.play();
+    await _handler.playPlayer();
     // play() 是真正启动播放的点，并发场景下上游可能在此之前 bump session。
     if (!isActiveSession(sessionId)) {
-      await _handler.pause();
+      await _handler.pausePlayer();
       return;
     }
 
@@ -352,13 +374,13 @@ class AudioEngine extends _$AudioEngine {
     // play() 是真正启动音频的点，必须最后一次 check session：
     // 上游 pause / seek 在并发场景下可能在 setClip → seek(0) 期间 bump session，
     // 不在这里拦住会让旧 session 启动一段短暂的播放再被 stop。
-    await _handler.play();
+    await _handler.playPlayer();
     if (!isActiveSession(sessionId)) {
       AppLogger.log(
         'AudioEngine',
         '⚠ playRangeOnce: session $sessionId 在 play() 后已过期，主动 pause',
       );
-      await _handler.pause();
+      await _handler.pausePlayer();
       return;
     }
 
