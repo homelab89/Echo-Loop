@@ -26,7 +26,11 @@ class _LoadAudioEngine extends TestAudioEngine {
   _LoadAudioEngine(this.sentences);
 
   @override
-  Future<Duration?> loadAudio(AudioItem audioItem, double speed) async => null;
+  Future<Duration?> loadAudio(
+    AudioItem audioItem,
+    double speed, {
+    String? subtitle,
+  }) async => null;
 
   @override
   Future<List<Sentence>> loadTranscript(AudioItem audioItem) async => sentences;

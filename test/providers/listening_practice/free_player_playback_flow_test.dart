@@ -845,7 +845,9 @@ void main() {
     await flushBoundary();
 
     expect(container.read(listeningPracticeProvider).currentFullIndex, 4);
-    expect(engine.stopCount, 1);
+    // 自然播完保留媒体会话（锁屏控件不消失），暂停而非 stop。
+    expect(engine.pauseKeepSessionCount, 1);
+    expect(engine.stopCount, 0);
     expect(engine.isPlaying, isFalse);
 
     await lp.play();
@@ -874,7 +876,8 @@ void main() {
 
     final endedState = container.read(listeningPracticeProvider);
     expect(endedState.currentBookmarkIndex, 4);
-    expect(engine.stopCount, 1);
+    expect(engine.pauseKeepSessionCount, 1);
+    expect(engine.stopCount, 0);
     expect(engine.isPlaying, isFalse);
 
     await lp.play();
@@ -959,9 +962,10 @@ void main() {
     expect(s.isPlaying, isTrue);
     expect(s.wholeLoopsDone, 2, reason: '第 3 遍播放中 → 状态栏显示 3/3');
 
-    await completeWhole(); // 第 3 遍完成 → 停止
+    await completeWhole(); // 第 3 遍完成 → 暂停保留会话
     expect(engine.playCount, 3, reason: '不再起播第 4 遍');
-    expect(engine.stopCount, 1);
+    expect(engine.pauseKeepSessionCount, 1);
+    expect(engine.stopCount, 0);
     expect(container.read(listeningPracticeProvider).isPlaying, isFalse);
   });
 
@@ -986,9 +990,10 @@ void main() {
       await flushBoundary();
     }
 
-    // 仍恰好播 3 遍后停止。
+    // 仍恰好播 3 遍后停止（保留会话）。
     expect(engine.playCount, 3);
-    expect(engine.stopCount, 1);
+    expect(engine.pauseKeepSessionCount, 1);
+    expect(engine.stopCount, 0);
     expect(container.read(listeningPracticeProvider).isPlaying, isFalse);
   });
 
@@ -1032,9 +1037,10 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(container.read(listeningPracticeProvider).currentFullIndex, 4);
 
-    await completeWhole(); // 唯一一遍完成 → 停止
+    await completeWhole(); // 唯一一遍完成 → 暂停保留会话
     final ended = container.read(listeningPracticeProvider);
-    expect(engine.stopCount, 1);
+    expect(engine.pauseKeepSessionCount, 1);
+    expect(engine.stopCount, 0);
     expect(ended.isPlaying, isFalse, reason: '逻辑播放态为 false → 图标显示「播放」');
     expect(ended.currentFullIndex, 4, reason: '高亮停在末句属正常');
 
@@ -1079,8 +1085,9 @@ void main() {
       reason: '从暂停位置续播，不回卷句首（未重新 seek 到 0）',
     );
 
-    await completeWhole(); // 第 2 遍完成 → 停止
-    expect(engine.stopCount, 1);
+    await completeWhole(); // 第 2 遍完成 → 暂停保留会话
+    expect(engine.pauseKeepSessionCount, 1);
+    expect(engine.stopCount, 0);
     expect(container.read(listeningPracticeProvider).isPlaying, isFalse);
   });
 }

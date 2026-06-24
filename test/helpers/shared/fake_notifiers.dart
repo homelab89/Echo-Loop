@@ -1816,6 +1816,18 @@ class FakeAudioEngine extends AudioEngine {
   Future<void> clearClip() async {}
 
   @override
+  void setSkipHandlers({
+    Future<void> Function()? onPrevious,
+    Future<void> Function()? onNext,
+  }) {}
+
+  @override
+  void setTransportHandlers({
+    Future<void> Function()? onPlay,
+    Future<void> Function()? onPause,
+  }) {}
+
+  @override
   Future<void> playClipOnce(Sentence sentence, int sessionId) async {}
 
   @override
