@@ -43,6 +43,9 @@ void main() {
       AudioItem audioItem, {
       LearningProgressState? progressState,
       Session? session,
+      AppSettingsState appSettingsState = const AppSettingsState(
+        locale: Locale('en'),
+      ),
     }) {
       final libraryState = AudioLibraryState(audioItems: [audioItem]);
       return createTestApp(
@@ -61,7 +64,7 @@ void main() {
         overrides: [
           analyticsOverride(),
           appSettingsProvider.overrideWith(
-            () => TestAppSettings(const AppSettingsState(locale: Locale('en'))),
+            () => TestAppSettings(appSettingsState),
           ),
           audioLibraryProvider.overrideWith(
             () => TestAudioLibrary(libraryState),
@@ -411,6 +414,26 @@ void main() {
         await tester.tap(find.byType(Switch));
         await tester.pumpAndSettle();
 
+        expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+      });
+
+      testWidgets('已保存关闭时，首次打开弹窗默认显示关闭', (tester) async {
+        final item = createTestAudioItem(transcriptPath: null);
+        await tester.pumpWidget(
+          buildSheet(
+            item,
+            appSettingsState: const AppSettingsState(
+              locale: Locale('en'),
+              aiTranscriptionAutoMergeEnabled: false,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Auto-merge short sentences'), findsOneWidget);
         expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
       });
     });

@@ -288,6 +288,48 @@ void main() {
       expect(readInitialUiLocaleSync(prefs), isNull);
     });
 
+    test(
+      'initialAiTranscriptionAutoMergeEnabledProvider override 直接作为首帧开关值',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'ai_transcription_auto_merge_enabled': false,
+        });
+
+        final container = ProviderContainer(
+          overrides: [
+            initialAiTranscriptionAutoMergeEnabledProvider.overrideWithValue(
+              false,
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        expect(
+          container.read(appSettingsProvider).aiTranscriptionAutoMergeEnabled,
+          isFalse,
+        );
+
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        expect(
+          container.read(appSettingsProvider).aiTranscriptionAutoMergeEnabled,
+          isFalse,
+        );
+      },
+    );
+
+    test('readInitialAiTranscriptionAutoMergeEnabledSync 解析 SP 值', () async {
+      SharedPreferences.setMockInitialValues({
+        'ai_transcription_auto_merge_enabled': false,
+      });
+      var prefs = await SharedPreferences.getInstance();
+      expect(readInitialAiTranscriptionAutoMergeEnabledSync(prefs), isFalse);
+
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+      expect(readInitialAiTranscriptionAutoMergeEnabledSync(prefs), isTrue);
+    });
+
     test('locale 配置为 system 时加载为 null（用户显式选择跟随系统）', () async {
       SharedPreferences.setMockInitialValues({'locale': 'system'});
 
@@ -369,10 +411,7 @@ void main() {
         isFalse,
       );
       final prefs = await SharedPreferences.getInstance();
-      expect(
-        prefs.getBool('ai_transcription_auto_merge_enabled'),
-        isFalse,
-      );
+      expect(prefs.getBool('ai_transcription_auto_merge_enabled'), isFalse);
     });
 
     test('加载已保存的 aiTranscriptionAutoMergeEnabled=false', () async {

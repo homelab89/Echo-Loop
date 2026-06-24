@@ -192,6 +192,17 @@ class AppSettingsState {
 /// 未 override 时返回 null，单测里也安全。
 final initialUiLocaleProvider = Provider<Locale?>((ref) => null);
 
+/// 启动期同步预读的 AI 转录「自动合并短句」开关。
+///
+/// 在 `main()` 同步从 SP 读出后通过 `overrideWithValue` 注入；用作
+/// [AppSettings.build] 的首帧值，避免转录弹窗在设置 hydrate 前先读到默认 `true`，
+/// 把错误值锁进本地 state。
+///
+/// 未 override 时返回默认 `true`，单测里也安全。
+final initialAiTranscriptionAutoMergeEnabledProvider = Provider<bool>(
+  (ref) => true,
+);
+
 /// 同步从 SP 读取并解析界面语言（main() 启动期使用）。
 Locale? readInitialUiLocaleSync(SharedPreferences prefs) {
   final stored = prefs.getString(_localeKey);
@@ -202,14 +213,26 @@ Locale? readInitialUiLocaleSync(SharedPreferences prefs) {
   };
 }
 
+/// 同步从 SP 读取 AI 转录「自动合并短句」开关（main() 启动期使用）。
+bool readInitialAiTranscriptionAutoMergeEnabledSync(SharedPreferences prefs) {
+  return prefs.getBool(_aiTranscriptionAutoMergeEnabledKey) ?? true;
+}
+
 @Riverpod(keepAlive: true)
 class AppSettings extends _$AppSettings {
   @override
   AppSettingsState build() {
-    // 用 main() 同步预读的 initialUiLocale 作为首帧值，避免闪烁。
+    // 用 main() 同步预读的首帧值，避免 locale 闪烁，以及转录弹窗在 hydrate 前
+    // 读到错误的 auto-merge 默认值。
     final initialLocale = ref.read(initialUiLocaleProvider);
+    final initialAiTranscriptionAutoMergeEnabled = ref.read(
+      initialAiTranscriptionAutoMergeEnabledProvider,
+    );
     _loadSettings();
-    return AppSettingsState(locale: initialLocale);
+    return AppSettingsState(
+      locale: initialLocale,
+      aiTranscriptionAutoMergeEnabled: initialAiTranscriptionAutoMergeEnabled,
+    );
   }
 
   Future<void> _loadSettings() async {

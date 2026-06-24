@@ -95,6 +95,10 @@ void main() async {
   // 界面语言同步预读：让首帧 MaterialApp.locale 直接拿到用户已选语言，
   // 避免"先按系统语言渲染、再 hydrate 切到用户设置"的闪烁。
   final initialUiLocale = readInitialUiLocaleSync(prefs);
+  // AI 转录「自动合并短句」同步预读：让转录弹窗首帧直接拿到上次选择，
+  // 避免在 AppSettings 异步 hydrate 前先读到默认 true。
+  final initialAiTranscriptionAutoMergeEnabled =
+      readInitialAiTranscriptionAutoMergeEnabledSync(prefs);
 
   // 初始化数据库（演示模式使用独立数据库文件）
   final dbFileName = isDemoMode ? 'echo_loop_demo.db' : 'echo_loop.db';
@@ -228,6 +232,9 @@ void main() async {
             initialLearningSettings,
           ),
           initialUiLocaleProvider.overrideWithValue(initialUiLocale),
+          initialAiTranscriptionAutoMergeEnabledProvider.overrideWithValue(
+            initialAiTranscriptionAutoMergeEnabled,
+          ),
           if (recommendedAsrModel != null)
             recommendedAsrModelProvider.overrideWithValue(recommendedAsrModel),
           if (initialOfflineAsrSettingsState != null)
