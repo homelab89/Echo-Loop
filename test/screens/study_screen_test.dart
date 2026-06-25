@@ -246,7 +246,7 @@ void main() {
           audioItemId: 'audio-1',
           currentStage: LearningStage.review2,
           currentSubStage: SubStageType.reviewDifficultPractice,
-          lastStageCompletedAt: now, // 未到时间 → 待解锁，距解锁 48h
+          lastStageCompletedAt: now, // 未到时间 → 待解锁，距解锁 24h（review2 间隔）
           updatedAt: now,
         ),
       },
@@ -266,8 +266,8 @@ void main() {
     await tester.tap(find.byType(ExpansionTile).first);
     await tester.pumpAndSettle();
 
-    // 应显示解锁倒计时（48h → "in 2d"），不应误显"In Progress"
-    expect(find.text('in 2d'), findsOneWidget);
+    // 应显示解锁倒计时（24h → "in 1d"），不应误显"In Progress"
+    expect(find.text('in 1d'), findsOneWidget);
     expect(find.text('In Progress'), findsNothing);
   });
 
@@ -332,8 +332,8 @@ void main() {
           audioItemId: 'audio-1',
           currentStage: LearningStage.review1,
           currentSubStage: SubStageType.blindListen,
-          // review1 窗口结束 = completed + 48h，这里逾期 3h
-          lastStageCompletedAt: now.subtract(const Duration(hours: 51)),
+          // review1 窗口结束 = completed + 18h(间隔) + 24h(窗口) = 42h，这里逾期 3h
+          lastStageCompletedAt: now.subtract(const Duration(hours: 45)),
           updatedAt: now,
         ),
       },

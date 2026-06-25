@@ -342,9 +342,11 @@ void main() {
       addTearDown(container.dispose);
 
       final tasks = container.read(studyTaskProvider);
+      // 两个均已就绪且未逾期，按 nextReviewAt 升序：review-2 完成更早（-2d，间隔
+      // 24h → 排程更早）排在 review-1（-1d，间隔 18h）之前。
       expect(tasks.map((e) => e.audioId).toList(), [
-        'review-1',
         'review-2',
+        'review-1',
         'new-short',
       ]);
       expect(tasks.last.type, StudyTaskType.firstStudy);
@@ -606,16 +608,16 @@ void main() {
           audioItemId: 'a',
           currentStage: LearningStage.review1,
           currentSubStage: SubStageType.blindListen,
-          // review1 窗口结束 = completed + 48h，这里逾期 5h
-          lastStageCompletedAt: now.subtract(const Duration(hours: 53)),
+          // review1 窗口结束 = completed + 18h(间隔) + 24h(窗口) = 42h，这里逾期 5h
+          lastStageCompletedAt: now.subtract(const Duration(hours: 47)),
           updatedAt: now,
         ),
         'b': LearningProgress(
           audioItemId: 'b',
           currentStage: LearningStage.review1,
           currentSubStage: SubStageType.blindListen,
-          // 逾期 2h
-          lastStageCompletedAt: now.subtract(const Duration(hours: 50)),
+          // 窗口结束 = completed + 42h，这里逾期 2h
+          lastStageCompletedAt: now.subtract(const Duration(hours: 44)),
           updatedAt: now,
         ),
         'c': LearningProgress(
